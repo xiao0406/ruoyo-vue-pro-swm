@@ -3,17 +3,17 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.jeesite</groupId>
-	<artifactId>CSCEC-Jeesite-Cloud-Ams</artifactId>
+	<artifactId>CSCEC-Jeesite-Cloud-Swm</artifactId>
 	<version>5.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<name>CSCEC-Jeesite-Cloud-Ams</name>
+	<name>CSCEC-Jeesite-Cloud-Swm</name>
 	<url>http://jeesite.com</url>
 	<inceptionYear>2013-Now</inceptionYear>
 
     <modules>
-        <module>ams/ams</module>
-        <module>ams/ams-client</module>
+        <module>swm/swm</module>
+        <module>swm/swm-client</module>
     </modules>
 	<developers>
 		<developer>
