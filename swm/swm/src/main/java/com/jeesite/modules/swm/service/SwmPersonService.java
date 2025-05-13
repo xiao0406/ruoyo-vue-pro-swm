@@ -14,6 +14,8 @@ import com.jeesite.modules.swm.entity.SwmPerson;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * 人员登记表service
  * 
@@ -91,6 +93,24 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
     @Transactional(readOnly = false)
     public void delete(SwmPerson swmPerson) {
         super.delete(swmPerson);
+    }
+
+    /**
+     * 根据身份证号码查询离职人员
+     * 
+     * @param identityCard 身份证号码
+     * @return 离职人员列表
+     */
+    public List<SwmPerson> findDepartedByIdentityCard(String identityCard) {
+        if (identityCard == null || identityCard.trim().isEmpty()) {
+            return Lists.newArrayList();
+        }
+
+        SwmPerson swmPerson = new SwmPerson();
+        swmPerson.setIdentityCard(identityCard);
+        swmPerson.setPersonnelStatus(SwmPerson.PersonStatusEnum.INACTIVE); // 只查询离职人员
+
+        return dao.findDepartedByIdentityCard(swmPerson);
     }
 
 }

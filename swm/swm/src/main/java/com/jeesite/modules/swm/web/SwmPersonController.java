@@ -341,4 +341,63 @@ public class SwmPersonController extends BaseController {
             return renderResult(Global.FALSE, text("处理人员离职失败：" + e.getMessage()));
         }
     }
+
+    /**
+     * 根据身份证查询离职人员
+     */
+    @GetMapping(value = "findDepartedByIdentityCard")
+    @ResponseBody
+    public Map<String, Object> findDepartedByIdentityCard(@RequestParam("identityCard") String identityCard) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            List<SwmPerson> departedPersons = swmPersonService.findDepartedByIdentityCard(identityCard);
+
+            if (departedPersons != null && !departedPersons.isEmpty()) {
+                result.put("success", true);
+                result.put("hasRecord", true);
+                result.put("data", departedPersons);
+                result.put("message", "查询到离职人员信息");
+            } else {
+                result.put("success", true);
+                result.put("hasRecord", false);
+                result.put("message", "未查询到离职人员信息");
+            }
+        } catch (Exception e) {
+            logger.error("查询离职人员信息异常", e);
+            result.put("success", false);
+            result.put("message", "查询离职人员信息失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取离职人员详情
+     */
+    @GetMapping(value = "getDepartureDetail")
+    @ResponseBody
+    public Map<String, Object> getDepartureDetail(@RequestParam("id") String id) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            SwmPerson person = swmPersonService.get(id);
+            if (person != null) {
+                // 处理枚举显示值
+                handleEnumTextDisplay(person);
+
+                result.put("success", true);
+                result.put("data", person);
+            } else {
+                result.put("success", false);
+                result.put("message", "未找到离职人员详情");
+            }
+        } catch (Exception e) {
+            logger.error("获取离职人员详情异常", e);
+            result.put("success", false);
+            result.put("message", "获取离职人员详情失败：" + e.getMessage());
+        }
+
+        return result;
+    }
 }
