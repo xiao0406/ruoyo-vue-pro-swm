@@ -11,8 +11,10 @@ import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.entity.SwmPersonDeparture;
 import com.jeesite.modules.swm.excel.SwmPersonExcelModel;
 import com.jeesite.modules.swm.excel.SwmPersonImportListener;
+import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,9 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private SwmPersonService swmPersonService;
+
+    @Autowired
+    private SwmPersonDepartureService swmPersonDepartureService;
 
     /**
      * 获取数据
@@ -332,9 +337,49 @@ public class SwmPersonController extends BaseController {
             swmPerson.setDepartureReason(departureReason);
             swmPerson.setDepartureDate(new Date()); // 设置为当前的服务器时间
 
-            // 保存更新
+            // 保存更新人员表记录
             swmPersonService.save(swmPerson);
 
+            // 创建并保存离职记录到离职表，这是必须成功的步骤
+            if (swmPersonDepartureService == null) {
+                logger.error("swmPersonDepartureService为空，无法创建离职记录");
+                return renderResult(Global.FALSE, text("离职记录服务异常，请联系管理员"));
+            }
+
+            // 创建离职记录并保存
+            SwmPersonDeparture departure = new SwmPersonDeparture();
+
+            // 复制基本信息
+            departure.setName(swmPerson.getName());
+            departure.setPersonType(swmPerson.getPersonType());
+            departure.setGender(swmPerson.getGender());
+            departure.setCompany(swmPerson.getCompany());
+            departure.setDepartment(swmPerson.getDepartment());
+            departure.setWorkProcess(swmPerson.getWorkProcess());
+            departure.setTeam(swmPerson.getTeam());
+            departure.setJobType(swmPerson.getJobType());
+            departure.setSafetyHelmetId(swmPerson.getSafetyHelmetId());
+            departure.setSafetyEducation(swmPerson.getSafetyEducation());
+            departure.setIdentityCard(swmPerson.getIdentityCard());
+            departure.setPhoneNumber(swmPerson.getPhoneNumber());
+
+            // 设置离职相关信息
+            departure.setPersonnelStatus(swmPerson.getPersonnelStatus());
+            departure.setHelmetReturned(swmPerson.getHelmetReturned());
+            departure.setDepartureType(swmPerson.getDepartureType());
+            departure.setDepartureReason(swmPerson.getDepartureReason());
+            departure.setDepartureDate(swmPerson.getDepartureDate());
+            departure.setRemarks(swmPerson.getRemarks());
+
+            // 保存离职记录
+            swmPersonDepartureService.save(departure);
+
+            if (departure.getId() == null || departure.getId().isEmpty()) {
+                logger.error("保存离职记录失败，人员ID：{}", personId);
+                return renderResult(Global.FALSE, text("保存离职记录失败，请重试"));
+            }
+
+            logger.info("成功创建离职记录，ID：{}, 姓名：{}", departure.getId(), departure.getName());
             return renderResult(Global.TRUE, text("人员离职处理成功"));
         } catch (Exception e) {
             logger.error("处理人员离职异常", e);
