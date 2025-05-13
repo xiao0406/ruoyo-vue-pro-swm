@@ -11,6 +11,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 
 /**
  * 人员登记表实体类
@@ -29,6 +30,8 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "job_type", attrName = "jobType", label = "所属工种"),
         @Column(name = "safety_helmet_id", attrName = "safetyHelmetId", label = "关联安全帽"),
         @Column(name = "safety_education", attrName = "safetyEducation", label = "入场安全教育"),
+        @Column(name = "identity_card", attrName = "identityCard", label = "身份证号码", queryType = QueryType.LIKE),
+        @Column(name = "phone_number", attrName = "phoneNumber", label = "手机号码", queryType = QueryType.LIKE),
         @Column(name = "personnel_status", attrName = "personnelStatus", label = "人员状态"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
@@ -46,6 +49,8 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String jobType; // 所属工种
     private String safetyHelmetId; // 关联安全帽
     private String safetyEducation; // 入场安全教育
+    private String identityCard; // 身份证号码
+    private String phoneNumber; // 手机号码
     private String personnelStatus; // 人员状态
 
     public SwmPerson() {
@@ -145,6 +150,26 @@ public class SwmPerson extends DataEntity<SwmPerson> {
 
     public void setSafetyEducation(String safetyEducation) {
         this.safetyEducation = safetyEducation;
+    }
+
+    @Length(max = 18, message = "身份证号码长度不能超过18个字符")
+    @Pattern(regexp = "(^\\d{15}$)|(^\\d{18}$)|(^\\d{17}(\\d|X|x)$)", message = "身份证号码格式不正确")
+    public String getIdentityCard() {
+        return identityCard;
+    }
+
+    public void setIdentityCard(String identityCard) {
+        this.identityCard = identityCard;
+    }
+
+    @Length(max = 20, message = "手机号码长度不能超过20个字符")
+    @Pattern(regexp = "^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}$", message = "手机号码格式不正确")
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     @Length(max = 20, message = "人员状态长度不能超过20个字符")

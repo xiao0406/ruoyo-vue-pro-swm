@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * 人员信息导入监听器
@@ -21,6 +22,10 @@ import java.util.List;
 public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExcelModel> {
 
     private static final Logger logger = LoggerFactory.getLogger(SwmPersonImportListener.class);
+    private static final Pattern IDENTITY_CARD_PATTERN = Pattern
+            .compile("(^\\d{15}$)|(^\\d{18}$)|(^\\d{17}(\\d|X|x)$)");
+    private static final Pattern PHONE_NUMBER_PATTERN = Pattern
+            .compile("^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}$");
 
     // 成功导入的数据列表
     private final List<SwmPerson> successList = new ArrayList<>();
@@ -76,6 +81,18 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
             errorMsg.append("姓名不能为空; ");
         }
 
+        // 身份证号码校验
+        if (StringUtils.isNotBlank(model.getIdentityCard())
+                && !IDENTITY_CARD_PATTERN.matcher(model.getIdentityCard()).matches()) {
+            errorMsg.append("身份证号码格式不正确; ");
+        }
+
+        // 手机号码校验
+        if (StringUtils.isNotBlank(model.getPhoneNumber())
+                && !PHONE_NUMBER_PATTERN.matcher(model.getPhoneNumber()).matches()) {
+            errorMsg.append("手机号码格式不正确; ");
+        }
+
         // 其他校验逻辑...
 
         if (errorMsg.length() > 0) {
@@ -98,6 +115,8 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
         person.setJobType(model.getJobType());
         person.setSafetyHelmetId(model.getSafetyHelmetId());
         person.setSafetyEducation(model.getSafetyEducation());
+        person.setIdentityCard(model.getIdentityCard());
+        person.setPhoneNumber(model.getPhoneNumber());
         person.setPersonnelStatus(model.getPersonnelStatus());
         person.setRemarks(model.getRemarks());
 
