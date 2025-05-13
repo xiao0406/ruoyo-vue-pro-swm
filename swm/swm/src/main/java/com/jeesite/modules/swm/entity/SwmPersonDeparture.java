@@ -61,6 +61,8 @@ public class SwmPersonDeparture extends DataEntity<SwmPersonDeparture> {
     private String departureType; // 离职类型
     private String departureReason; // 离职原因
     private Date departureDate; // 离职时间
+    private String helmetReturnedText; // 是否归还安全帽文本
+    private String departureTypeText; // 离职类型文本
 
     public SwmPersonDeparture() {
         this(null);
@@ -222,5 +224,21 @@ public class SwmPersonDeparture extends DataEntity<SwmPersonDeparture> {
 
     public void setDepartureDate(Date departureDate) {
         this.departureDate = departureDate;
+    }
+
+    public String getHelmetReturnedText() {
+        return helmetReturnedText;
+    }
+
+    public void setHelmetReturnedText(String helmetReturnedText) {
+        this.helmetReturnedText = helmetReturnedText;
+    }
+
+    public String getDepartureTypeText() {
+        return departureTypeText;
+    }
+
+    public void setDepartureTypeText(String departureTypeText) {
+        this.departureTypeText = departureTypeText;
     }
 }

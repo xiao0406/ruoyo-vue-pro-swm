@@ -396,6 +396,20 @@ public class SwmPersonController extends BaseController {
         Map<String, Object> result = new HashMap<>();
 
         try {
+            // 优先从离职表查询数据
+            SwmPersonDeparture query = new SwmPersonDeparture();
+            query.setIdentityCard(identityCard);
+            List<SwmPersonDeparture> departureList = swmPersonDepartureService.findList(query);
+
+            if (departureList != null && !departureList.isEmpty()) {
+                result.put("success", true);
+                result.put("hasRecord", true);
+                result.put("data", departureList);
+                result.put("message", "查询到离职记录信息");
+                return result;
+            }
+
+            // 如果离职表没有数据，再从人员表查询
             List<SwmPerson> departedPersons = swmPersonService.findDepartedByIdentityCard(identityCard);
 
             if (departedPersons != null && !departedPersons.isEmpty()) {
@@ -426,16 +440,23 @@ public class SwmPersonController extends BaseController {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            SwmPerson person = swmPersonService.get(id);
-            if (person != null) {
-                // 处理枚举显示值
-                handleEnumTextDisplay(person);
-
+            // 从离职表中查询详情
+            SwmPersonDeparture departure = swmPersonDepartureService.get(id);
+            if (departure != null) {
                 result.put("success", true);
-                result.put("data", person);
+                result.put("data", departure);
             } else {
-                result.put("success", false);
-                result.put("message", "未找到离职人员详情");
+                // 如果离职表中没有数据，再从人员表查询
+                SwmPerson person = swmPersonService.get(id);
+                if (person != null) {
+                    // 处理枚举显示值
+                    handleEnumTextDisplay(person);
+                    result.put("success", true);
+                    result.put("data", person);
+                } else {
+                    result.put("success", false);
+                    result.put("message", "未找到离职人员详情");
+                }
             }
         } catch (Exception e) {
             logger.error("获取离职人员详情异常", e);
