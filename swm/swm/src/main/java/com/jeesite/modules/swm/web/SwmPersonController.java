@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +131,7 @@ public class SwmPersonController extends BaseController {
             personData.put("departureType", swmPerson.getDepartureType());
             personData.put("departureTypeText", swmPerson.getDepartureTypeText());
             personData.put("departureReason", swmPerson.getDepartureReason());
+            personData.put("departureDate", swmPerson.getDepartureDate()); // 添加离职时间
 
             result.putAll(personData);
         }
@@ -328,6 +330,7 @@ public class SwmPersonController extends BaseController {
             swmPerson.setHelmetReturned(helmetReturned);
             swmPerson.setDepartureType(departureType);
             swmPerson.setDepartureReason(departureReason);
+            swmPerson.setDepartureDate(new Date()); // 设置为当前的服务器时间
 
             // 保存更新
             swmPersonService.save(swmPerson);

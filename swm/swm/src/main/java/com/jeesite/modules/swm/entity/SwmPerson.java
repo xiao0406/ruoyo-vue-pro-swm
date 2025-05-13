@@ -12,6 +12,7 @@ import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
+import java.util.Date;
 
 /**
  * 人员登记表实体类
@@ -36,6 +37,7 @@ import javax.validation.constraints.Pattern;
         @Column(name = "helmet_returned", attrName = "helmetReturned", label = "是否归还安全帽"),
         @Column(name = "departure_type", attrName = "departureType", label = "离职类型"),
         @Column(name = "departure_reason", attrName = "departureReason", label = "离职原因"),
+        @Column(name = "departure_date", attrName = "departureDate", label = "离职时间"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmPerson extends DataEntity<SwmPerson> {
@@ -146,6 +148,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String helmetReturned; // 是否归还安全帽
     private String departureType; // 离职类型
     private String departureReason; // 离职原因
+    private Date departureDate; // 离职时间
 
     public SwmPerson() {
         this(null);
@@ -327,5 +330,13 @@ public class SwmPerson extends DataEntity<SwmPerson> {
 
     public void setDepartureReason(String departureReason) {
         this.departureReason = departureReason;
+    }
+
+    public Date getDepartureDate() {
+        return departureDate;
+    }
+
+    public void setDepartureDate(Date departureDate) {
+        this.departureDate = departureDate;
     }
 }
