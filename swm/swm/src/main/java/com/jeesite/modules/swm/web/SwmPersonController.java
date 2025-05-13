@@ -85,6 +85,13 @@ public class SwmPersonController extends BaseController {
         if (person.getSafetyEducation() != null) {
             person.setSafetyEducation(person.getSafetyEducationText());
         }
+        // 处理新增字段的显示
+        if (person.getHelmetReturned() != null) {
+            person.setHelmetReturned(person.getHelmetReturnedText());
+        }
+        if (person.getDepartureType() != null) {
+            person.setDepartureType(person.getDepartureTypeText());
+        }
     }
 
     /**
@@ -116,6 +123,13 @@ public class SwmPersonController extends BaseController {
             personData.put("personnelStatusText", swmPerson.getPersonnelStatusText());
             personData.put("safetyEducation", swmPerson.getSafetyEducation());
             personData.put("safetyEducationText", swmPerson.getSafetyEducationText());
+
+            // 添加新字段
+            personData.put("helmetReturned", swmPerson.getHelmetReturned());
+            personData.put("helmetReturnedText", swmPerson.getHelmetReturnedText());
+            personData.put("departureType", swmPerson.getDepartureType());
+            personData.put("departureTypeText", swmPerson.getDepartureTypeText());
+            personData.put("departureReason", swmPerson.getDepartureReason());
 
             result.putAll(personData);
         }
@@ -269,6 +283,59 @@ public class SwmPersonController extends BaseController {
                 SwmPerson.SafetyEducationEnum.getText(SwmPerson.SafetyEducationEnum.COMPLETED));
         result.put("safetyEducation", safetyEducationOptions);
 
+        // 是否归还安全帽选项
+        Map<String, String> helmetReturnedOptions = new HashMap<>();
+        helmetReturnedOptions.put(SwmPerson.HelmetReturnedEnum.YES,
+                SwmPerson.HelmetReturnedEnum.getText(SwmPerson.HelmetReturnedEnum.YES));
+        helmetReturnedOptions.put(SwmPerson.HelmetReturnedEnum.NO,
+                SwmPerson.HelmetReturnedEnum.getText(SwmPerson.HelmetReturnedEnum.NO));
+        result.put("helmetReturned", helmetReturnedOptions);
+
+        // 离职类型选项
+        Map<String, String> departureTypeOptions = new HashMap<>();
+        departureTypeOptions.put(SwmPerson.DepartureTypeEnum.NORMAL,
+                SwmPerson.DepartureTypeEnum.getText(SwmPerson.DepartureTypeEnum.NORMAL));
+        departureTypeOptions.put(SwmPerson.DepartureTypeEnum.ABNORMAL,
+                SwmPerson.DepartureTypeEnum.getText(SwmPerson.DepartureTypeEnum.ABNORMAL));
+        result.put("departureType", departureTypeOptions);
+
         return result;
+    }
+
+    /**
+     * 处理人员离职
+     */
+    @PostMapping(value = "handleDeparture", consumes = "application/json")
+    @ResponseBody
+    public String handleDeparture(@RequestBody Map<String, Object> params) {
+        try {
+            String personId = (String) params.get("id");
+            String helmetReturned = (String) params.get("helmetReturned");
+            String departureType = (String) params.get("departureType");
+            String departureReason = (String) params.get("departureReason");
+
+            logger.info("处理人员离职: personId={}, helmetReturned={}, departureType={}, departureReason={}",
+                    personId, helmetReturned, departureType, departureReason);
+
+            // 获取人员信息
+            SwmPerson swmPerson = swmPersonService.get(personId);
+            if (swmPerson == null) {
+                return renderResult(Global.FALSE, text("人员不存在"));
+            }
+
+            // 设置离职相关信息
+            swmPerson.setPersonnelStatus(SwmPerson.PersonStatusEnum.INACTIVE); // 设置为离职状态
+            swmPerson.setHelmetReturned(helmetReturned);
+            swmPerson.setDepartureType(departureType);
+            swmPerson.setDepartureReason(departureReason);
+
+            // 保存更新
+            swmPersonService.save(swmPerson);
+
+            return renderResult(Global.TRUE, text("人员离职处理成功"));
+        } catch (Exception e) {
+            logger.error("处理人员离职异常", e);
+            return renderResult(Global.FALSE, text("处理人员离职失败：" + e.getMessage()));
+        }
     }
 }
