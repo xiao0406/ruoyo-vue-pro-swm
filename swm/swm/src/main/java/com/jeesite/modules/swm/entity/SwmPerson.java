@@ -39,6 +39,50 @@ public class SwmPerson extends DataEntity<SwmPerson> {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 人员状态枚举
+     */
+    public static class PersonStatusEnum {
+        /** 离职 */
+        public static final String INACTIVE = "0";
+        /** 在职 */
+        public static final String ACTIVE = "1";
+
+        /**
+         * 获取人员状态显示文本
+         */
+        public static String getText(String value) {
+            if (ACTIVE.equals(value)) {
+                return "在职";
+            } else if (INACTIVE.equals(value)) {
+                return "离职";
+            }
+            return "";
+        }
+    }
+
+    /**
+     * 安全教育枚举
+     */
+    public static class SafetyEducationEnum {
+        /** 未开始 */
+        public static final String NOT_STARTED = "0";
+        /** 已培训 */
+        public static final String COMPLETED = "1";
+
+        /**
+         * 获取安全教育状态显示文本
+         */
+        public static String getText(String value) {
+            if (NOT_STARTED.equals(value)) {
+                return "未开始";
+            } else if (COMPLETED.equals(value)) {
+                return "已培训";
+            }
+            return "";
+        }
+    }
+
     private String name; // 姓名
     private String personType; // 人员类型
     private String gender; // 性别
@@ -148,6 +192,13 @@ public class SwmPerson extends DataEntity<SwmPerson> {
         return safetyEducation;
     }
 
+    /**
+     * 获取安全教育显示值
+     */
+    public String getSafetyEducationText() {
+        return SafetyEducationEnum.getText(safetyEducation);
+    }
+
     public void setSafetyEducation(String safetyEducation) {
         this.safetyEducation = safetyEducation;
     }
@@ -175,6 +226,13 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     @Length(max = 20, message = "人员状态长度不能超过20个字符")
     public String getPersonnelStatus() {
         return personnelStatus;
+    }
+
+    /**
+     * 获取人员状态显示值
+     */
+    public String getPersonnelStatusText() {
+        return PersonStatusEnum.getText(personnelStatus);
     }
 
     public void setPersonnelStatus(String personnelStatus) {

@@ -13,7 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -26,6 +28,21 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
             .compile("(^\\d{15}$)|(^\\d{18}$)|(^\\d{17}(\\d|X|x)$)");
     private static final Pattern PHONE_NUMBER_PATTERN = Pattern
             .compile("^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}$");
+
+    // 人员状态映射
+    private static final Map<String, String> PERSONNEL_STATUS_MAP = new HashMap<>();
+    // 安全教育状态映射
+    private static final Map<String, String> SAFETY_EDUCATION_MAP = new HashMap<>();
+
+    static {
+        // 初始化人员状态映射
+        PERSONNEL_STATUS_MAP.put("在职", SwmPerson.PersonStatusEnum.ACTIVE);
+        PERSONNEL_STATUS_MAP.put("离职", SwmPerson.PersonStatusEnum.INACTIVE);
+
+        // 初始化安全教育状态映射
+        SAFETY_EDUCATION_MAP.put("未开始", SwmPerson.SafetyEducationEnum.NOT_STARTED);
+        SAFETY_EDUCATION_MAP.put("已培训", SwmPerson.SafetyEducationEnum.COMPLETED);
+    }
 
     // 成功导入的数据列表
     private final List<SwmPerson> successList = new ArrayList<>();
@@ -93,7 +110,21 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
             errorMsg.append("手机号码格式不正确; ");
         }
 
-        // 其他校验逻辑...
+        // 人员状态校验
+        if (StringUtils.isNotBlank(model.getPersonnelStatus())
+                && !PERSONNEL_STATUS_MAP.containsKey(model.getPersonnelStatus())
+                && !model.getPersonnelStatus().equals("0")
+                && !model.getPersonnelStatus().equals("1")) {
+            errorMsg.append("人员状态必须为'在职'或'离职'; ");
+        }
+
+        // 安全教育状态校验
+        if (StringUtils.isNotBlank(model.getSafetyEducation())
+                && !SAFETY_EDUCATION_MAP.containsKey(model.getSafetyEducation())
+                && !model.getSafetyEducation().equals("0")
+                && !model.getSafetyEducation().equals("1")) {
+            errorMsg.append("安全教育状态必须为'未开始'或'已培训'; ");
+        }
 
         if (errorMsg.length() > 0) {
             throw new RuntimeException(errorMsg.toString());
@@ -114,10 +145,42 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
         person.setTeam(model.getTeam());
         person.setJobType(model.getJobType());
         person.setSafetyHelmetId(model.getSafetyHelmetId());
-        person.setSafetyEducation(model.getSafetyEducation());
+
+        // 处理安全教育状态
+        String safetyEducation = model.getSafetyEducation();
+        if (StringUtils.isNotBlank(safetyEducation)) {
+            if (SAFETY_EDUCATION_MAP.containsKey(safetyEducation)) {
+                person.setSafetyEducation(SAFETY_EDUCATION_MAP.get(safetyEducation));
+            } else if ("0".equals(safetyEducation) || "1".equals(safetyEducation)) {
+                person.setSafetyEducation(safetyEducation);
+            } else {
+                // 默认为未开始
+                person.setSafetyEducation(SwmPerson.SafetyEducationEnum.NOT_STARTED);
+            }
+        } else {
+            // 默认为未开始
+            person.setSafetyEducation(SwmPerson.SafetyEducationEnum.NOT_STARTED);
+        }
+
         person.setIdentityCard(model.getIdentityCard());
         person.setPhoneNumber(model.getPhoneNumber());
-        person.setPersonnelStatus(model.getPersonnelStatus());
+
+        // 处理人员状态
+        String personnelStatus = model.getPersonnelStatus();
+        if (StringUtils.isNotBlank(personnelStatus)) {
+            if (PERSONNEL_STATUS_MAP.containsKey(personnelStatus)) {
+                person.setPersonnelStatus(PERSONNEL_STATUS_MAP.get(personnelStatus));
+            } else if ("0".equals(personnelStatus) || "1".equals(personnelStatus)) {
+                person.setPersonnelStatus(personnelStatus);
+            } else {
+                // 默认为在职
+                person.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
+            }
+        } else {
+            // 默认为在职
+            person.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
+        }
+
         person.setRemarks(model.getRemarks());
 
         // 设置默认状态为0（正常）

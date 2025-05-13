@@ -55,7 +55,8 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
     public Page<SwmPerson> findPage(Page<SwmPerson> page, SwmPerson swmPerson) {
         swmPerson.setPage(page);
         // 设置状态条件为在职或离职
-        swmPerson.getSqlMap().getWhere().and("personnel_status", QueryType.IN, Lists.newArrayList("在职", "离职"));
+        swmPerson.getSqlMap().getWhere().and("personnel_status", QueryType.IN,
+                Lists.newArrayList(SwmPerson.PersonStatusEnum.ACTIVE, SwmPerson.PersonStatusEnum.INACTIVE));
         return this.findPage(swmPerson);
     }
 

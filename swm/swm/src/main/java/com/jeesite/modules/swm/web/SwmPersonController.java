@@ -68,7 +68,23 @@ public class SwmPersonController extends BaseController {
     @ResponseBody
     public Page<SwmPerson> listData(SwmPerson swmPerson, HttpServletRequest request, HttpServletResponse response) {
         Page<SwmPerson> page = swmPersonService.findPage(new Page<>(request, response), swmPerson);
+        // 处理枚举显示值
+        for (SwmPerson person : page.getList()) {
+            handleEnumTextDisplay(person);
+        }
         return page;
+    }
+
+    /**
+     * 处理枚举显示值
+     */
+    private void handleEnumTextDisplay(SwmPerson person) {
+        if (person.getPersonnelStatus() != null) {
+            person.setPersonnelStatus(person.getPersonnelStatusText());
+        }
+        if (person.getSafetyEducation() != null) {
+            person.setSafetyEducation(person.getSafetyEducationText());
+        }
     }
 
     /**
@@ -76,8 +92,34 @@ public class SwmPersonController extends BaseController {
      */
     @RequestMapping(value = "form")
     @ResponseBody
-    public SwmPerson form(SwmPerson swmPerson, Model model) {
-        return swmPerson;
+    public Map<String, Object> form(SwmPerson swmPerson, Model model) {
+        Map<String, Object> result = new HashMap<>();
+        if (swmPerson != null) {
+            Map<String, Object> personData = new HashMap<>();
+            // 复制基本属性
+            personData.put("id", swmPerson.getId());
+            personData.put("name", swmPerson.getName());
+            personData.put("personType", swmPerson.getPersonType());
+            personData.put("gender", swmPerson.getGender());
+            personData.put("company", swmPerson.getCompany());
+            personData.put("department", swmPerson.getDepartment());
+            personData.put("workProcess", swmPerson.getWorkProcess());
+            personData.put("team", swmPerson.getTeam());
+            personData.put("jobType", swmPerson.getJobType());
+            personData.put("safetyHelmetId", swmPerson.getSafetyHelmetId());
+            personData.put("identityCard", swmPerson.getIdentityCard());
+            personData.put("phoneNumber", swmPerson.getPhoneNumber());
+            personData.put("remarks", swmPerson.getRemarks());
+
+            // 处理枚举值
+            personData.put("personnelStatus", swmPerson.getPersonnelStatus());
+            personData.put("personnelStatusText", swmPerson.getPersonnelStatusText());
+            personData.put("safetyEducation", swmPerson.getSafetyEducation());
+            personData.put("safetyEducationText", swmPerson.getSafetyEducationText());
+
+            result.putAll(personData);
+        }
+        return result;
     }
 
     /**
@@ -201,5 +243,32 @@ public class SwmPersonController extends BaseController {
             logger.error("批量保存人员异常", e);
             return renderResult(Global.FALSE, text("批量保存人员失败：" + e.getMessage()));
         }
+    }
+
+    /**
+     * 获取人员状态和安全教育枚举选项
+     */
+    @GetMapping(value = "enumOptions")
+    @ResponseBody
+    public Map<String, Object> getEnumOptions() {
+        Map<String, Object> result = new HashMap<>();
+
+        // 人员状态选项
+        Map<String, String> personnelStatusOptions = new HashMap<>();
+        personnelStatusOptions.put(SwmPerson.PersonStatusEnum.ACTIVE,
+                SwmPerson.PersonStatusEnum.getText(SwmPerson.PersonStatusEnum.ACTIVE));
+        personnelStatusOptions.put(SwmPerson.PersonStatusEnum.INACTIVE,
+                SwmPerson.PersonStatusEnum.getText(SwmPerson.PersonStatusEnum.INACTIVE));
+        result.put("personnelStatus", personnelStatusOptions);
+
+        // 安全教育选项
+        Map<String, String> safetyEducationOptions = new HashMap<>();
+        safetyEducationOptions.put(SwmPerson.SafetyEducationEnum.NOT_STARTED,
+                SwmPerson.SafetyEducationEnum.getText(SwmPerson.SafetyEducationEnum.NOT_STARTED));
+        safetyEducationOptions.put(SwmPerson.SafetyEducationEnum.COMPLETED,
+                SwmPerson.SafetyEducationEnum.getText(SwmPerson.SafetyEducationEnum.COMPLETED));
+        result.put("safetyEducation", safetyEducationOptions);
+
+        return result;
     }
 }
