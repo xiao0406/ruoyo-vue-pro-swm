@@ -9,7 +9,6 @@ import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import org.hibernate.validator.constraints.Length;
-import com.jeesite.modules.swm.constant.HelmetTypeEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -42,8 +41,10 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     public static class MotionStatusEnum {
         /** 静止 */
         public static final String STATIC = "0";
-        /** 移动 */
+        /** 运动 */
         public static final String MOVING = "1";
+        /** 充电 */
+        public static final String CHARGING = "2";
 
         /**
          * 获取运动状态显示文本
@@ -52,14 +53,38 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
             if (STATIC.equals(value)) {
                 return "静止";
             } else if (MOVING.equals(value)) {
-                return "移动";
+                return "运动";
+            } else if (CHARGING.equals(value)) {
+                return "充电";
+            }
+            return "";
+        }
+    }
+
+    /**
+     * 头盔类型枚举
+     */
+    public static class HelmetTypeEnum {
+        /** 便携式 */
+        public static final String PORTABLE = "1";
+        /** 头箍式 */
+        public static final String HEADBAND = "2";
+
+        /**
+         * 获取头盔类型显示文本
+         */
+        public static String getText(String value) {
+            if (PORTABLE.equals(value)) {
+                return "便携式";
+            } else if (HEADBAND.equals(value)) {
+                return "头箍式";
             }
             return "";
         }
     }
 
     private String helmetId; // 头盔编号
-    private Integer helmetType; // 头盔类型(1:便携式 2:头箍式)
+    private String helmetType; // 头盔类型(1:便携式 2:头箍式)
     private Integer batteryLevel; // 头盔电量 (0-100%)
     private String ip; // IP地址
     private String macAddress; // MAC地址
@@ -86,17 +111,18 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
         this.helmetId = helmetId;
     }
 
-    @JsonIgnore
-    public Integer getHelmetType() {
+    public String getHelmetType() {
         return helmetType;
     }
 
-    @JsonProperty("helmetType")
-    public String getHelmetTypeDescription() {
-        return HelmetTypeEnum.getDescriptionByCode(this.helmetType);
+    /**
+     * 获取头盔类型显示值
+     */
+    public String getHelmetTypeText() {
+        return HelmetTypeEnum.getText(helmetType);
     }
 
-    public void setHelmetType(Integer helmetType) {
+    public void setHelmetType(String helmetType) {
         this.helmetType = helmetType;
     }
 
