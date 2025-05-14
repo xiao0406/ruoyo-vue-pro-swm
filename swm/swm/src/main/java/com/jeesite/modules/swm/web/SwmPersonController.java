@@ -12,10 +12,12 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmPersonDeparture;
+import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.excel.SwmPersonExcelModel;
 import com.jeesite.modules.swm.excel.SwmPersonImportListener;
 import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
+import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -49,6 +51,9 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private SwmPersonDepartureService swmPersonDepartureService;
+
+    @Autowired
+    private SwmHelmetDeviceService swmHelmetDeviceService;
 
     /**
      * 获取数据
@@ -465,5 +470,112 @@ public class SwmPersonController extends BaseController {
         }
 
         return result;
+    }
+
+    /**
+     * 获取可用的安全帽列表
+     */
+    @GetMapping(value = "getAvailableHelmets")
+    @ResponseBody
+    public Map<String, Object> getAvailableHelmets(@RequestParam(value = "keyword", required = false) String keyword) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // 查询可用的安全帽
+            List<SwmHelmetDevice> helmets = swmHelmetDeviceService.findAvailableHelmets(keyword);
+            result.put("success", true);
+            result.put("data", helmets);
+        } catch (Exception e) {
+            logger.error("获取可用安全帽列表异常", e);
+            result.put("success", false);
+            result.put("message", "获取可用安全帽列表失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * 绑定安全帽
+     */
+    @PostMapping(value = "bindHelmet")
+    @ResponseBody
+    public String bindHelmet(@RequestBody Map<String, String> params) {
+        try {
+            String personId = params.get("personId");
+            String helmetId = params.get("helmetId");
+
+            // 获取人员信息
+            SwmPerson person = swmPersonService.get(personId);
+            if (person == null) {
+                return renderResult(Global.FALSE, text("人员不存在"));
+            }
+
+            // 获取安全帽信息
+            SwmHelmetDevice helmet = swmHelmetDeviceService.getByHelmetId(helmetId);
+            if (helmet == null) {
+                return renderResult(Global.FALSE, text("安全帽不存在"));
+            }
+
+            // 检查安全帽是否已被绑定
+            if (helmet.getAssignedPerson() != null && !helmet.getAssignedPerson().isEmpty()) {
+                return renderResult(Global.FALSE, text("该安全帽已被绑定，请选择其他安全帽"));
+            }
+
+            // 更新人员的安全帽编号
+            person.setSafetyHelmetId(helmetId);
+            swmPersonService.save(person);
+
+            // 更新安全帽的绑定信息
+            helmet.setAssignedPerson(person.getName());
+            helmet.setAssignedWorkshop(person.getDepartment());
+            helmet.setAssignedProcess(person.getWorkProcess());
+            helmet.setAssignedTeam(person.getTeam());
+            swmHelmetDeviceService.save(helmet);
+
+            return renderResult(Global.TRUE, text("安全帽绑定成功"));
+        } catch (Exception e) {
+            logger.error("绑定安全帽异常", e);
+            return renderResult(Global.FALSE, text("绑定安全帽失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 解绑安全帽
+     */
+    @PostMapping(value = "unbindHelmet")
+    @ResponseBody
+    public String unbindHelmet(@RequestBody Map<String, String> params) {
+        try {
+            String personId = params.get("personId");
+
+            // 获取人员信息
+            SwmPerson person = swmPersonService.get(personId);
+            if (person == null) {
+                return renderResult(Global.FALSE, text("人员不存在"));
+            }
+
+            // 获取人员当前绑定的安全帽
+            String helmetId = person.getSafetyHelmetId();
+            if (helmetId == null || helmetId.isEmpty()) {
+                return renderResult(Global.FALSE, text("该人员未绑定安全帽"));
+            }
+
+            // 更新安全帽的绑定信息
+            SwmHelmetDevice helmet = swmHelmetDeviceService.getByHelmetId(helmetId);
+            if (helmet != null) {
+                helmet.setAssignedPerson(null);
+                helmet.setAssignedWorkshop(null);
+                helmet.setAssignedProcess(null);
+                helmet.setAssignedTeam(null);
+                swmHelmetDeviceService.save(helmet);
+            }
+
+            // 更新人员的安全帽编号
+            person.setSafetyHelmetId(null);
+            swmPersonService.save(person);
+
+            return renderResult(Global.TRUE, text("安全帽解绑成功"));
+        } catch (Exception e) {
+            logger.error("解绑安全帽异常", e);
+            return renderResult(Global.FALSE, text("解绑安全帽失败：" + e.getMessage()));
+        }
     }
 }
