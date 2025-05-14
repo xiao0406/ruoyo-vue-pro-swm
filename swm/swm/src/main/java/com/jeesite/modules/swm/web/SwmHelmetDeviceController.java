@@ -9,6 +9,8 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
+import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.service.SwmPersonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +31,9 @@ public class SwmHelmetDeviceController extends BaseController {
 
     @Autowired
     private SwmHelmetDeviceService swmHelmetDeviceService;
+
+    @Autowired
+    private SwmPersonService swmPersonService;
 
     /**
      * 获取单个头盔设备数据
@@ -185,11 +190,25 @@ public class SwmHelmetDeviceController extends BaseController {
             return result;
         }
 
-        device.setAssignedPerson(personName);
+        SwmPerson person = swmPersonService.get(personId);
+        if (person == null) {
+            result.put("success", false);
+            result.put("message", "未找到 ID 为 '" + personId + "' 对应的人员信息！");
+            return result;
+        }
+
+        String personIdCard = person.getIdentityCard();
+        if (personIdCard == null || personIdCard.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "人员 '" + person.getName() + "' 的身份证信息为空！");
+            return result;
+        }
+
+        device.setAssignedPerson(personIdCard);
         swmHelmetDeviceService.save(device);
 
         result.put("success", true);
-        result.put("message", "绑定人员成功！");
+        result.put("message", "已成功将安全帽绑定到身份证号：" + personIdCard + " (人员：" + personName + ")");
         return result;
     }
 
