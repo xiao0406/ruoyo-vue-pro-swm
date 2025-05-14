@@ -9,6 +9,9 @@ import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import org.hibernate.validator.constraints.Length;
+import com.jeesite.modules.swm.constant.HelmetTypeEnum;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * 头盔设备管理实体类
@@ -32,31 +35,6 @@ import org.hibernate.validator.constraints.Length;
 public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
 
     private static final long serialVersionUID = 1L;
-
-    /**
-     * 头盔类型枚举
-     */
-    public static class HelmetTypeEnum {
-        /** 便携式 */
-        public static final Integer PORTABLE = 1;
-        /** 头箍式 */
-        public static final Integer HEADBAND = 2;
-
-        /**
-         * 获取头盔类型显示文本
-         */
-        public static String getText(Integer value) {
-            if (value == null) {
-                return "";
-            }
-            if (PORTABLE.equals(value)) {
-                return "便携式";
-            } else if (HEADBAND.equals(value)) {
-                return "头箍式";
-            }
-            return "";
-        }
-    }
 
     /**
      * 运动状态枚举
@@ -108,15 +86,14 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
         this.helmetId = helmetId;
     }
 
+    @JsonIgnore
     public Integer getHelmetType() {
         return helmetType;
     }
 
-    /**
-     * 获取头盔类型显示值
-     */
-    public String getHelmetTypeText() {
-        return HelmetTypeEnum.getText(helmetType);
+    @JsonProperty("helmetType")
+    public String getHelmetTypeDescription() {
+        return HelmetTypeEnum.getDescriptionByCode(this.helmetType);
     }
 
     public void setHelmetType(Integer helmetType) {
