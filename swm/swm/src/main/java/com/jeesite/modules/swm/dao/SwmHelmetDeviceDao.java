@@ -23,4 +23,30 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * 查询可用的安全帽列表（未绑定人员的）
      */
     List<SwmHelmetDevice> findAvailableHelmets(@Param("keyword") String keyword);
+
+    /**
+     * 根据头盔编号查询设备
+     * 注意：此方法可由实体类注解查询实现，但为保持兼容性暂时保留
+     */
+    SwmHelmetDevice getByHelmetId(@Param("helmetId") String helmetId);
+
+    /**
+     * 根据绑定人员ID查询设备
+     */
+    List<SwmHelmetDevice> findByAssignedPerson(@Param("assignedPerson") String assignedPerson);
+
+    /**
+     * 根据所属车间查询设备
+     */
+    List<SwmHelmetDevice> findByWorkshop(@Param("assignedWorkshop") String assignedWorkshop);
+
+    /**
+     * 根据所属工序查询设备
+     */
+    List<SwmHelmetDevice> findByProcess(@Param("assignedProcess") String assignedProcess);
+
+    /**
+     * 根据所属班组查询设备
+     */
+    List<SwmHelmetDevice> findByTeam(@Param("assignedTeam") String assignedTeam);
 }
