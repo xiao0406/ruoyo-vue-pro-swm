@@ -34,15 +34,39 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 信标类型枚举
+     */
+    public static class BeaconTypeEnum {
+        /** 常规信标 */
+        public static final String CONVENTION = "1";
+        /** 电子围栏 */
+        public static final String FENCE = "2";
+        /** 危险源信标 */
+        public static final String DANGEROUS_SOURCE = "3";
+
+        /**
+         * 获取信标类型显示文本
+         */
+        public static String getText(String value) {
+            if (CONVENTION.equals(value)) {
+                return "常规信标";
+            } else if (FENCE.equals(value)) {
+                return "电子围栏";
+            } else if (DANGEROUS_SOURCE.equals(value)) {
+                return "危险源信标";
+            }
+            return "";
+        }
+    }
+
+    /**
      * 信标状态枚举
      */
     public static class BeaconStatusEnum {
         /** 离线 */
-        public static final String OFFLINE = "0";
+        public static final String OFFLINE = "2";
         /** 在线 */
         public static final String ONLINE = "1";
-        /** 故障 */
-        public static final String FAULT = "2";
 
         /**
          * 获取信标状态显示文本
@@ -52,8 +76,6 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
                 return "离线";
             } else if (ONLINE.equals(value)) {
                 return "在线";
-            } else if (FAULT.equals(value)) {
-                return "故障";
             }
             return "";
         }
@@ -67,8 +89,6 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
         public static final String NOT_DEPLOYED = "0";
         /** 已部署 */
         public static final String DEPLOYED = "1";
-        /** 部署中 */
-        public static final String DEPLOYING = "2";
 
         /**
          * 获取部署状态显示文本
@@ -78,8 +98,6 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
                 return "未部署";
             } else if (DEPLOYED.equals(value)) {
                 return "已部署";
-            } else if (DEPLOYING.equals(value)) {
-                return "部署中";
             }
             return "";
         }
@@ -119,6 +137,10 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     public void setBeaconType(String beaconType) {
         this.beaconType = beaconType;
+    }
+
+    public String getBeaconTypeText() {
+        return BeaconTypeEnum.getText(this.beaconType);
     }
 
     @Length(min = 0, max = 50, message = "围栏类型不能超过50个字符")
