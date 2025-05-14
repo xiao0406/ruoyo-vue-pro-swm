@@ -9,7 +9,6 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +24,7 @@ import java.util.Map;
  * @author Shawn
  */
 @RestController
-@RequestMapping(value = "${adminPath}/swm/swmHelmetDevice")
+@RequestMapping(value = "${adminPath}/swmHelmetDevice")
 public class SwmHelmetDeviceController extends BaseController {
 
     @Autowired
@@ -34,7 +33,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 获取单个头盔设备数据
      */
-    @RequiresPermissions("swm:swmHelmetDevice:view")
     @GetMapping("get")
     public SwmHelmetDevice get(String id) {
         return swmHelmetDeviceService.get(id);
@@ -43,7 +41,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 查询分页数据
      */
-    @RequiresPermissions("swm:swmHelmetDevice:view")
     @GetMapping("list")
     public Page<SwmHelmetDevice> list(SwmHelmetDevice swmHelmetDevice, HttpServletRequest request,
             HttpServletResponse response) {
@@ -54,7 +51,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 根据头盔编号获取头盔设备
      */
-    @RequiresPermissions("swm:swmHelmetDevice:view")
     @GetMapping("getByHelmetId")
     public SwmHelmetDevice getByHelmetId(String helmetId) {
         return swmHelmetDeviceService.getByHelmetId(helmetId);
@@ -63,7 +59,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 查询可用的安全帽列表（未绑定人员的）
      */
-    @RequiresPermissions("swm:swmHelmetDevice:view")
     @GetMapping("findAvailableHelmets")
     public List<SwmHelmetDevice> findAvailableHelmets(String keyword) {
         return swmHelmetDeviceService.findAvailableHelmets(keyword);
@@ -72,7 +67,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 根据绑定人员查询设备
      */
-    @RequiresPermissions("swm:swmHelmetDevice:view")
     @GetMapping("findByAssignedPerson")
     public List<SwmHelmetDevice> findByAssignedPerson(String assignedPerson) {
         return swmHelmetDeviceService.findByAssignedPerson(assignedPerson);
@@ -81,7 +75,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 根据所属车间查询设备
      */
-    @RequiresPermissions("swm:swmHelmetDevice:view")
     @GetMapping("findByWorkshop")
     public List<SwmHelmetDevice> findByWorkshop(String assignedWorkshop) {
         return swmHelmetDeviceService.findByWorkshop(assignedWorkshop);
@@ -90,7 +83,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 根据所属工序查询设备
      */
-    @RequiresPermissions("swm:swmHelmetDevice:view")
     @GetMapping("findByProcess")
     public List<SwmHelmetDevice> findByProcess(String assignedProcess) {
         return swmHelmetDeviceService.findByProcess(assignedProcess);
@@ -99,7 +91,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 根据所属班组查询设备
      */
-    @RequiresPermissions("swm:swmHelmetDevice:view")
     @GetMapping("findByTeam")
     public List<SwmHelmetDevice> findByTeam(String assignedTeam) {
         return swmHelmetDeviceService.findByTeam(assignedTeam);
@@ -108,7 +99,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 保存数据
      */
-    @RequiresPermissions("swm:swmHelmetDevice:edit")
     @PostMapping("save")
     public Map<String, Object> save(@RequestBody SwmHelmetDevice swmHelmetDevice) {
         Map<String, Object> result = new HashMap<>();
@@ -121,7 +111,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 批量保存数据
      */
-    @RequiresPermissions("swm:swmHelmetDevice:edit")
     @PostMapping("saveBatch")
     public Map<String, Object> saveBatch(@RequestBody List<SwmHelmetDevice> deviceList) {
         Map<String, Object> result = new HashMap<>();
@@ -134,7 +123,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 删除数据
      */
-    @RequiresPermissions("swm:swmHelmetDevice:edit")
     @PostMapping("delete")
     public Map<String, Object> delete(String id) {
         Map<String, Object> result = new HashMap<>();
@@ -148,7 +136,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 批量删除数据
      */
-    @RequiresPermissions("swm:swmHelmetDevice:edit")
     @PostMapping("deleteAll")
     public Map<String, Object> deleteAll(String ids) {
         Map<String, Object> result = new HashMap<>();
@@ -165,7 +152,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 更新头盔电量
      */
-    @RequiresPermissions("swm:swmHelmetDevice:edit")
     @PostMapping("updateBattery")
     public Map<String, Object> updateBattery(String helmetId, Integer batteryLevel) {
         Map<String, Object> result = new HashMap<>();
@@ -188,7 +174,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 绑定人员
      */
-    @RequiresPermissions("swm:swmHelmetDevice:edit")
     @PostMapping("assignPerson")
     public Map<String, Object> assignPerson(String helmetId, String personId, String personName) {
         Map<String, Object> result = new HashMap<>();
@@ -211,7 +196,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 解绑人员
      */
-    @RequiresPermissions("swm:swmHelmetDevice:edit")
     @PostMapping("unassignPerson")
     public Map<String, Object> unassignPerson(String helmetId) {
         Map<String, Object> result = new HashMap<>();
@@ -234,7 +218,6 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 清除缓存
      */
-    @RequiresPermissions("swm:swmHelmetDevice:edit")
     @PostMapping("clearCache")
     public Map<String, Object> clearCache() {
         Map<String, Object> result = new HashMap<>();
