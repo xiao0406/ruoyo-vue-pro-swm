@@ -22,6 +22,7 @@
             a.`participants` AS "participants", 
             a.`status` AS "status", 
             a.`participation_type` AS "participationType",
+            a.`attachment_url` AS "attachmentUrl",
             a.`create_time` AS "createTime", 
             a.`update_time` AS "updateTime"
         FROM 

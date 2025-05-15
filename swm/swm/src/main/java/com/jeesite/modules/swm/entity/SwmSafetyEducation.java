@@ -11,8 +11,10 @@ import java.util.Date;
 
 /**
  * 安全教育实体类
- * @author generated
- * @version 2024-05-14
+ * 
+ * @author zwf
+ * @version 2025-05-14
+ * 
  */
 @Table(name = "swm_safety_education", alias = "a", label = "安全教育管理表", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
@@ -22,13 +24,14 @@ import java.util.Date;
         @Column(name = "participants", attrName = "participants", label = "参与对象", queryType = QueryType.LIKE),
         @Column(name = "status", attrName = "status", label = "状态"),
         @Column(name = "participation_type", attrName = "participationType", label = "参与类型"),
+        @Column(name = "attachment_url", attrName = "attachmentUrl", label = "附件URL"),
         @Column(name = "create_time", attrName = "createTime", label = "创建时间", isUpdateForce = true),
         @Column(name = "update_time", attrName = "updateTime", label = "更新时间", isUpdateForce = true)
 }, orderBy = "a.update_time DESC")
 public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
 
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 安全教育状态枚举
      */
@@ -37,7 +40,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         public static final String NOT_STARTED = "0";
         /** 已完成 */
         public static final String COMPLETED = "1";
-        
+
         /**
          * 获取状态显示文本
          */
@@ -50,7 +53,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
             return "";
         }
     }
-    
+
     /**
      * 安全教育类型枚举
      */
@@ -65,7 +68,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         public static final String QUARTERLY = "4";
         /** 专题教育 */
         public static final String SPECIAL = "5";
-        
+
         /**
          * 获取教育类型显示文本
          */
@@ -84,7 +87,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
             return "";
         }
     }
-    
+
     /**
      * 参与类型枚举
      */
@@ -95,7 +98,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         public static final String PROCESS = "2";
         /** 车间 */
         public static final String WORKSHOP = "3";
-        
+
         /**
          * 获取参与类型显示文本
          */
@@ -111,19 +114,20 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         }
     }
 
-    private String theme;              // 主题
+    private String theme; // 主题
     private String safetyEducationType; // 安全教育类型
-    private Date startTime;            // 开始时间
-    private String participants;       // 参与对象
-    private String status;             // 状态
-    private String participationType;  // 参与类型
-    private Date createTime;           // 创建时间
-    private Date updateTime;           // 更新时间
-    
+    private Date startTime; // 开始时间
+    private String participants; // 参与对象
+    private String status; // 状态
+    private String participationType; // 参与类型
+    private String attachmentUrl; // 附件URL
+    private Date createTime; // 创建时间
+    private Date updateTime; // 更新时间
+
     // 用于显示的属性，不对应数据库字段
-    private String statusText;         // 状态显示文本
+    private String statusText; // 状态显示文本
     private String safetyEducationTypeText; // 安全教育类型显示文本
-    private String participationTypeText;   // 参与类型显示文本
+    private String participationTypeText; // 参与类型显示文本
 
     public SwmSafetyEducation() {
         this(null);
@@ -154,7 +158,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     public void setSafetyEducationType(String safetyEducationType) {
         this.safetyEducationType = safetyEducationType;
     }
-    
+
     /**
      * 获取安全教育类型显示文本
      */
@@ -164,11 +168,11 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         }
         return this.safetyEducationTypeText;
     }
-    
+
     public void setSafetyEducationTypeText(String safetyEducationTypeText) {
         this.safetyEducationTypeText = safetyEducationTypeText;
     }
-    
+
     @NotBlank(message = "参与类型不能为空")
     @Length(min = 0, max = 50, message = "参与类型长度不能超过 50 个字符")
     public String getParticipationType() {
@@ -178,7 +182,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     public void setParticipationType(String participationType) {
         this.participationType = participationType;
     }
-    
+
     /**
      * 获取参与类型显示文本
      */
@@ -188,7 +192,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         }
         return this.participationTypeText;
     }
-    
+
     public void setParticipationTypeText(String participationTypeText) {
         this.participationTypeText = participationTypeText;
     }
@@ -218,7 +222,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     public void setStatus(String status) {
         this.status = status;
     }
-    
+
     /**
      * 获取状态显示文本
      */
@@ -228,7 +232,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         }
         return this.statusText;
     }
-    
+
     public void setStatusText(String statusText) {
         this.statusText = statusText;
     }
@@ -248,4 +252,13 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
     }
-} 
+
+    @Length(min = 0, max = 4000, message = "附件URL长度不能超过 4000 个字符")
+    public String getAttachmentUrl() {
+        return attachmentUrl;
+    }
+
+    public void setAttachmentUrl(String attachmentUrl) {
+        this.attachmentUrl = attachmentUrl;
+    }
+}
