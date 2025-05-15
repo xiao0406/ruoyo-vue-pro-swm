@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmHelmetDeviceDao">
+    
+    <!-- 查询数据 -->
+    <select id="get" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
+        SELECT 
+            a.id,
+            a.helmet_id,
+            a.helmet_type,
+            a.battery_level,
+            a.ip,
+            a.mac_address,
+            a.assigned_person,
+            a.assigned_workshop,
+            a.assigned_process,
+            a.assigned_team,
+            a.motion_status,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks
+        FROM swm_helmet_device a
+        WHERE a.id = #{id}
+    </select>
+    
+    <!-- 查询列表数据 -->
+    <select id="findList" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
+        SELECT 
+            a.id,
+            a.helmet_id,
+            a.helmet_type,
+            a.battery_level,
+            a.ip,
+            a.mac_address,
+            a.assigned_person,
+            a.assigned_workshop,
+            a.assigned_process,
+            a.assigned_team,
+            a.motion_status,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks
+        FROM swm_helmet_device a
+        <where>
+            <if test="helmetId != null and helmetId != ''">
+                AND a.helmet_id = #{helmetId}
+            </if>
+            <if test="helmetType != null">
+                AND a.helmet_type = #{helmetType}
+            </if>
+            <if test="assignedPerson != null and assignedPerson != ''">
+                AND a.assigned_person = #{assignedPerson}
+            </if>
+            <if test="assignedWorkshop != null and assignedWorkshop != ''">
+                AND a.assigned_workshop = #{assignedWorkshop}
+            </if>
+            <if test="assignedProcess != null and assignedProcess != ''">
+                AND a.assigned_process = #{assignedProcess}
+            </if>
+            <if test="assignedTeam != null and assignedTeam != ''">
+                AND a.assigned_team = #{assignedTeam}
+            </if>
+        </where>
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 查询可用的安全帽列表（未绑定人员的） -->
+    <select id="findAvailableHelmets" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
+        SELECT 
+            a.id,
+            a.helmet_id,
+            a.helmet_type,
+            a.battery_level,
+            a.ip,
+            a.mac_address,
+            a.assigned_person,
+            a.assigned_workshop,
+            a.assigned_process,
+            a.assigned_team,
+            a.motion_status,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks
+        FROM swm_helmet_device a
+        WHERE (a.assigned_person IS NULL OR a.assigned_person = '')
+        <if test="keyword != null and keyword != ''">
+            AND a.helmet_id LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 插入数据 -->
+    <insert id="insert">
+        INSERT INTO swm_helmet_device(
+            id,
+            helmet_id,
+            helmet_type,
+            battery_level,
+            ip,
+            mac_address,
+            assigned_person,
+            assigned_workshop,
+            assigned_process,
+            assigned_team,
+            motion_status,
+            create_by,
+            create_date,
+            update_by,
+            update_date,
+            remarks
+        ) VALUES (
+            #{id},
+            #{helmetId},
+            #{helmetType},
+            #{batteryLevel},
+            #{ip},
+            #{macAddress},
+            #{assignedPerson},
+            #{assignedWorkshop},
+            #{assignedProcess},
+            #{assignedTeam},
+            #{motionStatus},
+            #{createBy},
+            #{createDate},
+            #{updateBy},
+            #{updateDate},
+            #{remarks}
+        )
+    </insert>
+    
+    <!-- 更新数据 -->
+    <update id="update">
+        UPDATE swm_helmet_device SET 
+            helmet_id = #{helmetId},
+            helmet_type = #{helmetType},
+            battery_level = #{batteryLevel},
+            ip = #{ip},
+            mac_address = #{macAddress},
+            assigned_person = #{assignedPerson},
+            assigned_workshop = #{assignedWorkshop},
+            assigned_process = #{assignedProcess},
+            assigned_team = #{assignedTeam},
+            motion_status = #{motionStatus},
+            update_by = #{updateBy},
+            update_date = #{updateDate},
+            remarks = #{remarks}
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 删除数据 -->
+    <delete id="delete">
+        DELETE FROM swm_helmet_device
+        WHERE id = #{id}
+    </delete>
+    
+</mapper> 
