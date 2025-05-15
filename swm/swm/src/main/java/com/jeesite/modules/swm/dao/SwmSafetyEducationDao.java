@@ -8,8 +8,8 @@ import java.util.List;
 
 /**
  * 安全教育DAO接口
- * @author generated
- * @version 2024-05-14
+ * @author zwf
+ * @version 2025-05-14
  */
 @MyBatisDao
 public interface SwmSafetyEducationDao extends CrudDao<SwmSafetyEducation> {

@@ -33,8 +33,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 /**
  * 安全教育Controller
  * 
- * @author generated
- * @version 2024-05-14
+ * @author zwf
+ * @version 2025-05-14
  */
 @Controller
 @RequestMapping(value = "${adminPath}/safetyEducation")
