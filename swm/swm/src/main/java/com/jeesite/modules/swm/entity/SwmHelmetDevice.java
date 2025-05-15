@@ -5,19 +5,86 @@
 package com.jeesite.modules.swm.entity;
 
 import com.jeesite.common.entity.DataEntity;
+import com.jeesite.common.mybatis.annotation.Column;
+import com.jeesite.common.mybatis.annotation.Table;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import org.hibernate.validator.constraints.Length;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * 头盔设备管理实体类
  * 
  * @author Shawn
  */
+@Table(name = "swm_helmet_device", alias = "a", columns = {
+        @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
+        @Column(name = "helmet_id", attrName = "helmetId", label = "头盔编号", queryType = QueryType.LIKE),
+        @Column(name = "helmet_type", attrName = "helmetType", label = "头盔类型(1:便携式 2:头箍式)"),
+        @Column(name = "battery_level", attrName = "batteryLevel", label = "头盔电量(0-100%)"),
+        @Column(name = "ip", attrName = "ip", label = "IP地址"),
+        @Column(name = "mac_address", attrName = "macAddress", label = "MAC地址"),
+        @Column(name = "assigned_person", attrName = "assignedPerson", label = "绑定人员"),
+        @Column(name = "assigned_workshop", attrName = "assignedWorkshop", label = "所属车间"),
+        @Column(name = "assigned_process", attrName = "assignedProcess", label = "所属工序"),
+        @Column(name = "assigned_team", attrName = "assignedTeam", label = "所属班组"),
+        @Column(name = "motion_status", attrName = "motionStatus", label = "运动状态"),
+        @Column(includeEntity = DataEntity.class)
+}, orderBy = "a.update_date DESC")
 public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 运动状态枚举
+     */
+    public static class MotionStatusEnum {
+        /** 静止 */
+        public static final String STATIC = "0";
+        /** 运动 */
+        public static final String MOVING = "1";
+        /** 充电 */
+        public static final String CHARGING = "2";
+
+        /**
+         * 获取运动状态显示文本
+         */
+        public static String getText(String value) {
+            if (STATIC.equals(value)) {
+                return "静止";
+            } else if (MOVING.equals(value)) {
+                return "运动";
+            } else if (CHARGING.equals(value)) {
+                return "充电";
+            }
+            return "";
+        }
+    }
+
+    /**
+     * 头盔类型枚举
+     */
+    public static class HelmetTypeEnum {
+        /** 便携式 */
+        public static final String PORTABLE = "1";
+        /** 头箍式 */
+        public static final String HEADBAND = "2";
+
+        /**
+         * 获取头盔类型显示文本
+         */
+        public static String getText(String value) {
+            if (PORTABLE.equals(value)) {
+                return "便携式";
+            } else if (HEADBAND.equals(value)) {
+                return "头箍式";
+            }
+            return "";
+        }
+    }
+
     private String helmetId; // 头盔编号
-    private Integer helmetType; // 头盔类型(1:便携式 2:头箍式)
+    private String helmetType; // 头盔类型(1:便携式 2:头箍式)
     private Integer batteryLevel; // 头盔电量 (0-100%)
     private String ip; // IP地址
     private String macAddress; // MAC地址
@@ -44,11 +111,18 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
         this.helmetId = helmetId;
     }
 
-    public Integer getHelmetType() {
+    public String getHelmetType() {
         return helmetType;
     }
 
-    public void setHelmetType(Integer helmetType) {
+    /**
+     * 获取头盔类型显示值
+     */
+    public String getHelmetTypeText() {
+        return HelmetTypeEnum.getText(helmetType);
+    }
+
+    public void setHelmetType(String helmetType) {
         this.helmetType = helmetType;
     }
 
@@ -117,6 +191,13 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     @Length(min = 0, max = 20, message = "运动状态长度不能超过20个字符")
     public String getMotionStatus() {
         return motionStatus;
+    }
+
+    /**
+     * 获取运动状态显示值
+     */
+    public String getMotionStatusText() {
+        return MotionStatusEnum.getText(motionStatus);
     }
 
     public void setMotionStatus(String motionStatus) {

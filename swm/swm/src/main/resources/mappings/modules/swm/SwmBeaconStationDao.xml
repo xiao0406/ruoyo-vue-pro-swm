@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmBeaconStationDao">
+    
+    <!-- 
+        注意：基本的CRUD操作已由实体类注解自动处理
+        此文件中只保留特殊查询方法
+    -->
+    
+    <!-- 根据信标编号查询基站 -->
+    <select id="getByBeaconId" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+        SELECT 
+            a.id,
+            a.beacon_id,
+            a.beacon_type,
+            a.control_type,
+            a.location,
+            a.map_coord,
+            a.gps_coord,
+            a.beacon_status,
+            a.deploy_status,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks
+        FROM swm_beacon_station a
+        WHERE a.beacon_id = #{beaconId}
+        LIMIT 1
+    </select>
+    
+    <!-- 查询指定位置的基站列表 -->
+    <select id="findByLocation" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+        SELECT 
+            a.id,
+            a.beacon_id,
+            a.beacon_type,
+            a.control_type,
+            a.location,
+            a.map_coord,
+            a.gps_coord,
+            a.beacon_status,
+            a.deploy_status,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks
+        FROM swm_beacon_station a
+        WHERE a.location LIKE CONCAT('%', #{location}, '%')
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 查询在线状态的基站列表 -->
+    <select id="findOnlineBeacons" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+        SELECT 
+            a.id,
+            a.beacon_id,
+            a.beacon_type,
+            a.control_type,
+            a.location,
+            a.map_coord,
+            a.gps_coord,
+            a.beacon_status,
+            a.deploy_status,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks
+        FROM swm_beacon_station a
+        WHERE a.beacon_status = '1' <!-- BeaconStatusEnum.ONLINE -->
+        AND a.status = '0' <!-- 正常状态 -->
+        ORDER BY a.update_date DESC
+    </select>
+    
+</mapper> 

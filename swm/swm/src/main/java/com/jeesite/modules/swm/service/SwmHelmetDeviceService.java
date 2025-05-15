@@ -51,11 +51,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         }
 
         // 缓存中没有，从数据库查询
-        SwmHelmetDevice device = new SwmHelmetDevice();
-        device.setHelmetId(helmetId);
-        List<SwmHelmetDevice> list = dao.findList(device);
-
-        SwmHelmetDevice result = list.isEmpty() ? null : list.get(0);
+        SwmHelmetDevice result = dao.getByHelmetId(helmetId);
         if (result != null) {
             // 放入缓存
             helmetCache.put(helmetId, result);
@@ -80,6 +76,46 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     }
 
     /**
+     * 根据绑定人员查询设备
+     */
+    public List<SwmHelmetDevice> findByAssignedPerson(String assignedPerson) {
+        // 使用实体类注解查询 - 无需特殊DAO方法
+        SwmHelmetDevice device = new SwmHelmetDevice();
+        device.setAssignedPerson(assignedPerson);
+        return this.findList(device);
+    }
+
+    /**
+     * 根据所属车间查询设备
+     */
+    public List<SwmHelmetDevice> findByWorkshop(String assignedWorkshop) {
+        // 使用实体类注解查询 - 无需特殊DAO方法
+        SwmHelmetDevice device = new SwmHelmetDevice();
+        device.setAssignedWorkshop(assignedWorkshop);
+        return this.findList(device);
+    }
+
+    /**
+     * 根据所属工序查询设备
+     */
+    public List<SwmHelmetDevice> findByProcess(String assignedProcess) {
+        // 使用实体类注解查询 - 无需特殊DAO方法
+        SwmHelmetDevice device = new SwmHelmetDevice();
+        device.setAssignedProcess(assignedProcess);
+        return this.findList(device);
+    }
+
+    /**
+     * 根据所属班组查询设备
+     */
+    public List<SwmHelmetDevice> findByTeam(String assignedTeam) {
+        // 使用实体类注解查询 - 无需特殊DAO方法
+        SwmHelmetDevice device = new SwmHelmetDevice();
+        device.setAssignedTeam(assignedTeam);
+        return this.findList(device);
+    }
+
+    /**
      * 保存数据
      */
     @Override
@@ -91,6 +127,16 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         if (device.getHelmetId() != null) {
             helmetCache.put(device.getHelmetId(), device);
             logger.debug("更新安全帽缓存: {}", device.getHelmetId());
+        }
+    }
+
+    /**
+     * 批量保存数据
+     */
+    @Transactional(readOnly = false)
+    public void saveBatch(List<SwmHelmetDevice> deviceList) {
+        for (SwmHelmetDevice device : deviceList) {
+            this.save(device);
         }
     }
 

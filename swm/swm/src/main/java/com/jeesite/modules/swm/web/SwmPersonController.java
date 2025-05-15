@@ -77,32 +77,61 @@ public class SwmPersonController extends BaseController {
      */
     @RequestMapping(value = "listData")
     @ResponseBody
-    public Page<SwmPerson> listData(SwmPerson swmPerson, HttpServletRequest request, HttpServletResponse response) {
+    public Map<String, Object> listData(SwmPerson swmPerson, HttpServletRequest request, HttpServletResponse response) {
         Page<SwmPerson> page = swmPersonService.findPage(new Page<>(request, response), swmPerson);
-        // 处理枚举显示值
-        for (SwmPerson person : page.getList()) {
-            handleEnumTextDisplay(person);
-        }
-        return page;
-    }
 
-    /**
-     * 处理枚举显示值
-     */
-    private void handleEnumTextDisplay(SwmPerson person) {
-        if (person.getPersonnelStatus() != null) {
-            person.setPersonnelStatus(person.getPersonnelStatusText());
+        // 构建包含额外字段的响应数据
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> enhancedList = new ArrayList<>();
+
+        // 处理每个Person对象，添加枚举的文本显示
+        for (SwmPerson person : page.getList()) {
+            Map<String, Object> personMap = new HashMap<>();
+
+            // 复制原始对象的所有属性
+            personMap.put("id", person.getId());
+            personMap.put("createBy", person.getCreateBy());
+            personMap.put("updateDate", person.getUpdateDate());
+            personMap.put("updateBy", person.getUpdateBy());
+            personMap.put("status", person.getStatus());
+            personMap.put("createDate", person.getCreateDate());
+            personMap.put("remarks", person.getRemarks());
+            personMap.put("name", person.getName());
+            personMap.put("personType", person.getPersonType());
+            personMap.put("gender", person.getGender());
+            personMap.put("company", person.getCompany());
+            personMap.put("department", person.getDepartment());
+            personMap.put("workProcess", person.getWorkProcess());
+            personMap.put("team", person.getTeam());
+            personMap.put("jobType", person.getJobType());
+            personMap.put("safetyHelmetId", person.getSafetyHelmetId());
+            personMap.put("personnelStatus", person.getPersonnelStatus());
+            personMap.put("safetyEducation", person.getSafetyEducation());
+            personMap.put("identityCard", person.getIdentityCard());
+            personMap.put("phoneNumber", person.getPhoneNumber());
+            personMap.put("helmetReturned", person.getHelmetReturned());
+            personMap.put("departureType", person.getDepartureType());
+            personMap.put("departureReason", person.getDepartureReason());
+            personMap.put("departureDate", person.getDepartureDate());
+            personMap.put("isNewRecord", person.getIsNewRecord());
+
+            // 添加枚举文本显示值
+            personMap.put("personnelStatusText", person.getPersonnelStatusText());
+            personMap.put("safetyEducationText", person.getSafetyEducationText());
+            personMap.put("helmetReturnedText", person.getHelmetReturnedText());
+            personMap.put("departureTypeText", person.getDepartureTypeText());
+
+            // 添加到列表
+            enhancedList.add(personMap);
         }
-        if (person.getSafetyEducation() != null) {
-            person.setSafetyEducation(person.getSafetyEducationText());
-        }
-        // 处理新增字段的显示
-        if (person.getHelmetReturned() != null) {
-            person.setHelmetReturned(person.getHelmetReturnedText());
-        }
-        if (person.getDepartureType() != null) {
-            person.setDepartureType(person.getDepartureTypeText());
-        }
+
+        // 构建分页结果
+        result.put("list", enhancedList);
+        result.put("count", page.getCount());
+        result.put("pageNo", page.getPageNo());
+        result.put("pageSize", page.getPageSize());
+
+        return result;
     }
 
     /**
@@ -454,10 +483,44 @@ public class SwmPersonController extends BaseController {
                 // 如果离职表中没有数据，再从人员表查询
                 SwmPerson person = swmPersonService.get(id);
                 if (person != null) {
-                    // 处理枚举显示值
-                    handleEnumTextDisplay(person);
+                    // 创建一个Map来保存人员信息和枚举文本
+                    Map<String, Object> personMap = new HashMap<>();
+
+                    // 复制基本属性
+                    personMap.put("id", person.getId());
+                    personMap.put("createBy", person.getCreateBy());
+                    personMap.put("updateDate", person.getUpdateDate());
+                    personMap.put("updateBy", person.getUpdateBy());
+                    personMap.put("status", person.getStatus());
+                    personMap.put("createDate", person.getCreateDate());
+                    personMap.put("remarks", person.getRemarks());
+                    personMap.put("name", person.getName());
+                    personMap.put("personType", person.getPersonType());
+                    personMap.put("gender", person.getGender());
+                    personMap.put("company", person.getCompany());
+                    personMap.put("department", person.getDepartment());
+                    personMap.put("workProcess", person.getWorkProcess());
+                    personMap.put("team", person.getTeam());
+                    personMap.put("jobType", person.getJobType());
+                    personMap.put("safetyHelmetId", person.getSafetyHelmetId());
+                    personMap.put("personnelStatus", person.getPersonnelStatus());
+                    personMap.put("safetyEducation", person.getSafetyEducation());
+                    personMap.put("identityCard", person.getIdentityCard());
+                    personMap.put("phoneNumber", person.getPhoneNumber());
+                    personMap.put("helmetReturned", person.getHelmetReturned());
+                    personMap.put("departureType", person.getDepartureType());
+                    personMap.put("departureReason", person.getDepartureReason());
+                    personMap.put("departureDate", person.getDepartureDate());
+                    personMap.put("isNewRecord", person.getIsNewRecord());
+
+                    // 添加枚举文本显示值
+                    personMap.put("personnelStatusText", person.getPersonnelStatusText());
+                    personMap.put("safetyEducationText", person.getSafetyEducationText());
+                    personMap.put("helmetReturnedText", person.getHelmetReturnedText());
+                    personMap.put("departureTypeText", person.getDepartureTypeText());
+
                     result.put("success", true);
-                    result.put("data", person);
+                    result.put("data", personMap);
                 } else {
                     result.put("success", false);
                     result.put("message", "未找到离职人员详情");
