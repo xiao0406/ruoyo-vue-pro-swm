@@ -24,6 +24,7 @@ import java.util.Date;
         @Column(name = "participants", attrName = "participants", label = "参与对象", queryType = QueryType.LIKE),
         @Column(name = "status", attrName = "status", label = "状态"),
         @Column(name = "participation_type", attrName = "participationType", label = "参与类型"),
+        @Column(name = "attachment_url", attrName = "attachmentUrl", label = "附件URL"),
         @Column(name = "create_time", attrName = "createTime", label = "创建时间", isUpdateForce = true),
         @Column(name = "update_time", attrName = "updateTime", label = "更新时间", isUpdateForce = true)
 }, orderBy = "a.update_time DESC")
@@ -119,6 +120,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     private String participants; // 参与对象
     private String status; // 状态
     private String participationType; // 参与类型
+    private String attachmentUrl; // 附件URL
     private Date createTime; // 创建时间
     private Date updateTime; // 更新时间
 
@@ -249,5 +251,14 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
+    }
+
+    @Length(min = 0, max = 4000, message = "附件URL长度不能超过 4000 个字符")
+    public String getAttachmentUrl() {
+        return attachmentUrl;
+    }
+
+    public void setAttachmentUrl(String attachmentUrl) {
+        this.attachmentUrl = attachmentUrl;
     }
 }

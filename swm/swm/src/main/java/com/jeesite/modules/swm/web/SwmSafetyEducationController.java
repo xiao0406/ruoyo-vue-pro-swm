@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 /**
  * 安全教育Controller
+ * 
  * @author generated
  * @version 2024-05-14
  */
@@ -35,7 +36,7 @@ public class SwmSafetyEducationController extends BaseController {
 
     @Autowired
     private SwmSafetyEducationService swmSafetyEducationService;
-    
+
     /**
      * 获取数据
      */
@@ -43,72 +44,73 @@ public class SwmSafetyEducationController extends BaseController {
     public SwmSafetyEducation get(String id, boolean isNewRecord) {
         return swmSafetyEducationService.get(id, isNewRecord);
     }
-    
+
     /**
      * 查询列表
      */
-    @RequestMapping(value = {"list", ""})
+    @RequestMapping(value = { "list", "" })
     @ApiOperation("查询列表")
     public String list(SwmSafetyEducation swmSafetyEducation, Model model) {
         model.addAttribute("swmSafetyEducation", swmSafetyEducation);
         return "modules/swm/safetyEducationList";
     }
-    
+
     /**
      * 查询列表数据
      */
     @RequestMapping(value = "listData")
     @ResponseBody
     @ApiOperation("查询列表数据")
-    public Page<SwmSafetyEducation> listData(SwmSafetyEducation swmSafetyEducation, HttpServletRequest request, HttpServletResponse response) {
+    public Page<SwmSafetyEducation> listData(SwmSafetyEducation swmSafetyEducation, HttpServletRequest request,
+            HttpServletResponse response) {
         // 创建分页对象
         Page<SwmSafetyEducation> page = new Page<>(request, response);
-        
+
         // 使用不带状态过滤的方法查询所有记录
         List<SwmSafetyEducation> allRecords = swmSafetyEducationService.findAllWithoutStatusFilter();
-        
+
         // 应用其他过滤条件（如果有的话）
         List<SwmSafetyEducation> filteredRecords = filterRecords(allRecords, swmSafetyEducation);
-        
+
         // 设置分页结果
         int pageNo = page.getPageNo();
         int pageSize = page.getPageSize();
         int count = filteredRecords.size();
-        
+
         // 计算起止索引
         int fromIndex = (pageNo - 1) * pageSize;
         int toIndex = Math.min(fromIndex + pageSize, count);
-        
+
         // 防止越界
         if (fromIndex >= count) {
             fromIndex = Math.max(0, count - pageSize);
             toIndex = count;
         }
-        
+
         // 获取当前页数据
-        List<SwmSafetyEducation> pageRecords = (fromIndex < toIndex) ? 
-                filteredRecords.subList(fromIndex, toIndex) : new ArrayList<>();
-        
+        List<SwmSafetyEducation> pageRecords = (fromIndex < toIndex) ? filteredRecords.subList(fromIndex, toIndex)
+                : new ArrayList<>();
+
         // 处理枚举显示值并将状态替换为文本
         for (SwmSafetyEducation education : pageRecords) {
             // 先获取文本值
             String statusText = education.getStatusText();
             String typeText = education.getSafetyEducationTypeText();
             String participationTypeText = education.getParticipationTypeText();
-            
+
             // 将字段的原始值替换为文本值
             education.setStatus(statusText);
             education.setSafetyEducationType(typeText);
             education.setParticipationType(participationTypeText);
         }
-        
+
         // 设置分页对象属性
         page.setList(pageRecords);
         page.setCount(count);
-        
+
         return page;
     }
-    
+
     /**
      * 根据查询条件过滤记录
      */
@@ -116,7 +118,7 @@ public class SwmSafetyEducationController extends BaseController {
         if (criteria == null) {
             return allRecords;
         }
-        
+
         return allRecords.stream()
                 .filter(record -> {
                     // 根据主题过滤（模糊匹配）
@@ -125,47 +127,58 @@ public class SwmSafetyEducationController extends BaseController {
                             return false;
                         }
                     }
-                    
+
                     // 根据安全教育类型过滤（精确匹配）
                     if (criteria.getSafetyEducationType() != null && !criteria.getSafetyEducationType().isEmpty()) {
-                        if (record.getSafetyEducationType() == null || !record.getSafetyEducationType().equals(criteria.getSafetyEducationType())) {
+                        if (record.getSafetyEducationType() == null
+                                || !record.getSafetyEducationType().equals(criteria.getSafetyEducationType())) {
                             return false;
                         }
                     }
-                    
+
                     // 根据参与类型过滤（精确匹配）
                     if (criteria.getParticipationType() != null && !criteria.getParticipationType().isEmpty()) {
-                        if (record.getParticipationType() == null || !record.getParticipationType().equals(criteria.getParticipationType())) {
+                        if (record.getParticipationType() == null
+                                || !record.getParticipationType().equals(criteria.getParticipationType())) {
                             return false;
                         }
                     }
-                    
+
                     // 根据参与对象过滤（模糊匹配）
                     if (criteria.getParticipants() != null && !criteria.getParticipants().isEmpty()) {
-                        if (record.getParticipants() == null || !record.getParticipants().contains(criteria.getParticipants())) {
+                        if (record.getParticipants() == null
+                                || !record.getParticipants().contains(criteria.getParticipants())) {
                             return false;
                         }
                     }
-                    
+
                     // 根据状态过滤（精确匹配）
                     if (criteria.getStatus() != null && !criteria.getStatus().isEmpty()) {
                         if (record.getStatus() == null || !record.getStatus().equals(criteria.getStatus())) {
                             return false;
                         }
                     }
-                    
+
+                    // 根据附件URL过滤（模糊匹配）
+                    if (criteria.getAttachmentUrl() != null && !criteria.getAttachmentUrl().isEmpty()) {
+                        if (record.getAttachmentUrl() == null
+                                || !record.getAttachmentUrl().contains(criteria.getAttachmentUrl())) {
+                            return false;
+                        }
+                    }
+
                     // 根据开始时间过滤
                     if (criteria.getStartTime() != null) {
                         if (record.getStartTime() == null || record.getStartTime().before(criteria.getStartTime())) {
                             return false;
                         }
                     }
-                    
+
                     return true;
                 })
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * 查看编辑表单
      */
@@ -182,7 +195,8 @@ public class SwmSafetyEducationController extends BaseController {
             educationData.put("startTime", swmSafetyEducation.getStartTime());
             educationData.put("participants", swmSafetyEducation.getParticipants());
             educationData.put("remarks", swmSafetyEducation.getRemarks());
-            
+            educationData.put("attachmentUrl", swmSafetyEducation.getAttachmentUrl());
+
             // 处理枚举值
             educationData.put("status", swmSafetyEducation.getStatus());
             educationData.put("statusText", swmSafetyEducation.getStatusText());
@@ -190,11 +204,11 @@ public class SwmSafetyEducationController extends BaseController {
             educationData.put("safetyEducationTypeText", swmSafetyEducation.getSafetyEducationTypeText());
             educationData.put("participationType", swmSafetyEducation.getParticipationType());
             educationData.put("participationTypeText", swmSafetyEducation.getParticipationTypeText());
-            
+
             // 处理时间
             educationData.put("createTime", swmSafetyEducation.getCreateTime());
             educationData.put("updateTime", swmSafetyEducation.getUpdateTime());
-            
+
             result.putAll(educationData);
         }
         return result;
@@ -213,11 +227,11 @@ public class SwmSafetyEducationController extends BaseController {
             swmSafetyEducation.setCreateTime(now);
         }
         swmSafetyEducation.setUpdateTime(now);
-        
+
         swmSafetyEducationService.save(swmSafetyEducation);
         return renderResult(Global.TRUE, text("保存安全教育成功！"));
     }
-    
+
     /**
      * 删除数据
      */
@@ -228,7 +242,7 @@ public class SwmSafetyEducationController extends BaseController {
         swmSafetyEducationService.delete(swmSafetyEducation);
         return renderResult(Global.TRUE, text("删除安全教育成功！"));
     }
-    
+
     /**
      * 批量删除数据
      */
@@ -245,7 +259,7 @@ public class SwmSafetyEducationController extends BaseController {
         }
         return renderResult(Global.TRUE, text("批量删除安全教育成功！"));
     }
-    
+
     /**
      * 获取枚举选项
      */
@@ -254,13 +268,13 @@ public class SwmSafetyEducationController extends BaseController {
     @ApiOperation("获取枚举选项")
     public Map<String, Object> getEnumOptions() {
         Map<String, Object> result = new HashMap<>();
-        
+
         // 状态选项
         Map<String, String> statusOptions = new HashMap<>();
         statusOptions.put(SwmSafetyEducation.StatusEnum.NOT_STARTED, "未开始");
         statusOptions.put(SwmSafetyEducation.StatusEnum.COMPLETED, "已完成");
         result.put("statusOptions", statusOptions);
-        
+
         // 安全教育类型选项
         Map<String, String> typeOptions = new HashMap<>();
         typeOptions.put(SwmSafetyEducation.EducationTypeEnum.ENTRY, "人员入职安全教育");
@@ -269,17 +283,17 @@ public class SwmSafetyEducationController extends BaseController {
         typeOptions.put(SwmSafetyEducation.EducationTypeEnum.QUARTERLY, "季度教育");
         typeOptions.put(SwmSafetyEducation.EducationTypeEnum.SPECIAL, "专题教育");
         result.put("educationTypeOptions", typeOptions);
-        
+
         // 参与类型选项
         Map<String, String> participationTypeOptions = new HashMap<>();
         participationTypeOptions.put(SwmSafetyEducation.ParticipationTypeEnum.TEAM, "班组");
         participationTypeOptions.put(SwmSafetyEducation.ParticipationTypeEnum.PROCESS, "工序");
         participationTypeOptions.put(SwmSafetyEducation.ParticipationTypeEnum.WORKSHOP, "车间");
         result.put("participationTypeOptions", participationTypeOptions);
-        
+
         return result;
     }
-    
+
     /**
      * 导出数据
      */
@@ -289,23 +303,23 @@ public class SwmSafetyEducationController extends BaseController {
         try {
             // 使用不带状态过滤的方法获取所有记录
             List<SwmSafetyEducation> allRecords = swmSafetyEducationService.findAllWithoutStatusFilter();
-            
+
             // 应用其他过滤条件
             List<SwmSafetyEducation> filteredRecords = filterRecords(allRecords, swmSafetyEducation);
-            
+
             // 处理枚举显示值并将状态替换为文本
             for (SwmSafetyEducation education : filteredRecords) {
                 // 先获取文本值
                 String statusText = education.getStatusText();
                 String typeText = education.getSafetyEducationTypeText();
                 String participationTypeText = education.getParticipationTypeText();
-                
+
                 // 将字段的原始值替换为文本值
                 education.setStatus(statusText);
                 education.setSafetyEducationType(typeText);
                 education.setParticipationType(participationTypeText);
             }
-            
+
             String fileName = "安全教育数据" + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
@@ -315,4 +329,4 @@ public class SwmSafetyEducationController extends BaseController {
             logger.error("导出安全教育数据失败！", e);
         }
     }
-} 
+}
