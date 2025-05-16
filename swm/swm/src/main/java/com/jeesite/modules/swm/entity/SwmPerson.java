@@ -8,6 +8,8 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.common.lang.StringUtils;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -57,12 +59,8 @@ public class SwmPerson extends DataEntity<SwmPerson> {
          * 获取人员状态显示文本
          */
         public static String getText(String value) {
-            if (ACTIVE.equals(value)) {
-                return "在职";
-            } else if (INACTIVE.equals(value)) {
-                return "离职";
-            }
-            return "";
+            String label = DictUtils.getDictLabel("person_status_enum", value, "");
+            return label;
         }
     }
 
@@ -79,12 +77,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
          * 获取安全教育状态显示文本
          */
         public static String getText(String value) {
-            if (NOT_STARTED.equals(value)) {
-                return "未开始";
-            } else if (COMPLETED.equals(value)) {
-                return "已培训";
-            }
-            return "";
+            return DictUtils.getDictLabel("safety_education_enum", value, "");
         }
     }
 
@@ -96,17 +89,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
         public static final String NO = "0"; // 否
 
         public static String getText(String status) {
-            if (status == null) {
-                return "";
-            }
-            switch (status) {
-                case YES:
-                    return "是";
-                case NO:
-                    return "否";
-                default:
-                    return "";
-            }
+            return DictUtils.getDictLabel("helmet_returned_enum", status, "");
         }
     }
 
@@ -118,17 +101,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
         public static final String ABNORMAL = "0"; // 异常离职
 
         public static String getText(String type) {
-            if (type == null) {
-                return "";
-            }
-            switch (type) {
-                case NORMAL:
-                    return "正常离职";
-                case ABNORMAL:
-                    return "异常离职";
-                default:
-                    return "";
-            }
+            return DictUtils.getDictLabel("departure_type_enum", type, "");
         }
     }
 
