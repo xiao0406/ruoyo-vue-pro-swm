@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmWarningManagementDao">
+    
+    <!-- 查询数据 -->
+    <select id="findList" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
+        SELECT ${sqlMap.column.toSql()}
+        FROM ${sqlMap.table.toSql()}
+        <where>
+            ${sqlMap.where.toSql()}
+        </where>
+        ORDER BY ${sqlMap.order.toSql()}
+    </select>
+    
+    <!-- 查询所有记录，不带默认的状态过滤 -->
+    <select id="findAllWithoutStatusFilter" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
+        SELECT 
+            a.`id` AS "id", 
+            a.`create_by` AS "createBy", 
+            a.`create_date` AS "createDate", 
+            a.`update_by` AS "updateBy", 
+            a.`update_date` AS "updateDate", 
+            a.`remarks` AS "remarks", 
+            a.`status` AS "status", 
+            a.`person_name` AS "personName", 
+            a.`warning_type` AS "warningType", 
+            a.`warning_content` AS "warningContent", 
+            a.`warning_time` AS "warningTime", 
+            a.`alarm_record` AS "alarmRecord", 
+            a.`alarm_time` AS "alarmTime", 
+            a.`trigger_reason` AS "triggerReason", 
+            a.`handler` AS "handler", 
+            a.`handle_time` AS "handleTime", 
+            a.`handle_process` AS "handleProcess", 
+            a.`handle_status` AS "handleStatus", 
+            a.`attachment` AS "attachment"
+        FROM 
+            `swm_warning_management` a
+        ORDER BY 
+            a.warning_time DESC
+    </select>
+    
+</mapper> 
