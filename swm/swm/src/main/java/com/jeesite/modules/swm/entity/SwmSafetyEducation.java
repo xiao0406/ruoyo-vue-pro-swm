@@ -4,6 +4,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -34,6 +35,9 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
 
     /**
      * 安全教育状态枚举
+     * 
+     * @author Shawn
+     * @date 2024-05-22
      */
     public static class StatusEnum {
         /** 未开始 */
@@ -45,17 +49,15 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
          * 获取状态显示文本
          */
         public static String getText(String value) {
-            if (NOT_STARTED.equals(value)) {
-                return "未开始";
-            } else if (COMPLETED.equals(value)) {
-                return "已完成";
-            }
-            return "";
+            return DictUtils.getDictLabel("education_status_enum", value, "");
         }
     }
 
     /**
      * 安全教育类型枚举
+     * 
+     * @author Shawn
+     * @date 2024-05-22
      */
     public static class EducationTypeEnum {
         /** 人员入职安全教育 */
@@ -73,23 +75,15 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
          * 获取教育类型显示文本
          */
         public static String getText(String value) {
-            if (ENTRY.equals(value)) {
-                return "人员入职安全教育";
-            } else if (WEEKLY.equals(value)) {
-                return "周安全教育";
-            } else if (MONTHLY.equals(value)) {
-                return "月度教育";
-            } else if (QUARTERLY.equals(value)) {
-                return "季度教育";
-            } else if (SPECIAL.equals(value)) {
-                return "专题教育";
-            }
-            return "";
+            return DictUtils.getDictLabel("education_type_enum", value, "");
         }
     }
 
     /**
      * 参与类型枚举
+     * 
+     * @author Shawn
+     * @date 2024-05-22
      */
     public static class ParticipationTypeEnum {
         /** 班组 */
@@ -103,14 +97,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
          * 获取参与类型显示文本
          */
         public static String getText(String value) {
-            if (TEAM.equals(value)) {
-                return "班组";
-            } else if (PROCESS.equals(value)) {
-                return "工序";
-            } else if (WORKSHOP.equals(value)) {
-                return "车间";
-            }
-            return "";
+            return DictUtils.getDictLabel("education_participation_type_enum", value, "");
         }
     }
 
