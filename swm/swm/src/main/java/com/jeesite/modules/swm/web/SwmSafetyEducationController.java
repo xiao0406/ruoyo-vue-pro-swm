@@ -112,6 +112,11 @@ public class SwmSafetyEducationController extends BaseController {
             education.setStatus(statusText);
             education.setSafetyEducationType(typeText);
             education.setParticipationType(participationTypeText);
+
+            // 确保内容描述不为null
+            if (education.getContentDescription() == null) {
+                education.setContentDescription("");
+            }
         }
 
         // 设置分页对象属性
@@ -134,6 +139,14 @@ public class SwmSafetyEducationController extends BaseController {
                     // 根据主题过滤（模糊匹配）
                     if (criteria.getTheme() != null && !criteria.getTheme().isEmpty()) {
                         if (record.getTheme() == null || !record.getTheme().contains(criteria.getTheme())) {
+                            return false;
+                        }
+                    }
+
+                    // 根据内容描述过滤（模糊匹配）
+                    if (criteria.getContentDescription() != null && !criteria.getContentDescription().isEmpty()) {
+                        if (record.getContentDescription() == null
+                                || !record.getContentDescription().contains(criteria.getContentDescription())) {
                             return false;
                         }
                     }
@@ -202,6 +215,7 @@ public class SwmSafetyEducationController extends BaseController {
             // 复制基本属性
             educationData.put("id", swmSafetyEducation.getId());
             educationData.put("theme", swmSafetyEducation.getTheme());
+            educationData.put("contentDescription", swmSafetyEducation.getContentDescription());
             educationData.put("startTime", swmSafetyEducation.getStartTime());
             educationData.put("participants", swmSafetyEducation.getParticipants());
             educationData.put("remarks", swmSafetyEducation.getRemarks());
@@ -237,6 +251,13 @@ public class SwmSafetyEducationController extends BaseController {
             swmSafetyEducation.setCreateTime(now);
         }
         swmSafetyEducation.setUpdateTime(now);
+
+        // 添加日志输出
+        logger.info("保存安全教育信息 - ID: {}, 主题: {}, 内容描述: {}, 是否新记录: {}",
+                swmSafetyEducation.getId(),
+                swmSafetyEducation.getTheme(),
+                swmSafetyEducation.getContentDescription(),
+                swmSafetyEducation.getIsNewRecord());
 
         swmSafetyEducationService.save(swmSafetyEducation);
         return renderResult(Global.TRUE, text("保存安全教育成功！"));

@@ -20,6 +20,7 @@ import java.util.Date;
 @Table(name = "swm_safety_education", alias = "a", label = "安全教育管理表", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "theme", attrName = "theme", label = "主题", queryType = QueryType.LIKE),
+        @Column(name = "content_description", attrName = "contentDescription", label = "内容描述"),
         @Column(name = "safety_education_type", attrName = "safetyEducationType", label = "安全教育类型"),
         @Column(name = "start_time", attrName = "startTime", label = "开始时间"),
         @Column(name = "participants", attrName = "participants", label = "参与对象", queryType = QueryType.LIKE),
@@ -102,6 +103,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     }
 
     private String theme; // 主题
+    private String contentDescription; // 内容描述
     private String safetyEducationType; // 安全教育类型
     private Date startTime; // 开始时间
     private String participants; // 参与对象
@@ -135,6 +137,17 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
 
     public void setTheme(String theme) {
         this.theme = theme;
+    }
+
+    @Length(min = 0, max = 4000, message = "内容描述长度不能超过 4000 个字符")
+    public String getContentDescription() {
+        System.out.println("获取contentDescription: " + this.contentDescription);
+        return contentDescription;
+    }
+
+    public void setContentDescription(String contentDescription) {
+        System.out.println("设置contentDescription: " + contentDescription);
+        this.contentDescription = contentDescription;
     }
 
     @Length(min = 0, max = 50, message = "安全教育类型长度不能超过 50 个字符")
