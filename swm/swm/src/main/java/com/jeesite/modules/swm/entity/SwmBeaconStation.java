@@ -8,6 +8,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -48,14 +49,7 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
          * 获取信标类型显示文本
          */
         public static String getText(String value) {
-            if (CONVENTION.equals(value)) {
-                return "常规信标";
-            } else if (FENCE.equals(value)) {
-                return "电子围栏";
-            } else if (DANGEROUS_SOURCE.equals(value)) {
-                return "危险源信标";
-            }
-            return "";
+            return DictUtils.getDictLabel("beacon_type_enum", value, "");
         }
     }
 
@@ -72,12 +66,7 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
          * 获取信标状态显示文本
          */
         public static String getText(String value) {
-            if (OFFLINE.equals(value)) {
-                return "离线";
-            } else if (ONLINE.equals(value)) {
-                return "在线";
-            }
-            return "";
+            return DictUtils.getDictLabel("beacon_status_enum", value, "");
         }
     }
 
@@ -94,12 +83,7 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
          * 获取部署状态显示文本
          */
         public static String getText(String value) {
-            if (NOT_DEPLOYED.equals(value)) {
-                return "未部署";
-            } else if (DEPLOYED.equals(value)) {
-                return "已部署";
-            }
-            return "";
+            return DictUtils.getDictLabel("deploy_status_enum", value, "");
         }
     }
 
