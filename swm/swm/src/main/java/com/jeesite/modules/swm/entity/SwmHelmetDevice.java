@@ -8,6 +8,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -50,14 +51,7 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
          * 获取运动状态显示文本
          */
         public static String getText(String value) {
-            if (STATIC.equals(value)) {
-                return "静止";
-            } else if (MOVING.equals(value)) {
-                return "运动";
-            } else if (CHARGING.equals(value)) {
-                return "充电";
-            }
-            return "";
+            return DictUtils.getDictLabel("motion_status_enum", value, "");
         }
     }
 
@@ -74,12 +68,7 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
          * 获取头盔类型显示文本
          */
         public static String getText(String value) {
-            if (PORTABLE.equals(value)) {
-                return "便携式";
-            } else if (HEADBAND.equals(value)) {
-                return "头箍式";
-            }
-            return "";
+            return DictUtils.getDictLabel("helmet_type_enum", value, "");
         }
     }
 

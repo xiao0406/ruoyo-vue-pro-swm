@@ -4,6 +4,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -40,20 +41,15 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
      */
     public static class WorkStatusEnum {
         /** 工作中 */
-        public static final String WORKING = "0";
+        public static final String WORKING = "1";
         /** 休息中 */
-        public static final String RESTING = "1";
+        public static final String RESTING = "0";
 
         /**
          * 获取工作状态显示文本
          */
         public static String getText(String value) {
-            if (WORKING.equals(value)) {
-                return "工作中";
-            } else if (RESTING.equals(value)) {
-                return "休息中";
-            }
-            return "";
+            return DictUtils.getDictLabel("work_status_enum", value, "");
         }
     }
 
@@ -62,20 +58,15 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
      */
     public static class HelmetStatusEnum {
         /** 正常 */
-        public static final String NORMAL = "0";
+        public static final String NORMAL = "1";
         /** 脱帽 */
-        public static final String OFF = "1";
+        public static final String OFF = "0";
 
         /**
          * 获取安全帽状态显示文本
          */
         public static String getText(String value) {
-            if (NORMAL.equals(value)) {
-                return "正常";
-            } else if (OFF.equals(value)) {
-                return "脱帽";
-            }
-            return "";
+            return DictUtils.getDictLabel("helmet_status_enum", value, "");
         }
     }
 
@@ -84,39 +75,34 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
      */
     public static class PersonnelStatusEnum {
         /** 正常 */
-        public static final String NORMAL = "0";
+        public static final String NORMAL = "1";
         /** 静止 */
-        public static final String IDLE = "1";
+        public static final String IDLE = "0";
 
         /**
          * 获取人员状态显示文本
          */
         public static String getText(String value) {
-            if (NORMAL.equals(value)) {
-                return "正常";
-            } else if (IDLE.equals(value)) {
-                return "静止";
-            }
-            return "";
+            return DictUtils.getDictLabel("personnel_status_enum", value, "");
         }
     }
 
-    private String name;                // 姓名
-    private String organization;        // 所属单位
-    private String workshop;            // 所属车间
-    private String process;             // 所属工序
-    private String team;                // 所属班组
-    private String workStatus;          // 工作状态
-    private String helmetId;            // 安全帽编号
-    private String helmetStatus;        // 安全帽状态
-    private String personnelStatus;     // 人员状态
-    private Integer attendanceCount;    // 本月出勤次数
-    private BigDecimal workingHours;    // 本月工作时长(小时)
-    private BigDecimal idleHours;       // 本月怠工时长(小时)
+    private String name; // 姓名
+    private String organization; // 所属单位
+    private String workshop; // 所属车间
+    private String process; // 所属工序
+    private String team; // 所属班组
+    private String workStatus; // 工作状态
+    private String helmetId; // 安全帽编号
+    private String helmetStatus; // 安全帽状态
+    private String personnelStatus; // 人员状态
+    private Integer attendanceCount; // 本月出勤次数
+    private BigDecimal workingHours; // 本月工作时长(小时)
+    private BigDecimal idleHours; // 本月怠工时长(小时)
 
     // 用于显示的文本属性，不对应数据库字段
-    private String workStatusText;      // 工作状态显示文本
-    private String helmetStatusText;    // 安全帽状态显示文本
+    private String workStatusText; // 工作状态显示文本
+    private String helmetStatusText; // 安全帽状态显示文本
     private String personnelStatusText; // 人员状态显示文本
 
     public SwmPersonnelBoard() {
@@ -274,4 +260,4 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
     public void setIdleHours(BigDecimal idleHours) {
         this.idleHours = idleHours;
     }
-} 
+}

@@ -5,6 +5,8 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmPersonnelBoard;
 import com.jeesite.modules.swm.service.SwmPersonnelBoardService;
+import com.jeesite.modules.sys.entity.DictData;
+import com.jeesite.modules.sys.utils.DictUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +35,7 @@ public class SwmPersonnelBoardController extends BaseController {
 
     @Autowired
     private SwmPersonnelBoardService swmPersonnelBoardService;
-    
+
     /**
      * 获取数据
      */
@@ -41,34 +43,36 @@ public class SwmPersonnelBoardController extends BaseController {
     public SwmPersonnelBoard get(String id, boolean isNewRecord) {
         return swmPersonnelBoardService.get(id, isNewRecord);
     }
-    
+
     /**
      * 查询列表
      */
-    @RequestMapping(value = {"list", ""})
+    @RequestMapping(value = { "list", "" })
     @ApiOperation("查询列表")
     public String list(SwmPersonnelBoard swmPersonnelBoard, Model model) {
         model.addAttribute("swmPersonnelBoard", swmPersonnelBoard);
         return "modules/swm/personnelBoardList";
     }
-    
+
     /**
      * 查询列表数据
      */
     @RequestMapping(value = "listData")
     @ResponseBody
     @ApiOperation("查询列表数据")
-    public Map<String, Object> listData(SwmPersonnelBoard swmPersonnelBoard, HttpServletRequest request, HttpServletResponse response) {
-        Page<SwmPersonnelBoard> page = swmPersonnelBoardService.findPage(new Page<>(request, response), swmPersonnelBoard);
-        
+    public Map<String, Object> listData(SwmPersonnelBoard swmPersonnelBoard, HttpServletRequest request,
+            HttpServletResponse response) {
+        Page<SwmPersonnelBoard> page = swmPersonnelBoardService.findPage(new Page<>(request, response),
+                swmPersonnelBoard);
+
         // 构建包含额外字段的响应数据
         Map<String, Object> result = new HashMap<>();
         List<Map<String, Object>> enhancedList = new ArrayList<>();
-        
+
         // 处理每个对象，添加枚举的文本显示
         for (SwmPersonnelBoard board : page.getList()) {
             Map<String, Object> boardMap = new HashMap<>();
-            
+
             // 复制基本属性
             boardMap.put("id", board.getId());
             boardMap.put("createBy", board.getCreateBy());
@@ -77,7 +81,7 @@ public class SwmPersonnelBoardController extends BaseController {
             boardMap.put("updateDate", board.getUpdateDate());
             boardMap.put("remarks", board.getRemarks());
             boardMap.put("status", board.getStatus());
-            
+
             // 复制业务属性
             boardMap.put("name", board.getName());
             boardMap.put("organization", board.getOrganization());
@@ -92,25 +96,25 @@ public class SwmPersonnelBoardController extends BaseController {
             boardMap.put("workingHours", board.getWorkingHours());
             boardMap.put("idleHours", board.getIdleHours());
             boardMap.put("isNewRecord", board.getIsNewRecord());
-            
+
             // 添加枚举文本显示值
             boardMap.put("workStatusText", board.getWorkStatusText());
             boardMap.put("helmetStatusText", board.getHelmetStatusText());
             boardMap.put("personnelStatusText", board.getPersonnelStatusText());
-            
+
             // 添加到列表
             enhancedList.add(boardMap);
         }
-        
+
         // 构建分页结果
         result.put("list", enhancedList);
         result.put("count", page.getCount());
         result.put("pageNo", page.getPageNo());
         result.put("pageSize", page.getPageSize());
-        
+
         return result;
     }
-    
+
     /**
      * 查看编辑表单
      */
@@ -121,7 +125,7 @@ public class SwmPersonnelBoardController extends BaseController {
         Map<String, Object> result = new HashMap<>();
         if (swmPersonnelBoard != null) {
             Map<String, Object> boardData = new HashMap<>();
-            
+
             // 复制基本属性
             boardData.put("id", swmPersonnelBoard.getId());
             boardData.put("name", swmPersonnelBoard.getName());
@@ -134,7 +138,7 @@ public class SwmPersonnelBoardController extends BaseController {
             boardData.put("workingHours", swmPersonnelBoard.getWorkingHours());
             boardData.put("idleHours", swmPersonnelBoard.getIdleHours());
             boardData.put("remarks", swmPersonnelBoard.getRemarks());
-            
+
             // 处理枚举值
             boardData.put("workStatus", swmPersonnelBoard.getWorkStatus());
             boardData.put("workStatusText", swmPersonnelBoard.getWorkStatusText());
@@ -142,12 +146,12 @@ public class SwmPersonnelBoardController extends BaseController {
             boardData.put("helmetStatusText", swmPersonnelBoard.getHelmetStatusText());
             boardData.put("personnelStatus", swmPersonnelBoard.getPersonnelStatus());
             boardData.put("personnelStatusText", swmPersonnelBoard.getPersonnelStatusText());
-            
+
             result.putAll(boardData);
         }
         return result;
     }
-    
+
     /**
      * 保存数据
      */
@@ -158,7 +162,7 @@ public class SwmPersonnelBoardController extends BaseController {
         swmPersonnelBoardService.save(swmPersonnelBoard);
         return renderResult(Global.TRUE, text("保存人员看板成功！"));
     }
-    
+
     /**
      * 删除数据
      */
@@ -169,7 +173,7 @@ public class SwmPersonnelBoardController extends BaseController {
         swmPersonnelBoardService.delete(swmPersonnelBoard);
         return renderResult(Global.TRUE, text("删除人员看板成功！"));
     }
-    
+
     /**
      * 批量删除数据
      */
@@ -186,7 +190,7 @@ public class SwmPersonnelBoardController extends BaseController {
         }
         return renderResult(Global.TRUE, text("批量删除人员看板成功！"));
     }
-    
+
     /**
      * 获取枚举选项
      */
@@ -195,28 +199,34 @@ public class SwmPersonnelBoardController extends BaseController {
     @ApiOperation("获取枚举选项")
     public Map<String, Object> getEnumOptions() {
         Map<String, Object> result = new HashMap<>();
-        
+
         // 工作状态选项
         Map<String, String> workStatusOptions = new HashMap<>();
-        workStatusOptions.put(SwmPersonnelBoard.WorkStatusEnum.WORKING, "工作中");
-        workStatusOptions.put(SwmPersonnelBoard.WorkStatusEnum.RESTING, "休息中");
+        List<DictData> workStatusDictList = DictUtils.getDictList("work_status_enum");
+        for (DictData dict : workStatusDictList) {
+            workStatusOptions.put(dict.getDictValue(), dict.getDictLabel());
+        }
         result.put("workStatusOptions", workStatusOptions);
-        
+
         // 安全帽状态选项
         Map<String, String> helmetStatusOptions = new HashMap<>();
-        helmetStatusOptions.put(SwmPersonnelBoard.HelmetStatusEnum.NORMAL, "正常");
-        helmetStatusOptions.put(SwmPersonnelBoard.HelmetStatusEnum.OFF, "脱帽");
+        List<DictData> helmetStatusDictList = DictUtils.getDictList("helmet_status_enum");
+        for (DictData dict : helmetStatusDictList) {
+            helmetStatusOptions.put(dict.getDictValue(), dict.getDictLabel());
+        }
         result.put("helmetStatusOptions", helmetStatusOptions);
-        
+
         // 人员状态选项
         Map<String, String> personnelStatusOptions = new HashMap<>();
-        personnelStatusOptions.put(SwmPersonnelBoard.PersonnelStatusEnum.NORMAL, "正常");
-        personnelStatusOptions.put(SwmPersonnelBoard.PersonnelStatusEnum.IDLE, "静止");
+        List<DictData> personnelStatusDictList = DictUtils.getDictList("personnel_status_enum");
+        for (DictData dict : personnelStatusDictList) {
+            personnelStatusOptions.put(dict.getDictValue(), dict.getDictLabel());
+        }
         result.put("personnelStatusOptions", personnelStatusOptions);
-        
+
         return result;
     }
-    
+
     /**
      * 批量更新工作状态
      */
@@ -227,15 +237,15 @@ public class SwmPersonnelBoardController extends BaseController {
         @SuppressWarnings("unchecked")
         List<String> ids = (List<String>) params.get("ids");
         String workStatus = (String) params.get("workStatus");
-        
+
         if (ids == null || ids.isEmpty() || workStatus == null) {
             return renderResult(Global.FALSE, text("参数错误"));
         }
-        
+
         swmPersonnelBoardService.batchUpdateWorkStatus(ids, workStatus);
         return renderResult(Global.TRUE, text("更新工作状态成功！"));
     }
-    
+
     /**
      * 批量更新安全帽状态
      */
@@ -246,15 +256,15 @@ public class SwmPersonnelBoardController extends BaseController {
         @SuppressWarnings("unchecked")
         List<String> ids = (List<String>) params.get("ids");
         String helmetStatus = (String) params.get("helmetStatus");
-        
+
         if (ids == null || ids.isEmpty() || helmetStatus == null) {
             return renderResult(Global.FALSE, text("参数错误"));
         }
-        
+
         swmPersonnelBoardService.batchUpdateHelmetStatus(ids, helmetStatus);
         return renderResult(Global.TRUE, text("更新安全帽状态成功！"));
     }
-    
+
     /**
      * 批量更新人员状态
      */
@@ -265,12 +275,12 @@ public class SwmPersonnelBoardController extends BaseController {
         @SuppressWarnings("unchecked")
         List<String> ids = (List<String>) params.get("ids");
         String personnelStatus = (String) params.get("personnelStatus");
-        
+
         if (ids == null || ids.isEmpty() || personnelStatus == null) {
             return renderResult(Global.FALSE, text("参数错误"));
         }
-        
+
         swmPersonnelBoardService.batchUpdatePersonnelStatus(ids, personnelStatus);
         return renderResult(Global.TRUE, text("更新人员状态成功！"));
     }
-} 
+}

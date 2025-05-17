@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmHazardSourceDao">
+    
+    <!-- 获取单条数据 -->
+    <select id="get" resultType="com.jeesite.modules.swm.entity.SwmHazardSource">
+        SELECT
+            a.*
+        FROM swm_hazard_source a
+        WHERE a.id = #{id}
+    </select>
+    
+    <!-- 查询数据列表 -->
+    <select id="findList" resultType="com.jeesite.modules.swm.entity.SwmHazardSource">
+        SELECT
+            a.*
+        FROM swm_hazard_source a
+        <where>
+            ${sqlMap.dsf}
+            <if test="hazardName != null and hazardName != ''">
+                AND a.hazard_name LIKE #{hazardName}
+            </if>
+            <if test="hazardCategory != null and hazardCategory != ''">
+                AND a.hazard_category = #{hazardCategory}
+            </if>
+            <if test="location != null and location != ''">
+                AND a.location LIKE #{location}
+            </if>
+            <if test="beaconIdentifier != null and beaconIdentifier != ''">
+                AND a.beacon_identifier LIKE #{beaconIdentifier}
+            </if>
+            <if test="isPatrolIncluded != null and isPatrolIncluded != ''">
+                AND a.is_patrol_included = #{isPatrolIncluded}
+            </if>
+            <if test="hazardStatus != null and hazardStatus != ''">
+                AND a.hazard_status = #{hazardStatus}
+            </if>
+            <if test="status != null and status != ''">
+                AND a.status = #{status}
+            </if>
+        </where>
+        ORDER BY a.create_date DESC
+    </select>
+    
+</mapper> 

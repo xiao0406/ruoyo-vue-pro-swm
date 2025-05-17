@@ -4,6 +4,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -34,26 +35,40 @@ import java.util.Date;
 public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 预警类型枚举
      */
     public static class WarningTypeEnum {
         /** 主动预警 */
-        public static final String ACTIVE = "1";
+        public static final String ACTIVE = "0";
         /** 被动预警 */
-        public static final String PASSIVE = "2";
-        
+        public static final String PASSIVE = "1";
+
         /**
          * 获取预警类型显示文本
          */
         public static String getText(String value) {
-            if (ACTIVE.equals(value)) {
-                return "主动预警";
-            } else if (PASSIVE.equals(value)) {
-                return "被动预警";
+            System.out.println("WarningTypeEnum.getText被调用，参数value=" + value);
+            String result;
+
+            // 如果是数字，从字典获取标签
+            if (value != null && value.matches("\\d+")) {
+                result = DictUtils.getDictLabel("warning_type_enum", value, "");
+            } else {
+                // 如果已经是文本，尝试反向查找字典值，如果找不到则直接返回原文本
+                String dictValue = DictUtils.getDictValue("warning_type_enum", value, "");
+                if (!dictValue.isEmpty()) {
+                    // 找到对应的字典值，转为标签
+                    result = DictUtils.getDictLabel("warning_type_enum", dictValue, value);
+                } else {
+                    // 未找到对应字典值，直接返回原文本
+                    result = value;
+                }
             }
-            return "";
+
+            System.out.println("WarningTypeEnum.getText返回结果：" + result);
+            return result;
         }
     }
 
@@ -65,36 +80,50 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
         public static final String UNHANDLED = "0";
         /** 已处置 */
         public static final String HANDLED = "1";
-        
+
         /**
          * 获取处置状态显示文本
          */
         public static String getText(String value) {
-            if (UNHANDLED.equals(value)) {
-                return "未处置";
-            } else if (HANDLED.equals(value)) {
-                return "已处置";
+            System.out.println("HandleStatusEnum.getText被调用，参数value=" + value);
+            String result;
+
+            // 如果是数字，从字典获取标签
+            if (value != null && value.matches("\\d+")) {
+                result = DictUtils.getDictLabel("handle_status_enum", value, "");
+            } else {
+                // 如果已经是文本，尝试反向查找字典值，如果找不到则直接返回原文本
+                String dictValue = DictUtils.getDictValue("handle_status_enum", value, "");
+                if (!dictValue.isEmpty()) {
+                    // 找到对应的字典值，转为标签
+                    result = DictUtils.getDictLabel("handle_status_enum", dictValue, value);
+                } else {
+                    // 未找到对应字典值，直接返回原文本
+                    result = value;
+                }
             }
-            return "";
+
+            System.out.println("HandleStatusEnum.getText返回结果：" + result);
+            return result;
         }
     }
 
-    private String personName;     // 人员名称
-    private String warningType;    // 预警类型
+    private String personName; // 人员名称
+    private String warningType; // 预警类型
     private String warningContent; // 预警内容
-    private Date warningTime;      // 预警时间
-    private String alarmRecord;    // 报警记录
-    private Date alarmTime;        // 报警时间
-    private String triggerReason;  // 触发原因
-    private String handler;        // 处置人
-    private Date handleTime;       // 处置时间
-    private String handleProcess;  // 处置过程
-    private String handleStatus;   // 处置状态
-    private String attachment;     // 附件路径
-    
+    private Date warningTime; // 预警时间
+    private String alarmRecord; // 报警记录
+    private Date alarmTime; // 报警时间
+    private String triggerReason; // 触发原因
+    private String handler; // 处置人
+    private Date handleTime; // 处置时间
+    private String handleProcess; // 处置过程
+    private String handleStatus; // 处置状态
+    private String attachment; // 附件路径
+
     // 用于显示的属性，不对应数据库字段
-    private String warningTypeText;     // 预警类型显示文本
-    private String handleStatusText;    // 处置状态显示文本
+    private String warningTypeText; // 预警类型显示文本
+    private String handleStatusText; // 处置状态显示文本
 
     public SwmWarningManagement() {
         this(null);
@@ -122,17 +151,20 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     public void setWarningType(String warningType) {
         this.warningType = warningType;
     }
-    
+
     /**
      * 获取预警类型显示文本
      */
     public String getWarningTypeText() {
+        System.out.println("getWarningTypeText被调用，this.warningType=" + this.warningType + ", this.warningTypeText="
+                + this.warningTypeText);
         if (this.warningTypeText == null && this.warningType != null) {
             this.warningTypeText = WarningTypeEnum.getText(this.warningType);
+            System.out.println("getWarningTypeText设置后，this.warningTypeText=" + this.warningTypeText);
         }
         return this.warningTypeText;
     }
-    
+
     public void setWarningTypeText(String warningTypeText) {
         this.warningTypeText = warningTypeText;
     }
@@ -203,7 +235,7 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     public void setHandleProcess(String handleProcess) {
         this.handleProcess = handleProcess;
     }
-    
+
     @Length(min = 0, max = 2, message = "处置状态不能超过2个字符")
     public String getHandleStatus() {
         return handleStatus;
@@ -212,17 +244,20 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     public void setHandleStatus(String handleStatus) {
         this.handleStatus = handleStatus;
     }
-    
+
     /**
      * 获取处置状态显示文本
      */
     public String getHandleStatusText() {
+        System.out.println("getHandleStatusText被调用，this.handleStatus=" + this.handleStatus + ", this.handleStatusText="
+                + this.handleStatusText);
         if (this.handleStatusText == null && this.handleStatus != null) {
             this.handleStatusText = HandleStatusEnum.getText(this.handleStatus);
+            System.out.println("getHandleStatusText设置后，this.handleStatusText=" + this.handleStatusText);
         }
         return this.handleStatusText;
     }
-    
+
     public void setHandleStatusText(String handleStatusText) {
         this.handleStatusText = handleStatusText;
     }
@@ -235,4 +270,4 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     public void setAttachment(String attachment) {
         this.attachment = attachment;
     }
-} 
+}
