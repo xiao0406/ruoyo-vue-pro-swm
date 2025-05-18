@@ -141,12 +141,10 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
 
     @Length(min = 0, max = 4000, message = "内容描述长度不能超过 4000 个字符")
     public String getContentDescription() {
-        System.out.println("获取contentDescription: " + this.contentDescription);
         return contentDescription;
     }
 
     public void setContentDescription(String contentDescription) {
-        System.out.println("设置contentDescription: " + contentDescription);
         this.contentDescription = contentDescription;
     }
 
