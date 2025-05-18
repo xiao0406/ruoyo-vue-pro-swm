@@ -113,6 +113,26 @@ public class SwmSafetyEducationController extends BaseController {
             education.setSafetyEducationType(typeText);
             education.setParticipationType(participationTypeText);
 
+            // 处理参与对象字段的展示
+            String participants = education.getParticipants();
+            if (participants != null && !participants.isEmpty()) {
+                // 检查是否是JSON格式
+                if (participants.startsWith("[") && participants.endsWith("]")) {
+                    try {
+                        // 解析JSON数组
+                        ObjectMapper mapper = new ObjectMapper();
+                        List<String> participantList = mapper.readValue(participants,
+                                new TypeReference<List<String>>() {
+                                });
+                        // 将列表转换为逗号分隔的字符串以便显示
+                        education.setParticipants(String.join(", ", participantList));
+                    } catch (Exception e) {
+                        // 解析失败时保持原样
+                        logger.error("解析参与对象JSON失败: {}", e.getMessage());
+                    }
+                }
+            }
+
             // 确保内容描述不为null
             if (education.getContentDescription() == null) {
                 education.setContentDescription("");
@@ -169,8 +189,31 @@ public class SwmSafetyEducationController extends BaseController {
 
                     // 根据参与对象过滤（模糊匹配）
                     if (criteria.getParticipants() != null && !criteria.getParticipants().isEmpty()) {
-                        if (record.getParticipants() == null
-                                || !record.getParticipants().contains(criteria.getParticipants())) {
+                        if (record.getParticipants() == null) {
+                            return false;
+                        }
+
+                        String participants = record.getParticipants();
+                        // 检查是否为JSON格式的参与者列表
+                        if (participants.startsWith("[") && participants.endsWith("]")) {
+                            try {
+                                // 解析JSON数组
+                                ObjectMapper mapper = new ObjectMapper();
+                                List<String> participantList = mapper.readValue(participants,
+                                        new TypeReference<List<String>>() {
+                                        });
+                                // 将列表转换为逗号分隔的字符串用于搜索
+                                String participantsText = String.join(", ", participantList);
+                                if (!participantsText.contains(criteria.getParticipants())) {
+                                    return false;
+                                }
+                            } catch (Exception e) {
+                                logger.error("过滤时解析参与对象JSON失败: {}", e.getMessage());
+                                if (!participants.contains(criteria.getParticipants())) {
+                                    return false;
+                                }
+                            }
+                        } else if (!participants.contains(criteria.getParticipants())) {
                             return false;
                         }
                     }
@@ -258,6 +301,14 @@ public class SwmSafetyEducationController extends BaseController {
                 swmSafetyEducation.getTheme(),
                 swmSafetyEducation.getContentDescription(),
                 swmSafetyEducation.getIsNewRecord());
+
+        // 记录参与对象格式
+        String participants = swmSafetyEducation.getParticipants();
+        if (participants != null && participants.startsWith("[") && participants.endsWith("]")) {
+            logger.info("参与对象已使用JSON格式保存: {}", participants);
+        } else {
+            logger.info("参与对象使用普通字符串格式: {}", participants);
+        }
 
         swmSafetyEducationService.save(swmSafetyEducation);
         return renderResult(Global.TRUE, text("保存安全教育成功！"));
@@ -349,6 +400,26 @@ public class SwmSafetyEducationController extends BaseController {
                 education.setStatus(statusText);
                 education.setSafetyEducationType(typeText);
                 education.setParticipationType(participationTypeText);
+
+                // 处理参与对象字段的展示（导出时）
+                String participants = education.getParticipants();
+                if (participants != null && !participants.isEmpty()) {
+                    // 检查是否是JSON格式
+                    if (participants.startsWith("[") && participants.endsWith("]")) {
+                        try {
+                            // 解析JSON数组
+                            ObjectMapper mapper = new ObjectMapper();
+                            List<String> participantList = mapper.readValue(participants,
+                                    new TypeReference<List<String>>() {
+                                    });
+                            // 将列表转换为逗号分隔的字符串以便显示
+                            education.setParticipants(String.join(", ", participantList));
+                        } catch (Exception e) {
+                            // 解析失败时保持原样
+                            logger.error("导出数据时解析参与对象JSON失败: {}", e.getMessage());
+                        }
+                    }
+                }
             }
 
             String fileName = "安全教育数据" + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
