@@ -11,7 +11,10 @@ import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 信标基站管理Service
@@ -122,5 +125,26 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
      */
     public List<SwmBeaconStation> findOnlineBeacons() {
         return dao.findOnlineBeacons();
+    }
+
+    /**
+     * 将信标基站列表转换为下拉框所需的格式
+     * 
+     * @param beaconList 信标基站列表
+     * @return 下拉框数据列表
+     */
+    public List<Map<String, Object>> convertToSelectList(List<SwmBeaconStation> beaconList) {
+        List<Map<String, Object>> resultList = new ArrayList<>();
+        if (beaconList != null && !beaconList.isEmpty()) {
+            for (SwmBeaconStation beacon : beaconList) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("value", beacon.getBeaconId()); // 值使用信标ID
+                map.put("label", beacon.getBeaconId()); // 显示文本也使用信标ID
+                // 可以添加额外信息，如位置
+                map.put("location", beacon.getLocation());
+                resultList.add(map);
+            }
+        }
+        return resultList;
     }
 }

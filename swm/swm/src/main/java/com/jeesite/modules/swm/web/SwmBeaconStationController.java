@@ -69,6 +69,21 @@ public class SwmBeaconStationController extends BaseController {
     }
 
     /**
+     * 获取所有信标基站列表(用于下拉框选择)
+     */
+    @GetMapping(value = "listForSelect")
+    @ResponseBody
+    @ApiOperation(value = "获取所有信标基站列表用于下拉框选择")
+    public List<Map<String, Object>> listForSelect() {
+        // 创建查询条件，可根据需求添加筛选条件
+        SwmBeaconStation swmBeaconStation = new SwmBeaconStation();
+        // 获取全部信标基站数据
+        List<SwmBeaconStation> beaconList = swmBeaconStationService.findList(swmBeaconStation);
+        // 转换为下拉框需要的格式
+        return swmBeaconStationService.convertToSelectList(beaconList);
+    }
+
+    /**
      * 查看编辑表单
      */
     @RequestMapping(value = "form")
