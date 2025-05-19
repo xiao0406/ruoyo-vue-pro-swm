@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmHiddenDangerDao">
+	
+	<!-- 查询条件 -->
+	<sql id="swmHiddenDangerColumns">
+		a.id AS "id",
+		a.danger_name AS "dangerName",
+		a.location AS "location",
+		a.inspection_plan_id AS "inspectionPlanId",
+		a.is_beacon_deployed AS "isBeaconDeployed",
+		a.is_handled AS "isHandled",
+		a.status AS "status",
+		a.create_by AS "createBy",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks"
+	</sql>
+	
+	<!-- 查询条件 -->
+	<sql id="swmHiddenDangerJoins">
+	</sql>
+	
+</mapper> 
