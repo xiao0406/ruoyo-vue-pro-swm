@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 预警管理DAO接口
  * 
- * @author auto create
+ * @author zwf
  * @version 2025-05-16
  */
 @MyBatisDao

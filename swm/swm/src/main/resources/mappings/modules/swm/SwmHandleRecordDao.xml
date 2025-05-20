@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmHandleRecordDao">
+    
+    <!-- 查询数据 -->
+    <select id="findList" resultType="SwmHandleRecord">
+        SELECT ${sqlMap.column.toSql()}
+        FROM ${sqlMap.table.toSql()}
+        <where>
+            ${sqlMap.where.toSql()}
+            <!-- 自定义条件 -->
+            <if test="sqlMap.where.sqlSegment != null and sqlMap.where.sqlSegment != ''">
+                AND (${sqlMap.where.sqlSegment})
+            </if>
+            <if test="recordName != null and recordName != ''">
+                AND a.record_name LIKE concat('%', #{recordName}, '%')
+            </if>
+            <if test="warningId != null and warningId != ''">
+                AND a.warning_id = #{warningId}
+            </if>
+            <if test="handler != null and handler != ''">
+                AND a.handler LIKE concat('%', #{handler}, '%')
+            </if>
+            <if test="handleStatus != null and handleStatus != ''">
+                AND a.handle_status = #{handleStatus}
+            </if>
+            <if test="beginAlarmTime != null and endAlarmTime != null">
+                AND a.alarm_time BETWEEN #{beginAlarmTime} AND #{endAlarmTime}
+            </if>
+            <if test="beginHandleTime != null and endHandleTime != null">
+                AND a.handle_time BETWEEN #{beginHandleTime} AND #{endHandleTime}
+            </if>
+        </where>
+        ORDER BY ${sqlMap.order.toSql()}
+    </select>
+    
+</mapper> 

@@ -13,7 +13,7 @@ import java.util.Date;
 /**
  * 预警管理表实体类
  * 
- * @author auto create
+ * @author zwf
  * @version 2025-05-16
  */
 @Table(name = "swm_warning_management", alias = "a", columns = {
@@ -29,7 +29,7 @@ import java.util.Date;
         @Column(name = "handle_time", attrName = "handleTime", label = "处置时间"),
         @Column(name = "handle_process", attrName = "handleProcess", label = "处置过程"),
         @Column(name = "handle_status", attrName = "handleStatus", label = "处置状态"),
-        @Column(name = "attachment", attrName = "attachment", label = "附件路径"),
+        @Column(name = "attachment", attrName = "attachment", label = "附件路径", comment = "附件路径"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.warning_time DESC")
 public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
@@ -80,6 +80,8 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
         public static final String UNHANDLED = "0";
         /** 已处置 */
         public static final String HANDLED = "1";
+        /** 草稿 */
+        public static final String DRAFT = "2";
 
         /**
          * 获取处置状态显示文本
@@ -262,7 +264,7 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
         this.handleStatusText = handleStatusText;
     }
 
-    @Length(min = 0, max = 500, message = "附件路径不能超过500个字符")
+    // mediumtext类型，无需长度限制
     public String getAttachment() {
         return attachment;
     }
