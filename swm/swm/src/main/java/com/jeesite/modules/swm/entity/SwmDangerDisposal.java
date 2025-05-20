@@ -28,7 +28,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
         @Column(name = "location", attrName = "location", label = "隐患位置", queryType = QueryType.LIKE),
         @Column(name = "disposal_time", attrName = "disposalTime", label = "处置时间"),
         @Column(name = "disposal_plan", attrName = "disposalPlan", label = "处置方案描述"),
-        @Column(name = "disposer", attrName = "disposer", label = "处置人"),
+        @Column(name = "disposal_content", attrName = "disposalContent", label = "处置内容"),
+        @Column(name = "disposal_method", attrName = "disposalMethod", label = "处置方法"),
+        @Column(name = "disposal_status", attrName = "disposalStatus", label = "处置状态"),
+        @Column(name = "disposal_user", attrName = "disposalUser", label = "处置人员"),
         @Column(name = "attachment", attrName = "attachment", label = "附件信息"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.create_date DESC")
@@ -41,7 +44,10 @@ public class SwmDangerDisposal extends DataEntity<SwmDangerDisposal> {
     private String location; // 隐患位置
     private Date disposalTime; // 处置时间
     private String disposalPlan; // 处置方案描述
-    private String disposer; // 处置人
+    private String disposalContent; // 处置内容
+    private String disposalMethod; // 处置方法
+    private String disposalStatus; // 处置状态
+    private String disposalUser; // 处置人员
     private String attachment; // 附件信息
 
     public SwmDangerDisposal() {
@@ -97,13 +103,39 @@ public class SwmDangerDisposal extends DataEntity<SwmDangerDisposal> {
         this.disposalPlan = disposalPlan;
     }
 
-    @Length(min = 0, max = 64, message = "处置人长度不能超过 64 个字符")
-    public String getDisposer() {
-        return disposer;
+    public String getDisposalContent() {
+        return disposalContent;
     }
 
-    public void setDisposer(String disposer) {
-        this.disposer = disposer;
+    public void setDisposalContent(String disposalContent) {
+        this.disposalContent = disposalContent;
+    }
+
+    @Length(min = 0, max = 64, message = "处置方法长度不能超过 64 个字符")
+    public String getDisposalMethod() {
+        return disposalMethod;
+    }
+
+    public void setDisposalMethod(String disposalMethod) {
+        this.disposalMethod = disposalMethod;
+    }
+
+    @Length(min = 0, max = 10, message = "处置状态长度不能超过 10 个字符")
+    public String getDisposalStatus() {
+        return disposalStatus;
+    }
+
+    public void setDisposalStatus(String disposalStatus) {
+        this.disposalStatus = disposalStatus;
+    }
+
+    @Length(min = 0, max = 64, message = "处置人员长度不能超过 64 个字符")
+    public String getDisposalUser() {
+        return disposalUser;
+    }
+
+    public void setDisposalUser(String disposalUser) {
+        this.disposalUser = disposalUser;
     }
 
     @Length(min = 0, max = 1000, message = "附件信息长度不能超过 1000 个字符")
