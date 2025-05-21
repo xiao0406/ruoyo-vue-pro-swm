@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmDailyAttendanceDao">
+    
+    <!-- 查询数据 -->
+    <select id="findList" resultType="SwmDailyAttendance">
+        SELECT ${sqlMap.column.toSql()}
+        FROM ${sqlMap.table.toSql()}
+        <where>
+            ${sqlMap.where.toSql()}
+            <!-- 自定义条件 -->
+            <if test="sqlMap.where.sqlSegment != null and sqlMap.where.sqlSegment != ''">
+                AND (${sqlMap.where.sqlSegment})
+            </if>
+            <if test="employeeId != null and employeeId != ''">
+                AND a.employee_id = #{employeeId}
+            </if>
+            <if test="employeeName != null and employeeName != ''">
+                AND a.employee_name LIKE concat('%', #{employeeName}, '%')
+            </if>
+            <if test="attendanceDate != null">
+                AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+            </if>
+            <if test="beginAttendanceDate != null and endAttendanceDate != null">
+                AND DATE(a.attendance_date) BETWEEN DATE(#{beginAttendanceDate}) AND DATE(#{endAttendanceDate})
+            </if>
+            <if test="workTimeRange != null and workTimeRange != ''">
+                AND a.work_time_range LIKE concat('%', #{workTimeRange}, '%')
+            </if>
+        </where>
+        ORDER BY ${sqlMap.order.toSql()}
+    </select>
+    
+    <!-- 根据员工ID和日期查询考勤记录 -->
+    <select id="findByEmployeeIdAndDate" resultType="SwmDailyAttendance">
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_out_time AS "clockOutTime",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_id = #{employeeId}
+            AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+        </where>
+    </select>
+    
+    <!-- 根据员工姓名和日期查询考勤记录 -->
+    <select id="findByEmployeeAndDate" resultType="SwmDailyAttendance">
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_out_time AS "clockOutTime",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_name = #{employeeName}
+            AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+        </where>
+    </select>
+    
+    <!-- 根据员工ID和日期范围查询考勤记录 -->
+    <select id="findByEmployeeIdAndDateRange" resultType="SwmDailyAttendance">
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_out_time AS "clockOutTime",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_id = #{employeeId}
+            AND DATE(a.attendance_date) BETWEEN DATE(#{beginDate}) AND DATE(#{endDate})
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+    
+    <!-- 根据员工姓名和日期范围查询考勤记录 -->
+    <select id="findByEmployeeAndDateRange" resultType="SwmDailyAttendance">
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_out_time AS "clockOutTime",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_name = #{employeeName}
+            AND DATE(a.attendance_date) BETWEEN DATE(#{beginDate}) AND DATE(#{endDate})
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+    
+    <!-- 根据日期查询所有考勤记录 -->
+    <select id="findByDate" resultType="SwmDailyAttendance">
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_out_time AS "clockOutTime",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            DATE(a.attendance_date) = DATE(#{attendanceDate})
+        </where>
+        ORDER BY a.employee_name ASC
+    </select>
+    
+    <!-- 根据员工ID和月份查询考勤记录 -->
+    <select id="findByEmployeeIdAndMonth" resultType="SwmDailyAttendance">
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_out_time AS "clockOutTime",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_id = #{employeeId}
+            AND YEAR(a.attendance_date) = #{year}
+            AND MONTH(a.attendance_date) = #{month}
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+    
+    <!-- 根据员工姓名和月份查询考勤记录 -->
+    <select id="findByEmployeeAndMonth" resultType="SwmDailyAttendance">
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_out_time AS "clockOutTime",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_name = #{employeeName}
+            AND YEAR(a.attendance_date) = #{year}
+            AND MONTH(a.attendance_date) = #{month}
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+    
+</mapper> 

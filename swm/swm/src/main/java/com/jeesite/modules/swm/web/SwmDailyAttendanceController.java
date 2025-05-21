@@ -1,0 +1,351 @@
+package com.jeesite.modules.swm.web;
+
+import com.jeesite.common.config.Global;
+import com.jeesite.common.entity.Page;
+import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
+import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
+import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.util.Calendar;
+
+/**
+ * 日考勤统计表Controller
+ * @author zwf
+ * @version 2025-05-20
+ */
+@Controller
+@RequestMapping(value = "${adminPath}/swmDailyAttendance")
+@Api(tags = "日考勤统计表管理")
+public class SwmDailyAttendanceController extends BaseController {
+
+    @Autowired
+    private SwmDailyAttendanceService swmDailyAttendanceService;
+    
+    @Autowired
+    private SwmAttendanceSummaryService swmAttendanceSummaryService;
+    
+    /**
+     * 获取数据
+     */
+    @ModelAttribute
+    public SwmDailyAttendance get(String id, boolean isNewRecord) {
+        return swmDailyAttendanceService.get(id, isNewRecord);
+    }
+    
+    /**
+     * 查询列表
+     */
+    @RequestMapping(value = {"list", ""})
+    public String list(SwmDailyAttendance swmDailyAttendance, Model model) {
+        model.addAttribute("swmDailyAttendance", swmDailyAttendance);
+        return "modules/swm/swmDailyAttendanceList";
+    }
+    
+    /**
+     * 查询列表数据
+     */
+    @RequestMapping(value = "listData")
+    @ResponseBody
+    public Page<SwmDailyAttendance> listData(SwmDailyAttendance swmDailyAttendance, HttpServletRequest request, HttpServletResponse response) {
+        if (swmDailyAttendance.getAttendanceDate() == null && 
+            swmDailyAttendance.getBeginAttendanceDate() == null && 
+            swmDailyAttendance.getEndAttendanceDate() == null) {
+            
+            Date today = new Date();
+            
+            swmDailyAttendance.setAttendanceDate(today);
+        }
+        
+        swmDailyAttendance.setPage(new Page<>(request, response));
+        Page<SwmDailyAttendance> page = swmDailyAttendanceService.findPage(swmDailyAttendance);
+        return page;
+    }
+
+    /**
+     * 查看编辑表单
+     */
+    @RequestMapping(value = "form")
+    public String form(SwmDailyAttendance swmDailyAttendance, Model model) {
+        model.addAttribute("swmDailyAttendance", swmDailyAttendance);
+        return "modules/swm/swmDailyAttendanceForm";
+    }
+
+    /**
+     * 保存数据
+     */
+    @PostMapping(value = "save")
+    @ResponseBody
+    @ApiOperation("保存数据")
+    public String save(@Validated SwmDailyAttendance swmDailyAttendance) {
+        swmDailyAttendanceService.save(swmDailyAttendance);
+        return renderResult(Global.TRUE, text("保存日考勤统计表成功！"));
+    }
+    
+    /**
+     * 删除数据
+     */
+    @RequestMapping(value = "delete")
+    @ResponseBody
+    @ApiOperation("删除数据")
+    public String delete(SwmDailyAttendance swmDailyAttendance) {
+        swmDailyAttendanceService.delete(swmDailyAttendance);
+        return renderResult(Global.TRUE, text("删除日考勤统计表成功！"));
+    }
+    
+    /**
+     * 根据员工姓名和日期查询考勤记录
+     */
+    @GetMapping(value = "findByEmployeeAndDate")
+    @ResponseBody
+    @ApiOperation("根据员工姓名和日期查询考勤记录")
+    public Map<String, Object> findByEmployeeAndDate(String employeeName, 
+                                                   @DateTimeFormat(pattern = "yyyy-MM-dd") Date attendanceDate) {
+        Map<String, Object> result = new HashMap<>();
+        if (employeeName != null && !employeeName.isEmpty() && attendanceDate != null) {
+            SwmDailyAttendance record = swmDailyAttendanceService.findByEmployeeAndDate(employeeName, attendanceDate);
+            result.put("record", record);
+            result.put("success", true);
+        } else {
+            result.put("success", false);
+            result.put("message", "员工姓名和考勤日期不能为空");
+        }
+        return result;
+    }
+    
+    /**
+     * 根据员工姓名和日期范围查询考勤记录
+     */
+    @GetMapping(value = "findByEmployeeAndDateRange")
+    @ResponseBody
+    @ApiOperation("根据员工姓名和日期范围查询考勤记录")
+    public Map<String, Object> findByEmployeeAndDateRange(String employeeName, 
+                                                        @DateTimeFormat(pattern = "yyyy-MM-dd") Date beginDate,
+                                                        @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
+        Map<String, Object> result = new HashMap<>();
+        if (employeeName != null && !employeeName.isEmpty() && beginDate != null && endDate != null) {
+            List<SwmDailyAttendance> recordList = swmDailyAttendanceService.findByEmployeeAndDateRange(employeeName, beginDate, endDate);
+            result.put("list", recordList);
+            result.put("success", true);
+        } else {
+            result.put("success", false);
+            result.put("message", "员工姓名和日期范围不能为空");
+        }
+        return result;
+    }
+    
+    /**
+     * 根据日期查询所有考勤记录
+     */
+    @GetMapping(value = "findByDate")
+    @ResponseBody
+    @ApiOperation("根据日期查询所有考勤记录")
+    public Map<String, Object> findByDate(@DateTimeFormat(pattern = "yyyy-MM-dd") Date attendanceDate) {
+        Map<String, Object> result = new HashMap<>();
+        if (attendanceDate != null) {
+            List<SwmDailyAttendance> recordList = swmDailyAttendanceService.findByDate(attendanceDate);
+            result.put("list", recordList);
+            result.put("success", true);
+        } else {
+            result.put("success", false);
+            result.put("message", "考勤日期不能为空");
+        }
+        return result;
+    }
+    
+    /**
+     * 计算月统计数据并保存
+     */
+    @PostMapping(value = "calculateAndSaveMonthly")
+    @ResponseBody
+    @ApiOperation("计算月统计数据并保存")
+    public String calculateAndSaveMonthly(String employeeName, int year, int month) {
+        if (employeeName == null || employeeName.isEmpty()) {
+            return renderResult(Global.FALSE, text("员工姓名不能为空！"));
+        }
+        
+        SwmAttendanceSummary summary = swmDailyAttendanceService.calculateMonthlyStats(employeeName, year, month);
+        
+        SwmAttendanceSummary existing = swmAttendanceSummaryService.findByEmployeeAndMonth(employeeName, String.format("%04d-%02d", year, month));
+        
+        if (existing != null) {
+            summary.setId(existing.getId());
+            summary.setIsNewRecord(false);
+            
+            if (existing.getDepartment() != null) {
+                summary.setDepartment(existing.getDepartment());
+            }
+            if (existing.getWorkProcess() != null) {
+                summary.setWorkProcess(existing.getWorkProcess());
+            }
+            if (existing.getTeam() != null) {
+                summary.setTeam(existing.getTeam());
+            }
+            if (existing.getJobType() != null) {
+                summary.setJobType(existing.getJobType());
+            }
+            if (existing.getWorkShift() != null) {
+                summary.setWorkShift(existing.getWorkShift());
+            }
+        }
+        
+        swmAttendanceSummaryService.save(summary);
+        
+        return renderResult(Global.TRUE, text("计算并保存月统计数据成功！"));
+    }
+
+    /**
+     * 获取员工月度考勤图表数据
+     * 根据员工ID和月份查询日考勤数据，返回适合图表展示的格式
+     */
+    @GetMapping(value = "getMonthlyChartData")
+    @ResponseBody
+    @ApiOperation("获取员工月度考勤图表数据")
+    public Map<String, Object> getMonthlyChartData(String employeeId, String month) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // 验证参数
+        if (employeeId == null || employeeId.isEmpty() || month == null || month.isEmpty()) {
+            result.put("code", 400);
+            result.put("success", false);
+            result.put("message", "员工ID和月份不能为空");
+            return result;
+        }
+        
+        // 解析月份格式 (YYYY-MM)
+        int year, monthOfYear;
+        try {
+            String[] parts = month.split("-");
+            if (parts.length != 2) {
+                throw new ParseException("月份格式不正确", 0);
+            }
+            year = Integer.parseInt(parts[0]);
+            monthOfYear = Integer.parseInt(parts[1]);
+            
+            if (monthOfYear < 1 || monthOfYear > 12) {
+                throw new ParseException("月份必须在1-12之间", 0);
+            }
+        } catch (Exception e) {
+            result.put("code", 400);
+            result.put("success", false);
+            result.put("message", "月份格式不正确，应为YYYY-MM");
+            return result;
+        }
+        
+        // 调用Service层方法获取图表数据
+        Map<String, Object> data = swmDailyAttendanceService.getMonthlyChartData(employeeId, year, monthOfYear);
+        
+        // 构建返回结果
+        result.put("code", 200);
+        result.put("success", true);
+        result.put("data", data);
+        
+        return result;
+    }
+
+    /**
+     * 获取员工月度考勤时长数据
+     * 根据员工ID和月份查询日考勤数据，返回应考勤时长和实际考勤时长
+     */
+    @GetMapping(value = "getMonthlyAttendanceData")
+    @ResponseBody
+    @ApiOperation("获取员工月度考勤时长数据")
+    public Map<String, Object> getMonthlyAttendanceData(String employeeId, String month) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // 验证参数
+        if (employeeId == null || employeeId.isEmpty() || month == null || month.isEmpty()) {
+            result.put("code", 400);
+            result.put("success", false);
+            result.put("message", "员工ID和月份不能为空");
+            return result;
+        }
+        
+        // 解析月份格式 (YYYY-MM)
+        int year, monthOfYear;
+        try {
+            String[] parts = month.split("-");
+            if (parts.length != 2) {
+                throw new ParseException("月份格式不正确", 0);
+            }
+            year = Integer.parseInt(parts[0]);
+            monthOfYear = Integer.parseInt(parts[1]);
+            
+            if (monthOfYear < 1 || monthOfYear > 12) {
+                throw new ParseException("月份必须在1-12之间", 0);
+            }
+        } catch (Exception e) {
+            result.put("code", 400);
+            result.put("success", false);
+            result.put("message", "月份格式不正确，应为YYYY-MM");
+            return result;
+        }
+        
+        // 调用Service层方法获取考勤时长数据
+        Map<String, Object> data = swmDailyAttendanceService.getMonthlyAttendanceData(employeeId, year, monthOfYear);
+        
+        // 构建返回结果
+        result.put("code", 200);
+        result.put("success", true);
+        result.put("data", data);
+        
+        return result;
+    }
+
+    /**
+     * 根据员工ID和日期查询单条考勤记录
+     */
+    @GetMapping(value = "getAttendanceByEmployeeAndDate")
+    @ResponseBody
+    @ApiOperation("根据员工ID和日期查询单条考勤记录")
+    public Map<String, Object> getAttendanceByEmployeeAndDate(String employeeId, 
+                                                            @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // 验证参数
+        if (employeeId == null || employeeId.isEmpty()) {
+            result.put("code", 400);
+            result.put("success", false);
+            result.put("message", "员工ID不能为空");
+            return result;
+        }
+        
+        if (date == null) {
+            result.put("code", 400);
+            result.put("success", false);
+            result.put("message", "日期不能为空");
+            return result;
+        }
+        
+        // 查询考勤记录
+        SwmDailyAttendance record = swmDailyAttendanceService.findByEmployeeIdAndDate(employeeId, date);
+        
+        if (record != null) {
+            result.put("code", 200);
+            result.put("success", true);
+            result.put("data", record);
+        } else {
+            result.put("code", 404);
+            result.put("success", false);
+            result.put("message", "未找到该员工在指定日期的考勤记录");
+        }
+        
+        return result;
+    }
+} 
