@@ -1,0 +1,171 @@
+/**
+ * 一键召回记录表实体类
+ * @author auto
+ * @date 2024-05-30
+ */
+package com.jeesite.modules.swm.entity;
+
+import com.jeesite.common.entity.DataEntity;
+import com.jeesite.common.mybatis.annotation.Column;
+import com.jeesite.common.mybatis.annotation.Table;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.sys.utils.DictUtils;
+import org.hibernate.validator.constraints.Length;
+
+import javax.validation.constraints.NotBlank;
+import java.util.Date;
+
+/**
+ * 一键召回记录表实体类
+ * 
+ * @author auto
+ */
+@Table(name = "swm_oneclick_recall", alias = "a", columns = {
+        @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
+        @Column(name = "template_name", attrName = "templateName", label = "语音模板名称", queryType = QueryType.LIKE),
+        @Column(name = "template_content", attrName = "templateContent", label = "语音模板内容"),
+        @Column(name = "evacuation_plan", attrName = "evacuationPlan", label = "撤离方案"),
+        @Column(name = "evacuee_count", attrName = "evacueeCount", label = "撤离人员数量"),
+        @Column(name = "evacuee_list", attrName = "evacueeList", label = "撤离人员名单"),
+        @Column(name = "recall_time", attrName = "recallTime", label = "召回时间"),
+        @Column(name = "recall_result", attrName = "recallResult", label = "召回结果"),
+        @Column(includeEntity = DataEntity.class)
+}, orderBy = "a.recall_time DESC")
+public class SwmOneClickRecall extends DataEntity<SwmOneClickRecall> {
+
+    private static final long serialVersionUID = 1L;
+    
+    /**
+     * 召回结果枚举
+     */
+    public static class RecallResultEnum {
+        /** 进行中 */
+        public static final String IN_PROGRESS = "0";
+        /** 成功 */
+        public static final String SUCCESS = "1";
+        /** 失败 */
+        public static final String FAILED = "2";
+        
+        /**
+         * 获取召回结果显示文本
+         */
+        public static String getText(String value) {
+            return DictUtils.getDictLabel("recall_result_enum", value, "");
+        }
+    }
+
+    /**
+     * 撤离方案枚举
+     */
+    public static class EvacuationPlanEnum {
+        /** 全体撤离 */
+        public static final String ALL = "1";
+        /** 按车间撤离 */
+        public static final String BY_WORKSHOP = "2";
+        /** 按班组撤离 */
+        public static final String BY_TEAM = "3";
+        /** 按区域撤离 */
+        public static final String BY_AREA = "4";
+        /** 按人员撤离 */
+        public static final String BY_PERSON = "5";
+
+        /**
+         * 获取撤离方案显示文本
+         */
+        public static String getText(String value) {
+            return DictUtils.getDictLabel("evacuation_plan_enum", value, "");
+        }
+    }
+    
+    private String templateName;     // 语音模板名称
+    private String templateContent;  // 语音模板内容
+    private String evacuationPlan;   // 撤离方案
+    private Integer evacueeCount;    // 撤离人员数量
+    private String evacueeList;      // 撤离人员名单(JSON格式)
+    private Date recallTime;         // 召回时间
+    private String recallResult;     // 召回结果
+    
+    public SwmOneClickRecall() {
+        this(null);
+    }
+
+    public SwmOneClickRecall(String id) {
+        super(id);
+    }
+    
+    @NotBlank(message = "语音模板名称不能为空")
+    @Length(min = 0, max = 100, message = "语音模板名称不能超过100个字符")
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
+    }
+    
+    @NotBlank(message = "语音模板内容不能为空")
+    public String getTemplateContent() {
+        return templateContent;
+    }
+
+    public void setTemplateContent(String templateContent) {
+        this.templateContent = templateContent;
+    }
+    
+    @NotBlank(message = "撤离方案不能为空")
+    @Length(min = 0, max = 20, message = "撤离方案不能超过20个字符")
+    public String getEvacuationPlan() {
+        return evacuationPlan;
+    }
+
+    public void setEvacuationPlan(String evacuationPlan) {
+        this.evacuationPlan = evacuationPlan;
+    }
+
+    /**
+     * 获取撤离方案显示文本
+     */
+    public String getEvacuationPlanText() {
+        return EvacuationPlanEnum.getText(evacuationPlan);
+    }
+    
+    public Integer getEvacueeCount() {
+        return evacueeCount;
+    }
+
+    public void setEvacueeCount(Integer evacueeCount) {
+        this.evacueeCount = evacueeCount;
+    }
+    
+    public String getEvacueeList() {
+        return evacueeList;
+    }
+
+    public void setEvacueeList(String evacueeList) {
+        this.evacueeList = evacueeList;
+    }
+    
+    public Date getRecallTime() {
+        return recallTime;
+    }
+
+    public void setRecallTime(Date recallTime) {
+        this.recallTime = recallTime;
+    }
+    
+    @Length(min = 0, max = 20, message = "召回结果不能超过20个字符")
+    public String getRecallResult() {
+        return recallResult;
+    }
+
+    public void setRecallResult(String recallResult) {
+        this.recallResult = recallResult;
+    }
+    
+    /**
+     * 获取召回结果显示文本
+     */
+    public String getRecallResultText() {
+        return RecallResultEnum.getText(recallResult);
+    }
+} 
