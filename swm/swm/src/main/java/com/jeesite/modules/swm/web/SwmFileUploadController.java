@@ -95,6 +95,8 @@ public class SwmFileUploadController extends BaseController {
             result.put("fileId", fileId);
             result.put("fileName", originalFilename);
             result.put("url", uploadResult.get("url"));
+            // 添加预览URL，直接使用"/swm/fileUpload/preview"路径
+            result.put("previewUrl", "fileUpload/preview?objectName=" + objectName);
             result.put("businessType", businessType);
             result.put("recordId", recordId);
 
