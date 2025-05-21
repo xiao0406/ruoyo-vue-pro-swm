@@ -15,7 +15,7 @@ import com.jeesite.modules.sys.utils.DictUtils;
  * 巡检列表Service
  * 
  * @author Shawn
- * @version 2024-06-22
+ * @version 2025-05-21
  */
 @Service
 @Transactional(readOnly = true)

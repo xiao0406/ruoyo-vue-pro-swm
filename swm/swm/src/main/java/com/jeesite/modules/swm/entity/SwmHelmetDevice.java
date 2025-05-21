@@ -1,6 +1,6 @@
 /**
  * @author Shawn
- * @date 2023-05-30
+ * @date 2025-05-21
  */
 package com.jeesite.modules.swm.entity;
 

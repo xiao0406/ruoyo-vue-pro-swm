@@ -38,7 +38,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
      * 安全教育状态枚举
      * 
      * @author Shawn
-     * @date 2024-05-22
+     * @date 2025-05-21
      */
     public static class StatusEnum {
         /** 未开始 */
@@ -58,7 +58,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
      * 安全教育类型枚举
      * 
      * @author Shawn
-     * @date 2024-05-22
+     * @date 2025-05-21
      */
     public static class EducationTypeEnum {
         /** 人员入职安全教育 */
@@ -84,7 +84,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
      * 参与类型枚举
      * 
      * @author Shawn
-     * @date 2024-05-22
+     * @date 2025-05-21
      */
     public static class ParticipationTypeEnum {
         /** 班组 */

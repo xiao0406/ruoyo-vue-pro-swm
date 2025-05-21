@@ -8,7 +8,7 @@ import com.jeesite.modules.swm.entity.SwmInspectionList;
  * 巡检列表DAO接口
  * 
  * @author Shawn
- * @version 2024-06-22
+ * @version 2025-05-21
  */
 @MyBatisDao
 public interface SwmInspectionListDao extends CrudDao<SwmInspectionList> {

@@ -1,7 +1,7 @@
 /**
  * 隐患处置信息Service
  * @author Shawn
- * @date 2024-06-28
+ * @date 2025-05-21
  */
 package com.jeesite.modules.swm.service;
 
@@ -18,7 +18,7 @@ import java.util.List;
  * 隐患处置信息Service
  * 
  * @author Shawn
- * @date 2024-06-28
+ * @date 2025-05-21
  */
 @Service
 @Transactional(readOnly = true)

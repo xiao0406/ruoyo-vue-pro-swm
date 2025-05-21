@@ -1,7 +1,7 @@
 /**
  * 危险源信息Service
  * @author Shawn
- * @version 2024-05-20
+ * @version 2025-05-21
  */
 package com.jeesite.modules.swm.service;
 

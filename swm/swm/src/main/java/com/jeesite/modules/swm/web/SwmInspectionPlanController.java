@@ -22,7 +22,7 @@ import com.jeesite.modules.swm.service.SwmInspectionPlanService;
  * 巡检计划Controller
  * 
  * @author Shawn
- * @version 2024-06-22
+ * @version 2025-05-21
  */
 @Controller
 @RequestMapping(value = "${adminPath}/swmInspectionPlan")

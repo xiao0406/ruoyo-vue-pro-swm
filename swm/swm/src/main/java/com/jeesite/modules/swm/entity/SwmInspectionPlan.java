@@ -16,7 +16,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
  * 巡检计划实体类
  * 
  * @author Shawn
- * @version 2024-06-22
+ * @version 2025-05-21
  */
 @Table(name = "swm_inspection_plan", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),

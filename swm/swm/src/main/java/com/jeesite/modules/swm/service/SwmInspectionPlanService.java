@@ -12,7 +12,7 @@ import com.jeesite.modules.swm.dao.SwmInspectionPlanDao;
  * 巡检计划Service
  * 
  * @author Shawn
- * @version 2024-06-22
+ * @version 2025-05-21
  */
 @Service
 @Transactional(readOnly = true)

@@ -1,7 +1,7 @@
 /**
  * 隐患处置信息实体类
  * @author Shawn
- * @date 2024-06-28
+ * @date 2025-05-21
  */
 package com.jeesite.modules.swm.entity;
 
