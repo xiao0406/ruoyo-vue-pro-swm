@@ -95,6 +95,8 @@ public class SwmFileUploadController extends BaseController {
             result.put("fileId", fileId);
             result.put("fileName", originalFilename);
             result.put("url", uploadResult.get("url"));
+            // 添加预览URL，直接使用"/swm/fileUpload/preview"路径
+            result.put("previewUrl", "fileUpload/preview?objectName=" + objectName);
             result.put("businessType", businessType);
             result.put("recordId", recordId);
 
@@ -188,6 +190,105 @@ public class SwmFileUploadController extends BaseController {
     }
 
     /**
+     * 直接预览文件
+     */
+    @GetMapping(value = "preview")
+    @ApiOperation("直接预览文件")
+    public void preview(
+            @RequestParam("objectName") String objectName,
+            HttpServletResponse response) {
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+
+        try {
+            logger.info("预览文件，对象名: {}", objectName);
+
+            // 获取文件类型
+            String contentType = getContentTypeByFileName(objectName);
+            response.setContentType(contentType);
+
+            // 从MinIO获取文件流
+            inputStream = minioUtils.getObject(objectName);
+
+            // 检查文件流是否为空
+            if (inputStream == null) {
+                logger.error("无法获取文件流，文件可能不存在: {}", objectName);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                response.getWriter().write("文件不存在或无法访问");
+                return;
+            }
+
+            // 获取输出流并写入文件内容
+            outputStream = response.getOutputStream();
+            byte[] buffer = new byte[4096]; // 增大缓冲区大小提高性能
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+
+            logger.info("文件预览完成: {}", objectName);
+
+        } catch (Exception e) {
+            logger.error("文件预览失败: {}", e.getMessage(), e);
+
+            // 检查响应是否已经提交
+            if (!response.isCommitted()) {
+                try {
+                    response.reset(); // 重置响应
+                    response.setContentType("text/plain;charset=UTF-8");
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    response.getWriter().write("文件预览失败：" + e.getMessage());
+                } catch (IOException ex) {
+                    logger.error("写入错误响应失败", ex);
+                }
+            }
+        } finally {
+            // 关闭资源
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    logger.error("关闭文件输入流失败", e);
+                }
+            }
+
+            // 输出流由容器管理，通常不需要关闭
+        }
+    }
+
+    /**
+     * 获取预览URL（带有时效性的访问链接）
+     */
+    @GetMapping(value = "getPreviewUrl")
+    @ResponseBody
+    @ApiOperation("获取预览URL")
+    public Map<String, Object> getPreviewUrl(
+            @RequestParam("objectName") String objectName,
+            @RequestParam(value = "expiry", required = false, defaultValue = "1") Integer expiry) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            logger.info("获取预览URL，对象名: {}, 有效期: {}小时", objectName, expiry);
+
+            // 调用MinioUtils生成预签名URL，默认有效期为1小时
+            String previewUrl = minioUtils.getPresignedUrl(objectName, expiry);
+
+            result.put("result", "success");
+            result.put("url", previewUrl);
+            result.put("expiry", expiry);
+            result.put("expiryUnit", "小时");
+
+            logger.info("预览URL生成成功: {}", previewUrl);
+        } catch (Exception e) {
+            logger.error("获取预览URL失败", e);
+            result.put("result", "error");
+            result.put("message", "获取预览URL失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
      * 删除文件
      */
     @PostMapping(value = "delete")
@@ -214,5 +315,45 @@ public class SwmFileUploadController extends BaseController {
             result.put("message", "文件删除失败：" + e.getMessage());
         }
         return result;
+    }
+
+    /**
+     * 根据文件名获取内容类型
+     * 
+     * @param fileName 文件名
+     * @return 内容类型
+     */
+    private String getContentTypeByFileName(String fileName) {
+        String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        switch (extension) {
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+            case "png":
+                return "image/png";
+            case "gif":
+                return "image/gif";
+            case "pdf":
+                return "application/pdf";
+            case "doc":
+                return "application/msword";
+            case "docx":
+                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case "xls":
+                return "application/vnd.ms-excel";
+            case "xlsx":
+                return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            case "txt":
+                return "text/plain";
+            case "html":
+            case "htm":
+                return "text/html";
+            case "mp4":
+                return "video/mp4";
+            case "mp3":
+                return "audio/mpeg";
+            default:
+                return "application/octet-stream";
+        }
     }
 }
