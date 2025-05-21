@@ -35,7 +35,7 @@ import com.jeesite.modules.swm.service.SwmVoiceTemplateService;
 /**
  * 一键召回记录表控制器
  * 
- * @author auto
+ * @author zwf
  */
 @Controller
 @RequestMapping(value = "${adminPath}/swmOneClickRecall")

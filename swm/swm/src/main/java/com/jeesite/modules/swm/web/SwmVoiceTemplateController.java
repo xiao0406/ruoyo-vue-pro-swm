@@ -1,6 +1,6 @@
 /**
  * 语音模板表控制器
- * @author auto
+ * @author zwf
  * @date 2024-05-29
  */
 package com.jeesite.modules.swm.web;
@@ -33,7 +33,7 @@ import com.jeesite.modules.swm.service.SwmVoiceTemplateService;
 /**
  * 语音模板表控制器
  * 
- * @author auto
+ * @author zwf
  */
 @Controller
 @RequestMapping(value = "${adminPath}/swmVoiceTemplate")

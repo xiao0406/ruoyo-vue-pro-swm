@@ -1,6 +1,6 @@
 /**
  * 语音模板表服务接口
- * @author auto
+ * @author zwf
  * @date 2024-05-29
  */
 package com.jeesite.modules.swm.service;
@@ -14,7 +14,7 @@ import com.jeesite.modules.swm.entity.SwmVoiceTemplate;
 /**
  * 语音模板表服务接口
  * 
- * @author auto
+ * @author zwf
  */
 public interface SwmVoiceTemplateService {
 

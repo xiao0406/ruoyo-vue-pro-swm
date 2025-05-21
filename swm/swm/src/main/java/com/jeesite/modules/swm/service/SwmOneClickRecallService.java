@@ -1,6 +1,6 @@
 /**
  * 一键召回记录表服务接口
- * @author auto
+ * @author zwf
  * @date 2024-05-30
  */
 package com.jeesite.modules.swm.service;
@@ -13,7 +13,7 @@ import com.jeesite.modules.swm.entity.SwmOneClickRecall;
 /**
  * 一键召回记录表服务接口
  * 
- * @author auto
+ * @author zwf
  */
 public interface SwmOneClickRecallService {
 

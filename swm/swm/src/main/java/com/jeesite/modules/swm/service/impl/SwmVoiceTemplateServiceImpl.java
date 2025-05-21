@@ -1,6 +1,6 @@
 /**
  * 语音模板表服务实现类
- * @author auto
+ * @author zwf
  * @date 2024-05-29
  */
 package com.jeesite.modules.swm.service.impl;
@@ -20,7 +20,7 @@ import com.jeesite.modules.swm.service.SwmVoiceTemplateService;
 /**
  * 语音模板表服务实现类
  * 
- * @author auto
+ * @author zwf
  */
 @Service
 @Transactional(readOnly = true)

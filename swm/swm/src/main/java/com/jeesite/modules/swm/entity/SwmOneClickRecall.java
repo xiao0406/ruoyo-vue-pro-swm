@@ -1,6 +1,6 @@
 /**
  * 一键召回记录表实体类
- * @author auto
+ * @author zwf
  * @date 2024-05-30
  */
 package com.jeesite.modules.swm.entity;
@@ -18,7 +18,7 @@ import java.util.Date;
 /**
  * 一键召回记录表实体类
  * 
- * @author auto
+ * @author zwf
  */
 @Table(name = "swm_oneclick_recall", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),

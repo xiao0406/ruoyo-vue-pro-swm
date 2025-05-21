@@ -1,6 +1,6 @@
 /**
  * 语音模板表实体类
- * @author auto
+ * @author zwf
  * @date 2024-05-29
  */
 package com.jeesite.modules.swm.entity;
@@ -16,7 +16,7 @@ import javax.validation.constraints.NotBlank;
 /**
  * 语音模板表实体类
  * 
- * @author auto
+ * @author zwf
  */
 @Table(name = "swm_voice_template", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),

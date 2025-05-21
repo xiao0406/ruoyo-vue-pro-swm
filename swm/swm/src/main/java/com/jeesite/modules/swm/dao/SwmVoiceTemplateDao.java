@@ -1,6 +1,6 @@
 /**
  * 语音模板表DAO接口
- * @author auto
+ * @author zwf
  * @date 2024-05-29
  */
 package com.jeesite.modules.swm.dao;
@@ -12,7 +12,7 @@ import com.jeesite.modules.swm.entity.SwmVoiceTemplate;
 /**
  * 语音模板表DAO接口
  * 
- * @author auto
+ * @author zwf
  */
 @MyBatisDao
 public interface SwmVoiceTemplateDao extends CrudDao<SwmVoiceTemplate> {
