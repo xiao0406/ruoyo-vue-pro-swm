@@ -599,7 +599,27 @@ public class SwmSafetyEducationController extends BaseController {
                         fileInfo.put("id", fileId); // 保持与前端一致
                         fileInfo.put("fileName",
                                 item.get("fileName") != null ? item.get("fileName").toString() : "未命名文件");
-                        fileInfo.put("url", item.get("url") != null ? item.get("url").toString() : "");
+                        String url = item.get("url") != null ? item.get("url").toString() : "";
+                        fileInfo.put("url", url);
+
+                        // 添加预览URL
+                        // 从URL中提取objectName或构造预览路径
+                        String previewUrl = "";
+                        if (item.get("previewUrl") != null) {
+                            // 如果原数据已经包含previewUrl，直接使用
+                            previewUrl = item.get("previewUrl").toString();
+                        } else if (url.contains("/swm/")) {
+                            // 尝试从URL中提取对象路径
+                            String objectName = url.substring(url.indexOf("/swm/") + 5);
+                            if (objectName.indexOf("/") > 0) {
+                                objectName = objectName.substring(objectName.indexOf("/") + 1);
+                                previewUrl = "fileUpload/preview?objectName=" + objectName;
+                            }
+                        } else {
+                            // 如果无法提取，则使用通用格式
+                            previewUrl = "fileUpload/preview?objectName=safety-education/" + id + "/" + fileId;
+                        }
+                        fileInfo.put("previewUrl", previewUrl);
 
                         fileList.add(fileInfo);
                     }
@@ -620,6 +640,11 @@ public class SwmSafetyEducationController extends BaseController {
                         // 由于没有URL信息，可以尝试从MinIO构建一个
                         String url = constructFileUrl(fileId.trim(), id);
                         fileInfo.put("url", url);
+
+                        // 添加预览URL
+                        String previewUrl = "fileUpload/preview?objectName=safety-education/" + id + "/"
+                                + fileId.trim();
+                        fileInfo.put("previewUrl", previewUrl);
 
                         fileList.add(fileInfo);
                     }
