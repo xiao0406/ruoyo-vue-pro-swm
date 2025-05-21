@@ -1,0 +1,527 @@
+package com.jeesite.modules.swm.service;
+
+import com.jeesite.common.entity.Page;
+import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
+import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
+import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
+
+/**
+ * 日考勤统计表Service
+ * @author zwf
+ * @version 2025-05-20
+ */
+@Service
+@Transactional(readOnly = true)
+public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao, SwmDailyAttendance> {
+    
+    /**
+     * 获取单条数据
+     * @param swmDailyAttendance
+     * @return
+     */
+    @Override
+    public SwmDailyAttendance get(SwmDailyAttendance swmDailyAttendance) {
+        return super.get(swmDailyAttendance);
+    }
+    
+    /**
+     * 查询分页数据
+     * @param swmDailyAttendance
+     * @return
+     */
+    @Override
+    public Page<SwmDailyAttendance> findPage(SwmDailyAttendance swmDailyAttendance) {
+        // 处理日期，去除时间部分
+        if (swmDailyAttendance.getAttendanceDate() != null) {
+            swmDailyAttendance.setAttendanceDate(truncateTime(swmDailyAttendance.getAttendanceDate()));
+        }
+        if (swmDailyAttendance.getBeginAttendanceDate() != null) {
+            swmDailyAttendance.setBeginAttendanceDate(truncateTime(swmDailyAttendance.getBeginAttendanceDate()));
+        }
+        if (swmDailyAttendance.getEndAttendanceDate() != null) {
+            swmDailyAttendance.setEndAttendanceDate(truncateTime(swmDailyAttendance.getEndAttendanceDate()));
+        }
+        return super.findPage(swmDailyAttendance);
+    }
+    
+    /**
+     * 查询列表数据
+     * @param swmDailyAttendance
+     * @return
+     */
+    @Override
+    public List<SwmDailyAttendance> findList(SwmDailyAttendance swmDailyAttendance) {
+        // 处理日期，去除时间部分
+        if (swmDailyAttendance.getAttendanceDate() != null) {
+            swmDailyAttendance.setAttendanceDate(truncateTime(swmDailyAttendance.getAttendanceDate()));
+        }
+        if (swmDailyAttendance.getBeginAttendanceDate() != null) {
+            swmDailyAttendance.setBeginAttendanceDate(truncateTime(swmDailyAttendance.getBeginAttendanceDate()));
+        }
+        if (swmDailyAttendance.getEndAttendanceDate() != null) {
+            swmDailyAttendance.setEndAttendanceDate(truncateTime(swmDailyAttendance.getEndAttendanceDate()));
+        }
+        return super.findList(swmDailyAttendance);
+    }
+    
+    /**
+     * 保存数据（插入或更新）
+     * 保存时自动计算：实际考勤时长、怠工时长、今日达成率
+     * @param swmDailyAttendance
+     */
+    @Override
+    @Transactional(readOnly = false)
+    public void save(SwmDailyAttendance swmDailyAttendance) {
+        // 如果是新记录，进行数据初始化
+        if (swmDailyAttendance.getIsNewRecord()) {
+            // 设置默认值，避免空指针异常
+            if (swmDailyAttendance.getScheduledHours() == null) {
+                swmDailyAttendance.setScheduledHours(BigDecimal.ZERO);
+            }
+            if (swmDailyAttendance.getActualHours() == null) {
+                swmDailyAttendance.setActualHours(BigDecimal.ZERO);
+            }
+            if (swmDailyAttendance.getIdleHours() == null) {
+                swmDailyAttendance.setIdleHours(BigDecimal.ZERO);
+            }
+        }
+        
+        // 计算实际考勤时长（如果上下班打卡时间都存在）
+        if (swmDailyAttendance.getClockInTime() != null && swmDailyAttendance.getClockOutTime() != null) {
+            // 计算上下班打卡时间的时间差（毫秒）
+            long timeDiffMs = swmDailyAttendance.getClockOutTime().getTime() - swmDailyAttendance.getClockInTime().getTime();
+            
+            // 转换为小时（四舍五入到2位小数）
+            BigDecimal actualHours = new BigDecimal(timeDiffMs / (1000.0 * 60 * 60))
+                    .setScale(2, RoundingMode.HALF_UP);
+            
+            // 设置实际考勤时长
+            swmDailyAttendance.setActualHours(actualHours);
+            
+            // 计算怠工时长 = 应考勤时长 - 实际考勤时长（如果为负，则怠工时长为0）
+            if (swmDailyAttendance.getScheduledHours() != null) {
+                BigDecimal idleHours = swmDailyAttendance.getScheduledHours().subtract(actualHours);
+                if (idleHours.compareTo(BigDecimal.ZERO) > 0) {
+                    swmDailyAttendance.setIdleHours(idleHours);
+                } else {
+                    swmDailyAttendance.setIdleHours(BigDecimal.ZERO);
+                }
+            }
+        }
+        
+        // 计算今日达成率 = 实际考勤时长 / 应考勤时长
+        if (swmDailyAttendance.getScheduledHours() != null && 
+            swmDailyAttendance.getActualHours() != null && 
+            swmDailyAttendance.getScheduledHours().compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal dailyAchievementRate = swmDailyAttendance.getActualHours()
+                    .divide(swmDailyAttendance.getScheduledHours(), 4, RoundingMode.HALF_UP);
+            swmDailyAttendance.setDailyAchievementRate(dailyAchievementRate);
+        } else {
+            swmDailyAttendance.setDailyAchievementRate(BigDecimal.ZERO);
+        }
+        
+        super.save(swmDailyAttendance);
+    }
+    
+    /**
+     * 更新状态
+     * @param swmDailyAttendance
+     */
+    @Override
+    @Transactional(readOnly = false)
+    public void updateStatus(SwmDailyAttendance swmDailyAttendance) {
+        super.updateStatus(swmDailyAttendance);
+    }
+    
+    /**
+     * 删除数据
+     * @param swmDailyAttendance
+     */
+    @Override
+    @Transactional(readOnly = false)
+    public void delete(SwmDailyAttendance swmDailyAttendance) {
+        super.delete(swmDailyAttendance);
+    }
+    
+    /**
+     * 处理日期，去除时间部分，只保留日期部分
+     * @param date 需要处理的日期
+     * @return 只包含日期部分的Date对象
+     */
+    private Date truncateTime(Date date) {
+        if (date == null) {
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+    
+    /**
+     * 根据员工姓名和日期查询考勤记录
+     * @param employeeName 员工姓名
+     * @param attendanceDate 考勤日期
+     * @return 考勤记录
+     */
+    public SwmDailyAttendance findByEmployeeAndDate(String employeeName, Date attendanceDate) {
+        // 处理日期，去除时间部分
+        attendanceDate = truncateTime(attendanceDate);
+        return dao.findByEmployeeAndDate(employeeName, attendanceDate);
+    }
+    
+    /**
+     * 根据员工姓名和日期范围查询考勤记录
+     * @param employeeName 员工姓名
+     * @param beginDate 开始日期
+     * @param endDate 结束日期
+     * @return 考勤记录列表
+     */
+    public List<SwmDailyAttendance> findByEmployeeAndDateRange(String employeeName, Date beginDate, Date endDate) {
+        // 处理日期，去除时间部分
+        beginDate = truncateTime(beginDate);
+        endDate = truncateTime(endDate);
+        return dao.findByEmployeeAndDateRange(employeeName, beginDate, endDate);
+    }
+    
+    /**
+     * 根据日期查询所有考勤记录
+     * @param attendanceDate 考勤日期
+     * @return 考勤记录列表
+     */
+    public List<SwmDailyAttendance> findByDate(Date attendanceDate) {
+        // 处理日期，去除时间部分
+        attendanceDate = truncateTime(attendanceDate);
+        return dao.findByDate(attendanceDate);
+    }
+    
+    /**
+     * 根据员工姓名和月份查询考勤记录
+     * @param employeeName 员工姓名
+     * @param year 年份
+     * @param month 月份 (1-12)
+     * @return 考勤记录列表
+     */
+    public List<SwmDailyAttendance> findByEmployeeAndMonth(String employeeName, int year, int month) {
+        return dao.findByEmployeeAndMonth(employeeName, year, month);
+    }
+    
+    /**
+     * 计算员工某月的统计数据
+     * @param employeeName 员工姓名
+     * @param year 年份
+     * @param month 月份 (1-12)
+     * @return 月统计数据
+     */
+    public SwmAttendanceSummary calculateMonthlyStats(String employeeName, int year, int month) {
+        // 获取该员工该月所有日考勤记录
+        List<SwmDailyAttendance> dailyRecords = findByEmployeeAndMonth(employeeName, year, month);
+        
+        SwmAttendanceSummary summary = new SwmAttendanceSummary();
+        summary.setEmployeeName(employeeName);
+        summary.setMonth(String.format("%04d-%02d", year, month));
+        
+        // 初始化统计数据
+        BigDecimal totalScheduledDays = BigDecimal.ZERO;
+        BigDecimal totalActualDays = BigDecimal.ZERO;
+        BigDecimal totalScheduledHours = BigDecimal.ZERO;
+        BigDecimal totalActualHours = BigDecimal.ZERO;
+        BigDecimal totalIdleHours = BigDecimal.ZERO;
+        
+        for (SwmDailyAttendance record : dailyRecords) {
+            // 累计应出勤天数（每条记录算1天）
+            totalScheduledDays = totalScheduledDays.add(BigDecimal.ONE);
+            
+            // 累计实际出勤天数（根据实际考勤时长判断，大于0即为出勤）
+            if (record.getActualHours() != null && record.getActualHours().compareTo(BigDecimal.ZERO) > 0) {
+                totalActualDays = totalActualDays.add(BigDecimal.ONE);
+            }
+            
+            // 累计应考勤时间
+            if (record.getScheduledHours() != null) {
+                totalScheduledHours = totalScheduledHours.add(record.getScheduledHours());
+            }
+            
+            // 累计实际工作时间
+            if (record.getActualHours() != null) {
+                totalActualHours = totalActualHours.add(record.getActualHours());
+            }
+            
+            // 累计怠工时长
+            if (record.getIdleHours() != null) {
+                totalIdleHours = totalIdleHours.add(record.getIdleHours());
+            }
+        }
+        
+        // 设置统计结果
+        summary.setScheduledDays(totalScheduledDays);
+        summary.setActualDays(totalActualDays);
+        summary.setScheduledHours(totalScheduledHours);
+        summary.setActualHours(totalActualHours);
+        summary.setIdleHours(totalIdleHours);
+        
+        // 计算出勤率 = 实际出勤天数 / 应出勤天数
+        if (totalScheduledDays.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal attendanceRate = totalActualDays.divide(totalScheduledDays, 4, RoundingMode.HALF_UP);
+            summary.setAttendanceRate(attendanceRate);
+        } else {
+            summary.setAttendanceRate(BigDecimal.ZERO);
+        }
+        
+        // 计算考勤达成率 = 实际工作时间 / 应考勤时间
+        if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal attendanceAchievementRate = totalActualHours.divide(totalScheduledHours, 4, RoundingMode.HALF_UP);
+            summary.setAttendanceAchievementRate(attendanceAchievementRate);
+        } else {
+            summary.setAttendanceAchievementRate(BigDecimal.ZERO);
+        }
+        
+        return summary;
+    }
+    
+    /**
+     * 根据员工ID和日期查询考勤记录
+     * @param employeeId 员工ID
+     * @param attendanceDate 考勤日期
+     * @return 考勤记录
+     */
+    public SwmDailyAttendance findByEmployeeIdAndDate(String employeeId, Date attendanceDate) {
+        // 处理日期，去除时间部分
+        attendanceDate = truncateTime(attendanceDate);
+        return dao.findByEmployeeIdAndDate(employeeId, attendanceDate);
+    }
+    
+    /**
+     * 根据员工ID和日期范围查询考勤记录
+     * @param employeeId 员工ID
+     * @param beginDate 开始日期
+     * @param endDate 结束日期
+     * @return 考勤记录列表
+     */
+    public List<SwmDailyAttendance> findByEmployeeIdAndDateRange(String employeeId, Date beginDate, Date endDate) {
+        // 处理日期，去除时间部分
+        beginDate = truncateTime(beginDate);
+        endDate = truncateTime(endDate);
+        return dao.findByEmployeeIdAndDateRange(employeeId, beginDate, endDate);
+    }
+    
+    /**
+     * 根据员工ID和月份查询考勤记录
+     * @param employeeId 员工ID
+     * @param year 年份
+     * @param month 月份 (1-12)
+     * @return 考勤记录列表
+     */
+    public List<SwmDailyAttendance> findByEmployeeIdAndMonth(String employeeId, int year, int month) {
+        return dao.findByEmployeeIdAndMonth(employeeId, year, month);
+    }
+    
+    /**
+     * 计算员工某月的统计数据
+     * @param employeeId 员工ID
+     * @param employeeName 员工姓名
+     * @param year 年份
+     * @param month 月份 (1-12)
+     * @return 月统计数据
+     */
+    public SwmAttendanceSummary calculateMonthlyStatsById(String employeeId, String employeeName, int year, int month) {
+        // 获取该员工该月所有日考勤记录
+        List<SwmDailyAttendance> dailyRecords = findByEmployeeIdAndMonth(employeeId, year, month);
+        
+        SwmAttendanceSummary summary = new SwmAttendanceSummary();
+        summary.setEmployeeId(employeeId);
+        summary.setEmployeeName(employeeName);
+        summary.setMonth(String.format("%04d-%02d", year, month));
+        
+        // 初始化统计数据
+        BigDecimal totalScheduledDays = BigDecimal.ZERO;
+        BigDecimal totalActualDays = BigDecimal.ZERO;
+        BigDecimal totalScheduledHours = BigDecimal.ZERO;
+        BigDecimal totalActualHours = BigDecimal.ZERO;
+        BigDecimal totalIdleHours = BigDecimal.ZERO;
+        
+        for (SwmDailyAttendance record : dailyRecords) {
+            // 累计应出勤天数（每条记录算1天）
+            totalScheduledDays = totalScheduledDays.add(BigDecimal.ONE);
+            
+            // 累计实际出勤天数（根据实际考勤时长判断，大于0即为出勤）
+            if (record.getActualHours() != null && record.getActualHours().compareTo(BigDecimal.ZERO) > 0) {
+                totalActualDays = totalActualDays.add(BigDecimal.ONE);
+            }
+            
+            // 累计应考勤时间
+            if (record.getScheduledHours() != null) {
+                totalScheduledHours = totalScheduledHours.add(record.getScheduledHours());
+            }
+            
+            // 累计实际工作时间
+            if (record.getActualHours() != null) {
+                totalActualHours = totalActualHours.add(record.getActualHours());
+            }
+            
+            // 累计怠工时长
+            if (record.getIdleHours() != null) {
+                totalIdleHours = totalIdleHours.add(record.getIdleHours());
+            }
+        }
+        
+        // 设置统计结果
+        summary.setScheduledDays(totalScheduledDays);
+        summary.setActualDays(totalActualDays);
+        summary.setScheduledHours(totalScheduledHours);
+        summary.setActualHours(totalActualHours);
+        summary.setIdleHours(totalIdleHours);
+        
+        // 计算出勤率 = 实际出勤天数 / 应出勤天数
+        if (totalScheduledDays.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal attendanceRate = totalActualDays.divide(totalScheduledDays, 4, RoundingMode.HALF_UP);
+            summary.setAttendanceRate(attendanceRate);
+        } else {
+            summary.setAttendanceRate(BigDecimal.ZERO);
+        }
+        
+        // 计算考勤达成率 = 实际工作时间 / 应考勤时间
+        if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal attendanceAchievementRate = totalActualHours.divide(totalScheduledHours, 4, RoundingMode.HALF_UP);
+            summary.setAttendanceAchievementRate(attendanceAchievementRate);
+        } else {
+            summary.setAttendanceAchievementRate(BigDecimal.ZERO);
+        }
+        
+        return summary;
+    }
+    
+    /**
+     * 获取员工月度考勤图表数据
+     * 根据员工ID和月份查询日考勤数据，返回适合图表展示的格式
+     * 
+     * @param employeeId 员工ID
+     * @param year 年份
+     * @param month 月份 (1-12)
+     * @return 包含图表数据的Map，包括xAxis(日期)、scheduledHours(应考勤时长)、idleHours(怠工时长)、efficiency(功效)
+     */
+    public Map<String, Object> getMonthlyChartData(String employeeId, int year, int month) {
+        // 获取该员工该月的所有考勤记录
+        List<SwmDailyAttendance> records = findByEmployeeIdAndMonth(employeeId, year, month);
+        
+        // 获取该月的天数
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(year, month - 1, 1); // 月份从0开始，所以减1
+        int daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+        
+        // 准备返回数据
+        List<String> xAxis = new ArrayList<>(); // 日期 (1-31)
+        List<BigDecimal> scheduledHours = new ArrayList<>(); // 应考勤时长
+        List<BigDecimal> idleHours = new ArrayList<>(); // 怠工时长
+        List<BigDecimal> efficiency = new ArrayList<>(); // 功效
+        
+        // 按照日期将记录映射到对应天数
+        Map<Integer, SwmDailyAttendance> recordsByDay = new HashMap<>();
+        for (SwmDailyAttendance record : records) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(record.getAttendanceDate());
+            int day = cal.get(Calendar.DAY_OF_MONTH);
+            recordsByDay.put(day, record);
+        }
+        
+        // 填充数据
+        for (int day = 1; day <= daysInMonth; day++) {
+            // 添加X轴日期
+            xAxis.add(String.valueOf(day));
+            
+            // 如果该天有记录，则添加对应的数据；否则添加0
+            SwmDailyAttendance record = recordsByDay.get(day);
+            if (record != null) {
+                scheduledHours.add(record.getScheduledHours() != null ? record.getScheduledHours() : BigDecimal.ZERO);
+                idleHours.add(record.getIdleHours() != null ? record.getIdleHours() : BigDecimal.ZERO);
+                efficiency.add(record.getDailyEfficiency() != null ? record.getDailyEfficiency() : BigDecimal.ZERO);
+            } else {
+                scheduledHours.add(BigDecimal.ZERO);
+                idleHours.add(BigDecimal.ZERO);
+                efficiency.add(BigDecimal.ZERO);
+            }
+        }
+        
+        // 构建结果
+        Map<String, Object> data = new HashMap<>();
+        data.put("xAxis", xAxis);
+        data.put("scheduledHours", scheduledHours);
+        data.put("idleHours", idleHours);
+        data.put("efficiency", efficiency);
+        
+        return data;
+    }
+    
+    /**
+     * 获取员工月度考勤时长数据
+     * 根据员工ID和月份查询日考勤数据，返回应考勤时长和实际考勤时长
+     * 
+     * @param employeeId 员工ID
+     * @param year 年份
+     * @param month 月份 (1-12)
+     * @return 包含图表数据的Map，包括xAxis(日期)、scheduledHours(应考勤时长)、actualHours(实际考勤时长)
+     */
+    public Map<String, Object> getMonthlyAttendanceData(String employeeId, int year, int month) {
+        // 获取该员工该月的所有考勤记录
+        List<SwmDailyAttendance> records = findByEmployeeIdAndMonth(employeeId, year, month);
+        
+        // 获取该月的天数
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(year, month - 1, 1); // 月份从0开始，所以减1
+        int daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+        
+        // 准备返回数据
+        List<String> xAxis = new ArrayList<>(); // 日期 (1-31)
+        List<BigDecimal> scheduledHours = new ArrayList<>(); // 应考勤时长
+        List<BigDecimal> actualHours = new ArrayList<>(); // 实际考勤时长
+        
+        // 按照日期将记录映射到对应天数
+        Map<Integer, SwmDailyAttendance> recordsByDay = new HashMap<>();
+        for (SwmDailyAttendance record : records) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(record.getAttendanceDate());
+            int day = cal.get(Calendar.DAY_OF_MONTH);
+            recordsByDay.put(day, record);
+        }
+        
+        // 填充数据
+        for (int day = 1; day <= daysInMonth; day++) {
+            // 添加X轴日期
+            xAxis.add(String.valueOf(day));
+            
+            // 如果该天有记录，则添加对应的数据；否则添加0
+            SwmDailyAttendance record = recordsByDay.get(day);
+            if (record != null) {
+                scheduledHours.add(record.getScheduledHours() != null ? record.getScheduledHours() : BigDecimal.ZERO);
+                actualHours.add(record.getActualHours() != null ? record.getActualHours() : BigDecimal.ZERO);
+            } else {
+                scheduledHours.add(BigDecimal.ZERO);
+                actualHours.add(BigDecimal.ZERO);
+            }
+        }
+        
+        // 构建结果
+        Map<String, Object> data = new HashMap<>();
+        data.put("xAxis", xAxis);
+        data.put("scheduledHours", scheduledHours);
+        data.put("actualHours", actualHours);
+        
+        return data;
+    }
+} 

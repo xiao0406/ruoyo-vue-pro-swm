@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmAttendanceSummaryDao">
+    
+    <!-- 查询数据 -->
+    <select id="findList" resultType="SwmAttendanceSummary">
+        SELECT ${sqlMap.column.toSql()}
+        FROM ${sqlMap.table.toSql()}
+        <where>
+            ${sqlMap.where.toSql()}
+            <!-- 自定义条件 -->
+            <if test="sqlMap.where.sqlSegment != null and sqlMap.where.sqlSegment != ''">
+                AND (${sqlMap.where.sqlSegment})
+            </if>
+            <if test="employeeId != null and employeeId != ''">
+                AND a.employee_id = #{employeeId}
+            </if>
+            <if test="employeeName != null and employeeName != ''">
+                AND a.employee_name LIKE concat('%', #{employeeName}, '%')
+            </if>
+            <if test="department != null and department != ''">
+                AND a.department LIKE concat('%', #{department}, '%')
+            </if>
+            <if test="workProcess != null and workProcess != ''">
+                AND a.work_process LIKE concat('%', #{workProcess}, '%')
+            </if>
+            <if test="team != null and team != ''">
+                AND a.team LIKE concat('%', #{team}, '%')
+            </if>
+            <if test="jobType != null and jobType != ''">
+                AND a.job_type LIKE concat('%', #{jobType}, '%')
+            </if>
+            <if test="workShift != null and workShift != ''">
+                AND a.work_shift LIKE concat('%', #{workShift}, '%')
+            </if>
+            <if test="month != null and month != ''">
+                AND a.month = #{month}
+            </if>
+        </where>
+        ORDER BY ${sqlMap.order.toSql()}
+    </select>
+    
+    <!-- 根据月份查询考勤统计记录 -->
+    <select id="findByMonth" resultType="SwmAttendanceSummary">
+        SELECT ${sqlMap.column.toSql()}
+        FROM ${sqlMap.table.toSql()}
+        <where>
+            a.month = #{month}
+        </where>
+        ORDER BY a.create_date DESC
+    </select>
+    
+    <!-- 根据员工ID和月份查询考勤统计记录 -->
+    <select id="findByEmployeeIdAndMonth" resultType="SwmAttendanceSummary">
+        SELECT ${sqlMap.column.toSql()}
+        FROM ${sqlMap.table.toSql()}
+        <where>
+            a.employee_id = #{param1}
+            AND a.month = #{param2}
+        </where>
+    </select>
+    
+    <!-- 根据员工姓名和月份查询考勤统计记录 -->
+    <select id="findByEmployeeAndMonth" resultType="SwmAttendanceSummary">
+        SELECT ${sqlMap.column.toSql()}
+        FROM ${sqlMap.table.toSql()}
+        <where>
+            a.employee_name = #{param1}
+            AND a.month = #{param2}
+        </where>
+    </select>
+    
+    <!-- 根据部门和月份查询考勤统计记录 -->
+    <select id="findByDepartmentAndMonth" resultType="SwmAttendanceSummary">
+        SELECT ${sqlMap.column.toSql()}
+        FROM ${sqlMap.table.toSql()}
+        <where>
+            a.department = #{param1}
+            AND a.month = #{param2}
+        </where>
+        ORDER BY a.employee_name ASC
+    </select>
+    
+</mapper> 

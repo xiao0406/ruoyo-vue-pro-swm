@@ -5,7 +5,9 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
+import com.jeesite.modules.swm.entity.SwmHandleRecord;
 import com.jeesite.modules.swm.service.SwmWarningManagementService;
+import com.jeesite.modules.swm.service.SwmHandleRecordService;
 import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
 import io.swagger.annotations.Api;
@@ -28,7 +30,7 @@ import java.util.stream.Collectors;
 /**
  * 预警管理Controller
  * 
- * @author auto create
+ * @author zwf
  * @version 2025-05-16
  */
 @Controller
@@ -38,6 +40,9 @@ public class SwmWarningManagementController extends BaseController {
 
     @Autowired
     private SwmWarningManagementService swmWarningManagementService;
+
+    @Autowired
+    private SwmHandleRecordService swmHandleRecordService;
 
     /**
      * 获取数据
@@ -74,7 +79,7 @@ public class SwmWarningManagementController extends BaseController {
                 ", warningContent=" + swmWarningManagement.getWarningContent() +
                 ", handleStatus=" + swmWarningManagement.getHandleStatus());
 
-        // 检查字典数据是否正确加载
+        // 检查字典数据是否正确加载12
         System.out.println("字典检查 - 预警类型:");
         List<DictData> warningTypeDict = DictUtils.getDictList("warning_type_enum");
         if (warningTypeDict != null) {
@@ -283,25 +288,70 @@ public class SwmWarningManagementController extends BaseController {
     @PostMapping(value = "process")
     @ResponseBody
     @ApiOperation("处理预警")
-    public String process(String id, String handler, String handleTime, String handleProcess, String handleStatus) {
+    public String process(String id, String handler, String handleTime, String handleProcess, String handleStatus, String attachment) {
         // 获取预警记录
         SwmWarningManagement swmWarningManagement = swmWarningManagementService.get(id);
         if (swmWarningManagement == null) {
             return renderResult(Global.FALSE, text("预警记录不存在！"));
         }
 
-        // 更新处置信息
-        swmWarningManagement.setHandler(handler);
+        // 解析处置时间
+        Date handleTimeDate;
         if (handleTime != null && !handleTime.isEmpty()) {
-            swmWarningManagement.setHandleTime(DateUtils.parseDate(handleTime));
+            handleTimeDate = DateUtils.parseDate(handleTime);
         } else {
-            swmWarningManagement.setHandleTime(new Date());
+            handleTimeDate = new Date();
         }
+
+        // 更新预警信息的处置信息
+        swmWarningManagement.setHandler(handler);
+        swmWarningManagement.setHandleTime(handleTimeDate);
         swmWarningManagement.setHandleProcess(handleProcess);
         swmWarningManagement.setHandleStatus(handleStatus);
+        
+        // 如果提供了附件路径，更新附件字段
+        if (attachment != null && !attachment.isEmpty()) {
+            // attachment是mediumtext类型，可以存储大量文本数据
+            swmWarningManagement.setAttachment(attachment);
+        }
 
-        // 保存更新
+        // 保存更新的预警记录
         swmWarningManagementService.save(swmWarningManagement);
+        
+        // 同时在处置记录表中创建新记录
+        SwmHandleRecord handleRecord = SwmHandleRecord.createNewRecord();
+        handleRecord.setWarningId(id);
+        
+        // 获取预警内容的文本值
+        String warningContentText = DictUtils.getDictLabel("warning_content_enum", 
+                swmWarningManagement.getWarningContent(), swmWarningManagement.getWarningContent());
+        
+        // 构造处置记录名称：处置personName触发warningContent
+        String recordName = "处置" + swmWarningManagement.getPersonName() + "触发" + warningContentText;
+        handleRecord.setRecordName(recordName);
+        
+        // 构造预警记录：personName触发warningContent (不带"处置"前缀)
+        String warningRecord = swmWarningManagement.getPersonName() + "触发" + warningContentText;
+        handleRecord.setWarningRecord(warningRecord);
+        
+        // 设置报警时间
+        handleRecord.setAlarmTime(swmWarningManagement.getAlarmTime() != null ? 
+                swmWarningManagement.getAlarmTime() : swmWarningManagement.getWarningTime());
+        
+        // 设置处置信息
+        handleRecord.setHandler(handler);
+        handleRecord.setHandleTime(handleTimeDate);
+        handleRecord.setHandleProcess(handleProcess);
+        handleRecord.setHandleStatus(handleStatus);
+        
+        // 设置附件路径
+        if (attachment != null && !attachment.isEmpty()) {
+            // attachment是mediumtext类型，可以存储大量文本数据
+            handleRecord.setAttachment(attachment);
+        }
+        
+        // 保存处置记录
+        swmHandleRecordService.save(handleRecord);
 
         return renderResult(Global.TRUE, text("预警处置成功！"));
     }
