@@ -72,6 +72,12 @@ public class SwmVoiceTemplateServiceImpl extends CrudService<SwmVoiceTemplateDao
     public void delete(SwmVoiceTemplate voiceTemplate) {
         super.delete(voiceTemplate);
     }
+    
+    @Override
+    @Transactional(readOnly = false)
+    public void deletePhysical(SwmVoiceTemplate voiceTemplate) {
+        swmVoiceTemplateDao.deletePhysical(voiceTemplate);
+    }
 
     @Override
     public SwmVoiceTemplate getByTemplateCode(String templateCode) {
@@ -82,5 +88,20 @@ public class SwmVoiceTemplateServiceImpl extends CrudService<SwmVoiceTemplateDao
         voiceTemplate.setTemplateCode(templateCode);
         List<SwmVoiceTemplate> list = findList(voiceTemplate);
         return list.isEmpty() ? null : list.get(0);
+    }
+    
+    @Override
+    public Page<SwmVoiceTemplate> findPageWithoutStatusFilter(Page<SwmVoiceTemplate> page, SwmVoiceTemplate voiceTemplate) {
+        // 设置分页参数
+        voiceTemplate.setPage(page);
+        // 调用DAO直接查询，不过滤status
+        page.setList(swmVoiceTemplateDao.findListWithoutStatusFilter(voiceTemplate));
+        return page;
+    }
+    
+    @Override
+    public List<SwmVoiceTemplate> findListWithStatusZero(SwmVoiceTemplate voiceTemplate) {
+        // 调用DAO查询状态为0的数据
+        return swmVoiceTemplateDao.findListWithStatusZero(voiceTemplate);
     }
 } 

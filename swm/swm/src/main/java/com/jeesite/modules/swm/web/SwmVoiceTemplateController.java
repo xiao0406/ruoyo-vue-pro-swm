@@ -75,6 +75,13 @@ public class SwmVoiceTemplateController extends BaseController {
     @RequestMapping(value = "listData")
     @ResponseBody
     public Page<SwmVoiceTemplate> listData(SwmVoiceTemplate swmVoiceTemplate, HttpServletRequest request, HttpServletResponse response) {
+        // 如果前端没有传status参数，则查询所有状态的数据
+        String statusParam = request.getParameter("status");
+        if (statusParam == null || statusParam.isEmpty()) {
+            // 彻底禁用status过滤，使用自定义SQL查询
+            return swmVoiceTemplateService.findPageWithoutStatusFilter(new Page<>(request, response), swmVoiceTemplate);
+        }
+        // 否则使用前端传递的status值进行查询
         Page<SwmVoiceTemplate> page = swmVoiceTemplateService.findPage(new Page<>(request, response), swmVoiceTemplate);
         return page;
     }
@@ -98,6 +105,15 @@ public class SwmVoiceTemplateController extends BaseController {
                     return map;
                 })
                 .collect(java.util.stream.Collectors.toList());
+    }
+    
+    /**
+     * 查询状态为0的所有数据
+     */
+    @RequestMapping(value = "findStatusZero")
+    @ResponseBody
+    public List<SwmVoiceTemplate> findStatusZero(SwmVoiceTemplate swmVoiceTemplate) {
+        return swmVoiceTemplateService.findListWithStatusZero(swmVoiceTemplate);
     }
     
     /**
@@ -189,6 +205,16 @@ public class SwmVoiceTemplateController extends BaseController {
     @PostMapping(value = "save")
     @ResponseBody
     public String save(@Validated SwmVoiceTemplate swmVoiceTemplate) {
+        // 检查模板名称是否存在（而非模板代码）
+        SwmVoiceTemplate query = new SwmVoiceTemplate();
+        query.setTemplateName(swmVoiceTemplate.getTemplateName());
+        List<SwmVoiceTemplate> existList = swmVoiceTemplateService.findList(query);
+        for (SwmVoiceTemplate exist : existList) {
+            if (!exist.getId().equals(swmVoiceTemplate.getId())) {
+                return renderResult(Global.FALSE, text("保存失败！模板名称 [" + swmVoiceTemplate.getTemplateName() + "] 已存在"));
+            }
+        }
+        // 执行保存
         swmVoiceTemplateService.save(swmVoiceTemplate);
         return renderResult(Global.TRUE, text("保存语音模板成功！"));
     }
@@ -199,7 +225,8 @@ public class SwmVoiceTemplateController extends BaseController {
     @RequestMapping(value = "delete")
     @ResponseBody
     public String delete(SwmVoiceTemplate swmVoiceTemplate) {
-        swmVoiceTemplateService.delete(swmVoiceTemplate);
+        System.out.println("11111"+swmVoiceTemplate.getId());
+        swmVoiceTemplateService.deletePhysical(swmVoiceTemplate);
         return renderResult(Global.TRUE, text("删除语音模板成功！"));
     }
     
