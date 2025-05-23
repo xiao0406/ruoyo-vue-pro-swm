@@ -138,7 +138,7 @@ public class SwmDangerDisposal extends DataEntity<SwmDangerDisposal> {
         this.disposalUser = disposalUser;
     }
 
-    @Length(min = 0, max = 1000, message = "附件信息长度不能超过 1000 个字符")
+    @Length(min = 0, max = 50000, message = "附件信息长度不能超过 50000 个字符")
     public String getAttachment() {
         return attachment;
     }
