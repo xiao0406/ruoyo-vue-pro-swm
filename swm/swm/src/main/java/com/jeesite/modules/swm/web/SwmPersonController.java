@@ -6,6 +6,8 @@ package com.jeesite.modules.swm.web;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelReader;
+import com.alibaba.excel.context.AnalysisContext;
+import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.read.metadata.ReadSheet;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
@@ -19,6 +21,7 @@ import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.utils.BatchOperationsUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -244,26 +247,87 @@ public class SwmPersonController extends BaseController {
         }
 
         try (InputStream inputStream = file.getInputStream()) {
-            // 创建Excel读取监听器
-            SwmPersonImportListener listener = new SwmPersonImportListener(swmPersonService);
+            // 先读取Excel数据进行预处理和检查
+            List<SwmPersonExcelModel> excelData = new ArrayList<>();
+            EasyExcel.read(inputStream, SwmPersonExcelModel.class, new AnalysisEventListener<SwmPersonExcelModel>() {
+                @Override
+                public void invoke(SwmPersonExcelModel data, AnalysisContext context) {
+                    excelData.add(data);
+                }
 
-            // 读取Excel
-            ExcelReader excelReader = EasyExcel.read(inputStream, SwmPersonExcelModel.class, listener).build();
-            ReadSheet readSheet = EasyExcel.readSheet(0).build();
-            excelReader.read(readSheet);
-            excelReader.finish();
+                @Override
+                public void doAfterAllAnalysed(AnalysisContext context) {
+                }
+            }).sheet().doRead();
 
-            // 获取结果
-            List<SwmPerson> successList = listener.getSuccessList();
-            List<SwmPersonExcelModel> errorList = listener.getErrorList();
+            // 检查身份证重复的在职人员
+            List<String> duplicateIdentityCards = new ArrayList<>();
+            Map<String, String> duplicatePersons = new HashMap<>();
 
-            // 返回导入结果
-            result.put("success", true);
-            result.put("total", listener.getTotal());
-            result.put("successCount", successList.size());
-            result.put("errorCount", errorList.size());
-            result.put("message", "导入成功" + successList.size() + "条，失败" + errorList.size() + "条");
+            for (SwmPersonExcelModel model : excelData) {
+                // 只检查具有身份证号的数据
+                if (StringUtils.isNotBlank(model.getIdentityCard())) {
+                    // 检查是否为在职人员
+                    String personnelStatus = model.getPersonnelStatus();
+                    boolean isActive = personnelStatus == null ||
+                            "在职".equals(personnelStatus) ||
+                            "1".equals(personnelStatus) ||
+                            personnelStatus.isEmpty();
 
+                    if (isActive) {
+                        // 查询数据库中是否已存在相同身份证的在职人员
+                        SwmPerson existingPerson = swmPersonService.getByIdentityCard(model.getIdentityCard());
+                        if (existingPerson != null
+                                && SwmPerson.PersonStatusEnum.ACTIVE.equals(existingPerson.getPersonnelStatus())) {
+                            duplicateIdentityCards.add(model.getIdentityCard());
+                            duplicatePersons.put(model.getIdentityCard(),
+                                    String.format("姓名: %s, 身份证: %s", existingPerson.getName(),
+                                            existingPerson.getIdentityCard()));
+                        }
+                    }
+                }
+            }
+
+            // 如果存在重复的在职人员身份证，返回错误
+            if (!duplicateIdentityCards.isEmpty()) {
+                result.put("success", false);
+                result.put("hasDuplicates", true);
+                result.put("duplicateIdentityCards", duplicateIdentityCards);
+                result.put("duplicatePersons", duplicatePersons);
+
+                StringBuilder message = new StringBuilder("导入失败：存在相同身份证的在职人员，请检查以下身份证：");
+                for (String key : duplicatePersons.keySet()) {
+                    message.append("\n").append(duplicatePersons.get(key));
+                }
+                result.put("message", message.toString());
+
+                return result;
+            }
+
+            // 没有重复，继续导入过程
+            // 重新打开文件流进行实际导入
+            try (InputStream secondInputStream = file.getInputStream()) {
+                // 创建Excel读取监听器
+                SwmPersonImportListener listener = new SwmPersonImportListener(swmPersonService);
+
+                // 读取Excel
+                ExcelReader excelReader = EasyExcel.read(secondInputStream, SwmPersonExcelModel.class, listener)
+                        .build();
+                ReadSheet readSheet = EasyExcel.readSheet(0).build();
+                excelReader.read(readSheet);
+                excelReader.finish();
+
+                // 获取结果
+                List<SwmPerson> successList = listener.getSuccessList();
+                List<SwmPersonExcelModel> errorList = listener.getErrorList();
+
+                // 返回导入结果
+                result.put("success", true);
+                result.put("total", listener.getTotal());
+                result.put("successCount", successList.size());
+                result.put("errorCount", errorList.size());
+                result.put("message", "导入成功" + successList.size() + "条，失败" + errorList.size() + "条");
+            }
         } catch (Exception e) {
             logger.error("导入Excel异常", e);
             result.put("success", false);

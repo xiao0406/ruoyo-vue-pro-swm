@@ -37,12 +37,6 @@ public class SwmPersonExcelModel {
     @ExcelProperty("所属工种")
     private String jobType;
 
-    @ExcelProperty("关联安全帽")
-    private String safetyHelmetId;
-
-    @ExcelProperty("入场安全教育")
-    private String safetyEducation;
-
     @ExcelProperty("身份证号码")
     private String identityCard;
 

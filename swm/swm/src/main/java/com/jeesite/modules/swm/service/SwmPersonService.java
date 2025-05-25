@@ -113,4 +113,22 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         return dao.findDepartedByIdentityCard(swmPerson);
     }
 
+    /**
+     * 根据身份证号码查询人员
+     * 
+     * @param identityCard 身份证号码
+     * @return 人员信息，如果不存在则返回null
+     */
+    public SwmPerson getByIdentityCard(String identityCard) {
+        if (identityCard == null || identityCard.trim().isEmpty()) {
+            return null;
+        }
+
+        SwmPerson swmPerson = new SwmPerson();
+        swmPerson.setIdentityCard(identityCard);
+
+        List<SwmPerson> list = dao.findList(swmPerson);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
 }

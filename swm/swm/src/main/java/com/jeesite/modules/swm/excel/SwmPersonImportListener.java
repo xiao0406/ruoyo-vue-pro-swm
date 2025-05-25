@@ -118,14 +118,6 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
             errorMsg.append("人员状态必须为'在职'或'离职'; ");
         }
 
-        // 安全教育状态校验
-        if (StringUtils.isNotBlank(model.getSafetyEducation())
-                && !SAFETY_EDUCATION_MAP.containsKey(model.getSafetyEducation())
-                && !model.getSafetyEducation().equals("0")
-                && !model.getSafetyEducation().equals("1")) {
-            errorMsg.append("安全教育状态必须为'未开始'或'已培训'; ");
-        }
-
         if (errorMsg.length() > 0) {
             throw new RuntimeException(errorMsg.toString());
         }
@@ -144,23 +136,9 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
         person.setWorkProcess(model.getWorkProcess());
         person.setTeam(model.getTeam());
         person.setJobType(model.getJobType());
-        person.setSafetyHelmetId(model.getSafetyHelmetId());
 
-        // 处理安全教育状态
-        String safetyEducation = model.getSafetyEducation();
-        if (StringUtils.isNotBlank(safetyEducation)) {
-            if (SAFETY_EDUCATION_MAP.containsKey(safetyEducation)) {
-                person.setSafetyEducation(SAFETY_EDUCATION_MAP.get(safetyEducation));
-            } else if ("0".equals(safetyEducation) || "1".equals(safetyEducation)) {
-                person.setSafetyEducation(safetyEducation);
-            } else {
-                // 默认为未开始
-                person.setSafetyEducation(SwmPerson.SafetyEducationEnum.NOT_STARTED);
-            }
-        } else {
-            // 默认为未开始
-            person.setSafetyEducation(SwmPerson.SafetyEducationEnum.NOT_STARTED);
-        }
+        // 设置默认安全教育状态为"未开始"
+        person.setSafetyEducation(SwmPerson.SafetyEducationEnum.NOT_STARTED);
 
         person.setIdentityCard(model.getIdentityCard());
         person.setPhoneNumber(model.getPhoneNumber());
