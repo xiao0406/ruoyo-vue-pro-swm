@@ -701,4 +701,47 @@ public class SwmPersonController extends BaseController {
             return renderResult(Global.FALSE, text("解绑安全帽失败：" + e.getMessage()));
         }
     }
+
+    /**
+     * 清除人员关联的安全帽
+     * 用于离职处理过程中，当选择"已归还安全帽"时调用
+     */
+    @PostMapping(value = "clearSafetyHelmet")
+    @ResponseBody
+    public String clearSafetyHelmet(@RequestParam("id") String personId) {
+        try {
+            // 获取人员信息
+            SwmPerson person = swmPersonService.get(personId);
+            if (person == null) {
+                return renderResult(Global.FALSE, text("人员不存在"));
+            }
+
+            // 获取人员当前绑定的安全帽
+            String helmetId = person.getSafetyHelmetId();
+            if (helmetId == null || helmetId.isEmpty()) {
+                return renderResult(Global.TRUE, text("该人员未绑定安全帽"));
+            }
+
+            // 更新安全帽的绑定信息
+            SwmHelmetDevice helmet = swmHelmetDeviceService.getByHelmetId(helmetId);
+            if (helmet != null) {
+                helmet.setAssignedPerson("");
+                helmet.setAssignedWorkshop("");
+                helmet.setAssignedProcess("");
+                helmet.setAssignedTeam("");
+                swmHelmetDeviceService.save(helmet);
+                logger.info("离职归还安全帽：已解除安全帽{}的绑定", helmetId);
+            }
+
+            // 更新人员的安全帽编号
+            person.setSafetyHelmetId(null);
+            swmPersonService.save(person);
+            logger.info("离职归还安全帽：已清除人员{}的安全帽关联", person.getName());
+
+            return renderResult(Global.TRUE, text("安全帽解绑成功"));
+        } catch (Exception e) {
+            logger.error("清除安全帽关联异常", e);
+            return renderResult(Global.FALSE, text("清除安全帽关联失败：" + e.getMessage()));
+        }
+    }
 }
