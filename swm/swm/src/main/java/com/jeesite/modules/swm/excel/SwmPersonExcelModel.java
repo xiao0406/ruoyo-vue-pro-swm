@@ -43,9 +43,6 @@ public class SwmPersonExcelModel {
     @ExcelProperty("手机号码")
     private String phoneNumber;
 
-    @ExcelProperty("人员状态")
-    private String personnelStatus;
-
     @ExcelProperty("备注")
     private String remarks;
 

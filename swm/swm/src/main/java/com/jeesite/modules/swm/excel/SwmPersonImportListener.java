@@ -110,14 +110,6 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
             errorMsg.append("手机号码格式不正确; ");
         }
 
-        // 人员状态校验
-        if (StringUtils.isNotBlank(model.getPersonnelStatus())
-                && !PERSONNEL_STATUS_MAP.containsKey(model.getPersonnelStatus())
-                && !model.getPersonnelStatus().equals("0")
-                && !model.getPersonnelStatus().equals("1")) {
-            errorMsg.append("人员状态必须为'在职'或'离职'; ");
-        }
-
         if (errorMsg.length() > 0) {
             throw new RuntimeException(errorMsg.toString());
         }
@@ -143,21 +135,8 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
         person.setIdentityCard(model.getIdentityCard());
         person.setPhoneNumber(model.getPhoneNumber());
 
-        // 处理人员状态
-        String personnelStatus = model.getPersonnelStatus();
-        if (StringUtils.isNotBlank(personnelStatus)) {
-            if (PERSONNEL_STATUS_MAP.containsKey(personnelStatus)) {
-                person.setPersonnelStatus(PERSONNEL_STATUS_MAP.get(personnelStatus));
-            } else if ("0".equals(personnelStatus) || "1".equals(personnelStatus)) {
-                person.setPersonnelStatus(personnelStatus);
-            } else {
-                // 默认为在职
-                person.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
-            }
-        } else {
-            // 默认为在职
-            person.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
-        }
+        // 设置默认人员状态为"在职"
+        person.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
 
         person.setRemarks(model.getRemarks());
 

@@ -267,12 +267,8 @@ public class SwmPersonController extends BaseController {
             for (SwmPersonExcelModel model : excelData) {
                 // 只检查具有身份证号的数据
                 if (StringUtils.isNotBlank(model.getIdentityCard())) {
-                    // 检查是否为在职人员
-                    String personnelStatus = model.getPersonnelStatus();
-                    boolean isActive = personnelStatus == null ||
-                            "在职".equals(personnelStatus) ||
-                            "1".equals(personnelStatus) ||
-                            personnelStatus.isEmpty();
+                    // 所有导入的人员都是在职状态
+                    boolean isActive = true;
 
                     if (isActive) {
                         // 查询数据库中是否已存在相同身份证的在职人员
