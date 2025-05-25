@@ -24,7 +24,6 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "template_code", attrName = "templateCode", label = "模板代码", isUpdateForce = true),
         @Column(name = "content", attrName = "content", label = "语音内容"),
         @Column(name = "language", attrName = "language", label = "语言"),
-        @Column(name = "status", attrName = "status", label = "状态"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {

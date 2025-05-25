@@ -52,9 +52,25 @@ public interface SwmVoiceTemplateService {
      * 删除数据
      */
     void delete(SwmVoiceTemplate voiceTemplate);
+    
+    /**
+     * 物理删除数据
+     */
+    void deletePhysical(SwmVoiceTemplate voiceTemplate);
 
     /**
      * 根据模板代码获取模板
      */
     SwmVoiceTemplate getByTemplateCode(String templateCode);
+    
+    /**
+     * 查询分页数据（不过滤status）
+     */
+    Page<SwmVoiceTemplate> findPageWithoutStatusFilter(Page<SwmVoiceTemplate> page, SwmVoiceTemplate voiceTemplate);
+    
+    /**
+     * 查询状态为0的所有数据
+     */
+    List<SwmVoiceTemplate> findListWithStatusZero(SwmVoiceTemplate voiceTemplate);
+    
 } 
