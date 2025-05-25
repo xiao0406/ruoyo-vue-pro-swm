@@ -734,7 +734,7 @@ public class SwmPersonController extends BaseController {
             }
 
             // 更新人员的安全帽编号
-            person.setSafetyHelmetId(null);
+            person.setSafetyHelmetId("");
             swmPersonService.save(person);
             logger.info("离职归还安全帽：已清除人员{}的安全帽关联", person.getName());
 
