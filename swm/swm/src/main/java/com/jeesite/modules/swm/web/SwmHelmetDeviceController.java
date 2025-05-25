@@ -226,7 +226,7 @@ public class SwmHelmetDeviceController extends BaseController {
             return result;
         }
 
-        device.setAssignedPerson(null);
+        device.setAssignedPerson("");
         swmHelmetDeviceService.save(device);
 
         result.put("success", true);
