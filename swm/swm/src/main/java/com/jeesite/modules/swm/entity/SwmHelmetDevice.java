@@ -13,6 +13,8 @@ import org.hibernate.validator.constraints.Length;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Date;
+
 /**
  * 头盔设备管理实体类
  * 
@@ -30,6 +32,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
         @Column(name = "assigned_process", attrName = "assignedProcess", label = "所属工序"),
         @Column(name = "assigned_team", attrName = "assignedTeam", label = "所属班组"),
         @Column(name = "motion_status", attrName = "motionStatus", label = "运动状态"),
+        @Column(name = "bind_time", attrName = "bindTime", label = "绑定时间"),
+        @Column(name = "unbind_time", attrName = "unbindTime", label = "解绑时间"),
+        @Column(name = "bind_duration_days", attrName = "bindDurationDays", label = "绑定时长(天)"),
+        @Column(name = "usage_status", attrName = "usageStatus", label = "使用状态(0-已解绑, 1-使用中)"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
@@ -71,6 +77,23 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
             return DictUtils.getDictLabel("helmet_type_enum", value, "");
         }
     }
+    
+    /**
+     * 使用状态枚举
+     */
+    public static class UsageStatusEnum {
+        /** 已解绑 */
+        public static final String UNBINDED = "0";
+        /** 使用中 */
+        public static final String IN_USE = "1";
+        
+        /**
+         * 获取使用状态显示文本
+         */
+        public static String getText(String value) {
+            return DictUtils.getDictLabel("usage_status_enum", value, "");
+        }
+    }
 
     private String helmetId; // 头盔编号
     private String helmetType; // 头盔类型(1:便携式 2:头箍式)
@@ -82,6 +105,10 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     private String assignedProcess; // 所属工序
     private String assignedTeam; // 所属班组
     private String motionStatus; // 运动状态
+    private Date bindTime; // 绑定时间
+    private Date unbindTime; // 解绑时间
+    private Integer bindDurationDays; // 绑定时长(天)
+    private String usageStatus; // 使用状态(0-已解绑, 1-使用中)
 
     public SwmHelmetDevice() {
         super();
@@ -191,5 +218,44 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
 
     public void setMotionStatus(String motionStatus) {
         this.motionStatus = motionStatus;
+    }
+    
+    public Date getBindTime() {
+        return bindTime;
+    }
+    
+    public void setBindTime(Date bindTime) {
+        this.bindTime = bindTime;
+    }
+    
+    public Date getUnbindTime() {
+        return unbindTime;
+    }
+    
+    public void setUnbindTime(Date unbindTime) {
+        this.unbindTime = unbindTime;
+    }
+    
+    public Integer getBindDurationDays() {
+        return bindDurationDays;
+    }
+    
+    public void setBindDurationDays(Integer bindDurationDays) {
+        this.bindDurationDays = bindDurationDays;
+    }
+    
+    public String getUsageStatus() {
+        return usageStatus;
+    }
+    
+    /**
+     * 获取使用状态显示值
+     */
+    public String getUsageStatusText() {
+        return UsageStatusEnum.getText(usageStatus);
+    }
+    
+    public void setUsageStatus(String usageStatus) {
+        this.usageStatus = usageStatus;
     }
 }
