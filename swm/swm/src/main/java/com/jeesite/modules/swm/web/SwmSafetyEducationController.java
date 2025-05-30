@@ -142,6 +142,11 @@ public class SwmSafetyEducationController extends BaseController {
             if (education.getContentDescription() == null) {
                 education.setContentDescription("");
             }
+            
+            // 确保参与对象名称不为null
+            if (education.getParticipantsName() == null) {
+                education.setParticipantsName("");
+            }
         }
 
         // 设置分页对象属性
@@ -223,6 +228,14 @@ public class SwmSafetyEducationController extends BaseController {
                         }
                     }
 
+                    // 根据参与对象名称过滤（模糊匹配）
+                    if (criteria.getParticipantsName() != null && !criteria.getParticipantsName().isEmpty()) {
+                        if (record.getParticipantsName() == null || 
+                            !record.getParticipantsName().contains(criteria.getParticipantsName())) {
+                            return false;
+                        }
+                    }
+
                     // 根据状态过滤（精确匹配）
                     if (criteria.getStatus() != null && !criteria.getStatus().isEmpty()) {
                         if (record.getStatus() == null || !record.getStatus().equals(criteria.getStatus())) {
@@ -266,6 +279,7 @@ public class SwmSafetyEducationController extends BaseController {
             educationData.put("contentDescription", swmSafetyEducation.getContentDescription());
             educationData.put("startTime", swmSafetyEducation.getStartTime());
             educationData.put("participants", swmSafetyEducation.getParticipants());
+            educationData.put("participantsName", swmSafetyEducation.getParticipantsName());
             educationData.put("remarks", swmSafetyEducation.getRemarks());
             educationData.put("attachmentUrl", swmSafetyEducation.getAttachmentUrl());
 
@@ -424,6 +438,11 @@ public class SwmSafetyEducationController extends BaseController {
                             logger.error("导出数据时解析参与对象JSON失败: {}", e.getMessage());
                         }
                     }
+                }
+                
+                // 确保参与对象名称不为null
+                if (education.getParticipantsName() == null) {
+                    education.setParticipantsName("");
                 }
             }
 

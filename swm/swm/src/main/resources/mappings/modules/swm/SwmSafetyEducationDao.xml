@@ -20,6 +20,7 @@
             a.`safety_education_type` AS "safetyEducationType", 
             a.`start_time` AS "startTime", 
             a.`participants` AS "participants", 
+            a.`participants_name` AS "participantsName", 
             a.`status` AS "status", 
             a.`participation_type` AS "participationType",
             a.`attachment_url` AS "attachmentUrl",

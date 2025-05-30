@@ -24,6 +24,7 @@ import java.util.Date;
         @Column(name = "safety_education_type", attrName = "safetyEducationType", label = "安全教育类型"),
         @Column(name = "start_time", attrName = "startTime", label = "开始时间"),
         @Column(name = "participants", attrName = "participants", label = "参与对象", queryType = QueryType.LIKE),
+        @Column(name = "participants_name", attrName = "participantsName", label = "参与对象名称", queryType = QueryType.LIKE),
         @Column(name = "status", attrName = "status", label = "状态"),
         @Column(name = "participation_type", attrName = "participationType", label = "参与类型"),
         @Column(name = "attachment_url", attrName = "attachmentUrl", label = "附件URL"),
@@ -89,7 +90,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     public static class ParticipationTypeEnum {
         /** 班组 */
         public static final String TEAM = "1";
-        /** 工序 */
+        /** 产线 */
         public static final String PROCESS = "2";
         /** 车间 */
         public static final String WORKSHOP = "3";
@@ -107,6 +108,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     private String safetyEducationType; // 安全教育类型
     private Date startTime; // 开始时间
     private String participants; // 参与对象
+    private String participantsName; // 参与对象名称
     private String status; // 状态
     private String participationType; // 参与类型
     private String attachmentUrl; // 附件URL
@@ -210,6 +212,15 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
 
     public void setParticipants(String participants) {
         this.participants = participants;
+    }
+
+    @Length(min = 0, max = 500, message = "参与对象名称长度不能超过 500 个字符")
+    public String getParticipantsName() {
+        return participantsName;
+    }
+
+    public void setParticipantsName(String participantsName) {
+        this.participantsName = participantsName;
     }
 
     @Length(min = 0, max = 20, message = "状态长度不能超过 20 个字符")
