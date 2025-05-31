@@ -42,19 +42,19 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     /**
      * 根据头盔编号获取头盔设备
      */
-    public SwmHelmetDevice getByHelmetId(String helmetId) {
+    public SwmHelmetDevice getByDeviceId(String deviceId) {
         // 先从缓存中查找
-        SwmHelmetDevice cachedDevice = helmetCache.get(helmetId);
+        SwmHelmetDevice cachedDevice = helmetCache.get(deviceId);
         if (cachedDevice != null) {
-            logger.debug("从缓存中获取安全帽: {}", helmetId);
+            logger.debug("从缓存中获取安全帽: {}", deviceId);
             return cachedDevice;
         }
 
         // 缓存中没有，从数据库查询
-        SwmHelmetDevice result = dao.getByHelmetId(helmetId);
+        SwmHelmetDevice result = dao.getByDeviceId(deviceId);
         if (result != null) {
             // 放入缓存
-            helmetCache.put(helmetId, result);
+            helmetCache.put(deviceId, result);
         }
 
         return result;
@@ -124,9 +124,57 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         super.save(device);
 
         // 更新缓存
-        if (device.getHelmetId() != null) {
-            helmetCache.put(device.getHelmetId(), device);
-            logger.debug("更新安全帽缓存: {}", device.getHelmetId());
+        if (device.getDeviceId() != null) {
+            helmetCache.put(device.getDeviceId(), device);
+            logger.debug("更新安全帽缓存: {}", device.getDeviceId());
+        }
+    }
+
+    /**
+     * 更新设备信息（专门用于更新现有设备）
+     * 
+     * @author Shawn
+     * @date 2025-05-31
+     */
+    @Transactional(readOnly = false)
+    public void updateDevice(SwmHelmetDevice device) {
+        if (device == null || device.getId() == null) {
+            throw new IllegalArgumentException("设备信息或设备ID不能为空");
+        }
+
+        // 确保这是更新操作，设置isNewRecord为false
+        device.setIsNewRecord(false);
+
+        // 直接调用DAO的update方法，避免save方法的插入/更新判断逻辑
+        dao.update(device);
+
+        // 更新缓存
+        if (device.getDeviceId() != null) {
+            helmetCache.put(device.getDeviceId(), device);
+            logger.debug("更新安全帽缓存: {}", device.getDeviceId());
+        }
+    }
+
+    /**
+     * 强制清空设备绑定信息（将assigned_person等字段设置为null）
+     * 
+     * @author Shawn
+     * @date 2025-05-31
+     */
+    @Transactional(readOnly = false)
+    public void clearDeviceAssignment(String deviceId) {
+        if (deviceId == null || deviceId.trim().isEmpty()) {
+            throw new IllegalArgumentException("设备ID不能为空");
+        }
+
+        // 直接使用DAO执行SQL更新，强制将字段设置为null
+        int result = dao.clearDeviceAssignment(deviceId);
+        if (result > 0) {
+            // 从缓存中移除，下次查询时会重新从数据库加载
+            helmetCache.remove(deviceId);
+            logger.info("已强制清空设备{}的绑定信息", deviceId);
+        } else {
+            logger.warn("清空设备{}绑定信息失败，可能设备不存在", deviceId);
         }
     }
 
@@ -149,9 +197,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         super.delete(device);
 
         // 从缓存中移除
-        if (device.getHelmetId() != null) {
-            helmetCache.remove(device.getHelmetId());
-            logger.debug("从缓存中移除安全帽: {}", device.getHelmetId());
+        if (device.getDeviceId() != null) {
+            helmetCache.remove(device.getDeviceId());
+            logger.debug("从缓存中移除安全帽: {}", device.getDeviceId());
         }
     }
 

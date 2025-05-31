@@ -56,9 +56,9 @@ public class SwmHelmetDeviceController extends BaseController {
     /**
      * 根据头盔编号获取头盔设备
      */
-    @GetMapping("getByHelmetId")
-    public SwmHelmetDevice getByHelmetId(String helmetId) {
-        return swmHelmetDeviceService.getByHelmetId(helmetId);
+    @GetMapping("getByDeviceId")
+    public SwmHelmetDevice getByDeviceId(String deviceId) {
+        return swmHelmetDeviceService.getByDeviceId(deviceId);
     }
 
     /**
@@ -158,10 +158,10 @@ public class SwmHelmetDeviceController extends BaseController {
      * 更新头盔电量
      */
     @PostMapping("updateBattery")
-    public Map<String, Object> updateBattery(String helmetId, Integer batteryLevel) {
+    public Map<String, Object> updateBattery(String deviceId, Integer batteryLevel) {
         Map<String, Object> result = new HashMap<>();
 
-        SwmHelmetDevice device = swmHelmetDeviceService.getByHelmetId(helmetId);
+        SwmHelmetDevice device = swmHelmetDeviceService.getByDeviceId(deviceId);
         if (device == null) {
             result.put("success", false);
             result.put("message", "未找到对应的安全帽设备！");
@@ -169,7 +169,7 @@ public class SwmHelmetDeviceController extends BaseController {
         }
 
         device.setBatteryLevel(batteryLevel);
-        swmHelmetDeviceService.save(device);
+        swmHelmetDeviceService.updateDevice(device);
 
         result.put("success", true);
         result.put("message", "更新安全帽电量成功！");
@@ -178,12 +178,15 @@ public class SwmHelmetDeviceController extends BaseController {
 
     /**
      * 绑定人员
+     * 
+     * @author Shawn
+     * @date 2025-05-31
      */
     @PostMapping("assignPerson")
-    public Map<String, Object> assignPerson(String helmetId, String personId, String personName) {
+    public Map<String, Object> assignPerson(String deviceId, String personId, String personName) {
         Map<String, Object> result = new HashMap<>();
 
-        SwmHelmetDevice device = swmHelmetDeviceService.getByHelmetId(helmetId);
+        SwmHelmetDevice device = swmHelmetDeviceService.getByDeviceId(deviceId);
         if (device == null) {
             result.put("success", false);
             result.put("message", "未找到对应的安全帽设备！");
@@ -204,8 +207,9 @@ public class SwmHelmetDeviceController extends BaseController {
             return result;
         }
 
+        // 设备已存在，使用专门的更新方法
         device.setAssignedPerson(personIdCard);
-        swmHelmetDeviceService.save(device);
+        swmHelmetDeviceService.updateDevice(device);
 
         result.put("success", true);
         result.put("message", "已成功将安全帽绑定到身份证号：" + personIdCard + " (人员：" + personName + ")");
@@ -214,20 +218,23 @@ public class SwmHelmetDeviceController extends BaseController {
 
     /**
      * 解绑人员
+     * 
+     * @author Shawn
+     * @date 2025-05-31
      */
     @PostMapping("unassignPerson")
-    public Map<String, Object> unassignPerson(String helmetId) {
+    public Map<String, Object> unassignPerson(String deviceId) {
         Map<String, Object> result = new HashMap<>();
 
-        SwmHelmetDevice device = swmHelmetDeviceService.getByHelmetId(helmetId);
+        SwmHelmetDevice device = swmHelmetDeviceService.getByDeviceId(deviceId);
         if (device == null) {
             result.put("success", false);
             result.put("message", "未找到对应的安全帽设备！");
             return result;
         }
 
-        device.setAssignedPerson("");
-        swmHelmetDeviceService.save(device);
+        // 使用专门的方法强制清空绑定信息，确保assigned_person字段设置为null
+        swmHelmetDeviceService.clearDeviceAssignment(deviceId);
 
         result.put("success", true);
         result.put("message", "解绑人员成功！");

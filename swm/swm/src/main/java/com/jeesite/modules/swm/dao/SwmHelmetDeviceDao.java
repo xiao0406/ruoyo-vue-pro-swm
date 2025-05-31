@@ -28,7 +28,7 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * 根据头盔编号查询设备
      * 注意：此方法可由实体类注解查询实现，但为保持兼容性暂时保留
      */
-    SwmHelmetDevice getByHelmetId(@Param("helmetId") String helmetId);
+    SwmHelmetDevice getByDeviceId(@Param("deviceId") String deviceId);
 
     /**
      * 根据绑定人员ID查询设备
@@ -49,4 +49,12 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * 根据所属班组查询设备
      */
     List<SwmHelmetDevice> findByTeam(@Param("assignedTeam") String assignedTeam);
+
+    /**
+     * 强制清空设备绑定信息（将assigned_person等字段设置为null）
+     * 
+     * @author Shawn
+     * @date 2025-05-31
+     */
+    int clearDeviceAssignment(@Param("deviceId") String deviceId);
 }

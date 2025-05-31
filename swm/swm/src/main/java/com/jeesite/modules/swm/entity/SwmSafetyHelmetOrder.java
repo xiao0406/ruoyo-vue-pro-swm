@@ -19,7 +19,7 @@ import java.util.Date;
 @Table(name = "swm_safety_helmet_order", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键", isPK = true),
         @Column(name = "person_id", attrName = "personId", label = "人员ID"),
-        @Column(name = "helmet_id", attrName = "helmetId", label = "安全帽ID"),
+        @Column(name = "device_id", attrName = "deviceId", label = "安全帽ID"),
         @Column(name = "order_by", attrName = "orderByPerson", label = "订购人"),
         @Column(name = "order_date", attrName = "orderDate", label = "订购时间"),
         @Column(name = "helmet_model", attrName = "helmetModel", label = "安全帽型号"),
@@ -57,7 +57,7 @@ public class SwmSafetyHelmetOrder extends DataEntity<SwmSafetyHelmetOrder> {
     }
 
     private String personId; // 人员ID
-    private String helmetId; // 安全帽ID
+    private String deviceId; // 安全帽ID
     private String orderByPerson; // 订购人
     private Date orderDate; // 订购时间
     private String helmetModel; // 安全帽型号
@@ -86,12 +86,12 @@ public class SwmSafetyHelmetOrder extends DataEntity<SwmSafetyHelmetOrder> {
     }
 
     @Length(min = 0, max = 50, message = "安全帽ID长度不能超过50个字符")
-    public String getHelmetId() {
-        return helmetId;
+    public String getDeviceId() {
+        return deviceId;
     }
 
-    public void setHelmetId(String helmetId) {
-        this.helmetId = helmetId;
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
     }
 
     @NotBlank(message = "订购人不能为空")

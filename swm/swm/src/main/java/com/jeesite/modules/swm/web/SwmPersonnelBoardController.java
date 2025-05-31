@@ -89,7 +89,7 @@ public class SwmPersonnelBoardController extends BaseController {
             boardMap.put("process", board.getProcess());
             boardMap.put("team", board.getTeam());
             boardMap.put("workStatus", board.getWorkStatus());
-            boardMap.put("helmetId", board.getHelmetId());
+            boardMap.put("deviceId", board.getDeviceId());
             boardMap.put("helmetStatus", board.getHelmetStatus());
             boardMap.put("personnelStatus", board.getPersonnelStatus());
             boardMap.put("attendanceCount", board.getAttendanceCount());
@@ -133,7 +133,7 @@ public class SwmPersonnelBoardController extends BaseController {
             boardData.put("workshop", swmPersonnelBoard.getWorkshop());
             boardData.put("process", swmPersonnelBoard.getProcess());
             boardData.put("team", swmPersonnelBoard.getTeam());
-            boardData.put("helmetId", swmPersonnelBoard.getHelmetId());
+            boardData.put("deviceId", swmPersonnelBoard.getDeviceId());
             boardData.put("attendanceCount", swmPersonnelBoard.getAttendanceCount());
             boardData.put("workingHours", swmPersonnelBoard.getWorkingHours());
             boardData.put("idleHours", swmPersonnelBoard.getIdleHours());

@@ -11,7 +11,7 @@
     <select id="findAvailableHelmets" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
         SELECT 
             a.id,
-            a.helmet_id,
+            a.device_id,
             a.helmet_type,
             a.battery_level,
             a.ip,
@@ -33,16 +33,16 @@
         FROM swm_helmet_device a
         WHERE (a.assigned_person IS NULL OR a.assigned_person = '')
         <if test="keyword != null and keyword != ''">
-            AND a.helmet_id LIKE CONCAT('%', #{keyword}, '%')
+            AND a.device_id LIKE CONCAT('%', #{keyword}, '%')
         </if>
         ORDER BY a.update_date DESC
     </select>
     
     <!-- 根据头盔编号查询设备 -->
-    <select id="getByHelmetId" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
+    <select id="getByDeviceId" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
         SELECT 
             a.id,
-            a.helmet_id,
+            a.device_id,
             a.helmet_type,
             a.battery_level,
             a.ip,
@@ -62,8 +62,22 @@
             a.update_date,
             a.remarks
         FROM swm_helmet_device a
-        WHERE a.helmet_id = #{helmetId}
+        WHERE a.device_id = #{deviceId}
         LIMIT 1
     </select>
+    
+    <!-- 强制清空设备绑定信息（将assigned_person等字段设置为null） -->
+    <update id="clearDeviceAssignment">
+        UPDATE swm_helmet_device 
+        SET 
+            assigned_person = NULL,
+            assigned_workshop = NULL,
+            assigned_process = NULL,
+            assigned_team = NULL,
+            unbind_time = NOW(),
+            usage_status = 0,
+            update_date = NOW()
+        WHERE device_id = #{deviceId}
+    </update>
     
 </mapper> 
