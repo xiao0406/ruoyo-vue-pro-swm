@@ -169,7 +169,7 @@ public class SwmHelmetDeviceController extends BaseController {
         }
 
         device.setBatteryLevel(batteryLevel);
-        swmHelmetDeviceService.save(device);
+        swmHelmetDeviceService.updateDevice(device);
 
         result.put("success", true);
         result.put("message", "更新安全帽电量成功！");
@@ -178,6 +178,9 @@ public class SwmHelmetDeviceController extends BaseController {
 
     /**
      * 绑定人员
+     * 
+     * @author Shawn
+     * @date 2025-05-31
      */
     @PostMapping("assignPerson")
     public Map<String, Object> assignPerson(String deviceId, String personId, String personName) {
@@ -204,8 +207,9 @@ public class SwmHelmetDeviceController extends BaseController {
             return result;
         }
 
+        // 设备已存在，使用专门的更新方法
         device.setAssignedPerson(personIdCard);
-        swmHelmetDeviceService.save(device);
+        swmHelmetDeviceService.updateDevice(device);
 
         result.put("success", true);
         result.put("message", "已成功将安全帽绑定到身份证号：" + personIdCard + " (人员：" + personName + ")");
@@ -214,6 +218,9 @@ public class SwmHelmetDeviceController extends BaseController {
 
     /**
      * 解绑人员
+     * 
+     * @author Shawn
+     * @date 2025-05-31
      */
     @PostMapping("unassignPerson")
     public Map<String, Object> unassignPerson(String deviceId) {
@@ -226,8 +233,9 @@ public class SwmHelmetDeviceController extends BaseController {
             return result;
         }
 
+        // 设备已存在，使用专门的更新方法
         device.setAssignedPerson("");
-        swmHelmetDeviceService.save(device);
+        swmHelmetDeviceService.updateDevice(device);
 
         result.put("success", true);
         result.put("message", "解绑人员成功！");

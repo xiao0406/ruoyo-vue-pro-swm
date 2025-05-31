@@ -131,6 +131,31 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     }
 
     /**
+     * 更新设备信息（专门用于更新现有设备）
+     * 
+     * @author Shawn
+     * @date 2025-05-31
+     */
+    @Transactional(readOnly = false)
+    public void updateDevice(SwmHelmetDevice device) {
+        if (device == null || device.getId() == null) {
+            throw new IllegalArgumentException("设备信息或设备ID不能为空");
+        }
+
+        // 确保这是更新操作，设置isNewRecord为false
+        device.setIsNewRecord(false);
+
+        // 直接调用DAO的update方法，避免save方法的插入/更新判断逻辑
+        dao.update(device);
+
+        // 更新缓存
+        if (device.getDeviceId() != null) {
+            helmetCache.put(device.getDeviceId(), device);
+            logger.debug("更新安全帽缓存: {}", device.getDeviceId());
+        }
+    }
+
+    /**
      * 批量保存数据
      */
     @Transactional(readOnly = false)
