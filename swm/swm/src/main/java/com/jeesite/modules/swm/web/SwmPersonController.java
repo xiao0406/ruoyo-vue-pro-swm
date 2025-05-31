@@ -681,15 +681,8 @@ public class SwmPersonController extends BaseController {
                 return renderResult(Global.FALSE, text("该人员未绑定安全帽"));
             }
 
-            // 更新安全帽的绑定信息
-            SwmHelmetDevice helmet = swmHelmetDeviceService.getByDeviceId(helmetId);
-            if (helmet != null) {
-                helmet.setAssignedPerson(null);
-                helmet.setAssignedWorkshop(null);
-                helmet.setAssignedProcess(null);
-                helmet.setAssignedTeam(null);
-                swmHelmetDeviceService.save(helmet);
-            }
+            // 使用专门的方法强制清空安全帽绑定信息，确保assigned_person字段设置为null
+            swmHelmetDeviceService.clearDeviceAssignment(helmetId);
 
             // 更新人员的安全帽编号
             person.setSafetyHelmetId(null);
@@ -722,16 +715,9 @@ public class SwmPersonController extends BaseController {
                 return renderResult(Global.TRUE, text("该人员未绑定安全帽"));
             }
 
-            // 更新安全帽的绑定信息
-            SwmHelmetDevice helmet = swmHelmetDeviceService.getByDeviceId(helmetId);
-            if (helmet != null) {
-                helmet.setAssignedPerson("");
-                helmet.setAssignedWorkshop("");
-                helmet.setAssignedProcess("");
-                helmet.setAssignedTeam("");
-                swmHelmetDeviceService.save(helmet);
-                logger.info("离职归还安全帽：已解除安全帽{}的绑定", helmetId);
-            }
+            // 使用专门的方法强制清空安全帽绑定信息，确保assigned_person字段设置为null
+            swmHelmetDeviceService.clearDeviceAssignment(helmetId);
+            logger.info("离职归还安全帽：已解除安全帽{}的绑定", helmetId);
 
             // 更新人员的安全帽编号
             person.setSafetyHelmetId("");

@@ -49,4 +49,12 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * 根据所属班组查询设备
      */
     List<SwmHelmetDevice> findByTeam(@Param("assignedTeam") String assignedTeam);
+
+    /**
+     * 强制清空设备绑定信息（将assigned_person等字段设置为null）
+     * 
+     * @author Shawn
+     * @date 2025-05-31
+     */
+    int clearDeviceAssignment(@Param("deviceId") String deviceId);
 }

@@ -156,6 +156,29 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     }
 
     /**
+     * 强制清空设备绑定信息（将assigned_person等字段设置为null）
+     * 
+     * @author Shawn
+     * @date 2025-05-31
+     */
+    @Transactional(readOnly = false)
+    public void clearDeviceAssignment(String deviceId) {
+        if (deviceId == null || deviceId.trim().isEmpty()) {
+            throw new IllegalArgumentException("设备ID不能为空");
+        }
+
+        // 直接使用DAO执行SQL更新，强制将字段设置为null
+        int result = dao.clearDeviceAssignment(deviceId);
+        if (result > 0) {
+            // 从缓存中移除，下次查询时会重新从数据库加载
+            helmetCache.remove(deviceId);
+            logger.info("已强制清空设备{}的绑定信息", deviceId);
+        } else {
+            logger.warn("清空设备{}绑定信息失败，可能设备不存在", deviceId);
+        }
+    }
+
+    /**
      * 批量保存数据
      */
     @Transactional(readOnly = false)

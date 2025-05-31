@@ -233,9 +233,8 @@ public class SwmHelmetDeviceController extends BaseController {
             return result;
         }
 
-        // 设备已存在，使用专门的更新方法
-        device.setAssignedPerson("");
-        swmHelmetDeviceService.updateDevice(device);
+        // 使用专门的方法强制清空绑定信息，确保assigned_person字段设置为null
+        swmHelmetDeviceService.clearDeviceAssignment(deviceId);
 
         result.put("success", true);
         result.put("message", "解绑人员成功！");
