@@ -28,7 +28,7 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * 根据头盔编号查询设备
      * 注意：此方法可由实体类注解查询实现，但为保持兼容性暂时保留
      */
-    SwmHelmetDevice getByHelmetId(@Param("helmetId") String helmetId);
+    SwmHelmetDevice getByDeviceId(@Param("deviceId") String deviceId);
 
     /**
      * 根据绑定人员ID查询设备

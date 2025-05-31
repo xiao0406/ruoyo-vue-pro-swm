@@ -24,7 +24,7 @@ import java.math.BigDecimal;
         @Column(name = "process", attrName = "process", label = "所属工序"),
         @Column(name = "team", attrName = "team", label = "所属班组"),
         @Column(name = "work_status", attrName = "workStatus", label = "工作状态"),
-        @Column(name = "helmet_id", attrName = "helmetId", label = "安全帽编号"),
+        @Column(name = "device_id", attrName = "deviceId", label = "安全帽编号"),
         @Column(name = "helmet_status", attrName = "helmetStatus", label = "安全帽状态"),
         @Column(name = "personnel_status", attrName = "personnelStatus", label = "人员状态"),
         @Column(name = "attendance_count", attrName = "attendanceCount", label = "本月出勤次数"),
@@ -93,7 +93,7 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
     private String process; // 所属工序
     private String team; // 所属班组
     private String workStatus; // 工作状态
-    private String helmetId; // 安全帽编号
+    private String deviceId; // 安全帽编号
     private String helmetStatus; // 安全帽状态
     private String personnelStatus; // 人员状态
     private Integer attendanceCount; // 本月出勤次数
@@ -183,12 +183,12 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
     }
 
     @Length(min = 0, max = 50, message = "安全帽编号不能超过50个字符")
-    public String getHelmetId() {
-        return helmetId;
+    public String getDeviceId() {
+        return deviceId;
     }
 
-    public void setHelmetId(String helmetId) {
-        this.helmetId = helmetId;
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
     }
 
     @Length(min = 0, max = 20, message = "安全帽状态不能超过20个字符")

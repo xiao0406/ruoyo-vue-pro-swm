@@ -632,7 +632,7 @@ public class SwmPersonController extends BaseController {
             }
 
             // 获取安全帽信息
-            SwmHelmetDevice helmet = swmHelmetDeviceService.getByHelmetId(helmetId);
+            SwmHelmetDevice helmet = swmHelmetDeviceService.getByDeviceId(helmetId);
             if (helmet == null) {
                 return renderResult(Global.FALSE, text("安全帽不存在"));
             }
@@ -682,7 +682,7 @@ public class SwmPersonController extends BaseController {
             }
 
             // 更新安全帽的绑定信息
-            SwmHelmetDevice helmet = swmHelmetDeviceService.getByHelmetId(helmetId);
+            SwmHelmetDevice helmet = swmHelmetDeviceService.getByDeviceId(helmetId);
             if (helmet != null) {
                 helmet.setAssignedPerson(null);
                 helmet.setAssignedWorkshop(null);
@@ -723,7 +723,7 @@ public class SwmPersonController extends BaseController {
             }
 
             // 更新安全帽的绑定信息
-            SwmHelmetDevice helmet = swmHelmetDeviceService.getByHelmetId(helmetId);
+            SwmHelmetDevice helmet = swmHelmetDeviceService.getByDeviceId(helmetId);
             if (helmet != null) {
                 helmet.setAssignedPerson("");
                 helmet.setAssignedWorkshop("");

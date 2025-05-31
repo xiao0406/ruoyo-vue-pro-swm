@@ -76,18 +76,17 @@ public class SwmSafetyHelmetOrderController extends BaseController {
     /**
      * 根据安全帽ID查询订购记录
      */
-    @GetMapping(value = "findByHelmetId")
+    @GetMapping(value = "findByDeviceId")
     @ResponseBody
-    public Map<String, Object> findByHelmetId(@RequestParam("helmetId") String helmetId) {
+    public Map<String, Object> findByDeviceId(@RequestParam("deviceId") String deviceId) {
         Map<String, Object> result = new HashMap<>();
         try {
-            List<SwmSafetyHelmetOrder> orders = swmSafetyHelmetOrderService.findByHelmetId(helmetId);
+            List<SwmSafetyHelmetOrder> orders = swmSafetyHelmetOrderService.findByDeviceId(deviceId);
             result.put("success", true);
             result.put("data", orders);
         } catch (Exception e) {
-            logger.error("查询安全帽订购记录异常", e);
             result.put("success", false);
-            result.put("message", "查询安全帽订购记录失败：" + e.getMessage());
+            result.put("message", "查询失败：" + e.getMessage());
         }
         return result;
     }

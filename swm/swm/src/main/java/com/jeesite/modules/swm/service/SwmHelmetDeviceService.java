@@ -42,19 +42,19 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     /**
      * 根据头盔编号获取头盔设备
      */
-    public SwmHelmetDevice getByHelmetId(String helmetId) {
+    public SwmHelmetDevice getByDeviceId(String deviceId) {
         // 先从缓存中查找
-        SwmHelmetDevice cachedDevice = helmetCache.get(helmetId);
+        SwmHelmetDevice cachedDevice = helmetCache.get(deviceId);
         if (cachedDevice != null) {
-            logger.debug("从缓存中获取安全帽: {}", helmetId);
+            logger.debug("从缓存中获取安全帽: {}", deviceId);
             return cachedDevice;
         }
 
         // 缓存中没有，从数据库查询
-        SwmHelmetDevice result = dao.getByHelmetId(helmetId);
+        SwmHelmetDevice result = dao.getByDeviceId(deviceId);
         if (result != null) {
             // 放入缓存
-            helmetCache.put(helmetId, result);
+            helmetCache.put(deviceId, result);
         }
 
         return result;
@@ -124,9 +124,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         super.save(device);
 
         // 更新缓存
-        if (device.getHelmetId() != null) {
-            helmetCache.put(device.getHelmetId(), device);
-            logger.debug("更新安全帽缓存: {}", device.getHelmetId());
+        if (device.getDeviceId() != null) {
+            helmetCache.put(device.getDeviceId(), device);
+            logger.debug("更新安全帽缓存: {}", device.getDeviceId());
         }
     }
 
@@ -149,9 +149,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         super.delete(device);
 
         // 从缓存中移除
-        if (device.getHelmetId() != null) {
-            helmetCache.remove(device.getHelmetId());
-            logger.debug("从缓存中移除安全帽: {}", device.getHelmetId());
+        if (device.getDeviceId() != null) {
+            helmetCache.remove(device.getDeviceId());
+            logger.debug("从缓存中移除安全帽: {}", device.getDeviceId());
         }
     }
 

@@ -22,7 +22,7 @@ import java.util.Date;
  */
 @Table(name = "swm_helmet_device", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
-        @Column(name = "helmet_id", attrName = "helmetId", label = "头盔编号", queryType = QueryType.LIKE),
+        @Column(name = "device_id", attrName = "deviceId", label = "头盔编号", queryType = QueryType.LIKE),
         @Column(name = "helmet_type", attrName = "helmetType", label = "头盔类型(1:便携式 2:头箍式)"),
         @Column(name = "battery_level", attrName = "batteryLevel", label = "头盔电量(0-100%)"),
         @Column(name = "ip", attrName = "ip", label = "IP地址"),
@@ -77,7 +77,7 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
             return DictUtils.getDictLabel("helmet_type_enum", value, "");
         }
     }
-    
+
     /**
      * 使用状态枚举
      */
@@ -86,7 +86,7 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
         public static final String UNBINDED = "0";
         /** 使用中 */
         public static final String IN_USE = "1";
-        
+
         /**
          * 获取使用状态显示文本
          */
@@ -95,7 +95,7 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
         }
     }
 
-    private String helmetId; // 头盔编号
+    private String deviceId; // 头盔编号
     private String helmetType; // 头盔类型(1:便携式 2:头箍式)
     private Integer batteryLevel; // 头盔电量 (0-100%)
     private String ip; // IP地址
@@ -119,12 +119,12 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     }
 
     @Length(min = 0, max = 50, message = "头盔编号长度不能超过50个字符")
-    public String getHelmetId() {
-        return helmetId;
+    public String getDeviceId() {
+        return deviceId;
     }
 
-    public void setHelmetId(String helmetId) {
-        this.helmetId = helmetId;
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
     }
 
     public String getHelmetType() {
@@ -219,42 +219,42 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     public void setMotionStatus(String motionStatus) {
         this.motionStatus = motionStatus;
     }
-    
+
     public Date getBindTime() {
         return bindTime;
     }
-    
+
     public void setBindTime(Date bindTime) {
         this.bindTime = bindTime;
     }
-    
+
     public Date getUnbindTime() {
         return unbindTime;
     }
-    
+
     public void setUnbindTime(Date unbindTime) {
         this.unbindTime = unbindTime;
     }
-    
+
     public Integer getBindDurationDays() {
         return bindDurationDays;
     }
-    
+
     public void setBindDurationDays(Integer bindDurationDays) {
         this.bindDurationDays = bindDurationDays;
     }
-    
+
     public String getUsageStatus() {
         return usageStatus;
     }
-    
+
     /**
      * 获取使用状态显示值
      */
     public String getUsageStatusText() {
         return UsageStatusEnum.getText(usageStatus);
     }
-    
+
     public void setUsageStatus(String usageStatus) {
         this.usageStatus = usageStatus;
     }

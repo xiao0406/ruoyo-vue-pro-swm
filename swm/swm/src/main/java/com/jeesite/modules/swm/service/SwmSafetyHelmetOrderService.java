@@ -89,8 +89,8 @@ public class SwmSafetyHelmetOrderService extends CrudService<SwmSafetyHelmetOrde
     /**
      * 根据安全帽ID查询订购记录
      */
-    public List<SwmSafetyHelmetOrder> findByHelmetId(String helmetId) {
-        return dao.findByHelmetId(helmetId);
+    public List<SwmSafetyHelmetOrder> findByDeviceId(String deviceId) {
+        return dao.findByDeviceId(deviceId);
     }
 
     /**
@@ -106,18 +106,19 @@ public class SwmSafetyHelmetOrderService extends CrudService<SwmSafetyHelmetOrde
      * 创建安全帽绑定订购记录
      */
     @Transactional(readOnly = false)
-    public void createBindingOrder(String personId, String personName, String helmetId, String currentUser) {
+    public void createBindingOrder(String personId, String personName, String deviceId, String currentUser) {
         SwmSafetyHelmetOrder order = new SwmSafetyHelmetOrder();
         order.setPersonId(personId);
-        order.setHelmetId(helmetId);
+        order.setDeviceId(deviceId);
         order.setOrderByPerson(currentUser);
         order.setOrderDate(new Date());
+        order.setOrderStatus(SwmSafetyHelmetOrder.OrderStatusEnum.DELIVERED);
+        order.setReceivedDate(new Date());
+        order.setReceivedSign(personName);
         order.setQuantity(1);
-        order.setOrderStatus(SwmSafetyHelmetOrder.OrderStatusEnum.DELIVERED); // 直接设为已发放状态
-        order.setReceivedDate(new Date()); // 领取时间设为当前时间
-        order.setReceivedSign(personName); // 使用人员姓名作为签名
-        order.setRemarks("系统自动创建的安全帽绑定记录");
-
+        order.setHelmetModel("标准型");
+        order.setHelmetColor("白色");
+        order.setRemarks("系统自动创建的绑定记录");
         this.save(order);
     }
 }
