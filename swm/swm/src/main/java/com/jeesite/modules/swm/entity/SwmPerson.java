@@ -1,6 +1,7 @@
 /**
  * @author Shawn
  * @date 2025-05-13
+ * @update 2025-06-01 添加产线字段
  */
 package com.jeesite.modules.swm.entity;
 
@@ -28,6 +29,7 @@ import java.util.Date;
         @Column(name = "gender", attrName = "gender", label = "性别"),
         @Column(name = "company", attrName = "company", label = "所属单位", queryType = QueryType.LIKE),
         @Column(name = "department", attrName = "department", label = "所属车间"),
+        @Column(name = "prod_line", attrName = "prodLine", label = "产线"),
         @Column(name = "work_process", attrName = "workProcess", label = "所属工序"),
         @Column(name = "team", attrName = "team", label = "所属班组"),
         @Column(name = "job_type", attrName = "jobType", label = "所属工种"),
@@ -110,6 +112,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String gender; // 性别
     private String company; // 所属单位
     private String department; // 所属车间
+    private String prodLine; // 产线
     private String workProcess; // 所属工序
     private String team; // 所属班组
     private String jobType; // 所属工种
@@ -175,6 +178,15 @@ public class SwmPerson extends DataEntity<SwmPerson> {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    @Length(min = 0, max = 64, message = "产线不能超过64个字符")
+    public String getProdLine() {
+        return prodLine;
+    }
+
+    public void setProdLine(String prodLine) {
+        this.prodLine = prodLine;
     }
 
     @Length(min = 0, max = 100, message = "所属工序不能超过100个字符")

@@ -125,6 +125,7 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
         person.setGender(model.getGender());
         person.setCompany(model.getCompany());
         person.setDepartment(model.getDepartment());
+        person.setProdLine(model.getProdLine());
         person.setWorkProcess(model.getWorkProcess());
         person.setTeam(model.getTeam());
         person.setJobType(model.getJobType());
