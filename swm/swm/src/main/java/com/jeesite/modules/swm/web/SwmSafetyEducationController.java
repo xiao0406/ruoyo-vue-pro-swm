@@ -142,7 +142,7 @@ public class SwmSafetyEducationController extends BaseController {
             if (education.getContentDescription() == null) {
                 education.setContentDescription("");
             }
-            
+
             // 确保参与对象名称不为null
             if (education.getParticipantsName() == null) {
                 education.setParticipantsName("");
@@ -230,8 +230,8 @@ public class SwmSafetyEducationController extends BaseController {
 
                     // 根据参与对象名称过滤（模糊匹配）
                     if (criteria.getParticipantsName() != null && !criteria.getParticipantsName().isEmpty()) {
-                        if (record.getParticipantsName() == null || 
-                            !record.getParticipantsName().contains(criteria.getParticipantsName())) {
+                        if (record.getParticipantsName() == null ||
+                                !record.getParticipantsName().contains(criteria.getParticipantsName())) {
                             return false;
                         }
                     }
@@ -439,7 +439,7 @@ public class SwmSafetyEducationController extends BaseController {
                         }
                     }
                 }
-                
+
                 // 确保参与对象名称不为null
                 if (education.getParticipantsName() == null) {
                     education.setParticipantsName("");
@@ -746,17 +746,20 @@ public class SwmSafetyEducationController extends BaseController {
         try {
             // 创建查询条件
             SwmPerson query = new SwmPerson();
-            query.setDepartment(department);
             query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 只更新在职人员
+
+            // 添加OR条件：部门 = department OR 班组 = department
+            query.getSqlMap().getDataScope().addFilter("departmentOrTeam",
+                    "(a.department = '" + department + "' OR a.team = '" + department + "')");
 
             // 查询符合条件的人员
             List<SwmPerson> personList = swmPersonService.findList(query);
             if (personList == null || personList.isEmpty()) {
-                logger.info("未找到部门 [{}] 的人员记录", department);
+                logger.info("未找到部门或班组 [{}] 的人员记录", department);
                 return 0;
             }
 
-            logger.info("部门 [{}] 找到 {} 名人员", department, personList.size());
+            logger.info("部门或班组 [{}] 找到 {} 名人员", department, personList.size());
 
             // 更新每个人员的安全教育状态
             int count = 0;
@@ -769,10 +772,10 @@ public class SwmSafetyEducationController extends BaseController {
                 }
             }
 
-            logger.info("部门 [{}] 共更新了 {} 名人员的安全教育状态", department, count);
+            logger.info("部门或班组 [{}] 共更新了 {} 名人员的安全教育状态", department, count);
             return count;
         } catch (Exception e) {
-            logger.error("更新部门 [{}] 人员的安全教育状态时出现异常: {}", department, e.getMessage());
+            logger.error("更新部门或班组 [{}] 人员的安全教育状态时出现异常: {}", department, e.getMessage());
             return 0;
         }
     }
