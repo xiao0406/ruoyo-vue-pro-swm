@@ -48,6 +48,18 @@ public class SwmSafetyEducationService extends CrudService<SwmSafetyEducationDao
     }
     
     /**
+     * 使用自定义条件查询安全教育记录
+     * @param theme 主题（模糊查询）
+     * @param safetyEducationType 安全教育类型
+     * @param participationType 参与类型
+     * @param status 状态
+     * @return 符合条件的记录列表
+     */
+    public List<SwmSafetyEducation> findByCustomConditions(String theme, String safetyEducationType, String participationType, String status) {
+        return dao.findByCustomConditions(theme, safetyEducationType, participationType, status);
+    }
+    
+    /**
      * 保存数据（插入或更新）
      * @param swmSafetyEducation
      */

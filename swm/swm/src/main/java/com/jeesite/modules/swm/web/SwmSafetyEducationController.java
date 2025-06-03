@@ -78,46 +78,76 @@ public class SwmSafetyEducationController extends BaseController {
     @ApiOperation("查询列表数据")
     public Page<SwmSafetyEducation> listData(SwmSafetyEducation swmSafetyEducation, HttpServletRequest request,
             HttpServletResponse response) {
+        // 添加日志记录请求参数
+        logger.info("接收到安全教育列表查询请求，参数: pageNo={}, pageSize={}, safetyEducationType={}, participationType={}, theme={}", 
+            request.getParameter("pageNo"), 
+            request.getParameter("pageSize"), 
+            request.getParameter("safety_education_type"),
+            request.getParameter("participation_type"),
+            request.getParameter("theme"));
+            
         // 创建分页对象
         Page<SwmSafetyEducation> page = new Page<>(request, response);
-
-        // 使用不带状态过滤的方法查询所有记录
-        List<SwmSafetyEducation> allRecords = swmSafetyEducationService.findAllWithoutStatusFilter();
-
-        // 应用其他过滤条件（如果有的话）
-        List<SwmSafetyEducation> filteredRecords = filterRecords(allRecords, swmSafetyEducation);
-
+        
+        // 处理前端请求参数
+        String theme = request.getParameter("theme");
+        String safetyEducationType = request.getParameter("safety_education_type");
+        String participationType = request.getParameter("participation_type");
+        String status = request.getParameter("status");
+        
+        // 记录查询条件
+        StringBuilder conditions = new StringBuilder("查询条件:");
+        if (theme != null && !theme.isEmpty()) {
+            conditions.append(" 主题=").append(theme);
+        }
+        if (safetyEducationType != null && !safetyEducationType.isEmpty()) {
+            conditions.append(" 安全教育类型=").append(safetyEducationType);
+        }
+        if (participationType != null && !participationType.isEmpty()) {
+            conditions.append(" 参与类型=").append(participationType);
+        }
+        if (status != null && !status.isEmpty()) {
+            conditions.append(" 状态=").append(status);
+        }
+        logger.info(conditions.toString());
+        
+        // 直接调用数据库查询，使用动态SQL过滤
+        List<SwmSafetyEducation> allRecords = swmSafetyEducationService.findByCustomConditions(
+            theme, safetyEducationType, participationType, status);
+        
+        logger.info("从数据库获取记录总数: {}", allRecords.size());
+        
         // 设置分页结果
         int pageNo = page.getPageNo();
         int pageSize = page.getPageSize();
-        int count = filteredRecords.size();
-
+        int count = allRecords.size();
+        
         // 计算起止索引
         int fromIndex = (pageNo - 1) * pageSize;
         int toIndex = Math.min(fromIndex + pageSize, count);
-
+        
         // 防止越界
         if (fromIndex >= count) {
             fromIndex = Math.max(0, count - pageSize);
             toIndex = count;
         }
-
+        
         // 获取当前页数据
-        List<SwmSafetyEducation> pageRecords = (fromIndex < toIndex) ? filteredRecords.subList(fromIndex, toIndex)
+        List<SwmSafetyEducation> pageRecords = (fromIndex < toIndex) ? allRecords.subList(fromIndex, toIndex)
                 : new ArrayList<>();
-
+        
         // 处理枚举显示值并将状态替换为文本
         for (SwmSafetyEducation education : pageRecords) {
             // 先获取文本值
             String statusText = education.getStatusText();
             String typeText = education.getSafetyEducationTypeText();
             String participationTypeText = education.getParticipationTypeText();
-
+            
             // 将字段的原始值替换为文本值
             education.setStatus(statusText);
             education.setSafetyEducationType(typeText);
             education.setParticipationType(participationTypeText);
-
+            
             // 处理参与对象字段的展示
             String participants = education.getParticipants();
             if (participants != null && !participants.isEmpty()) {
@@ -137,130 +167,51 @@ public class SwmSafetyEducationController extends BaseController {
                     }
                 }
             }
-
+            
             // 确保内容描述不为null
             if (education.getContentDescription() == null) {
                 education.setContentDescription("");
             }
             
-            // 确保参与对象名称不为null
-            if (education.getParticipantsName() == null) {
+            // 确保参与对象名称不为null，并转换为与participants相同的格式
+            String participantsName = education.getParticipantsName();
+            if (participantsName == null) {
                 education.setParticipantsName("");
+            } else if (participantsName.startsWith("[") && participantsName.endsWith("]")) {
+                try {
+                    // 解析JSON数组
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<String> nameList = mapper.readValue(participantsName, new TypeReference<List<String>>() {});
+                    // 将列表转换为逗号分隔的字符串
+                    education.setParticipantsName(String.join(", ", nameList));
+                } catch (Exception e) {
+                    logger.error("解析参与对象名称JSON失败: {}", e.getMessage());
+                }
             }
         }
-
+        
         // 设置分页对象属性
         page.setList(pageRecords);
         page.setCount(count);
-
-        return page;
-    }
-
-    /**
-     * 根据查询条件过滤记录
-     */
-    private List<SwmSafetyEducation> filterRecords(List<SwmSafetyEducation> allRecords, SwmSafetyEducation criteria) {
-        if (criteria == null) {
-            return allRecords;
+        
+        // 记录过滤和分页后的结果明细
+        StringBuilder resultSummary = new StringBuilder();
+        resultSummary.append("过滤后返回的记录: [");
+        for (SwmSafetyEducation record : pageRecords) {
+            resultSummary.append("\n  {id=").append(record.getId())
+                .append(", theme=").append(record.getTheme())
+                .append(", type=").append(record.getSafetyEducationType())
+                .append(", pType=").append(record.getParticipationType())
+                .append("},");
         }
-
-        return allRecords.stream()
-                .filter(record -> {
-                    // 根据主题过滤（模糊匹配）
-                    if (criteria.getTheme() != null && !criteria.getTheme().isEmpty()) {
-                        if (record.getTheme() == null || !record.getTheme().contains(criteria.getTheme())) {
-                            return false;
-                        }
-                    }
-
-                    // 根据内容描述过滤（模糊匹配）
-                    if (criteria.getContentDescription() != null && !criteria.getContentDescription().isEmpty()) {
-                        if (record.getContentDescription() == null
-                                || !record.getContentDescription().contains(criteria.getContentDescription())) {
-                            return false;
-                        }
-                    }
-
-                    // 根据安全教育类型过滤（精确匹配）
-                    if (criteria.getSafetyEducationType() != null && !criteria.getSafetyEducationType().isEmpty()) {
-                        if (record.getSafetyEducationType() == null
-                                || !record.getSafetyEducationType().equals(criteria.getSafetyEducationType())) {
-                            return false;
-                        }
-                    }
-
-                    // 根据参与类型过滤（精确匹配）
-                    if (criteria.getParticipationType() != null && !criteria.getParticipationType().isEmpty()) {
-                        if (record.getParticipationType() == null
-                                || !record.getParticipationType().equals(criteria.getParticipationType())) {
-                            return false;
-                        }
-                    }
-
-                    // 根据参与对象过滤（模糊匹配）
-                    if (criteria.getParticipants() != null && !criteria.getParticipants().isEmpty()) {
-                        if (record.getParticipants() == null) {
-                            return false;
-                        }
-
-                        String participants = record.getParticipants();
-                        // 检查是否为JSON格式的参与者列表
-                        if (participants.startsWith("[") && participants.endsWith("]")) {
-                            try {
-                                // 解析JSON数组
-                                ObjectMapper mapper = new ObjectMapper();
-                                List<String> participantList = mapper.readValue(participants,
-                                        new TypeReference<List<String>>() {
-                                        });
-                                // 将列表转换为逗号分隔的字符串用于搜索
-                                String participantsText = String.join(", ", participantList);
-                                if (!participantsText.contains(criteria.getParticipants())) {
-                                    return false;
-                                }
-                            } catch (Exception e) {
-                                logger.error("过滤时解析参与对象JSON失败: {}", e.getMessage());
-                                if (!participants.contains(criteria.getParticipants())) {
-                                    return false;
-                                }
-                            }
-                        } else if (!participants.contains(criteria.getParticipants())) {
-                            return false;
-                        }
-                    }
-
-                    // 根据参与对象名称过滤（模糊匹配）
-                    if (criteria.getParticipantsName() != null && !criteria.getParticipantsName().isEmpty()) {
-                        if (record.getParticipantsName() == null || 
-                            !record.getParticipantsName().contains(criteria.getParticipantsName())) {
-                            return false;
-                        }
-                    }
-
-                    // 根据状态过滤（精确匹配）
-                    if (criteria.getStatus() != null && !criteria.getStatus().isEmpty()) {
-                        if (record.getStatus() == null || !record.getStatus().equals(criteria.getStatus())) {
-                            return false;
-                        }
-                    }
-
-                    // 根据附件URL过滤（模糊匹配）
-                    if (criteria.getAttachmentUrl() != null && !criteria.getAttachmentUrl().isEmpty()) {
-                        if (record.getAttachmentUrl() == null
-                                || !record.getAttachmentUrl().contains(criteria.getAttachmentUrl())) {
-                            return false;
-                        }
-                    }
-
-                    // 根据开始时间过滤
-                    if (criteria.getStartTime() != null) {
-                        if (record.getStartTime() == null || record.getStartTime().before(criteria.getStartTime())) {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                })
-                .collect(Collectors.toList());
+        if (!pageRecords.isEmpty()) {
+            resultSummary.deleteCharAt(resultSummary.length() - 1);
+        }
+        resultSummary.append("\n]");
+        logger.info("查询结果: 总记录数={}, 当前页={}, 每页记录数={}, 当前页记录数={}\n{}", 
+            count, page.getPageNo(), page.getPageSize(), pageRecords.size(), resultSummary);
+        
+        return page;
     }
 
     /**
@@ -402,12 +353,18 @@ public class SwmSafetyEducationController extends BaseController {
     @ApiOperation("导出数据")
     public void exportData(SwmSafetyEducation swmSafetyEducation, HttpServletResponse response) {
         try {
-            // 使用不带状态过滤的方法获取所有记录
-            List<SwmSafetyEducation> allRecords = swmSafetyEducationService.findAllWithoutStatusFilter();
-
-            // 应用其他过滤条件
-            List<SwmSafetyEducation> filteredRecords = filterRecords(allRecords, swmSafetyEducation);
-
+            // 从请求中获取过滤参数
+            String theme = swmSafetyEducation.getTheme();
+            String safetyEducationType = swmSafetyEducation.getSafetyEducationType();
+            String participationType = swmSafetyEducation.getParticipationType();
+            String status = swmSafetyEducation.getStatus();
+            
+            // 使用自定义查询方法直接从数据库获取过滤后的记录
+            List<SwmSafetyEducation> filteredRecords = swmSafetyEducationService.findByCustomConditions(
+                theme, safetyEducationType, participationType, status);
+            
+            logger.info("导出数据：使用条件查询获取到 {} 条记录", filteredRecords.size());
+            
             // 处理枚举显示值并将状态替换为文本
             for (SwmSafetyEducation education : filteredRecords) {
                 // 先获取文本值
@@ -443,6 +400,16 @@ public class SwmSafetyEducationController extends BaseController {
                 // 确保参与对象名称不为null
                 if (education.getParticipantsName() == null) {
                     education.setParticipantsName("");
+                } else if (education.getParticipantsName().startsWith("[") && education.getParticipantsName().endsWith("]")) {
+                    try {
+                        // 解析JSON数组
+                        ObjectMapper mapper = new ObjectMapper();
+                        List<String> nameList = mapper.readValue(education.getParticipantsName(), new TypeReference<List<String>>() {});
+                        // 将列表转换为逗号分隔的字符串
+                        education.setParticipantsName(String.join(", ", nameList));
+                    } catch (Exception e) {
+                        logger.error("导出数据时解析参与对象名称JSON失败: {}", e.getMessage());
+                    }
                 }
             }
 

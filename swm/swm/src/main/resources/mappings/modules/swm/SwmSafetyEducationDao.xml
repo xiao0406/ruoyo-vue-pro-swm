@@ -32,4 +32,46 @@
             a.update_time DESC
     </select>
     
+    <!-- 根据自定义条件查询安全教育记录 -->
+    <select id="findByCustomConditions" resultType="com.jeesite.modules.swm.entity.SwmSafetyEducation">
+        SELECT 
+            a.`id` AS "id", 
+            a.`theme` AS "theme",
+            a.`content_description` AS "contentDescription", 
+            a.`safety_education_type` AS "safetyEducationType", 
+            a.`start_time` AS "startTime", 
+            a.`participants` AS "participants", 
+            a.`participants_name` AS "participantsName", 
+            a.`status` AS "status", 
+            a.`participation_type` AS "participationType",
+            a.`attachment_url` AS "attachmentUrl",
+            a.`create_time` AS "createTime", 
+            a.`update_time` AS "updateTime"
+        FROM 
+            `swm_safety_education` a
+        <where>
+            <!-- 主题模糊查询 -->
+            <if test="theme != null and theme != ''">
+                AND a.`theme` LIKE CONCAT('%', #{theme}, '%')
+            </if>
+            
+            <!-- 安全教育类型精确匹配 -->
+            <if test="safetyEducationType != null and safetyEducationType != ''">
+                AND a.`safety_education_type` = #{safetyEducationType}
+            </if>
+            
+            <!-- 参与类型精确匹配 -->
+            <if test="participationType != null and participationType != ''">
+                AND a.`participation_type` = #{participationType}
+            </if>
+            
+            <!-- 状态精确匹配 -->
+            <if test="status != null and status != ''">
+                AND a.`status` = #{status}
+            </if>
+        </where>
+        ORDER BY 
+            a.update_time DESC
+    </select>
+    
 </mapper> 
