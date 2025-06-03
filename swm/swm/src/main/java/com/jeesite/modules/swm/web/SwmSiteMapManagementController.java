@@ -26,6 +26,7 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.service.SwmSiteMapManagementService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * 场地底图管理表Controller
@@ -39,7 +40,7 @@ public class SwmSiteMapManagementController extends BaseController {
 
     @Autowired
     private SwmSiteMapManagementService swmSiteMapManagementService;
-    
+
     /**
      * 获取数据
      */
@@ -47,7 +48,7 @@ public class SwmSiteMapManagementController extends BaseController {
     public SwmSiteMapManagement get(String id, boolean isNewRecord) {
         return swmSiteMapManagementService.get(id, isNewRecord);
     }
-    
+
     /**
      * 查询列表
      */
@@ -56,13 +57,14 @@ public class SwmSiteMapManagementController extends BaseController {
         model.addAttribute("swmSiteMapManagement", swmSiteMapManagement);
         return "modules/swm/swmSiteMapManagementList";
     }
-    
+
     /**
      * 查询列表数据
      */
     @RequestMapping(value = "listData")
     @ResponseBody
-    public Page<SwmSiteMapManagement> listData(SwmSiteMapManagement swmSiteMapManagement, HttpServletRequest request, HttpServletResponse response) {
+    public Page<SwmSiteMapManagement> listData(SwmSiteMapManagement swmSiteMapManagement, HttpServletRequest request,
+            HttpServletResponse response) {
         swmSiteMapManagement.setPage(new Page<>(request, response));
         // 完全移除状态过滤条件
         swmSiteMapManagement.setStatus(null);
@@ -90,7 +92,7 @@ public class SwmSiteMapManagementController extends BaseController {
         swmSiteMapManagementService.save(swmSiteMapManagement);
         return renderResult(Global.TRUE, text("保存场地底图管理成功！"));
     }
-    
+
     /**
      * 删除场地底图管理
      */
@@ -100,32 +102,33 @@ public class SwmSiteMapManagementController extends BaseController {
         swmSiteMapManagementService.delete(swmSiteMapManagement);
         return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
     }
-    
+
     /**
      * 删除场地底图管理（JSON方式）
      */
-    @RequestMapping(value = "deleteJson", method = {RequestMethod.DELETE, RequestMethod.POST})
+    @RequestMapping(value = "deleteJson", method = { RequestMethod.DELETE, RequestMethod.POST })
     @ResponseBody
-    public String deleteJson(@RequestBody(required = false) Map<String, Object> params, @RequestParam(required = false) String id, HttpServletRequest request) {
+    public String deleteJson(@RequestBody(required = false) Map<String, Object> params,
+            @RequestParam(required = false) String id, HttpServletRequest request) {
         // 尝试从JSON请求体获取ID
         if (params != null && params.get("id") != null) {
             id = params.get("id").toString();
         }
-        
+
         // 如果JSON中没有ID，尝试从URL参数获取
         if ((id == null || id.isEmpty()) && request != null) {
             id = request.getParameter("id");
         }
-        
+
         if (id == null || id.isEmpty()) {
             return renderResult(Global.FALSE, text("删除失败：ID不能为空！"));
         }
-        
+
         SwmSiteMapManagement swmSiteMapManagement = new SwmSiteMapManagement(id);
         swmSiteMapManagementService.delete(swmSiteMapManagement);
         return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
     }
-    
+
     /**
      * 批量删除场地底图管理
      */
@@ -141,7 +144,7 @@ public class SwmSiteMapManagementController extends BaseController {
         }
         return renderResult(Global.TRUE, text("批量删除场地底图管理成功！"));
     }
-    
+
     /**
      * 获取场地底图管理列表（用于下拉选择）
      */
@@ -149,7 +152,7 @@ public class SwmSiteMapManagementController extends BaseController {
     @ResponseBody
     public List<Map<String, Object>> getMapList() {
         List<Map<String, Object>> result = new ArrayList<>();
-        
+
         List<SwmSiteMapManagement> mapList = swmSiteMapManagementService.findList(new SwmSiteMapManagement());
         for (SwmSiteMapManagement map : mapList) {
             Map<String, Object> item = new HashMap<>();
@@ -157,31 +160,31 @@ public class SwmSiteMapManagementController extends BaseController {
             item.put("mapName", map.getMapName());
             item.put("projectId", map.getProjectId());
             item.put("filePath", map.getFilePath());
-            
+
             result.add(item);
         }
-        
+
         return result;
     }
-    
+
     /**
      * 启用底图
      */
-    @RequestMapping(value = "enable", method = {RequestMethod.POST})
+    @RequestMapping(value = "enable", method = { RequestMethod.POST })
     @ResponseBody
-    public String enable(@RequestParam(required = false) String id, 
-                          @RequestParam(required = false) String status,
-                          HttpServletRequest request) {
+    public String enable(@RequestParam(required = false) String id,
+            @RequestParam(required = false) String status,
+            HttpServletRequest request) {
 
         // 如果参数中没有ID，尝试从请求中获取
         if ((id == null || id.isEmpty()) && request != null) {
             id = request.getParameter("id");
         }
-        
+
         if (id == null || id.isEmpty()) {
             return renderResult(Global.FALSE, text("操作失败：ID不能为空！"));
         }
-        
+
         try {
             // 调用服务层方法启用底图（启用该底图同时会禁用其他底图）
             swmSiteMapManagementService.changeStatus(id, "0");
@@ -190,24 +193,24 @@ public class SwmSiteMapManagementController extends BaseController {
             return renderResult(Global.FALSE, text("操作失败：" + e.getMessage()));
         }
     }
-    
+
     /**
      * 禁用底图
      */
-    @RequestMapping(value = "disable", method = {RequestMethod.POST})
+    @RequestMapping(value = "disable", method = { RequestMethod.POST })
     @ResponseBody
-    public String disable(@RequestParam(required = false) String id, 
-                           @RequestParam(required = false) String status,
-                           HttpServletRequest request) {
+    public String disable(@RequestParam(required = false) String id,
+            @RequestParam(required = false) String status,
+            HttpServletRequest request) {
         // 如果参数中没有ID，尝试从请求中获取
         if ((id == null || id.isEmpty()) && request != null) {
             id = request.getParameter("id");
         }
-        
+
         if (id == null || id.isEmpty()) {
             return renderResult(Global.FALSE, text("操作失败：ID不能为空！"));
         }
-        
+
         try {
             // 调用服务层方法禁用底图
             swmSiteMapManagementService.changeStatus(id, "1");
@@ -216,34 +219,55 @@ public class SwmSiteMapManagementController extends BaseController {
             return renderResult(Global.FALSE, text("操作失败：" + e.getMessage()));
         }
     }
-    
+
     /**
      * 获取已启用底图
+     * 
+     * @author Shawn
+     * @date 2025-01-14
      */
     @RequestMapping(value = "getEnabledMap")
     @ResponseBody
     public Map<String, Object> getEnabledMap() {
         Map<String, Object> result = new HashMap<>();
-        
+
         // 查询系统中启用的底图
         SwmSiteMapManagement query = new SwmSiteMapManagement();
         query.setStatus("0"); // 0表示启用
         List<SwmSiteMapManagement> maps = swmSiteMapManagementService.findList(query);
-        
+
         if (maps != null && !maps.isEmpty()) {
             SwmSiteMapManagement map = maps.get(0);
+
+            // 创建底图数据对象
+            Map<String, Object> mapData = new HashMap<>();
+            mapData.put("id", map.getId());
+            mapData.put("mapName", map.getMapName());
+            mapData.put("projectId", map.getProjectId());
+            mapData.put("filePath", map.getFilePath());
+            mapData.put("mapSize", map.getMapSize());
+            mapData.put("scale", map.getScale());
+
+            // 解析filePath中的JSON字符串获取URL
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                Map<String, Object> filePathJson = objectMapper.readValue(map.getFilePath(), Map.class);
+                String url = (String) filePathJson.get("url");
+                mapData.put("url", url);
+            } catch (Exception e) {
+                // 如果解析JSON失败，返回原始filePath
+                mapData.put("url", map.getFilePath());
+            }
+
             result.put("success", true);
-            result.put("id", map.getId());
-            result.put("mapName", map.getMapName());
-            result.put("projectId", map.getProjectId());
-            result.put("filePath", map.getFilePath());
-            result.put("mapSize", map.getMapSize());
-            result.put("scale", map.getScale());
+            result.put("data", mapData);
+            result.put("message", "获取底图成功");
         } else {
             result.put("success", false);
+            result.put("data", null);
             result.put("message", "系统中没有启用的底图");
         }
-        
+
         return result;
     }
-} 
+}
