@@ -21,13 +21,16 @@
             a.`start_time` AS "startTime", 
             a.`participants` AS "participants", 
             a.`participants_name` AS "participantsName", 
-            a.`status` AS "status", 
+            a.`safety_status` AS "safetyStatus", 
             a.`participation_type` AS "participationType",
             a.`attachment_url` AS "attachmentUrl",
             a.`create_time` AS "createTime", 
-            a.`update_time` AS "updateTime"
+            a.`update_time` AS "updateTime",
+            a.`status` AS "status"
         FROM 
             `swm_safety_education` a
+        WHERE
+            a.`status` = 0
         ORDER BY 
             a.update_time DESC
     </select>
@@ -42,14 +45,17 @@
             a.`start_time` AS "startTime", 
             a.`participants` AS "participants", 
             a.`participants_name` AS "participantsName", 
-            a.`status` AS "status", 
+            a.`safety_status` AS "safetyStatus", 
             a.`participation_type` AS "participationType",
             a.`attachment_url` AS "attachmentUrl",
             a.`create_time` AS "createTime", 
-            a.`update_time` AS "updateTime"
+            a.`update_time` AS "updateTime",
+            a.`status` AS "status"
         FROM 
             `swm_safety_education` a
         <where>
+            a.`status` = 0
+            
             <!-- 主题模糊查询 -->
             <if test="theme != null and theme != ''">
                 AND a.`theme` LIKE CONCAT('%', #{theme}, '%')
@@ -66,8 +72,8 @@
             </if>
             
             <!-- 状态精确匹配 -->
-            <if test="status != null and status != ''">
-                AND a.`status` = #{status}
+            <if test="safetyStatus != null and safetyStatus != ''">
+                AND a.`safety_status` = #{safetyStatus}
             </if>
         </where>
         ORDER BY 

@@ -26,13 +26,13 @@ public interface SwmSafetyEducationDao extends CrudDao<SwmSafetyEducation> {
      * @param theme 主题（模糊查询）
      * @param safetyEducationType 安全教育类型
      * @param participationType 参与类型
-     * @param status 状态
+     * @param safetyStatus 状态
      * @return 符合条件的记录列表
      */
     List<SwmSafetyEducation> findByCustomConditions(
         @Param("theme") String theme,
         @Param("safetyEducationType") String safetyEducationType,
         @Param("participationType") String participationType,
-        @Param("status") String status
+        @Param("safetyStatus") String safetyStatus
     );
 } 

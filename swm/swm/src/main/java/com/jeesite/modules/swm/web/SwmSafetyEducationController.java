@@ -93,7 +93,7 @@ public class SwmSafetyEducationController extends BaseController {
         String theme = request.getParameter("theme");
         String safetyEducationType = request.getParameter("safety_education_type");
         String participationType = request.getParameter("participation_type");
-        String status = request.getParameter("status");
+        String safetyStatus = request.getParameter("status");
         
         // 记录查询条件
         StringBuilder conditions = new StringBuilder("查询条件:");
@@ -106,14 +106,14 @@ public class SwmSafetyEducationController extends BaseController {
         if (participationType != null && !participationType.isEmpty()) {
             conditions.append(" 参与类型=").append(participationType);
         }
-        if (status != null && !status.isEmpty()) {
-            conditions.append(" 状态=").append(status);
+        if (safetyStatus != null && !safetyStatus.isEmpty()) {
+            conditions.append(" 状态=").append(safetyStatus);
         }
         logger.info(conditions.toString());
         
         // 直接调用数据库查询，使用动态SQL过滤
         List<SwmSafetyEducation> allRecords = swmSafetyEducationService.findByCustomConditions(
-            theme, safetyEducationType, participationType, status);
+            theme, safetyEducationType, participationType, safetyStatus);
         
         logger.info("从数据库获取记录总数: {}", allRecords.size());
         
@@ -138,13 +138,11 @@ public class SwmSafetyEducationController extends BaseController {
         
         // 处理枚举显示值并将状态替换为文本
         for (SwmSafetyEducation education : pageRecords) {
-            // 先获取文本值
-            String statusText = education.getStatusText();
+            // 获取枚举类型的文本值
             String typeText = education.getSafetyEducationTypeText();
             String participationTypeText = education.getParticipationTypeText();
             
-            // 将字段的原始值替换为文本值
-            education.setStatus(statusText);
+            // 将类型字段替换为文本值（safetyStatus已经是文本值，不需要转换）
             education.setSafetyEducationType(typeText);
             education.setParticipationType(participationTypeText);
             
@@ -235,12 +233,9 @@ public class SwmSafetyEducationController extends BaseController {
             educationData.put("attachmentUrl", swmSafetyEducation.getAttachmentUrl());
 
             // 处理枚举值
-            educationData.put("status", swmSafetyEducation.getStatus());
-            educationData.put("statusText", swmSafetyEducation.getStatusText());
+            educationData.put("safetyStatus", swmSafetyEducation.getSafetyStatus());
             educationData.put("safetyEducationType", swmSafetyEducation.getSafetyEducationType());
-            educationData.put("safetyEducationTypeText", swmSafetyEducation.getSafetyEducationTypeText());
             educationData.put("participationType", swmSafetyEducation.getParticipationType());
-            educationData.put("participationTypeText", swmSafetyEducation.getParticipationTypeText());
 
             // 处理时间
             educationData.put("createTime", swmSafetyEducation.getCreateTime());
@@ -291,7 +286,12 @@ public class SwmSafetyEducationController extends BaseController {
     @ResponseBody
     @ApiOperation("删除数据")
     public String delete(SwmSafetyEducation swmSafetyEducation) {
-        swmSafetyEducationService.delete(swmSafetyEducation);
+        // 逻辑删除，设置delFlag=1
+        swmSafetyEducation = swmSafetyEducationService.get(swmSafetyEducation.getId());
+        if (swmSafetyEducation != null) {
+            swmSafetyEducation.setStatus(1);
+            swmSafetyEducationService.save(swmSafetyEducation);
+        }
         return renderResult(Global.TRUE, text("删除安全教育成功！"));
     }
 
@@ -306,7 +306,9 @@ public class SwmSafetyEducationController extends BaseController {
         for (String id : idArray) {
             SwmSafetyEducation swmSafetyEducation = swmSafetyEducationService.get(id);
             if (swmSafetyEducation != null) {
-                swmSafetyEducationService.delete(swmSafetyEducation);
+                // 逻辑删除，设置delFlag=1
+                swmSafetyEducation.setStatus(1);
+                swmSafetyEducationService.save(swmSafetyEducation);
             }
         }
         return renderResult(Global.TRUE, text("批量删除安全教育成功！"));
@@ -357,23 +359,21 @@ public class SwmSafetyEducationController extends BaseController {
             String theme = swmSafetyEducation.getTheme();
             String safetyEducationType = swmSafetyEducation.getSafetyEducationType();
             String participationType = swmSafetyEducation.getParticipationType();
-            String status = swmSafetyEducation.getStatus();
+            String safetyStatus = swmSafetyEducation.getSafetyStatus();
             
             // 使用自定义查询方法直接从数据库获取过滤后的记录
             List<SwmSafetyEducation> filteredRecords = swmSafetyEducationService.findByCustomConditions(
-                theme, safetyEducationType, participationType, status);
+                theme, safetyEducationType, participationType, safetyStatus);
             
             logger.info("导出数据：使用条件查询获取到 {} 条记录", filteredRecords.size());
             
             // 处理枚举显示值并将状态替换为文本
             for (SwmSafetyEducation education : filteredRecords) {
-                // 先获取文本值
-                String statusText = education.getStatusText();
+                // 获取枚举类型的文本值
                 String typeText = education.getSafetyEducationTypeText();
                 String participationTypeText = education.getParticipationTypeText();
 
-                // 将字段的原始值替换为文本值
-                education.setStatus(statusText);
+                // 将类型字段替换为文本值（safetyStatus已经是文本值，不需要转换）
                 education.setSafetyEducationType(typeText);
                 education.setParticipationType(participationTypeText);
 
@@ -508,7 +508,7 @@ public class SwmSafetyEducationController extends BaseController {
             }
 
             // 更新状态为已完成
-            education.setStatus(SwmSafetyEducation.StatusEnum.COMPLETED);
+            education.setSafetyStatus(SwmSafetyEducation.StatusEnum.COMPLETED);
 
             // 保存附件信息，优先使用完整的附件URL（包含文件路径）
             if (attachmentUrl != null && !attachmentUrl.isEmpty()) {

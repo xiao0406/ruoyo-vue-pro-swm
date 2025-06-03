@@ -25,11 +25,12 @@ import java.util.Date;
         @Column(name = "start_time", attrName = "startTime", label = "开始时间"),
         @Column(name = "participants", attrName = "participants", label = "参与对象", queryType = QueryType.LIKE),
         @Column(name = "participants_name", attrName = "participantsName", label = "参与对象名称", queryType = QueryType.LIKE),
-        @Column(name = "status", attrName = "status", label = "状态"),
+        @Column(name = "safety_status", attrName = "safetyStatus", label = "状态"),
         @Column(name = "participation_type", attrName = "participationType", label = "参与类型"),
         @Column(name = "attachment_url", attrName = "attachmentUrl", label = "附件URL"),
         @Column(name = "create_time", attrName = "createTime", label = "创建时间", isUpdateForce = true),
-        @Column(name = "update_time", attrName = "updateTime", label = "更新时间", isUpdateForce = true)
+        @Column(name = "update_time", attrName = "updateTime", label = "更新时间", isUpdateForce = true),
+        @Column(name = "status", attrName = "status", label = "状态：0-正常，1-删除")
 }, orderBy = "a.update_time DESC")
 public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
 
@@ -109,16 +110,17 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     private Date startTime; // 开始时间
     private String participants; // 参与对象
     private String participantsName; // 参与对象名称
-    private String status; // 状态
+    private String safetyStatus; // 状态
     private String participationType; // 参与类型
     private String attachmentUrl; // 附件URL
     private Date createTime; // 创建时间
     private Date updateTime; // 更新时间
+    private String status; // 状态：0-正常，1-删除
 
     // 用于显示的属性，不对应数据库字段
-    private String statusText; // 状态显示文本
     private String safetyEducationTypeText; // 安全教育类型显示文本
     private String participationTypeText; // 参与类型显示文本
+    private String safetyStatusText; // 安全状态显示文本
 
     public SwmSafetyEducation() {
         this(null);
@@ -127,8 +129,9 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     public SwmSafetyEducation(String id) {
         super(id);
         // 取消DataEntity默认的状态过滤
-        this.status = null;
-        // 清除可能存在的默认status条件
+        this.safetyStatus = null;
+        // 默认状态为正常
+        this.status = String.valueOf(0);
     }
 
     @NotBlank(message = "主题不能为空")
@@ -197,6 +200,20 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         this.participationTypeText = participationTypeText;
     }
 
+    /**
+     * 获取安全状态显示文本
+     */
+    public String getSafetyStatusText() {
+        if (this.safetyStatusText == null && this.safetyStatus != null) {
+            this.safetyStatusText = StatusEnum.getText(this.safetyStatus);
+        }
+        return this.safetyStatusText;
+    }
+
+    public void setSafetyStatusText(String safetyStatusText) {
+        this.safetyStatusText = safetyStatusText;
+    }
+
     public Date getStartTime() {
         return startTime;
     }
@@ -224,26 +241,12 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
     }
 
     @Length(min = 0, max = 20, message = "状态长度不能超过 20 个字符")
-    public String getStatus() {
-        return status;
+    public String getSafetyStatus() {
+        return safetyStatus;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    /**
-     * 获取状态显示文本
-     */
-    public String getStatusText() {
-        if (this.statusText == null && this.status != null) {
-            this.statusText = StatusEnum.getText(this.status);
-        }
-        return this.statusText;
-    }
-
-    public void setStatusText(String statusText) {
-        this.statusText = statusText;
+    public void setSafetyStatus(String safetyStatus) {
+        this.safetyStatus = safetyStatus;
     }
 
     public Date getCreateTime() {
@@ -269,5 +272,13 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
 
     public void setAttachmentUrl(String attachmentUrl) {
         this.attachmentUrl = attachmentUrl;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = String.valueOf(status);
     }
 }
