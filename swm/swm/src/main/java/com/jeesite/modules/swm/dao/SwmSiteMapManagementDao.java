@@ -26,4 +26,10 @@ public interface SwmSiteMapManagementDao extends CrudDao<SwmSiteMapManagement> {
      * @return 影响行数
      */
     long physicalDelete(SwmSiteMapManagement swmSiteMapManagement);
+    
+    /**
+     * 查询启用状态的地图
+     * @return 启用状态的地图实体
+     */
+    SwmSiteMapManagement findActiveMap();
 } 

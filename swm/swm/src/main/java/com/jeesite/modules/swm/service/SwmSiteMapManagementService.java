@@ -50,6 +50,14 @@ public class SwmSiteMapManagementService extends CrudService<SwmSiteMapManagemen
     }
     
     /**
+     * 查询启用状态的地图
+     * @return 启用状态的地图
+     */
+    public SwmSiteMapManagement findActiveMap() {
+        return dao.findActiveMap();
+    }
+    
+    /**
      * 保存数据（插入或更新）
      * @param swmSiteMapManagement 实体对象
      */
