@@ -21,6 +21,10 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
         @Column(name = "map_size", attrName = "mapSize", label = "底图尺寸"),
         @Column(name = "scale", attrName = "scale", label = "比例尺"),
         @Column(name = "file_path", attrName = "filePath", label = "文件路径"),
+        @Column(name = "drawing_pixel_x", attrName = "drawingPixelX", label = "图纸X像素坐标"),
+        @Column(name = "drawing_pixel_y", attrName = "drawingPixelY", label = "图纸Y像素坐标"),
+        @Column(name = "site_coordinate_x_m", attrName = "siteCoordinateXM", label = "场地X坐标(米)"),
+        @Column(name = "site_coordinate_y_m", attrName = "siteCoordinateYM", label = "场地Y坐标(米)"),
         @Column(includeEntity = DataEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmSiteMapManagement extends DataEntity<SwmSiteMapManagement> {
@@ -32,6 +36,10 @@ public class SwmSiteMapManagement extends DataEntity<SwmSiteMapManagement> {
     private String mapSize;     // 底图尺寸
     private String scale;       // 比例尺
     private String filePath;    // 文件路径
+    private Integer drawingPixelX;  // 图纸X像素坐标
+    private Integer drawingPixelY;  // 图纸Y像素坐标
+    private java.math.BigDecimal siteCoordinateXM;  // 场地X坐标(米)
+    private java.math.BigDecimal siteCoordinateYM;  // 场地Y坐标(米)
     
     public SwmSiteMapManagement() {
         this(null);
@@ -85,5 +93,37 @@ public class SwmSiteMapManagement extends DataEntity<SwmSiteMapManagement> {
     
     public void setFilePath(String filePath) {
         this.filePath = filePath;
+    }
+    
+    public Integer getDrawingPixelX() {
+        return drawingPixelX;
+    }
+    
+    public void setDrawingPixelX(Integer drawingPixelX) {
+        this.drawingPixelX = drawingPixelX;
+    }
+    
+    public Integer getDrawingPixelY() {
+        return drawingPixelY;
+    }
+    
+    public void setDrawingPixelY(Integer drawingPixelY) {
+        this.drawingPixelY = drawingPixelY;
+    }
+    
+    public java.math.BigDecimal getSiteCoordinateXM() {
+        return siteCoordinateXM;
+    }
+    
+    public void setSiteCoordinateXM(java.math.BigDecimal siteCoordinateXM) {
+        this.siteCoordinateXM = siteCoordinateXM;
+    }
+    
+    public java.math.BigDecimal getSiteCoordinateYM() {
+        return siteCoordinateYM;
+    }
+    
+    public void setSiteCoordinateYM(java.math.BigDecimal siteCoordinateYM) {
+        this.siteCoordinateYM = siteCoordinateYM;
     }
 } 
