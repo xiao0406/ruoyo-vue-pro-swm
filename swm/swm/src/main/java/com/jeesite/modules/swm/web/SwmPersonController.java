@@ -104,6 +104,7 @@ public class SwmPersonController extends BaseController {
             personMap.put("gender", person.getGender());
             personMap.put("company", person.getCompany());
             personMap.put("department", person.getDepartment());
+            personMap.put("prodLine", person.getProdLine());
             personMap.put("workProcess", person.getWorkProcess());
             personMap.put("team", person.getTeam());
             personMap.put("jobType", person.getJobType());
@@ -153,6 +154,7 @@ public class SwmPersonController extends BaseController {
             personData.put("gender", swmPerson.getGender());
             personData.put("company", swmPerson.getCompany());
             personData.put("department", swmPerson.getDepartment());
+            personData.put("prodLine", swmPerson.getProdLine());
             personData.put("workProcess", swmPerson.getWorkProcess());
             personData.put("team", swmPerson.getTeam());
             personData.put("jobType", swmPerson.getJobType());
@@ -449,6 +451,7 @@ public class SwmPersonController extends BaseController {
             departure.setGender(swmPerson.getGender());
             departure.setCompany(swmPerson.getCompany());
             departure.setDepartment(swmPerson.getDepartment());
+            departure.setProdLine(swmPerson.getProdLine());
             departure.setWorkProcess(swmPerson.getWorkProcess());
             departure.setTeam(swmPerson.getTeam());
             departure.setJobType(swmPerson.getJobType());
@@ -559,6 +562,7 @@ public class SwmPersonController extends BaseController {
                     personMap.put("gender", person.getGender());
                     personMap.put("company", person.getCompany());
                     personMap.put("department", person.getDepartment());
+                    personMap.put("prodLine", person.getProdLine());
                     personMap.put("workProcess", person.getWorkProcess());
                     personMap.put("team", person.getTeam());
                     personMap.put("jobType", person.getJobType());

@@ -28,6 +28,9 @@ public class SwmPersonExcelModel {
     @ExcelProperty("所属车间")
     private String department;
 
+    @ExcelProperty("产线")
+    private String prodLine;
+
     @ExcelProperty("所属工序")
     private String workProcess;
 
