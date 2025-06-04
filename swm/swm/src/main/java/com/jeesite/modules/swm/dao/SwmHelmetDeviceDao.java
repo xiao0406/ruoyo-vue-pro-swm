@@ -10,6 +10,7 @@ import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import com.jeesite.common.entity.Page;
 
 /**
  * 头盔设备管理DAO接口
@@ -57,4 +58,13 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * @date 2025-05-31
      */
     int clearDeviceAssignment(@Param("deviceId") String deviceId);
+    
+    /**
+     * 带有人员关联信息的列表查询，关联fms_worker、fms_work_group和fms_position_archive表
+     * 用于替代实体类默认查询
+     * 
+     * @author Shawn
+     * @date 2025-06-01
+     */
+    List<SwmHelmetDevice> findHelmetDeviceListWithRelations(SwmHelmetDevice swmHelmetDevice);
 }

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.ArrayList;
 
 /**
  * 头盔设备管理服务
@@ -65,7 +66,31 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
      */
     @Override
     public Page<SwmHelmetDevice> findPage(SwmHelmetDevice device) {
-        return super.findPage(device);
+        // 确保设备对象有Page对象
+        if (device.getPage() == null) {
+            device.setPage(new Page<>());
+        }
+        
+        // 获取分页对象
+        Page<SwmHelmetDevice> page = device.getPage();
+        
+        // 先查询总数，设置到page对象中
+        long count = dao.findCount(device);
+        page.setCount(count);
+        
+        // 如果总数为0，则直接返回空列表
+        if (count <= 0) {
+            page.setList(new ArrayList<>());
+            return page;
+        }
+        
+        // 查询数据列表
+        List<SwmHelmetDevice> list = dao.findHelmetDeviceListWithRelations(device);
+        
+        // 设置查询结果
+        page.setList(list);
+        
+        return page;
     }
 
     /**
