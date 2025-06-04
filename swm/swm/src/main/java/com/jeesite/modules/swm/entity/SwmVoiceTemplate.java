@@ -24,6 +24,8 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "template_code", attrName = "templateCode", label = "模板代码", isUpdateForce = true),
         @Column(name = "content", attrName = "content", label = "语音内容"),
         @Column(name = "language", attrName = "language", label = "语言"),
+        @Column(name = "push_method", attrName = "pushMethod", label = "推送方式"),
+        @Column(name = "push_frequency", attrName = "pushFrequency", label = "推送频次"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {
@@ -34,6 +36,8 @@ public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {
     private String templateCode;    // 模板代码
     private String content;         // 语音内容
     private String language;        // 语言
+    private String pushMethod;      // 推送方式
+    private String pushFrequency;   // 推送频次
     
     public SwmVoiceTemplate() {
         this(null);
@@ -79,5 +83,23 @@ public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+    
+    @Length(min = 0, max = 100, message = "推送方式不能超过100个字符")
+    public String getPushMethod() {
+        return pushMethod;
+    }
+
+    public void setPushMethod(String pushMethod) {
+        this.pushMethod = pushMethod;
+    }
+    
+    @Length(min = 0, max = 50, message = "推送频次不能超过50个字符")
+    public String getPushFrequency() {
+        return pushFrequency;
+    }
+
+    public void setPushFrequency(String pushFrequency) {
+        this.pushFrequency = pushFrequency;
     }
 } 

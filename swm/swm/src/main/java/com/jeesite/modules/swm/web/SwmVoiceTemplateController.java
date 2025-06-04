@@ -268,4 +268,35 @@ public class SwmVoiceTemplateController extends BaseController {
         
         return result;
     }
+    
+    /**
+     * 更新模板状态（启用/禁用）
+     */
+    @RequestMapping(value = "updateStatus")
+    @ResponseBody
+    public String updateStatus(@RequestParam("id") String id, @RequestParam("status") String status) {
+        if (id == null || id.isEmpty()) {
+            return renderResult(Global.FALSE, text("更新状态失败！ID不能为空"));
+        }
+        
+        if (!"0".equals(status) && !"1".equals(status)) {
+            return renderResult(Global.FALSE, text("更新状态失败！状态值无效"));
+        }
+        
+        try {
+            // 获取现有模板
+            SwmVoiceTemplate template = swmVoiceTemplateService.get(id);
+            if (template == null) {
+                return renderResult(Global.FALSE, text("更新状态失败！未找到对应模板"));
+            }
+            
+            // 直接使用SQL更新状态
+            swmVoiceTemplateService.updateStatus(id, status);
+            
+            return renderResult(Global.TRUE, text((status.equals("0") ? "启用" : "禁用") + "模板成功！"));
+        } catch (Exception e) {
+            logger.error("更新模板状态失败", e);
+            return renderResult(Global.FALSE, text("更新状态失败！" + e.getMessage()));
+        }
+    }
 } 

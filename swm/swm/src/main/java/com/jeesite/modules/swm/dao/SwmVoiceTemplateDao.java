@@ -9,6 +9,7 @@ import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmVoiceTemplate;
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 语音模板表DAO接口
@@ -32,4 +33,9 @@ public interface SwmVoiceTemplateDao extends CrudDao<SwmVoiceTemplate> {
      * 物理删除数据
      */
     void deletePhysical(SwmVoiceTemplate voiceTemplate);
+    
+    /**
+     * 更新状态
+     */
+    void updateStatus(@Param("id") String id, @Param("status") String status);
 } 

@@ -19,6 +19,8 @@
 		       a.`template_code` AS "templateCode", 
 		       a.`content` AS "content", 
 		       a.`language` AS "language", 
+		       a.`push_method` AS "pushMethod",
+		       a.`push_frequency` AS "pushFrequency",
 		       a.`status` AS "status", 
 		       a.`create_by` AS "createBy", 
 		       a.`create_date` AS "createDate", 
@@ -44,6 +46,8 @@
 		       a.`template_code` AS "templateCode", 
 		       a.`content` AS "content", 
 		       a.`language` AS "language", 
+		       a.`push_method` AS "pushMethod",
+		       a.`push_frequency` AS "pushFrequency",
 		       a.`status` AS "status", 
 		       a.`create_by` AS "createBy", 
 		       a.`create_date` AS "createDate", 
@@ -68,5 +72,12 @@
 		DELETE FROM `swm_voice_template`
 		WHERE id = #{id}
 	</delete>
+	
+	<!-- 更新状态 -->
+	<update id="updateStatus">
+		UPDATE `swm_voice_template`
+		SET `status` = #{status}
+		WHERE id = #{id}
+	</update>
 	
 </mapper> 

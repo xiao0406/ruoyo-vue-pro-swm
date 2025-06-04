@@ -104,4 +104,10 @@ public class SwmVoiceTemplateServiceImpl extends CrudService<SwmVoiceTemplateDao
         // 调用DAO查询状态为0的数据
         return swmVoiceTemplateDao.findListWithStatusZero(voiceTemplate);
     }
+    
+    @Override
+    @Transactional(readOnly = false)
+    public void updateStatus(String id, String status) {
+        swmVoiceTemplateDao.updateStatus(id, status);
+    }
 } 

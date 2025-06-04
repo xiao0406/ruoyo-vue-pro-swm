@@ -73,4 +73,9 @@ public interface SwmVoiceTemplateService {
      */
     List<SwmVoiceTemplate> findListWithStatusZero(SwmVoiceTemplate voiceTemplate);
     
+    /**
+     * 更新状态
+     */
+    void updateStatus(String id, String status);
+    
 } 
