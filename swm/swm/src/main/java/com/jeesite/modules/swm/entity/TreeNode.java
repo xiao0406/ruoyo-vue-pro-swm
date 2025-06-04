@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * 树节点实体类
  * 
- * @author AI-Generated
+ * @author zwf
  * @version 2025-05-28
  */
 public class TreeNode implements Serializable {
@@ -17,7 +17,7 @@ public class TreeNode implements Serializable {
     private String value;     // 节点值
     private String title;     // 节点标题
     private String key;       // 节点键
-    private String nodeType;  // 节点类型: office(厂间), workshop(车间), prodLine(产线), workGroup(班组)
+    private String nodeType;  // 节点类型: office(厂间), workshop(车间), prodLine(产线), workGroup(班组), worker(员工)
     private boolean isLeaf;   // 是否叶子节点
 
     public TreeNode() {

@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * 组织树服务
  * 
- * @author AI-Generated
+ * @author zwf
  * @version 2025-05-28
  */
 @Service
@@ -26,7 +26,7 @@ public class SwmOrganizationTreeService {
     /**
      * 获取组织树节点
      * 
-     * @param nodeType 节点类型: root, office, workshop, prodLine, workGroup
+     * @param nodeType 节点类型: root, office, workshop, prodLine, workGroup, worker
      * @param parentId 父节点ID
      * @return 树节点列表
      */
@@ -49,6 +49,10 @@ public class SwmOrganizationTreeService {
             case "prodLine":
                 // 请求产线的下级节点，返回班组数据
                 nodes = getWorkGroupNodes(parentId);
+                break;
+            case "workGroup":
+                // 请求班组的下级节点，返回员工数据
+                nodes = getWorkerNodes(parentId);
                 break;
             default:
                 break;
@@ -137,12 +141,37 @@ public class SwmOrganizationTreeService {
             node.setValue(node.getId());
             node.setKey(node.getId());
             node.setNodeType("workGroup");
-            node.setLeaf(true);  // 班组是叶子节点
+            node.setLeaf(false);  // 班组不再是叶子节点，因为下面还有员工
             
             System.out.println("创建班组节点: id=" + node.getId() + ", parentId=" + node.getParentId() + ", name=" + node.getTitle());
         }
         
         System.out.println("已获取班组节点数量: " + nodes.size());
+        return nodes;
+    }
+    
+    /**
+     * 获取员工节点
+     * 
+     * @param workGroupId 班组ID
+     * @return 员工节点列表
+     */
+    private List<TreeNode> getWorkerNodes(String workGroupId) {
+        System.out.println("正在获取员工节点，班组ID: " + workGroupId);
+        
+        List<TreeNode> nodes = swmOrganizationTreeDao.getWorkerNodes(workGroupId);
+        
+        // 设置节点属性
+        for (TreeNode node : nodes) {
+            node.setValue(node.getId());
+            node.setKey(node.getId());
+            node.setNodeType("worker");
+            node.setLeaf(true);  // 员工是叶子节点
+            
+            System.out.println("创建员工节点: id=" + node.getId() + ", parentId=" + node.getParentId() + ", name=" + node.getTitle());
+        }
+        
+        System.out.println("已获取员工节点数量: " + nodes.size());
         return nodes;
     }
 } 

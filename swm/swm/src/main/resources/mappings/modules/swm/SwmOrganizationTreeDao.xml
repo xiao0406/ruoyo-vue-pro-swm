@@ -53,4 +53,15 @@
         WHERE prod_line_id = #{prodLineId}
     </select>
     
+    <!-- 获取员工节点 -->
+    <select id="getWorkerNodes" resultMap="treeNodeResultMap">
+        SELECT 
+            id,
+            work_group_id AS parent_id,
+            person_name AS title
+        FROM fms_worker
+        WHERE work_group_id = #{workGroupId}
+
+    </select>
+    
 </mapper> 

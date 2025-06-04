@@ -10,7 +10,7 @@ import org.apache.ibatis.annotations.Param;
 /**
  * 组织树数据访问接口
  * 
- * @author AI-Generated
+ * @author zwf
  * @version 2025-05-28
  */
 @MyBatisDao
@@ -46,4 +46,12 @@ public interface SwmOrganizationTreeDao {
      * @return 班组节点列表
      */
     List<TreeNode> getWorkGroupNodes(@Param("prodLineId") String prodLineId);
+    
+    /**
+     * 获取员工节点列表
+     * 
+     * @param workGroupId 班组ID
+     * @return 员工节点列表
+     */
+    List<TreeNode> getWorkerNodes(@Param("workGroupId") String workGroupId);
 } 
