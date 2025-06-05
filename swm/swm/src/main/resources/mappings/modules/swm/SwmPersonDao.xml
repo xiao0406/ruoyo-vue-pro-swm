@@ -11,7 +11,7 @@
                a.gender AS "gender",
                 o.office_name AS "company",
                 p.position_name AS "department",
-                a.prod_line AS "prodLine",
+                fpl.prod_line_name AS "prodLine",
                 wg.work_group_name AS "team",
                 f.work_type AS "jobType",
                a.safety_helmet_id AS "safetyHelmetId",
@@ -34,6 +34,7 @@
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
+        LEFT JOIN fms_prod_line fpl on fpl.id = wg.prod_line_id
         <where>
             ${sqlMap.where.toSql()}
         </where>
