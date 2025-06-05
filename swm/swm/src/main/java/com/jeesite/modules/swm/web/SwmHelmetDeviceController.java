@@ -252,4 +252,23 @@ public class SwmHelmetDeviceController extends BaseController {
         result.put("message", "清除安全帽缓存成功！");
         return result;
     }
+
+    /**
+     * 获取安全帽使用记录
+     * 根据设备ID查询所有安全帽订单记录
+     */
+    @GetMapping("getHelmetUsageRecords")
+    public Map<String, Object> getHelmetUsageRecords(String deviceId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<Map<String, Object>> records = swmHelmetDeviceService.getHelmetUsageRecords(deviceId);
+            result.put("success", true);
+            result.put("data", records);
+        } catch (Exception e) {
+            logger.error("获取安全帽使用记录失败", e);
+            result.put("success", false);
+            result.put("message", "获取安全帽使用记录失败：" + e.getMessage());
+        }
+        return result;
+    }
 }

@@ -28,6 +28,11 @@ import java.util.Date;
         @Column(name = "order_status", attrName = "orderStatus", label = "订购状态"),
         @Column(name = "received_date", attrName = "receivedDate", label = "领取时间"),
         @Column(name = "received_sign", attrName = "receivedSign", label = "领取签名"),
+        @Column(name = "bind_time", attrName = "bindTime", label = "绑定时间"),
+        @Column(name = "unbind_time", attrName = "unbindTime", label = "解绑时间"),
+        @Column(name = "bind_duration", attrName = "bindDuration", label = "绑定时长(天)"),
+        @Column(name = "usage_status", attrName = "usageStatus", label = "使用状态"),
+        @Column(name = "binder", attrName = "binder", label = "绑定人员"),
         @Column(includeEntity = DataEntity.class)
 })
 public class SwmSafetyHelmetOrder extends DataEntity<SwmSafetyHelmetOrder> {
@@ -55,6 +60,25 @@ public class SwmSafetyHelmetOrder extends DataEntity<SwmSafetyHelmetOrder> {
             }
         }
     }
+    
+    // 使用状态枚举
+    public static final class UsageStatusEnum {
+        public static final String USING = "0"; // 使用中
+        public static final String UNBINDED = "1"; // 已解绑
+
+        /**
+         * 获取使用状态文本
+         */
+        public static String getText(String status) {
+            if (USING.equals(status)) {
+                return "使用中";
+            } else if (UNBINDED.equals(status)) {
+                return "已解绑";
+            } else {
+                return "未知状态";
+            }
+        }
+    }
 
     private String personId; // 人员ID
     private String deviceId; // 安全帽ID
@@ -66,6 +90,11 @@ public class SwmSafetyHelmetOrder extends DataEntity<SwmSafetyHelmetOrder> {
     private String orderStatus; // 订购状态
     private Date receivedDate; // 领取时间
     private String receivedSign; // 领取签名
+    private Date bindTime; // 绑定时间
+    private Date unbindTime; // 解绑时间
+    private Integer bindDuration; // 绑定时长(天)
+    private String usageStatus; // 使用状态
+    private String binder; // 绑定人员
 
     public SwmSafetyHelmetOrder() {
         this(null);
@@ -165,11 +194,61 @@ public class SwmSafetyHelmetOrder extends DataEntity<SwmSafetyHelmetOrder> {
     public void setReceivedSign(String receivedSign) {
         this.receivedSign = receivedSign;
     }
+    
+    public Date getBindTime() {
+        return bindTime;
+    }
+
+    public void setBindTime(Date bindTime) {
+        this.bindTime = bindTime;
+    }
+
+    public Date getUnbindTime() {
+        return unbindTime;
+    }
+
+    public void setUnbindTime(Date unbindTime) {
+        this.unbindTime = unbindTime;
+    }
+
+    public Integer getBindDuration() {
+        return bindDuration;
+    }
+
+    public void setBindDuration(Integer bindDuration) {
+        this.bindDuration = bindDuration;
+    }
+
+    @NotBlank(message = "使用状态不能为空")
+    @Length(min = 0, max = 20, message = "使用状态长度不能超过20个字符")
+    public String getUsageStatus() {
+        return usageStatus;
+    }
+
+    public void setUsageStatus(String usageStatus) {
+        this.usageStatus = usageStatus;
+    }
+
+    @Length(min = 0, max = 64, message = "绑定人员长度不能超过64个字符")
+    public String getBinder() {
+        return binder;
+    }
+
+    public void setBinder(String binder) {
+        this.binder = binder;
+    }
 
     /**
      * 获取订购状态文本
      */
     public String getOrderStatusText() {
         return OrderStatusEnum.getText(this.orderStatus);
+    }
+    
+    /**
+     * 获取使用状态文本
+     */
+    public String getUsageStatusText() {
+        return UsageStatusEnum.getText(this.usageStatus);
     }
 }

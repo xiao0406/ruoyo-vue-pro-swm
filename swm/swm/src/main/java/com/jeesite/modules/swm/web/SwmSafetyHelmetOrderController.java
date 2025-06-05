@@ -90,6 +90,44 @@ public class SwmSafetyHelmetOrderController extends BaseController {
         }
         return result;
     }
+    
+    /**
+     * 查询人员当前使用中的安全帽订单
+     */
+    @GetMapping(value = "findActiveOrdersByPersonId")
+    @ResponseBody
+    public Map<String, Object> findActiveOrdersByPersonId(@RequestParam("personId") String personId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<SwmSafetyHelmetOrder> orders = swmSafetyHelmetOrderService.findActiveOrdersByPersonId(personId);
+            result.put("success", true);
+            result.put("data", orders);
+        } catch (Exception e) {
+            logger.error("查询使用中的安全帽订单异常", e);
+            result.put("success", false);
+            result.put("message", "查询使用中的安全帽订单失败：" + e.getMessage());
+        }
+        return result;
+    }
+    
+    /**
+     * 查询设备当前的使用订单
+     */
+    @GetMapping(value = "findActiveOrderByDeviceId")
+    @ResponseBody
+    public Map<String, Object> findActiveOrderByDeviceId(@RequestParam("deviceId") String deviceId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            SwmSafetyHelmetOrder order = swmSafetyHelmetOrderService.findActiveOrderByDeviceId(deviceId);
+            result.put("success", true);
+            result.put("data", order);
+        } catch (Exception e) {
+            logger.error("查询安全帽当前使用订单异常", e);
+            result.put("success", false);
+            result.put("message", "查询安全帽当前使用订单失败：" + e.getMessage());
+        }
+        return result;
+    }
 
     /**
      * 保存安全帽订购记录
@@ -138,6 +176,61 @@ public class SwmSafetyHelmetOrderController extends BaseController {
         } catch (Exception e) {
             logger.error("更新订购状态异常", e);
             return renderResult(Global.FALSE, text("更新订购状态失败：" + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 绑定安全帽
+     */
+    @PostMapping(value = "bindHelmet")
+    @ResponseBody
+    public String bindHelmet(@RequestBody Map<String, Object> params) {
+        String orderId = (String) params.get("orderId");
+        String binder = (String) params.get("binder"); // 获取绑定人员身份证
+        
+        try {
+            SwmSafetyHelmetOrder order = swmSafetyHelmetOrderService.get(orderId);
+            if (order == null) {
+                return renderResult(Global.FALSE, text("订购记录不存在"));
+            }
+            
+            // 调用带binder参数的绑定方法
+            if (binder != null && !binder.isEmpty()) {
+                swmSafetyHelmetOrderService.bindHelmet(orderId, binder);
+            } else {
+                swmSafetyHelmetOrderService.bindHelmet(orderId);
+            }
+            
+            return renderResult(Global.TRUE, text("安全帽绑定成功！"));
+        } catch (Exception e) {
+            logger.error("安全帽绑定异常", e);
+            return renderResult(Global.FALSE, text("安全帽绑定失败：" + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 解绑安全帽
+     */
+    @PostMapping(value = "unbindHelmet")
+    @ResponseBody
+    public String unbindHelmet(@RequestBody Map<String, Object> params) {
+        String orderId = (String) params.get("orderId");
+        
+        try {
+            SwmSafetyHelmetOrder order = swmSafetyHelmetOrderService.get(orderId);
+            if (order == null) {
+                return renderResult(Global.FALSE, text("订购记录不存在"));
+            }
+            
+            if (!SwmSafetyHelmetOrder.UsageStatusEnum.USING.equals(order.getUsageStatus())) {
+                return renderResult(Global.FALSE, text("该安全帽未处于使用状态，无法解绑"));
+            }
+            
+            swmSafetyHelmetOrderService.unbindHelmet(orderId);
+            return renderResult(Global.TRUE, text("安全帽解绑成功！"));
+        } catch (Exception e) {
+            logger.error("安全帽解绑异常", e);
+            return renderResult(Global.FALSE, text("安全帽解绑失败：" + e.getMessage()));
         }
     }
 }

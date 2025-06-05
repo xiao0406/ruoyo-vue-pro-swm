@@ -7,16 +7,23 @@ package com.jeesite.modules.swm.service;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmHelmetDeviceDao;
+import com.jeesite.modules.swm.dao.SwmSafetyHelmetOrderDao;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
+import com.jeesite.modules.swm.entity.SwmPerson;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 头盔设备管理服务
@@ -31,6 +38,12 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
     // 简单的内存缓存，用于缓存头盔信息
     private final ConcurrentMap<String, SwmHelmetDevice> helmetCache = new ConcurrentHashMap<>();
+
+    @Autowired
+    private SwmSafetyHelmetOrderDao swmSafetyHelmetOrderDao;
+
+    @Autowired
+    private SwmPersonService swmPersonService;
 
     /**
      * 获取单条数据
@@ -234,5 +247,65 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     public void clearCache() {
         helmetCache.clear();
         logger.info("已清除安全帽缓存");
+    }
+
+    /**
+     * 获取安全帽使用记录
+     * 根据设备ID查询所有安全帽订单记录
+     */
+    public List<Map<String, Object>> getHelmetUsageRecords(String deviceId) {
+        if (deviceId == null || deviceId.trim().isEmpty()) {
+            throw new IllegalArgumentException("设备ID不能为空");
+        }
+
+        List<SwmSafetyHelmetOrder> orderList = swmSafetyHelmetOrderDao.findByDeviceId(deviceId);
+        List<Map<String, Object>> resultList = new ArrayList<>();
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        
+        for (SwmSafetyHelmetOrder order : orderList) {
+            Map<String, Object> recordMap = new HashMap<>();
+            
+            // 获取需要的字段信息
+            recordMap.put("id", order.getId());
+            recordMap.put("personId", order.getPersonId());
+            recordMap.put("deviceId", order.getDeviceId());
+            
+            // 绑定时间
+            if (order.getBindTime() != null) {
+                recordMap.put("bindTime", sdf.format(order.getBindTime()));
+            } else {
+                recordMap.put("bindTime", null);
+            }
+            
+            // 解绑时间
+            if (order.getUnbindTime() != null) {
+                recordMap.put("unbindTime", sdf.format(order.getUnbindTime()));
+            } else {
+                recordMap.put("unbindTime", null);
+            }
+            
+            // 绑定时长
+            recordMap.put("bindDuration", order.getBindDuration());
+            
+            // 使用状态
+            recordMap.put("usageStatus", order.getUsageStatus());
+            recordMap.put("usageStatusText", order.getUsageStatusText());
+            
+            // 绑定人员身份证
+            recordMap.put("binder", order.getBinder());
+            
+            // 查询人员名称
+            SwmPerson person = swmPersonService.get(order.getPersonId());
+            if (person != null) {
+                recordMap.put("personName", person.getName());
+            } else {
+                recordMap.put("personName", null);
+            }
+            
+            resultList.add(recordMap);
+        }
+        
+        return resultList;
     }
 }
