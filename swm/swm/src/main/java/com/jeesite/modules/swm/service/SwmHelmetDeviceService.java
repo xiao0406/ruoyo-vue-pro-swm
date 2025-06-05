@@ -4,6 +4,9 @@
  */
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmHelmetDeviceDao;
@@ -11,6 +14,9 @@ import com.jeesite.modules.swm.dao.SwmSafetyHelmetOrderDao;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.utils.R;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -23,7 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.ArrayList;
 import java.text.SimpleDateFormat;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.springframework.beans.factory.annotation.Autowired;
+
 
 /**
  * 头盔设备管理服务
@@ -32,6 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @Service
 @Transactional(readOnly = true)
+@Slf4j
 public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmHelmetDevice> {
 
     private static final Logger logger = LoggerFactory.getLogger(SwmHelmetDeviceService.class);
@@ -44,6 +55,21 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
     @Autowired
     private SwmPersonService swmPersonService;
+
+    @Autowired
+    private TDengineService tdengineService;
+
+
+
+    @Value("${tdengine.dbname}")
+    private String dbname;
+
+
+
+    /**
+     * 安全帽超级表名称
+     */
+    private static final String HELMET_SUPER_TABLE_NAME = "helmet_runde_ca_report_location";
 
     /**
      * 获取单条数据
@@ -99,7 +125,46 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         
         // 查询数据列表
         List<SwmHelmetDevice> list = dao.findHelmetDeviceListWithRelations(device);
-        
+
+
+        for (SwmHelmetDevice swmHelmetDevice : list) {
+            String sql = String.format(
+                    "select time , bat_l from %s.%s " +
+                            "where device_id = '%s' " +
+                            "AND time <= NOW() " +
+                            "AND time >= NOW() - 5m \n" +
+                            "ORDER BY time DESC \n" +
+                            "LIMIT 1;",
+                    dbname, HELMET_SUPER_TABLE_NAME,swmHelmetDevice.getDeviceId());
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            try {
+                if (result != null && result.getData() != null) {
+                    JSONObject obj = result.getData();
+                    JSONArray dataArray = obj.getJSONArray("data");
+
+                    if (dataArray != null && dataArray.size() > 0) {
+                        int batL = dataArray.getJSONArray(0).getInt(1);
+                        swmHelmetDevice.setBatteryLevel(batL);
+                    } else {
+                       // 无数据标记
+                        System.out.println("设备 " + swmHelmetDevice.getDeviceId() + " 暂无电池数据");
+                    }
+                } else {
+
+                    System.out.println("查询结果为空: " + swmHelmetDevice.getDeviceId());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                 // 异常情况设置默认值
+            }
+            System.out.println("结结果是"+result);
+        }
+        // 构建查询SQL
+
+
+
+
         // 设置查询结果
         page.setList(list);
         
