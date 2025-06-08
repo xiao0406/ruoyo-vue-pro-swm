@@ -99,7 +99,11 @@ public class SwmBeaconStationController extends BaseController {
             data.put("controlType", swmBeaconStation.getControlType());
             data.put("location", swmBeaconStation.getLocation());
             data.put("mapCoord", swmBeaconStation.getMapCoord());
+            data.put("pixelX", swmBeaconStation.getPixelX());
+            data.put("pixelY", swmBeaconStation.getPixelY());
             data.put("gpsCoord", swmBeaconStation.getGpsCoord());
+            data.put("gpsLongitude", swmBeaconStation.getGpsLongitude());
+            data.put("gpsLatitude", swmBeaconStation.getGpsLatitude());
             data.put("beaconStatus", swmBeaconStation.getBeaconStatus());
             data.put("beaconStatusText", swmBeaconStation.getBeaconStatusText());
             data.put("deployStatus", swmBeaconStation.getDeployStatus());
@@ -178,5 +182,48 @@ public class SwmBeaconStationController extends BaseController {
     @ApiOperation(value = "查询在线状态的基站列表")
     public List<SwmBeaconStation> findOnlineBeacons() {
         return swmBeaconStationService.findOnlineBeacons();
+    }
+
+    /**
+     * 根据GPS坐标范围查询基站列表
+     */
+    @GetMapping("findByGpsRange")
+    @ResponseBody
+    @ApiOperation(value = "根据GPS坐标范围查询基站列表")
+    public List<SwmBeaconStation> findByGpsRange(Double minLongitude, Double maxLongitude,
+            Double minLatitude, Double maxLatitude) {
+        return swmBeaconStationService.findByGpsRange(minLongitude, maxLongitude, minLatitude, maxLatitude);
+    }
+
+    /**
+     * 根据图纸像素坐标范围查询基站列表
+     */
+    @GetMapping("findByPixelRange")
+    @ResponseBody
+    @ApiOperation(value = "根据图纸像素坐标范围查询基站列表")
+    public List<SwmBeaconStation> findByPixelRange(Double minX, Double maxX, Double minY, Double maxY) {
+        return swmBeaconStationService.findByPixelRange(minX, maxX, minY, maxY);
+    }
+
+    /**
+     * 更新基站坐标信息
+     */
+    @PostMapping("updateCoordinates")
+    @ResponseBody
+    @ApiOperation(value = "更新基站坐标信息")
+    public String updateCoordinates(String id, Double pixelX, Double pixelY,
+            Double gpsLongitude, Double gpsLatitude) {
+        SwmBeaconStation swmBeaconStation = swmBeaconStationService.get(id);
+        if (swmBeaconStation == null) {
+            return renderResult(Global.FALSE, text("基站不存在！"));
+        }
+
+        swmBeaconStation.setPixelX(pixelX);
+        swmBeaconStation.setPixelY(pixelY);
+        swmBeaconStation.setGpsLongitude(gpsLongitude);
+        swmBeaconStation.setGpsLatitude(gpsLatitude);
+
+        swmBeaconStationService.save(swmBeaconStation);
+        return renderResult(Global.TRUE, text("更新基站坐标成功！"));
     }
 }

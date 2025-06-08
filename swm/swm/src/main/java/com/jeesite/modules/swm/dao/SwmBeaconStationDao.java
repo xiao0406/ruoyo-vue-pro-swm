@@ -33,4 +33,20 @@ public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
      * 查询在线状态的基站列表
      */
     List<SwmBeaconStation> findOnlineBeacons();
+
+    /**
+     * 根据GPS坐标范围查询基站列表
+     */
+    List<SwmBeaconStation> findByGpsRange(@Param("minLongitude") Double minLongitude,
+            @Param("maxLongitude") Double maxLongitude,
+            @Param("minLatitude") Double minLatitude,
+            @Param("maxLatitude") Double maxLatitude);
+
+    /**
+     * 根据图纸像素坐标范围查询基站列表
+     */
+    List<SwmBeaconStation> findByPixelRange(@Param("minX") Double minX,
+            @Param("maxX") Double maxX,
+            @Param("minY") Double minY,
+            @Param("maxY") Double maxY);
 }

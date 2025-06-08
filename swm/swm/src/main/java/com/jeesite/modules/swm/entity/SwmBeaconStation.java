@@ -25,7 +25,11 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "control_type", attrName = "controlType", label = "围栏类型"),
         @Column(name = "location", attrName = "location", label = "所在位置", queryType = QueryType.LIKE),
         @Column(name = "map_coord", attrName = "mapCoord", label = "图中坐标"),
+        @Column(name = "pixel_x", attrName = "pixelX", label = "图纸像素X坐标"),
+        @Column(name = "pixel_y", attrName = "pixelY", label = "图纸像素Y坐标"),
         @Column(name = "gps_coord", attrName = "gpsCoord", label = "GPS坐标"),
+        @Column(name = "gps_longitude", attrName = "gpsLongitude", label = "GPS经度"),
+        @Column(name = "gps_latitude", attrName = "gpsLatitude", label = "GPS纬度"),
         @Column(name = "beacon_status", attrName = "beaconStatus", label = "信标状态"),
         @Column(name = "deploy_status", attrName = "deployStatus", label = "部署状态"),
         @Column(includeEntity = DataEntity.class)
@@ -92,7 +96,11 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     private String controlType; // 围栏类型
     private String location; // 所在位置
     private String mapCoord; // 图中坐标
+    private Double pixelX; // 图纸像素X坐标
+    private Double pixelY; // 图纸像素Y坐标
     private String gpsCoord; // GPS坐标
+    private Double gpsLongitude; // GPS经度
+    private Double gpsLatitude; // GPS纬度
     private String beaconStatus; // 信标状态
     private String deployStatus; // 部署状态
 
@@ -187,5 +195,37 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     public String getDeployStatusText() {
         return DeployStatusEnum.getText(this.deployStatus);
+    }
+
+    public Double getPixelX() {
+        return pixelX;
+    }
+
+    public void setPixelX(Double pixelX) {
+        this.pixelX = pixelX;
+    }
+
+    public Double getPixelY() {
+        return pixelY;
+    }
+
+    public void setPixelY(Double pixelY) {
+        this.pixelY = pixelY;
+    }
+
+    public Double getGpsLongitude() {
+        return gpsLongitude;
+    }
+
+    public void setGpsLongitude(Double gpsLongitude) {
+        this.gpsLongitude = gpsLongitude;
+    }
+
+    public Double getGpsLatitude() {
+        return gpsLatitude;
+    }
+
+    public void setGpsLatitude(Double gpsLatitude) {
+        this.gpsLatitude = gpsLatitude;
     }
 }

@@ -147,4 +147,31 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         }
         return resultList;
     }
+
+    /**
+     * 根据GPS坐标范围查询基站列表
+     * 
+     * @param minLongitude 最小经度
+     * @param maxLongitude 最大经度
+     * @param minLatitude  最小纬度
+     * @param maxLatitude  最大纬度
+     * @return 基站列表
+     */
+    public List<SwmBeaconStation> findByGpsRange(Double minLongitude, Double maxLongitude,
+            Double minLatitude, Double maxLatitude) {
+        return dao.findByGpsRange(minLongitude, maxLongitude, minLatitude, maxLatitude);
+    }
+
+    /**
+     * 根据图纸像素坐标范围查询基站列表
+     * 
+     * @param minX 最小X坐标
+     * @param maxX 最大X坐标
+     * @param minY 最小Y坐标
+     * @param maxY 最大Y坐标
+     * @return 基站列表
+     */
+    public List<SwmBeaconStation> findByPixelRange(Double minX, Double maxX, Double minY, Double maxY) {
+        return dao.findByPixelRange(minX, maxX, minY, maxY);
+    }
 }
