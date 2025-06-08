@@ -174,4 +174,26 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     public List<SwmBeaconStation> findByPixelRange(Double minX, Double maxX, Double minY, Double maxY) {
         return dao.findByPixelRange(minX, maxX, minY, maxY);
     }
+
+    /**
+     * 根据区域查询基站列表
+     * 
+     * @param area 区域名称
+     * @return 基站列表
+     */
+    public List<SwmBeaconStation> findByArea(String area) {
+        if (area == null || area.trim().isEmpty()) {
+            return null;
+        }
+        return dao.findByArea(area);
+    }
+
+    /**
+     * 获取所有区域列表
+     * 
+     * @return 区域列表
+     */
+    public List<String> findAllAreas() {
+        return dao.findAllAreas();
+    }
 }

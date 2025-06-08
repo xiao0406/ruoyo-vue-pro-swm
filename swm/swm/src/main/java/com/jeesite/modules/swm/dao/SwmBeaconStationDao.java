@@ -19,34 +19,44 @@ import java.util.List;
 @MyBatisDao
 public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
 
-    /**
-     * 根据信标编号查询基站
-     */
-    SwmBeaconStation getByBeaconId(@Param("beaconId") String beaconId);
+        /**
+         * 根据信标编号查询基站
+         */
+        SwmBeaconStation getByBeaconId(@Param("beaconId") String beaconId);
 
-    /**
-     * 查询指定位置的基站列表
-     */
-    List<SwmBeaconStation> findByLocation(@Param("location") String location);
+        /**
+         * 查询指定位置的基站列表
+         */
+        List<SwmBeaconStation> findByLocation(@Param("location") String location);
 
-    /**
-     * 查询在线状态的基站列表
-     */
-    List<SwmBeaconStation> findOnlineBeacons();
+        /**
+         * 查询在线状态的基站列表
+         */
+        List<SwmBeaconStation> findOnlineBeacons();
 
-    /**
-     * 根据GPS坐标范围查询基站列表
-     */
-    List<SwmBeaconStation> findByGpsRange(@Param("minLongitude") Double minLongitude,
-            @Param("maxLongitude") Double maxLongitude,
-            @Param("minLatitude") Double minLatitude,
-            @Param("maxLatitude") Double maxLatitude);
+        /**
+         * 根据GPS坐标范围查询基站列表
+         */
+        List<SwmBeaconStation> findByGpsRange(@Param("minLongitude") Double minLongitude,
+                        @Param("maxLongitude") Double maxLongitude,
+                        @Param("minLatitude") Double minLatitude,
+                        @Param("maxLatitude") Double maxLatitude);
 
-    /**
-     * 根据图纸像素坐标范围查询基站列表
-     */
-    List<SwmBeaconStation> findByPixelRange(@Param("minX") Double minX,
-            @Param("maxX") Double maxX,
-            @Param("minY") Double minY,
-            @Param("maxY") Double maxY);
+        /**
+         * 根据图纸像素坐标范围查询基站列表
+         */
+        List<SwmBeaconStation> findByPixelRange(@Param("minX") Double minX,
+                        @Param("maxX") Double maxX,
+                        @Param("minY") Double minY,
+                        @Param("maxY") Double maxY);
+
+        /**
+         * 根据区域查询基站列表
+         */
+        List<SwmBeaconStation> findByArea(@Param("area") String area);
+
+        /**
+         * 获取所有区域列表
+         */
+        List<String> findAllAreas();
 }

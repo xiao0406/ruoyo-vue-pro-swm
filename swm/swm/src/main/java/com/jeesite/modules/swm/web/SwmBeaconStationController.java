@@ -98,6 +98,7 @@ public class SwmBeaconStationController extends BaseController {
             data.put("beaconType", swmBeaconStation.getBeaconType());
             data.put("controlType", swmBeaconStation.getControlType());
             data.put("location", swmBeaconStation.getLocation());
+            data.put("area", swmBeaconStation.getArea());
             data.put("mapCoord", swmBeaconStation.getMapCoord());
             data.put("pixelX", swmBeaconStation.getPixelX());
             data.put("pixelY", swmBeaconStation.getPixelY());
@@ -225,5 +226,42 @@ public class SwmBeaconStationController extends BaseController {
 
         swmBeaconStationService.save(swmBeaconStation);
         return renderResult(Global.TRUE, text("更新基站坐标成功！"));
+    }
+
+    /**
+     * 根据区域查询基站列表
+     */
+    @GetMapping("findByArea")
+    @ResponseBody
+    @ApiOperation(value = "根据区域查询基站列表")
+    public List<SwmBeaconStation> findByArea(String area) {
+        return swmBeaconStationService.findByArea(area);
+    }
+
+    /**
+     * 获取所有区域列表
+     */
+    @GetMapping("getAllAreas")
+    @ResponseBody
+    @ApiOperation(value = "获取所有区域列表")
+    public List<String> getAllAreas() {
+        return swmBeaconStationService.findAllAreas();
+    }
+
+    /**
+     * 更新基站区域信息
+     */
+    @PostMapping("updateArea")
+    @ResponseBody
+    @ApiOperation(value = "更新基站区域信息")
+    public String updateArea(String id, String area) {
+        SwmBeaconStation swmBeaconStation = swmBeaconStationService.get(id);
+        if (swmBeaconStation == null) {
+            return renderResult(Global.FALSE, text("基站不存在！"));
+        }
+
+        swmBeaconStation.setArea(area);
+        swmBeaconStationService.save(swmBeaconStation);
+        return renderResult(Global.TRUE, text("更新基站区域成功！"));
     }
 }

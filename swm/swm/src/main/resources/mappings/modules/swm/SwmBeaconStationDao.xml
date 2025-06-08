@@ -15,6 +15,7 @@
             a.beacon_type,
             a.control_type,
             a.location,
+            a.area,
             a.map_coord,
             a.pixel_x,
             a.pixel_y,
@@ -41,6 +42,7 @@
             a.beacon_type,
             a.control_type,
             a.location,
+            a.area,
             a.map_coord,
             a.pixel_x,
             a.pixel_y,
@@ -67,6 +69,7 @@
             a.beacon_type,
             a.control_type,
             a.location,
+            a.area,
             a.map_coord,
             a.pixel_x,
             a.pixel_y,
@@ -94,6 +97,7 @@
             a.beacon_type,
             a.control_type,
             a.location,
+            a.area,
             a.map_coord,
             a.pixel_x,
             a.pixel_y,
@@ -132,6 +136,7 @@
             a.beacon_type,
             a.control_type,
             a.location,
+            a.area,
             a.map_coord,
             a.pixel_x,
             a.pixel_y,
@@ -160,6 +165,44 @@
             AND a.pixel_y &lt;= #{maxY}
         </if>
         ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 根据区域查询基站列表 -->
+    <select id="findByArea" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+        SELECT 
+            a.id,
+            a.beacon_id,
+            a.beacon_type,
+            a.control_type,
+            a.location,
+            a.area,
+            a.map_coord,
+            a.pixel_x,
+            a.pixel_y,
+            a.gps_coord,
+            a.gps_longitude,
+            a.gps_latitude,
+            a.beacon_status,
+            a.deploy_status,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks
+        FROM swm_beacon_station a
+        WHERE a.area LIKE CONCAT('%', #{area}, '%')
+        AND a.status = '0' <!-- 正常状态 -->
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 获取所有区域列表 -->
+    <select id="findAllAreas" resultType="java.lang.String">
+        SELECT DISTINCT a.area
+        FROM swm_beacon_station a
+        WHERE a.area IS NOT NULL 
+        AND a.area != ''
+        AND a.status = '0' <!-- 正常状态 -->
+        ORDER BY a.area ASC
     </select>
     
 </mapper> 

@@ -24,6 +24,7 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "beacon_type", attrName = "beaconType", label = "信标类型"),
         @Column(name = "control_type", attrName = "controlType", label = "围栏类型"),
         @Column(name = "location", attrName = "location", label = "所在位置", queryType = QueryType.LIKE),
+        @Column(name = "area", attrName = "area", label = "所属区域", queryType = QueryType.LIKE),
         @Column(name = "map_coord", attrName = "mapCoord", label = "图中坐标"),
         @Column(name = "pixel_x", attrName = "pixelX", label = "图纸像素X坐标"),
         @Column(name = "pixel_y", attrName = "pixelY", label = "图纸像素Y坐标"),
@@ -95,6 +96,7 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     private String beaconType; // 信标类型
     private String controlType; // 围栏类型
     private String location; // 所在位置
+    private String area; // 所属区域
     private String mapCoord; // 图中坐标
     private Double pixelX; // 图纸像素X坐标
     private Double pixelY; // 图纸像素Y坐标
@@ -151,6 +153,15 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    @Length(min = 0, max = 100, message = "所属区域不能超过100个字符")
+    public String getArea() {
+        return area;
+    }
+
+    public void setArea(String area) {
+        this.area = area;
     }
 
     @Length(min = 0, max = 50, message = "图中坐标不能超过50个字符")
