@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javax.annotation.PostConstruct;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
 
 /**
  * 头盔设备管理服务
@@ -59,17 +59,41 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     @Autowired
     private TDengineService tdengineService;
 
-
+    @Autowired
+    private SwmHelmetCacheService helmetCacheService;
 
     @Value("${tdengine.dbname}")
     private String dbname;
-
-
 
     /**
      * 安全帽超级表名称
      */
     private static final String HELMET_SUPER_TABLE_NAME = "helmet_runde_ca_report_location";
+
+    /**
+     * 服务启动后初始化Redis缓存
+     */
+    @PostConstruct
+    public void initCache() {
+        try {
+            // 检查Redis连接状态
+            if (!helmetCacheService.isRedisAvailable()) {
+                logger.warn("Redis连接不可用，跳过缓存初始化");
+                return;
+            }
+
+            // 查询所有头盔设备数据
+            SwmHelmetDevice queryCondition = new SwmHelmetDevice();
+            List<SwmHelmetDevice> allDevices = this.findList(queryCondition);
+
+            // 初始化Redis缓存
+            helmetCacheService.initHelmetCache(allDevices);
+
+            logger.info("头盔设备Redis缓存初始化完成，共{}条设备", allDevices.size());
+        } catch (Exception e) {
+            logger.error("初始化头盔设备Redis缓存失败", e);
+        }
+    }
 
     /**
      * 获取单条数据
@@ -83,21 +107,28 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
      * 根据头盔编号获取头盔设备
      */
     public SwmHelmetDevice getByDeviceId(String deviceId) {
-        // 先从缓存中查找
+        // 优先从内存缓存中查找
         SwmHelmetDevice cachedDevice = helmetCache.get(deviceId);
         if (cachedDevice != null) {
-            logger.debug("从缓存中获取安全帽: {}", deviceId);
+            logger.debug("从内存缓存中获取安全帽: {}", deviceId);
             return cachedDevice;
         }
 
         // 缓存中没有，从数据库查询
         SwmHelmetDevice result = dao.getByDeviceId(deviceId);
         if (result != null) {
-            // 放入缓存
+            // 放入内存缓存
             helmetCache.put(deviceId, result);
         }
 
         return result;
+    }
+
+    /**
+     * 直接从数据库获取头盔设备（不使用缓存）
+     */
+    public SwmHelmetDevice getByDeviceIdFromDB(String deviceId) {
+        return dao.getByDeviceId(deviceId);
     }
 
     /**
@@ -109,23 +140,22 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         if (device.getPage() == null) {
             device.setPage(new Page<>());
         }
-        
+
         // 获取分页对象
         Page<SwmHelmetDevice> page = device.getPage();
-        
+
         // 先查询总数，设置到page对象中
         long count = dao.findCount(device);
         page.setCount(count);
-        
+
         // 如果总数为0，则直接返回空列表
         if (count <= 0) {
             page.setList(new ArrayList<>());
             return page;
         }
-        
+
         // 查询数据列表
         List<SwmHelmetDevice> list = dao.findHelmetDeviceListWithRelations(device);
-
 
         for (SwmHelmetDevice swmHelmetDevice : list) {
             String sql = String.format(
@@ -135,7 +165,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                             "AND time >= NOW() - 5m \n" +
                             "ORDER BY time DESC \n" +
                             "LIMIT 1;",
-                    dbname, HELMET_SUPER_TABLE_NAME,swmHelmetDevice.getDeviceId());
+                    dbname, HELMET_SUPER_TABLE_NAME, swmHelmetDevice.getDeviceId());
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
 
             try {
@@ -147,7 +177,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                         int batL = dataArray.getJSONArray(0).getInt(1);
                         swmHelmetDevice.setBatteryLevel(batL);
                     } else {
-                       // 无数据标记
+                        // 无数据标记
                         System.out.println("设备 " + swmHelmetDevice.getDeviceId() + " 暂无电池数据");
                     }
                 } else {
@@ -156,18 +186,15 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                 // 异常情况设置默认值
+                // 异常情况设置默认值
             }
-            System.out.println("结结果是"+result);
+            System.out.println("结结果是" + result);
         }
         // 构建查询SQL
 
-
-
-
         // 设置查询结果
         page.setList(list);
-        
+
         return page;
     }
 
@@ -228,8 +255,11 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
         // 更新缓存
         if (device.getDeviceId() != null) {
+            // 更新内存缓存
             helmetCache.put(device.getDeviceId(), device);
-            logger.debug("更新安全帽缓存: {}", device.getDeviceId());
+            // 更新分配关系缓存
+            helmetCacheService.updateDevicePersonMapping(device.getDeviceId(), device.getAssignedPerson());
+            logger.debug("已更新设备缓存: {}", device.getDeviceId());
         }
     }
 
@@ -253,8 +283,11 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
         // 更新缓存
         if (device.getDeviceId() != null) {
+            // 更新内存缓存
             helmetCache.put(device.getDeviceId(), device);
-            logger.debug("更新安全帽缓存: {}", device.getDeviceId());
+            // 更新分配关系缓存
+            helmetCacheService.updateDevicePersonMapping(device.getDeviceId(), device.getAssignedPerson());
+            logger.debug("已更新设备缓存: {}", device.getDeviceId());
         }
     }
 
@@ -273,8 +306,10 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         // 直接使用DAO执行SQL更新，强制将字段设置为null
         int result = dao.clearDeviceAssignment(deviceId);
         if (result > 0) {
-            // 从缓存中移除，下次查询时会重新从数据库加载
+            // 从内存缓存中移除，下次查询时会重新从数据库加载
             helmetCache.remove(deviceId);
+            // 更新Redis缓存 - 清除分配关系
+            helmetCacheService.updateDevicePersonMapping(deviceId, null);
             logger.info("已强制清空设备{}的绑定信息", deviceId);
         } else {
             logger.warn("清空设备{}绑定信息失败，可能设备不存在", deviceId);
@@ -301,8 +336,11 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
         // 从缓存中移除
         if (device.getDeviceId() != null) {
+            // 从内存缓存中移除
             helmetCache.remove(device.getDeviceId());
-            logger.debug("从缓存中移除安全帽: {}", device.getDeviceId());
+            // 清除Redis缓存
+            helmetCacheService.clearDeviceCache(device.getDeviceId());
+            logger.debug("已从缓存中移除安全帽: {}", device.getDeviceId());
         }
     }
 
@@ -310,8 +348,11 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
      * 清除缓存
      */
     public void clearCache() {
+        // 清除内存缓存
         helmetCache.clear();
-        logger.info("已清除安全帽缓存");
+        // 清除Redis缓存
+        helmetCacheService.clearAllHelmetCache();
+        logger.info("已清除所有安全帽缓存");
     }
 
     /**
@@ -325,41 +366,41 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
         List<SwmSafetyHelmetOrder> orderList = swmSafetyHelmetOrderDao.findByDeviceId(deviceId);
         List<Map<String, Object>> resultList = new ArrayList<>();
-        
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        
+
         for (SwmSafetyHelmetOrder order : orderList) {
             Map<String, Object> recordMap = new HashMap<>();
-            
+
             // 获取需要的字段信息
             recordMap.put("id", order.getId());
             recordMap.put("personId", order.getPersonId());
             recordMap.put("deviceId", order.getDeviceId());
-            
+
             // 绑定时间
             if (order.getBindTime() != null) {
                 recordMap.put("bindTime", sdf.format(order.getBindTime()));
             } else {
                 recordMap.put("bindTime", null);
             }
-            
+
             // 解绑时间
             if (order.getUnbindTime() != null) {
                 recordMap.put("unbindTime", sdf.format(order.getUnbindTime()));
             } else {
                 recordMap.put("unbindTime", null);
             }
-            
+
             // 绑定时长
             recordMap.put("bindDuration", order.getBindDuration());
-            
+
             // 使用状态
             recordMap.put("usageStatus", order.getUsageStatus());
             recordMap.put("usageStatusText", order.getUsageStatusText());
-            
+
             // 绑定人员身份证
             recordMap.put("binder", order.getBinder());
-            
+
             // 查询人员名称
             SwmPerson person = swmPersonService.get(order.getPersonId());
             if (person != null) {
@@ -367,10 +408,10 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             } else {
                 recordMap.put("personName", null);
             }
-            
+
             resultList.add(recordMap);
         }
-        
+
         return resultList;
     }
 }

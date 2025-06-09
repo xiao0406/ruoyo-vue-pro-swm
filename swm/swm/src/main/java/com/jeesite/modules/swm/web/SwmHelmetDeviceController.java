@@ -11,6 +11,7 @@ import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.service.SwmPersonService;
+import com.jeesite.modules.swm.service.SwmHelmetCacheService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +35,9 @@ public class SwmHelmetDeviceController extends BaseController {
 
     @Autowired
     private SwmPersonService swmPersonService;
+
+    @Autowired
+    private SwmHelmetCacheService helmetCacheService;
 
     /**
      * 获取单个头盔设备数据
@@ -173,6 +177,8 @@ public class SwmHelmetDeviceController extends BaseController {
 
         result.put("success", true);
         result.put("message", "更新安全帽电量成功！");
+        result.put("deviceId", deviceId);
+        result.put("batteryLevel", batteryLevel);
         return result;
     }
 
@@ -213,6 +219,9 @@ public class SwmHelmetDeviceController extends BaseController {
 
         result.put("success", true);
         result.put("message", "已成功将安全帽绑定到身份证号：" + personIdCard + " (人员：" + personName + ")");
+        result.put("deviceId", deviceId);
+        result.put("personId", personId);
+        result.put("personIdCard", personIdCard);
         return result;
     }
 
@@ -268,6 +277,108 @@ public class SwmHelmetDeviceController extends BaseController {
             logger.error("获取安全帽使用记录失败", e);
             result.put("success", false);
             result.put("message", "获取安全帽使用记录失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * 获取设备和人员的映射关系（从Redis缓存）
+     */
+    @GetMapping("getCachedMappings")
+    public Map<String, Object> getCachedMappings() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Map<String, String> devicePersonMappings = helmetCacheService.getAllDevicePersonMappings();
+            Map<String, String> personDeviceMappings = helmetCacheService.getAllPersonDeviceMappings();
+
+            result.put("success", true);
+            result.put("devicePersonMappings", devicePersonMappings);
+            result.put("personDeviceMappings", personDeviceMappings);
+        } catch (Exception e) {
+            logger.error("获取缓存映射关系失败", e);
+            result.put("success", false);
+            result.put("message", "获取缓存映射关系失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * 根据设备ID从缓存中获取分配的人员
+     */
+    @GetMapping("getCachedAssignedPerson")
+    public Map<String, Object> getCachedAssignedPerson(String deviceId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String assignedPerson = helmetCacheService.getAssignedPersonFromCache(deviceId, swmHelmetDeviceService);
+            result.put("success", true);
+            result.put("deviceId", deviceId);
+            result.put("assignedPerson", assignedPerson);
+        } catch (Exception e) {
+            logger.error("从缓存获取设备分配人员失败", e);
+            result.put("success", false);
+            result.put("message", "从缓存获取设备分配人员失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * 根据人员身份证号从缓存中获取分配的设备
+     */
+    @GetMapping("getCachedAssignedDevice")
+    public Map<String, Object> getCachedAssignedDevice(String personId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String assignedDevice = helmetCacheService.getAssignedDeviceFromCache(personId, swmHelmetDeviceService);
+            result.put("success", true);
+            result.put("personId", personId);
+            result.put("assignedDevice", assignedDevice);
+        } catch (Exception e) {
+            logger.error("从缓存获取人员分配设备失败", e);
+            result.put("success", false);
+            result.put("message", "从缓存获取人员分配设备失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * 重新初始化Redis缓存
+     */
+    @PostMapping("reloadCache")
+    public Map<String, Object> reloadCache() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // 清除现有缓存
+            swmHelmetDeviceService.clearCache();
+
+            // 重新初始化缓存
+            swmHelmetDeviceService.initCache();
+
+            result.put("success", true);
+            result.put("message", "Redis缓存重新初始化成功！");
+        } catch (Exception e) {
+            logger.error("重新初始化Redis缓存失败", e);
+            result.put("success", false);
+            result.put("message", "重新初始化Redis缓存失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * 检查Redis连接状态
+     */
+    @GetMapping("checkRedisStatus")
+    public Map<String, Object> checkRedisStatus() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            boolean isAvailable = helmetCacheService.isRedisAvailable();
+            result.put("success", true);
+            result.put("redisAvailable", isAvailable);
+            result.put("message", isAvailable ? "Redis连接正常" : "Redis连接异常");
+        } catch (Exception e) {
+            logger.error("检查Redis状态失败", e);
+            result.put("success", false);
+            result.put("redisAvailable", false);
+            result.put("message", "检查Redis状态失败：" + e.getMessage());
         }
         return result;
     }
