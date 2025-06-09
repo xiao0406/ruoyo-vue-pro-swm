@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Base64;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -20,6 +21,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
@@ -266,6 +272,68 @@ public class SwmSiteMapManagementController extends BaseController {
             result.put("success", false);
             result.put("data", null);
             result.put("message", "系统中没有启用的底图");
+        }
+
+        return result;
+    }
+
+    /**
+     * 
+     * 
+     * @author Shawn
+     * @date 2025-06-09
+     *       蓝牙 iBeacon 定位对接说明
+     *       GET api/MapInfo/GetDetailMapInfo
+     */
+    @RequestMapping(value = "getThirdPartyMapInfo", method = RequestMethod.GET)
+    @ResponseBody
+    public Map<String, Object> getThirdPartyMapInfo() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 第三方API配置
+            String apiUrl = "http://58.240.212.6:8094/api/MapInfo/GetDetailMapInfo";
+            String encodedCredentials = "VXJhZGlvOlVyQGRpbzIwMTg=";
+
+            // 设置请求头
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Basic " + encodedCredentials);
+            headers.set("Content-Type", "application/json");
+
+            // 创建HTTP实体
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            // 发起HTTP请求
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    apiUrl,
+                    HttpMethod.GET,
+                    entity,
+                    Map.class);
+
+            // 处理响应
+            if (response.getStatusCode().is2xxSuccessful()) {
+                Map<String, Object> responseBody = response.getBody();
+                if (responseBody != null && Boolean.TRUE.equals(responseBody.get("Success"))) {
+                    result.put("success", true);
+                    result.put("data", responseBody);
+                    result.put("message", "获取第三方底图信息成功");
+                } else {
+                    result.put("success", false);
+                    result.put("data", null);
+                    result.put("message", "第三方API返回失败：" +
+                            (responseBody != null ? responseBody.get("ErrorText") : "未知错误"));
+                }
+            } else {
+                result.put("success", false);
+                result.put("data", null);
+                result.put("message", "请求失败，HTTP状态码：" + response.getStatusCode());
+            }
+
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("data", null);
+            result.put("message", "调用第三方API异常：" + e.getMessage());
         }
 
         return result;
