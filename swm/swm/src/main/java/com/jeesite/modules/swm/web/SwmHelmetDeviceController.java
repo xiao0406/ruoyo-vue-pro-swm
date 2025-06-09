@@ -341,6 +341,26 @@ public class SwmHelmetDeviceController extends BaseController {
     }
 
     /**
+     * 手动清空所有Redis缓存（永久删除）
+     */
+    @PostMapping("clearAllRedisCache")
+    public Map<String, Object> clearAllRedisCache() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // 清空所有头盔设备相关的Redis缓存
+            helmetCacheService.clearAllHelmetCache();
+
+            result.put("success", true);
+            result.put("message", "所有Redis缓存已手动清空！");
+        } catch (Exception e) {
+            logger.error("手动清空Redis缓存失败", e);
+            result.put("success", false);
+            result.put("message", "手动清空Redis缓存失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
      * 重新初始化Redis缓存
      */
     @PostMapping("reloadCache")

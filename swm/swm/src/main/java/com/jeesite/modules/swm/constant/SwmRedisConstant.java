@@ -27,7 +27,7 @@ public class SwmRedisConstant {
      * 缓存过期时间（秒）
      */
     public static class TTL {
-        /** 映射关系缓存时间 - 一个月 */
-        public static final long MAPPING = 30 * 24 * 60 * 60;
+        /** 映射关系缓存时间 - 永不过期 */
+        public static final long MAPPING = -1;
     }
 }

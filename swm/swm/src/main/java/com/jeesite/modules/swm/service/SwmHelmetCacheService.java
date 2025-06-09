@@ -44,18 +44,16 @@ public class SwmHelmetCacheService {
                 }
             }
 
-            // 批量缓存映射关系
+            // 批量缓存映射关系（永不过期）
             if (!devicePersonMap.isEmpty()) {
                 Map<String, Object> devicePersonMapObj = new HashMap<>(devicePersonMap);
-                redisService.hmset(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, devicePersonMapObj,
-                        SwmRedisConstant.TTL.MAPPING);
+                redisService.hmset(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, devicePersonMapObj);
                 log.info("已缓存设备到人员映射关系，共{}条", devicePersonMap.size());
             }
 
             if (!personDeviceMap.isEmpty()) {
                 Map<String, Object> personDeviceMapObj = new HashMap<>(personDeviceMap);
-                redisService.hmset(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, personDeviceMapObj,
-                        SwmRedisConstant.TTL.MAPPING);
+                redisService.hmset(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, personDeviceMapObj);
                 log.info("已缓存人员到设备映射关系，共{}条", personDeviceMap.size());
             }
 
@@ -98,11 +96,9 @@ public class SwmHelmetCacheService {
                     log.debug("清除人员旧设备绑定：{} -> {}", assignedPerson, existingDevice);
                 }
 
-                // 建立新的双向映射
-                redisService.hset(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId, assignedPerson,
-                        SwmRedisConstant.TTL.MAPPING);
-                redisService.hset(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, assignedPerson, deviceId,
-                        SwmRedisConstant.TTL.MAPPING);
+                // 建立新的双向映射（永不过期）
+                redisService.hset(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId, assignedPerson);
+                redisService.hset(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, assignedPerson, deviceId);
                 log.info("已更新设备分配关系：{} -> {}", deviceId, assignedPerson);
             } else {
                 // 解绑操作，清除设备映射
