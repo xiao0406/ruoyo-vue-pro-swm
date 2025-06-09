@@ -3,7 +3,7 @@ package com.jeesite.modules.swm.service;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.PersonTrackDao;
 import com.jeesite.modules.swm.entity.PersonTrackInfo;
-import com.jeesite.modules.swm.service.impl.HelmetRundeCaReportLocationTdEnginServiceImpl;
+import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
 
 import com.jeesite.modules.utils.R;
 import org.slf4j.Logger;
@@ -30,7 +30,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
     private PersonTrackDao personTrackDao;
 
     @Autowired
-    private HelmetRundeCaReportLocationTdEnginServiceImpl helmetLocationService;
+    private ExternalCoordinateDataService externalCoordinateDataService;
 
     /**
      * 从数据库查询人员数据并转换为位置信息
@@ -62,20 +62,20 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                 }
             }
 
-            // 批量查询TDengine中的坐标数据
+            // 批量查询external_coordinate_data表中的坐标数据
             Map<String, Map<String, Object>> locationMap = new HashMap<>();
             if (!idCardList.isEmpty()) {
                 try {
-                    R<Map<String, Map<String, Object>>> locationResult = helmetLocationService
+                    R<Map<String, Map<String, Object>>> locationResult = externalCoordinateDataService
                             .getLatestLocationsByIdCards(idCardList);
                     if (locationResult.getCode() == R.SUCCESS) {
                         locationMap = locationResult.getData();
-                        logger.info("从TDengine查询到 {} 个身份证的坐标数据", locationMap.size());
+                        logger.info("从external_coordinate_data查询到 {} 个身份证的坐标数据", locationMap.size());
                     } else {
-                        logger.warn("查询TDengine坐标数据失败: {}", locationResult.getMsg());
+                        logger.warn("查询external_coordinate_data坐标数据失败: {}", locationResult.getMsg());
                     }
                 } catch (Exception e) {
-                    logger.error("查询TDengine坐标数据异常", e);
+                    logger.error("查询external_coordinate_data坐标数据异常", e);
                 }
             }
 
@@ -110,7 +110,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                     }
                 }
 
-                // 检查是否在TDengine中找到了坐标数据
+                // 检查是否在external_coordinate_data表中找到了坐标数据
                 if (identityCard != null && !identityCard.trim().isEmpty() && locationMap.containsKey(identityCard)) {
                     Map<String, Object> locationInfo = locationMap.get(identityCard);
                     Object xObj = locationInfo.get("x");
@@ -118,7 +118,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
                     if (xObj != null && yObj != null) {
                         try {
-                            // 将TDengine中的坐标转换为整数
+                            // 将external_coordinate_data中的坐标转换为整数
                             int x = (int) Math.round(Double.parseDouble(xObj.toString()));
                             int y = (int) Math.round(Double.parseDouble(yObj.toString()));
 

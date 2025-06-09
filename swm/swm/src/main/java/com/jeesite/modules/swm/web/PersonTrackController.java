@@ -2,7 +2,7 @@ package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.service.PersonTrackService;
-import com.jeesite.modules.swm.service.impl.HelmetRundeCaReportLocationTdEnginServiceImpl;
+import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -29,7 +29,7 @@ public class PersonTrackController extends BaseController {
     private PersonTrackService personTrackService;
 
     @Autowired
-    private HelmetRundeCaReportLocationTdEnginServiceImpl helmetLocationService;
+    private ExternalCoordinateDataService externalCoordinateDataService;
 
     private Random random = new Random();
 
@@ -361,18 +361,19 @@ public class PersonTrackController extends BaseController {
 
         List<Map<String, Object>> trajectoryPoints = new ArrayList<>();
 
-        // 首先尝试从TDengine获取真实轨迹数据
+        // 首先尝试从external_coordinate_data表获取真实轨迹数据
         if (idCard != null && !idCard.trim().isEmpty()) {
             try {
-                R<List<Map<String, Object>>> trajectoryResult = helmetLocationService
+                R<List<Map<String, Object>>> trajectoryResult = externalCoordinateDataService
                         .getTodayTrajectoryByIdCard(idCard);
                 if (trajectoryResult.getCode() == R.SUCCESS && trajectoryResult.getData() != null) {
                     List<Map<String, Object>> realTrajectory = trajectoryResult.getData();
 
                     if (!realTrajectory.isEmpty()) {
-                        logger.info("身份证 {} ({}) 获取到 {} 个真实轨迹点", idCard, personName, realTrajectory.size());
+                        logger.info("身份证 {} ({}) 从external_coordinate_data获取到 {} 个真实轨迹点", idCard, personName,
+                                realTrajectory.size());
 
-                        // 将TDengine数据转换为前端需要的格式
+                        // 将external_coordinate_data数据转换为前端需要的格式
                         for (Map<String, Object> point : realTrajectory) {
                             Object xObj = point.get("x");
                             Object yObj = point.get("y");
@@ -415,9 +416,9 @@ public class PersonTrackController extends BaseController {
                     }
                 }
 
-                logger.info("身份证 {} ({}) 未找到轨迹数据，使用随机轨迹", idCard, personName);
+                logger.info("身份证 {} ({}) 从external_coordinate_data未找到轨迹数据，使用随机轨迹", idCard, personName);
             } catch (Exception e) {
-                logger.error("获取身份证 {} ({}) 轨迹数据异常，使用随机轨迹", idCard, personName, e);
+                logger.error("从external_coordinate_data获取身份证 {} ({}) 轨迹数据异常，使用随机轨迹", idCard, personName, e);
             }
         }
 
