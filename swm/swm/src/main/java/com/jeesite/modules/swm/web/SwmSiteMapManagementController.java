@@ -33,6 +33,7 @@ import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.service.SwmSiteMapManagementService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * 场地底图管理表Controller
@@ -46,6 +47,9 @@ public class SwmSiteMapManagementController extends BaseController {
 
     @Autowired
     private SwmSiteMapManagementService swmSiteMapManagementService;
+
+    @Value("${JIAI.url}")
+    private String jiaiUrl;
 
     /**
      * 获取数据
@@ -292,7 +296,7 @@ public class SwmSiteMapManagementController extends BaseController {
 
         try {
             // 第三方API配置
-            String apiUrl = "http://58.240.212.6:8094/api/MapInfo/GetDetailMapInfo";
+            String apiUrl = jiaiUrl + "/api/MapInfo/GetDetailMapInfo";
             String encodedCredentials = "VXJhZGlvOlVyQGRpbzIwMTg=";
 
             // 设置请求头
