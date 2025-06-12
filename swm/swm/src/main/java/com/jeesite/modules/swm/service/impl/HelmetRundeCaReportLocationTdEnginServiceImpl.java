@@ -1209,6 +1209,8 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
             String startTime = currentDate + " 00:00:00";
             String endTime = currentDate + " 23:59:59";
 
+
+
             // 查询当天该身份证的所有坐标数据，按时间排序
             String sql = String.format(
                     "select id_card, x, y, time from %s.%s " +
