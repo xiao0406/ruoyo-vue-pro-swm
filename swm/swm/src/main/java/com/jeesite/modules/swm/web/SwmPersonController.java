@@ -19,7 +19,9 @@ import com.jeesite.modules.swm.excel.SwmPersonExcelModel;
 import com.jeesite.modules.swm.excel.SwmPersonImportListener;
 import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
+import com.jeesite.modules.swm.service.SwmPersonCacheService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
+import org.springframework.context.ApplicationContext;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +59,19 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private SwmHelmetDeviceService swmHelmetDeviceService;
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    // 延迟获取SwmPersonCacheService，避免循环依赖
+    private SwmPersonCacheService getPersonCacheService() {
+        try {
+            return applicationContext.getBean(SwmPersonCacheService.class);
+        } catch (Exception e) {
+            logger.warn("获取SwmPersonCacheService失败", e);
+            return null;
+        }
+    }
 
     /**
      * 获取数据
@@ -733,5 +748,179 @@ public class SwmPersonController extends BaseController {
             logger.error("清除安全帽关联异常", e);
             return renderResult(Global.FALSE, text("清除安全帽关联失败：" + e.getMessage()));
         }
+    }
+
+    /**
+     * 根据身份证从缓存中查询在职人员信息
+     */
+    @GetMapping(value = "getActivePersonFromCache")
+    @ResponseBody
+    public Map<String, Object> getActivePersonFromCache(@RequestParam("identityCard") String identityCard) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            SwmPersonCacheService cacheService = getPersonCacheService();
+            if (cacheService == null) {
+                result.put("success", false);
+                result.put("message", "缓存服务不可用");
+                return result;
+            }
+
+            Map<String, Object> personInfo = cacheService.getActivePersonByIdentityCard(identityCard);
+
+            if (personInfo != null) {
+                result.put("success", true);
+                result.put("data", personInfo);
+                result.put("message", "从缓存中查询到人员信息");
+            } else {
+                result.put("success", true);
+                result.put("data", null);
+                result.put("message", "缓存中未找到该身份证对应的在职人员");
+            }
+
+        } catch (Exception e) {
+            logger.error("从缓存查询人员信息异常", e);
+            result.put("success", false);
+            result.put("message", "查询失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取缓存统计信息
+     */
+    @GetMapping(value = "getCacheStats")
+    @ResponseBody
+    public Map<String, Object> getCacheStats() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            SwmPersonCacheService cacheService = getPersonCacheService();
+            if (cacheService == null) {
+                result.put("success", false);
+                result.put("message", "缓存服务不可用");
+                return result;
+            }
+
+            Map<String, Object> stats = cacheService.getCacheStats();
+            result.put("success", true);
+            result.put("data", stats);
+            result.put("message", "获取缓存统计信息成功");
+
+        } catch (Exception e) {
+            logger.error("获取缓存统计信息异常", e);
+            result.put("success", false);
+            result.put("message", "获取缓存统计信息失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 重新加载在职人员缓存
+     */
+    @PostMapping(value = "reloadPersonCache")
+    @ResponseBody
+    public String reloadPersonCache() {
+        try {
+            SwmPersonCacheService cacheService = getPersonCacheService();
+            if (cacheService == null) {
+                return renderResult(Global.FALSE, text("缓存服务不可用"));
+            }
+
+            cacheService.reloadActivePersonCache();
+            return renderResult(Global.TRUE, text("重新加载在职人员缓存成功"));
+        } catch (Exception e) {
+            logger.error("重新加载在职人员缓存异常", e);
+            return renderResult(Global.FALSE, text("重新加载在职人员缓存失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 清除在职人员缓存
+     */
+    @PostMapping(value = "clearPersonCache")
+    @ResponseBody
+    public String clearPersonCache() {
+        try {
+            SwmPersonCacheService cacheService = getPersonCacheService();
+            if (cacheService == null) {
+                return renderResult(Global.FALSE, text("缓存服务不可用"));
+            }
+
+            cacheService.clearActivePersonCache();
+            return renderResult(Global.TRUE, text("清除在职人员缓存成功"));
+        } catch (Exception e) {
+            logger.error("清除在职人员缓存异常", e);
+            return renderResult(Global.FALSE, text("清除在职人员缓存失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取所有在职人员缓存信息
+     */
+    @GetMapping(value = "getAllActivePersonsFromCache")
+    @ResponseBody
+    public Map<String, Object> getAllActivePersonsFromCache() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            SwmPersonCacheService cacheService = getPersonCacheService();
+            if (cacheService == null) {
+                result.put("success", false);
+                result.put("message", "缓存服务不可用");
+                return result;
+            }
+
+            Map<Object, Object> allPersons = cacheService.getAllActivePersons();
+            result.put("success", true);
+            result.put("data", allPersons);
+            result.put("total", allPersons != null ? allPersons.size() : 0);
+            result.put("message", "获取所有在职人员缓存信息成功");
+
+        } catch (Exception e) {
+            logger.error("获取所有在职人员缓存信息异常", e);
+            result.put("success", false);
+            result.put("message", "获取失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 测试接口 - 验证循环依赖是否解决
+     */
+    @GetMapping(value = "testCacheService")
+    @ResponseBody
+    public Map<String, Object> testCacheService() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            SwmPersonCacheService cacheService = getPersonCacheService();
+
+            if (cacheService != null) {
+                result.put("success", true);
+                result.put("message", "缓存服务可用");
+                result.put("serviceAvailable", true);
+
+                // 测试Redis连接
+                boolean redisAvailable = cacheService.isRedisAvailable();
+                result.put("redisAvailable", redisAvailable);
+
+            } else {
+                result.put("success", false);
+                result.put("message", "缓存服务不可用");
+                result.put("serviceAvailable", false);
+            }
+
+        } catch (Exception e) {
+            logger.error("测试缓存服务异常", e);
+            result.put("success", false);
+            result.put("message", "测试失败：" + e.getMessage());
+            result.put("serviceAvailable", false);
+        }
+
+        return result;
     }
 }
