@@ -7,6 +7,7 @@
         <id property="id" column="id"/>
         <result property="parentId" column="parent_id"/>
         <result property="title" column="title"/>
+        <result property="idCard" column="id_card"/>
     </resultMap>
     
     <!-- 获取厂间节点 - 这是组织树的最高级节点 -->
@@ -58,10 +59,10 @@
         SELECT 
             id,
             work_group_id AS parent_id,
-            person_name AS title
+            person_name AS title,
+            identity_code AS id_card
         FROM fms_worker
         WHERE work_group_id = #{workGroupId}
-
     </select>
     
 </mapper> 

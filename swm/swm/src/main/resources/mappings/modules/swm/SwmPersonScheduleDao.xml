@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmPersonScheduleDao">
+    
+    <!-- 查询条件 -->
+    <sql id="personScheduleWhere">
+        WHERE 1=1
+        <if test="personName != null and personName != ''">
+            AND a.person_name LIKE CONCAT('%', #{personName}, '%')
+        </if>
+        <if test="month != null and month != ''">
+            AND a.month = #{month}
+        </if>
+        <if test="classes != null and classes != ''">
+            AND a.classes = #{classes}
+        </if>
+        <if test="idCard != null and idCard != ''">
+            AND a.id_card = #{idCard}
+        </if>
+    </sql>
+    
+    <!-- 自定义查询（示例） -->
+    <select id="findByIdCard" resultType="SwmPersonSchedule">
+        SELECT 
+            a.id,
+            a.person_name AS "personName",
+            a.month,
+            a.classes,
+            a.id_card AS "idCard",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks,
+            a.status
+        FROM swm_person_schedule a
+        WHERE a.id_card = #{idCard}
+        AND a.status = '0'
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 根据身份证号获取班组名称 -->
+    <select id="getWorkGroupNameByIdCard" resultType="String">
+        SELECT 
+            wg.work_group_name
+        FROM fms_worker w
+        LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id
+        WHERE w.identity_code = #{idCard}
+        LIMIT 1
+    </select>
+    
+    <!-- 根据身份证号和月份查询排班记录 -->
+    <select id="findByIdCardAndMonth" resultType="SwmPersonSchedule">
+        SELECT 
+            a.id,
+            a.person_name AS "personName",
+            a.month,
+            a.classes,
+            a.id_card AS "idCard",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks,
+            a.status
+        FROM swm_person_schedule a
+        WHERE a.id_card = #{idCard}
+        AND a.month = #{month}
+        AND a.status = '0'
+        ORDER BY a.update_date DESC
+    </select>
+    
+</mapper> 
