@@ -31,8 +31,6 @@ public class PersonTrackController extends BaseController {
     @Autowired
     private ExternalCoordinateDataService externalCoordinateDataService;
 
-    private Random random = new Random();
-
     private static final Logger logger = LoggerFactory.getLogger(PersonTrackController.class);
 
     /**
@@ -292,8 +290,8 @@ public class PersonTrackController extends BaseController {
             String workShop = (String) personInfo.get("workShop");
             String teamGroup = (String) personInfo.get("teamGroup");
 
-            // 生成轨迹点（优先使用TDengine真实数据，备用随机数据）
-            List<Map<String, Object>> trajectoryPoints = generateRandomTrajectoryPoints(
+            // 获取轨迹点（仅从时序数据库获取真实数据）
+            List<Map<String, Object>> trajectoryPoints = getTrajectoryPoints(
                     personId != null ? personId : (Integer) personInfo.get("id"),
                     personName,
                     workType,
@@ -343,7 +341,7 @@ public class PersonTrackController extends BaseController {
     }
 
     /**
-     * 生成轨迹点（优先使用TDengine真实数据，备用随机数据）
+     * 获取轨迹点（仅从时序数据库获取真实数据）
      * 
      * @param personId     人员ID
      * @param personName   人员姓名
@@ -356,12 +354,12 @@ public class PersonTrackController extends BaseController {
      * @author Shawn
      * @date 2025-01-14
      */
-    private List<Map<String, Object>> generateRandomTrajectoryPoints(Integer personId, String personName,
+    private List<Map<String, Object>> getTrajectoryPoints(Integer personId, String personName,
             String workType, String organization, String workShop, String teamGroup, String idCard) {
 
         List<Map<String, Object>> trajectoryPoints = new ArrayList<>();
 
-        // 首先尝试从external_coordinate_data表获取真实轨迹数据
+        // 从external_coordinate_data表获取真实轨迹数据
         if (idCard != null && !idCard.trim().isEmpty()) {
             try {
                 R<List<Map<String, Object>>> trajectoryResult = externalCoordinateDataService
@@ -416,72 +414,14 @@ public class PersonTrackController extends BaseController {
                     }
                 }
 
-                logger.info("身份证 {} ({}) 从external_coordinate_data未找到轨迹数据，使用随机轨迹", idCard, personName);
+                logger.info("身份证 {} ({}) 从external_coordinate_data未找到轨迹数据", idCard, personName);
             } catch (Exception e) {
-                logger.error("从external_coordinate_data获取身份证 {} ({}) 轨迹数据异常，使用随机轨迹", idCard, personName, e);
+                logger.error("从external_coordinate_data获取身份证 {} ({}) 轨迹数据异常", idCard, personName, e);
             }
         }
 
-        // 如果没有获取到真实数据，使用随机轨迹作为备用方案
-        logger.info("为身份证 {} ({}) 生成随机轨迹数据", idCard, personName);
-        return generateRandomTrajectoryPointsBackup(personId, personName, workType, organization, workShop, teamGroup,
-                idCard);
-    }
-
-    /**
-     * 生成随机轨迹点（备用方案）
-     * 
-     * @param personId     人员ID
-     * @param personName   人员姓名
-     * @param workType     工种
-     * @param organization 组织
-     * @param workShop     车间
-     * @param teamGroup    班组
-     * @param idCard       身份证号
-     * @return 轨迹点列表
-     * @author Shawn
-     * @date 2025-01-14
-     */
-    private List<Map<String, Object>> generateRandomTrajectoryPointsBackup(Integer personId, String personName,
-            String workType, String organization, String workShop, String teamGroup, String idCard) {
-
-        List<Map<String, Object>> trajectoryPoints = new ArrayList<>();
-
-        // 生成8个随机轨迹点，模拟一天的移动路径
-        int startX = random.nextInt(500) + 100; // 起始点
-        int startY = random.nextInt(300) + 100;
-
-        for (int i = 0; i < 8; i++) {
-            // 每个点在前一个点的附近随机生成，模拟连续移动
-            int deltaX = random.nextInt(400) - 200; // -200到200的随机偏移
-            int deltaY = random.nextInt(400) - 200;
-
-            int x = Math.max(50, Math.min(2500, startX + deltaX));
-            int y = Math.max(50, Math.min(1100, startY + deltaY));
-
-            // 更新起始点为当前点，用于下一个点的生成
-            startX = x;
-            startY = y;
-
-            Map<String, Object> trajectoryPoint = createPersonPosition(
-                    personId,
-                    personName,
-                    x,
-                    y,
-                    workType != null ? workType : "待分配",
-                    organization != null ? organization : "未知单位",
-                    workShop != null ? workShop : "未知车间",
-                    teamGroup != null ? teamGroup : "未知班组",
-                    "8小时",
-                    "正常考勤",
-                    idCard);
-
-            // 标记为随机位置
-            trajectoryPoint.put("hasRealLocation", false);
-
-            trajectoryPoints.add(trajectoryPoint);
-        }
-
+        // 如果没有获取到真实数据，返回空列表
+        logger.info("身份证 {} ({}) 无轨迹数据", idCard, personName);
         return trajectoryPoints;
     }
 
