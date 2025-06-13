@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * 预警管理Service
- * 
+ *
  * @author zwf
  * @version 2025-05-16
  */
@@ -431,5 +431,21 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     @Transactional(readOnly = false)
     public void delete(SwmWarningManagement swmWarningManagement) {
         super.delete(swmWarningManagement);
+    }
+
+    /**
+     * 获取近七天预警数据
+     * @return
+     */
+    public List<SwmWarningManagement> listPast7DaysWarning() {
+        return dao.listPast7DaysWarning();
+    }
+
+    /**
+     * 获取今日预警数据
+     * @return
+     */
+    public List<SwmWarningManagement> listTodayWarning() {
+        return dao.listTodayWarning();
     }
 }

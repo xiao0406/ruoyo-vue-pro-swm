@@ -1,24 +1,26 @@
 package com.jeesite.modules.swm.entity;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
-
-import java.util.Date;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
+import com.jeesite.common.mybatis.annotation.JoinTable;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.sys.utils.DictUtils;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+import java.util.Date;
 
 /**
  * 巡检列表实体类
- * 
+ *
  * @author Shawn
  * @version 2025-05-21
  */
 @Table(name = "swm_inspection_list", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
+        @Column(name = "plan_id", attrName = "planId", label = "巡检计划ID"),
         @Column(name = "plan_name", attrName = "planName", label = "计划名称", queryType = QueryType.LIKE),
         @Column(name = "inspection_type", attrName = "inspectionType", label = "巡检类型"),
         @Column(name = "inspector_id", attrName = "inspectorId", label = "巡检人"),
@@ -27,14 +29,43 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
         @Column(name = "attachment_path", attrName = "attachmentPath", label = "附件路径"),
         @Column(name = "inspection_list_status", attrName = "inspectionListStatus", label = "巡检列表状态"),
         @Column(includeEntity = DataEntity.class)
+},joinTable={
+        @JoinTable(type= JoinTable.Type.LEFT_JOIN, entity=SwmPerson.class, attrName="this", alias="b",
+                on="b.id = a.inspector_id",
+                columns={
+                        @Column(name="name", attrName="inspector", label="姓名"),
+                }),
 }, orderBy = "a.create_date DESC")
 public class SwmInspectionList extends DataEntity<SwmInspectionList> {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 巡检任务状态枚举
+     */
+    public static class InspectionListStatusEnum {
+        /** 待处理 */
+        public static final String WAIT = "0";
+        /** 进行中 */
+        public static final String IN_PROGRESS = "1";
+        /** 已完成 */
+        public static final String COMPLETED = "2";
+        /** 已取消 */
+        public static final String CANCELLED = "3";
+
+        /**
+         * 获取巡检任务状态显示文本
+         */
+        public static String getText(String value) {
+            return DictUtils.getDictLabel("inspection_status_enum", value, "");
+        }
+    }
+
+    private String planId;
     private String planName; // 计划名称
     private String inspectionType; // 巡检类型
-    private String inspectorId; // 巡检人
+    private String inspectorId; // 巡检人id
+    private String inspector; // 巡检人
     private Date startTime; // 开始时间
     private Date endTime; // 结束时间
     private String attachmentPath; // 附件路径
@@ -50,6 +81,14 @@ public class SwmInspectionList extends DataEntity<SwmInspectionList> {
 
     public SwmInspectionList(String id) {
         super(id);
+    }
+
+    public String getPlanId() {
+        return planId;
+    }
+
+    public void setPlanId(String planId) {
+        this.planId = planId;
     }
 
     @NotBlank(message = "计划名称不能为空")
@@ -78,6 +117,14 @@ public class SwmInspectionList extends DataEntity<SwmInspectionList> {
 
     public void setInspectorId(String inspectorId) {
         this.inspectorId = inspectorId;
+    }
+
+    public String getInspector() {
+        return inspector;
+    }
+
+    public void setInspector(String inspector) {
+        this.inspector = inspector;
     }
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

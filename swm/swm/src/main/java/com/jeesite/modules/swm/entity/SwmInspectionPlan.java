@@ -1,20 +1,20 @@
 package com.jeesite.modules.swm.entity;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-
-import java.util.Date;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
+import com.jeesite.common.mybatis.annotation.JoinTable;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import java.util.Date;
+
 /**
  * 巡检计划实体类
- * 
+ *
  * @author Shawn
  * @version 2025-05-21
  */
@@ -23,10 +23,16 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
         @Column(name = "plan_name", attrName = "planName", label = "计划名称", queryType = QueryType.LIKE),
         @Column(name = "frequency_days", attrName = "frequencyDays", label = "巡检频次（天数）"),
         @Column(name = "inspection_type", attrName = "inspectionType", label = "巡检类型"),
-        @Column(name = "responsible_person_id", attrName = "responsiblePersonId", label = "巡检负责人"),
+        @Column(name = "responsible_person_id", attrName = "responsiblePersonId", label = "巡检负责人id"),
         @Column(name = "first_inspection_time", attrName = "firstInspectionTime", label = "首次巡检时间"),
         @Column(includeEntity = DataEntity.class)
-}, orderBy = "a.create_date DESC")
+}, joinTable={
+        @JoinTable(type= JoinTable.Type.LEFT_JOIN, entity=SwmPerson.class, attrName="this", alias="b",
+                on="b.id = a.responsible_person_id",
+                columns={
+                        @Column(name="name", attrName="responsiblePerson", label="姓名"),
+                }),
+},orderBy = "a.create_date DESC")
 public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 
     private static final long serialVersionUID = 1L;
@@ -34,7 +40,8 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
     private String planName; // 计划名称
     private Integer frequencyDays; // 巡检频次（天数）
     private String inspectionType; // 巡检类型
-    private String responsiblePersonId; // 巡检负责人
+    private String responsiblePersonId; // 巡检负责人id
+    private String responsiblePerson; // 巡检负责人
     private Date firstInspectionTime; // 首次巡检时间
 
     public SwmInspectionPlan() {
@@ -74,14 +81,24 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
         this.inspectionType = inspectionType;
     }
 
-    @NotBlank(message = "巡检负责人不能为空")
-    @Size(min = 0, max = 64, message = "巡检负责人长度不能超过 64 个字符")
+    @NotBlank(message = "巡检负责人ID不能为空")
+    @Size(min = 0, max = 64, message = "巡检负责人ID长度不能超过 64 个字符")
     public String getResponsiblePersonId() {
         return responsiblePersonId;
     }
 
     public void setResponsiblePersonId(String responsiblePersonId) {
         this.responsiblePersonId = responsiblePersonId;
+    }
+
+    @NotBlank(message = "巡检负责人不能为空")
+    @Size(min = 0, max = 64, message = "巡检负责人长度不能超过 64 个字符")
+    public String getResponsiblePerson() {
+        return responsiblePerson;
+    }
+
+    public void setResponsiblePerson(String responsiblePerson) {
+        this.responsiblePerson = responsiblePerson;
     }
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

@@ -5,29 +5,25 @@
  */
 package com.jeesite.modules.swm.web;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.GetMapping;
-
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmHazardSource;
+import com.jeesite.modules.swm.entity.SwmInspectionPlan;
 import com.jeesite.modules.swm.service.SwmHazardSourceService;
-
+import com.jeesite.modules.swm.service.SwmInspectionPlanService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 危险源信息Controller
@@ -39,6 +35,8 @@ public class SwmHazardSourceController extends BaseController {
 
     @Autowired
     private SwmHazardSourceService swmHazardSourceService;
+    @Autowired
+    private SwmInspectionPlanService swmInspectionPlanService;
 
     /**
      * 获取数据
@@ -180,6 +178,21 @@ public class SwmHazardSourceController extends BaseController {
     @ApiOperation(value = "保存危险源")
     public String save(@Validated SwmHazardSource swmHazardSource) {
         swmHazardSourceService.save(swmHazardSource);
+        //如果设置为加入巡检需要生成巡检计划
+        if("1".equals(swmHazardSource.getIsPatrolIncluded())){
+            //判断必要字段是否为空
+            if(swmHazardSource.getFirstInspectionTime() == null || swmHazardSource.getFrequencyDays() == null ||  swmHazardSource.getResponsiblePersonId() == null){
+                return renderResult(Global.FALSE, text("加入巡检的危险源巡检负责人、巡检频次、首检时间不能为空"));
+            }
+            SwmInspectionPlan swmInspectionPlan = new SwmInspectionPlan();
+            swmInspectionPlan.setPlanName(swmHazardSource.getHazardName());
+            swmInspectionPlan.setFrequencyDays(swmHazardSource.getFrequencyDays());
+            //危险源巡检
+            swmInspectionPlan.setInspectionType("3");
+            swmInspectionPlan.setResponsiblePersonId(swmHazardSource.getResponsiblePersonId());
+            swmInspectionPlan.setFirstInspectionTime(swmHazardSource.getFirstInspectionTime());
+            swmInspectionPlanService.save(swmInspectionPlan);
+        }
         return renderResult(Global.TRUE, text("保存危险源信息成功！"));
     }
 

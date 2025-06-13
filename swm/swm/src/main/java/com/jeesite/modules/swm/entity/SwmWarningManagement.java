@@ -7,12 +7,11 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
-import javax.validation.constraints.NotBlank;
 import java.util.Date;
 
 /**
  * 预警管理表实体类
- * 
+ *
  * @author zwf
  * @version 2025-05-16
  */
@@ -271,5 +270,27 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setAttachment(String attachment) {
         this.attachment = attachment;
+    }
+
+    // 添加预警时间不为空的查询条件
+    public Boolean getWarningTime_isNotNull() {
+        return sqlMap.getWhere().getValue("warning_time", QueryType.IS_NOT_NULL);
+    }
+
+    public void setWarningTimeIsNotNull(Boolean isNotNull) {
+        if (isNotNull != null && isNotNull) {
+            sqlMap.getWhere().and("warning_time", QueryType.IS_NOT_NULL,null);
+        }
+    }
+
+    // 添加报警时间不为空的查询条件
+    public Boolean getAlarmTime_isNotNull() {
+        return sqlMap.getWhere().getValue("alarm_time", QueryType.IS_NOT_NULL);
+    }
+
+    public void setAlarmTimeIsNotNull(Boolean isNotNull) {
+        if (isNotNull != null && isNotNull) {
+            sqlMap.getWhere().and("alarm_time", QueryType.IS_NOT_NULL,null);
+        }
     }
 }

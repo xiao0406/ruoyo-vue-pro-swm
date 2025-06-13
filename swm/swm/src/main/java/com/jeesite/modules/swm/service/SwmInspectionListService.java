@@ -1,19 +1,18 @@
 package com.jeesite.modules.swm.service;
 
+import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.StringUtils;
+import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.swm.dao.SwmInspectionListDao;
+import com.jeesite.modules.swm.entity.SwmInspectionList;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.jeesite.common.entity.Page;
-import com.jeesite.common.service.CrudService;
-import com.jeesite.modules.swm.dao.SwmInspectionListDao;
-import com.jeesite.modules.swm.entity.SwmInspectionList;
-import com.jeesite.common.lang.StringUtils;
-import com.jeesite.modules.sys.utils.DictUtils;
-
 /**
  * 巡检列表Service
- * 
+ *
  * @author Shawn
  * @version 2025-05-21
  */
@@ -86,5 +85,14 @@ public class SwmInspectionListService extends CrudService<SwmInspectionListDao, 
     @Transactional(readOnly = false)
     public void delete(SwmInspectionList swmInspectionList) {
         super.delete(swmInspectionList);
+    }
+
+    /**
+     * 获取计划对应的最后一个任务
+     * @param planId
+     * @return
+     */
+    public SwmInspectionList getLastTaskByPlanId(String planId) {
+        return dao.getLastTaskByPlanId(planId);
     }
 }

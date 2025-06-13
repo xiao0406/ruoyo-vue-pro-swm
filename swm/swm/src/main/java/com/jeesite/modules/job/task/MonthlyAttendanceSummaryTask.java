@@ -58,8 +58,8 @@ public class MonthlyAttendanceSummaryTask {
         Map<String, List<SwmDailyAttendance>> attendanceByEmployee = dailyAttendanceList.stream()
                 .collect(Collectors.groupingBy(SwmDailyAttendance::getEmployeeId));
 
-        // 4. 计算当月应出勤天数(本月1号到当天的天数)
-        int scheduledDays = calculateScheduledDays(startDate, endDate);
+        // 4. 计算当月应出勤天数(出勤天数按当月的总天数算)
+        int scheduledDays = DateUtil.lengthOfMonth(DateUtil.thisMonth(), DateUtil.isLeapYear(DateUtil.thisYear()));
 
         // 5. 处理每个员工的考勤数据
         for (Map.Entry<String, List<SwmDailyAttendance>> entry : attendanceByEmployee.entrySet()) {
@@ -160,13 +160,5 @@ public class MonthlyAttendanceSummaryTask {
         }
 
         log.info("月考勤统计定时任务执行完成，共处理{}名员工的考勤数据", attendanceByEmployee.size());
-    }
-
-    /**
-     * 计算应出勤天数(从开始日期到结束日期的天数)
-     */
-    private int calculateScheduledDays(Date startDate, Date endDate) {
-        long diffInMillis = endDate.getTime() - startDate.getTime();
-        return (int) (diffInMillis / (1000 * 60 * 60 * 24)) + 1; // 包含首尾两天
     }
 }

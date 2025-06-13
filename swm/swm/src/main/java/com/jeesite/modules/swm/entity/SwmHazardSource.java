@@ -5,15 +5,23 @@
  */
 package com.jeesite.modules.swm.entity;
 
-import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
+import com.jeesite.common.mybatis.annotation.JoinTable;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import org.hibernate.validator.constraints.Length;
-import javax.validation.constraints.NotBlank;
-import com.fasterxml.jackson.annotation.JsonFormat;
 
+import javax.validation.constraints.NotBlank;
+import java.util.Date;
+
+/**
+ * 危险源管理
+ *
+ * @author Shawn
+ * @version 2025-05-21
+ */
 @Table(name = "swm_hazard_source", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键", isPK = true),
         @Column(name = "hazard_name", attrName = "hazardName", label = "危险源名称", queryType = QueryType.LIKE),
@@ -24,7 +32,16 @@ import com.fasterxml.jackson.annotation.JsonFormat;
         @Column(name = "is_patrol_included", attrName = "isPatrolIncluded", label = "是否加入巡检"),
         @Column(name = "patrol_record_summary", attrName = "patrolRecordSummary", label = "巡检记录摘要"),
         @Column(name = "registration_time", attrName = "registrationTime", label = "登记时间"),
-        @Column(name = "hazard_status", attrName = "hazardStatus", label = "危险源状态")
+        @Column(name = "hazard_status", attrName = "hazardStatus", label = "危险源状态"),
+        @Column(name = "frequency_days", attrName = "frequencyDays", label = "巡检频次（天数）"),
+        @Column(name = "responsible_person_id", attrName = "responsiblePersonId", label = "巡检负责人id"),
+        @Column(name = "first_inspection_time", attrName = "firstInspectionTime", label = "首次巡检时间"),
+}, joinTable={
+        @JoinTable(type= JoinTable.Type.LEFT_JOIN, entity=SwmPerson.class, attrName="this", alias="b",
+                on="b.id = a.responsible_person_id",
+                columns={
+                        @Column(name="name", attrName="responsiblePerson", label="姓名"),
+                }),
 }, orderBy = "a.create_date DESC")
 public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 
@@ -38,6 +55,10 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
     private String patrolRecordSummary; // 巡检记录摘要
     private Date registrationTime; // 登记时间
     private String hazardStatus; // 危险源状态
+    private Integer frequencyDays; // 巡检频次（天数）
+    private String responsiblePersonId; // 巡检负责人id
+    private String responsiblePerson; // 巡检负责人
+    private Date firstInspectionTime; // 首次巡检时间
 
     // 非持久化的文本展示字段，不再由数据库JOIN查询获取，而是在Controller中手动设置
     private String hazardCategoryText; // 危险源类别文本
@@ -133,6 +154,38 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 
     public void setHazardStatus(String hazardStatus) {
         this.hazardStatus = hazardStatus;
+    }
+
+    public Integer getFrequencyDays() {
+        return frequencyDays;
+    }
+
+    public void setFrequencyDays(Integer frequencyDays) {
+        this.frequencyDays = frequencyDays;
+    }
+
+    public String getResponsiblePersonId() {
+        return responsiblePersonId;
+    }
+
+    public void setResponsiblePersonId(String responsiblePersonId) {
+        this.responsiblePersonId = responsiblePersonId;
+    }
+
+    public String getResponsiblePerson() {
+        return responsiblePerson;
+    }
+
+    public void setResponsiblePerson(String responsiblePerson) {
+        this.responsiblePerson = responsiblePerson;
+    }
+
+    public Date getFirstInspectionTime() {
+        return firstInspectionTime;
+    }
+
+    public void setFirstInspectionTime(Date firstInspectionTime) {
+        this.firstInspectionTime = firstInspectionTime;
     }
 
     public String getHazardStatusText() {
