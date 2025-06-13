@@ -10,9 +10,9 @@
             a.person_type AS personType,
             a.gender AS gender,
             o.office_name AS organization,
-            p.position_name AS workShop,
-            fpl.prod_line_name AS prodLine,
-            wg.work_group_name AS teamGroup,
+            p.position_name AS workShop,                -- 🏭 车间字段
+            fpl.prod_line_name AS prodLine,             -- 🏗️ 产线字段  
+            wg.work_group_name AS teamGroup,            -- 👥 班组字段
             f.work_type AS workType,
             a.safety_helmet_id AS safetyHelmetId,
             a.personnel_status AS personnelStatus,
@@ -38,6 +38,14 @@
         WHERE a.personnel_status = '1'
         <if test="searchName != null and searchName != ''">
             AND a.name LIKE CONCAT('%', #{searchName}, '%')
+        </if>
+        <if test="organizationKey != null and organizationKey != ''">
+            AND (
+                p.id LIKE CONCAT('%', #{organizationKey}, '%')                 -- 🏭 车间ID查询
+                OR fpl.id LIKE CONCAT('%', #{organizationKey}, '%')            -- 🏗️ 产线ID查询  
+                OR wg.id LIKE CONCAT('%', #{organizationKey}, '%')             -- 👥 班组ID查询
+                OR f.office_code = #{organizationKey}                          -- 🏢 厂间编码查询
+            )
         </if>
         LIMIT 50000
     </select>
