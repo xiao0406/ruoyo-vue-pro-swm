@@ -20,6 +20,7 @@ import javax.validation.constraints.Pattern;
         @Column(name = "person_name", attrName = "personName", label = "人员姓名", queryType = QueryType.LIKE),
         @Column(name = "month", attrName = "month", label = "排班月份"),
         @Column(name = "classes", attrName = "classes", label = "班次"),
+        @Column(name = "id_card", attrName = "idCard", label = "身份证号码", queryType = QueryType.LIKE),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
@@ -29,9 +30,11 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
     private String personName;  // 人员姓名
     private String month;       // 排班月份
     private String classes;     // 班次
+    private String idCard;      // 身份证号码
 
     // 用于显示的文本属性，不对应数据库字段
     private String classesText; // 班次显示文本
+    private String workGroupName; // 班组名称（非数据库字段）
 
     public SwmPersonSchedule() {
         this(null);
@@ -71,6 +74,15 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
     public void setClasses(String classes) {
         this.classes = classes;
     }
+    
+    @Length(min = 0, max = 18, message = "身份证号码不能超过18个字符")
+    public String getIdCard() {
+        return idCard;
+    }
+
+    public void setIdCard(String idCard) {
+        this.idCard = idCard;
+    }
 
     /**
      * 获取班次显示文本
@@ -84,5 +96,16 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
 
     public void setClassesText(String classesText) {
         this.classesText = classesText;
+    }
+    
+    /**
+     * 获取班组名称
+     */
+    public String getWorkGroupName() {
+        return workGroupName;
+    }
+
+    public void setWorkGroupName(String workGroupName) {
+        this.workGroupName = workGroupName;
     }
 } 

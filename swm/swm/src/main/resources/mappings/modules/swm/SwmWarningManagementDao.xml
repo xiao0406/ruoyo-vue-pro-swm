@@ -40,6 +40,103 @@
             a.warning_time DESC
     </select>
 
+    <!-- 向MySQL数据库插入预警处置记录 -->
+    <insert id="insertToMySql">
+        INSERT INTO swm_warning_management (
+            id, create_by, create_date, update_by, update_date, remarks, status,
+            person_name, warning_type, warning_content, warning_time, alarm_record,
+            alarm_time, trigger_reason, handler, handle_time, handle_process,
+            handle_status, attachment, device_id, id_card
+        ) VALUES (
+            #{id}, #{createBy}, #{createDate}, #{updateBy}, #{updateDate}, #{remarks}, #{status},
+            #{personName}, #{warningType}, #{warningContent}, #{warningTime}, #{alarmRecord},
+            #{alarmTime}, #{triggerReason}, #{handler}, #{handleTime}, #{handleProcess},
+            #{handleStatus}, #{attachment}, #{deviceId}, #{idCard}
+        )
+    </insert>
+
+    <!-- 根据ID集合批量查询MySQL数据库中的预警记录 -->
+    <select id="findInMySqlByIds" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
+        SELECT
+            a.id, a.create_by AS createBy, a.create_date AS createDate,
+            a.update_by AS updateBy, a.update_date AS updateDate,
+            a.remarks, a.status, a.person_name AS personName,
+            a.warning_type AS warningType, a.warning_content AS warningContent,
+            a.warning_time AS warningTime, a.alarm_record AS alarmRecord,
+            a.alarm_time AS alarmTime, a.trigger_reason AS triggerReason,
+            a.handler, a.handle_time AS handleTime,
+            a.handle_process AS handleProcess, a.handle_status AS handleStatus,
+            a.attachment, a.device_id AS deviceId, a.id_card AS idCard
+        FROM
+            swm_warning_management a
+        WHERE
+            a.id IN
+            <foreach collection="idList" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+    </select>
+
+    <!-- 根据ID和身份证号查询MySQL数据库中的预警记录 -->
+    <select id="findInMySqlByIdAndIdCard" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
+        SELECT
+            a.id, a.create_by AS createBy, a.create_date AS createDate,
+            a.update_by AS updateBy, a.update_date AS updateDate,
+            a.remarks, a.status, a.person_name AS personName,
+            a.warning_type AS warningType, a.warning_content AS warningContent,
+            a.warning_time AS warningTime, a.alarm_record AS alarmRecord,
+            a.alarm_time AS alarmTime, a.trigger_reason AS triggerReason,
+            a.handler, a.handle_time AS handleTime,
+            a.handle_process AS handleProcess, a.handle_status AS handleStatus,
+            a.attachment, a.device_id AS deviceId, a.id_card AS idCard
+        FROM
+            swm_warning_management a
+        WHERE
+            a.id = #{id}
+            <if test="idCard != null and idCard != ''">
+            AND a.id_card = #{idCard}
+            </if>
+        LIMIT 1
+    </select>
+
+    <!-- 在MySQL中按条件查询已处置的预警数据 -->
+    <select id="findProcessedInMySql" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
+        SELECT
+            a.id, a.create_by AS createBy, a.create_date AS createDate,
+            a.update_by AS updateBy, a.update_date AS updateDate,
+            a.remarks, a.status, a.person_name AS personName,
+            a.warning_type AS warningType, a.warning_content AS warningContent,
+            a.warning_time AS warningTime, a.alarm_record AS alarmRecord,
+            a.alarm_time AS alarmTime, a.trigger_reason AS triggerReason,
+            a.handler, a.handle_time AS handleTime,
+            a.handle_process AS handleProcess, a.handle_status AS handleStatus,
+            a.attachment, a.device_id AS deviceId, a.id_card AS idCard
+        FROM
+            swm_warning_management a
+        WHERE
+            a.handle_status = '1'
+            <if test="personName != null and personName != ''">
+                AND a.person_name LIKE CONCAT('%', #{personName}, '%')
+            </if>
+            <if test="warningType != null and warningType != ''">
+                AND a.warning_type = #{warningType}
+            </if>
+            <if test="warningContent != null and warningContent != ''">
+                AND a.warning_content = #{warningContent}
+            </if>
+        ORDER BY
+            a.warning_time DESC
+    </select>
+
+    <!-- 查询所有已处置记录的ID -->
+    <select id="findAllProcessedIds" resultType="String">
+        SELECT
+            a.id
+        FROM
+            swm_warning_management a
+        WHERE
+            a.handle_status = '1'
+    </select>
+
     <!-- 查询过去7天的预警 -->
     <select id="listPast7DaysWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT ${sqlMap.column.toSql()}

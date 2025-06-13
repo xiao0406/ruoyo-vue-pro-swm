@@ -11,6 +11,10 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +28,11 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
+
+    private static final Logger logger = LoggerFactory.getLogger(SwmPersonService.class);
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
     /**
      * 获取单条数据
@@ -71,6 +80,17 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
     @Transactional(readOnly = false)
     public void save(SwmPerson swmPerson) {
         super.save(swmPerson);
+
+        // 更新缓存（避免循环依赖）
+        try {
+            SwmPersonCacheService cacheService = applicationContext.getBean(SwmPersonCacheService.class);
+            if (cacheService != null) {
+                cacheService.updatePersonCache(swmPerson);
+            }
+        } catch (Exception e) {
+            // 忽略缓存更新异常，不影响主要业务
+            logger.debug("更新人员缓存失败", e);
+        }
     }
 
     /**
@@ -92,6 +112,17 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
     @Override
     @Transactional(readOnly = false)
     public void delete(SwmPerson swmPerson) {
+        // 先从缓存中移除（避免循环依赖）
+        try {
+            SwmPersonCacheService cacheService = applicationContext.getBean(SwmPersonCacheService.class);
+            if (cacheService != null) {
+                cacheService.removePersonFromCache(swmPerson);
+            }
+        } catch (Exception e) {
+            // 忽略缓存更新异常，不影响主要业务
+            logger.debug("从缓存中移除人员失败", e);
+        }
+
         super.delete(swmPerson);
     }
 

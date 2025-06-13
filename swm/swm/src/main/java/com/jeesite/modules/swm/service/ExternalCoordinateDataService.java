@@ -37,6 +37,19 @@ public interface ExternalCoordinateDataService {
     R<List<Map<String, Object>>> getTodayTrajectoryByIdCard(String idCard);
 
     /**
+     * 根据身份证号和时间范围获取轨迹坐标
+     * 
+     * @param idCard    身份证号
+     * @param startDate 开始日期 (格式: YYYY-MM-DD)
+     * @param endDate   结束日期 (格式: YYYY-MM-DD)
+     * @param startTime 开始时间（当日的秒数，可选）
+     * @param endTime   结束时间（当日的秒数，可选）
+     * @return 轨迹坐标列表
+     */
+    R<List<Map<String, Object>>> getTrajectoryByIdCardAndTimeRange(String idCard, String startDate, String endDate,
+            Integer startTime, Integer endTime);
+
+    /**
      * 保存外部坐标数据
      * 
      * @param dataMap 坐标数据

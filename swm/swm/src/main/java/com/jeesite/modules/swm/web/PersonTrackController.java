@@ -3,6 +3,9 @@ package com.jeesite.modules.swm.web;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.service.PersonTrackService;
 import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
+import com.jeesite.modules.swm.service.SwmHelmetCacheService;
+import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
+import com.jeesite.modules.swm.service.TDengineService;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -10,7 +13,10 @@ import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 
 import java.util.*;
 
@@ -31,7 +37,17 @@ public class PersonTrackController extends BaseController {
     @Autowired
     private ExternalCoordinateDataService externalCoordinateDataService;
 
-    private Random random = new Random();
+    @Autowired
+    private SwmHelmetCacheService helmetCacheService;
+
+    @Autowired
+    private SwmHelmetDeviceService swmHelmetDeviceService;
+
+    @Autowired
+    private TDengineService tdengineService;
+
+    @Value("${tdengine.dbname}")
+    private String dbname;
 
     private static final Logger logger = LoggerFactory.getLogger(PersonTrackController.class);
 
@@ -292,15 +308,19 @@ public class PersonTrackController extends BaseController {
             String workShop = (String) personInfo.get("workShop");
             String teamGroup = (String) personInfo.get("teamGroup");
 
-            // 生成轨迹点（优先使用TDengine真实数据，备用随机数据）
-            List<Map<String, Object>> trajectoryPoints = generateRandomTrajectoryPoints(
+            // 获取轨迹点（仅从时序数据库获取真实数据）
+            List<Map<String, Object>> trajectoryPoints = getTrajectoryPoints(
                     personId != null ? personId : (Integer) personInfo.get("id"),
                     personName,
                     workType,
                     organization,
                     workShop,
                     teamGroup,
-                    idCard);
+                    idCard,
+                    startDate,
+                    endDate,
+                    startTime,
+                    endTime);
 
             // 构建时间线事件数据
             List<Map<String, Object>> timelineEvents = Arrays.asList(
@@ -343,7 +363,7 @@ public class PersonTrackController extends BaseController {
     }
 
     /**
-     * 生成轨迹点（优先使用TDengine真实数据，备用随机数据）
+     * 获取轨迹点（仅从时序数据库获取真实数据）
      * 
      * @param personId     人员ID
      * @param personName   人员姓名
@@ -352,20 +372,33 @@ public class PersonTrackController extends BaseController {
      * @param workShop     车间
      * @param teamGroup    班组
      * @param idCard       身份证号
+     * @param startDate    开始日期
+     * @param endDate      结束日期
+     * @param startTime    开始时间（秒数）
+     * @param endTime      结束时间（秒数）
      * @return 轨迹点列表
      * @author Shawn
      * @date 2025-01-14
      */
-    private List<Map<String, Object>> generateRandomTrajectoryPoints(Integer personId, String personName,
-            String workType, String organization, String workShop, String teamGroup, String idCard) {
+    private List<Map<String, Object>> getTrajectoryPoints(Integer personId, String personName,
+            String workType, String organization, String workShop, String teamGroup, String idCard,
+            String startDate, String endDate, Integer startTime, Integer endTime) {
 
         List<Map<String, Object>> trajectoryPoints = new ArrayList<>();
 
-        // 首先尝试从external_coordinate_data表获取真实轨迹数据
+        // 从external_coordinate_data表获取真实轨迹数据
         if (idCard != null && !idCard.trim().isEmpty()) {
             try {
-                R<List<Map<String, Object>>> trajectoryResult = externalCoordinateDataService
-                        .getTodayTrajectoryByIdCard(idCard);
+                R<List<Map<String, Object>>> trajectoryResult;
+
+                // 如果指定了时间范围参数，使用时间范围查询；否则使用当天查询
+                if (startDate != null || endDate != null || startTime != null || endTime != null) {
+                    trajectoryResult = externalCoordinateDataService
+                            .getTrajectoryByIdCardAndTimeRange(idCard, startDate, endDate, startTime, endTime);
+                } else {
+                    trajectoryResult = externalCoordinateDataService
+                            .getTodayTrajectoryByIdCard(idCard);
+                }
                 if (trajectoryResult.getCode() == R.SUCCESS && trajectoryResult.getData() != null) {
                     List<Map<String, Object>> realTrajectory = trajectoryResult.getData();
 
@@ -416,72 +449,14 @@ public class PersonTrackController extends BaseController {
                     }
                 }
 
-                logger.info("身份证 {} ({}) 从external_coordinate_data未找到轨迹数据，使用随机轨迹", idCard, personName);
+                logger.info("身份证 {} ({}) 从external_coordinate_data未找到轨迹数据", idCard, personName);
             } catch (Exception e) {
-                logger.error("从external_coordinate_data获取身份证 {} ({}) 轨迹数据异常，使用随机轨迹", idCard, personName, e);
+                logger.error("从external_coordinate_data获取身份证 {} ({}) 轨迹数据异常", idCard, personName, e);
             }
         }
 
-        // 如果没有获取到真实数据，使用随机轨迹作为备用方案
-        logger.info("为身份证 {} ({}) 生成随机轨迹数据", idCard, personName);
-        return generateRandomTrajectoryPointsBackup(personId, personName, workType, organization, workShop, teamGroup,
-                idCard);
-    }
-
-    /**
-     * 生成随机轨迹点（备用方案）
-     * 
-     * @param personId     人员ID
-     * @param personName   人员姓名
-     * @param workType     工种
-     * @param organization 组织
-     * @param workShop     车间
-     * @param teamGroup    班组
-     * @param idCard       身份证号
-     * @return 轨迹点列表
-     * @author Shawn
-     * @date 2025-01-14
-     */
-    private List<Map<String, Object>> generateRandomTrajectoryPointsBackup(Integer personId, String personName,
-            String workType, String organization, String workShop, String teamGroup, String idCard) {
-
-        List<Map<String, Object>> trajectoryPoints = new ArrayList<>();
-
-        // 生成8个随机轨迹点，模拟一天的移动路径
-        int startX = random.nextInt(500) + 100; // 起始点
-        int startY = random.nextInt(300) + 100;
-
-        for (int i = 0; i < 8; i++) {
-            // 每个点在前一个点的附近随机生成，模拟连续移动
-            int deltaX = random.nextInt(400) - 200; // -200到200的随机偏移
-            int deltaY = random.nextInt(400) - 200;
-
-            int x = Math.max(50, Math.min(2500, startX + deltaX));
-            int y = Math.max(50, Math.min(1100, startY + deltaY));
-
-            // 更新起始点为当前点，用于下一个点的生成
-            startX = x;
-            startY = y;
-
-            Map<String, Object> trajectoryPoint = createPersonPosition(
-                    personId,
-                    personName,
-                    x,
-                    y,
-                    workType != null ? workType : "待分配",
-                    organization != null ? organization : "未知单位",
-                    workShop != null ? workShop : "未知车间",
-                    teamGroup != null ? teamGroup : "未知班组",
-                    "8小时",
-                    "正常考勤",
-                    idCard);
-
-            // 标记为随机位置
-            trajectoryPoint.put("hasRealLocation", false);
-
-            trajectoryPoints.add(trajectoryPoint);
-        }
-
+        // 如果没有获取到真实数据，返回空列表
+        logger.info("身份证 {} ({}) 无轨迹数据", idCard, personName);
         return trajectoryPoints;
     }
 
@@ -519,5 +494,166 @@ public class PersonTrackController extends BaseController {
         event.put("type", type); // 1-正常 2-报警 3-警告
 
         return event;
+    }
+
+    /**
+     * 根据身份证查询区域围栏数据
+     * 通过身份证号从Redis缓存中查找设备ID，然后匹配area_fence_data表中的设备ID后8位，
+     * 查询该表并按area_name分组找出最早的记录
+     * 
+     * @param idCard 身份证号
+     * @return 区域围栏数据
+     * @author Shawn
+     * @date 2025-01-15
+     */
+    @GetMapping("/getAreaFenceDataByIdCard")
+    @ResponseBody
+    @ApiOperation("根据身份证查询区域围栏数据")
+    public Map<String, Object> getAreaFenceDataByIdCard(
+            @ApiParam(value = "身份证号", required = true) @RequestParam String idCard) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            logger.info("根据身份证查询区域围栏数据，身份证号: {}", idCard);
+
+            // 1. 根据身份证从Redis缓存中查找设备ID
+            String deviceId = helmetCacheService.getAssignedDeviceFromCache(idCard, swmHelmetDeviceService);
+
+            if (deviceId == null || deviceId.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "未找到身份证号 " + idCard + " 对应的设备ID");
+                return result;
+            }
+
+            logger.info("身份证 {} 对应的设备ID: {}", idCard, deviceId);
+
+            // 2. 获取设备ID的后8位用于匹配
+            String deviceIdLast8 = getLastEightDigits(deviceId);
+            if (deviceIdLast8 == null) {
+                result.put("success", false);
+                result.put("message", "设备ID格式不正确，无法提取后8位数字");
+                return result;
+            }
+
+            logger.info("设备ID {} 的后8位: {}", deviceId, deviceIdLast8);
+
+            // 3. 查询area_fence_data表，匹配device_id的后8位
+            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8);
+
+            result.put("success", true);
+            result.put("data", areaFenceData);
+            result.put("deviceId", deviceId);
+            result.put("deviceIdLast8", deviceIdLast8);
+            result.put("total", areaFenceData.size());
+            result.put("message", "查询区域围栏数据成功");
+
+        } catch (Exception e) {
+            logger.error("根据身份证查询区域围栏数据失败，身份证号: {}", idCard, e);
+            result.put("success", false);
+            result.put("message", "查询区域围栏数据失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 提取设备ID的后8位数字
+     * 从类似 "866652022415351" 的字符串中提取后8位 "22415351"
+     * 
+     * @param deviceId 设备ID
+     * @return 后8位数字字符串，如果格式不正确则返回null
+     */
+    private String getLastEightDigits(String deviceId) {
+        if (deviceId == null || deviceId.trim().isEmpty()) {
+            return null;
+        }
+
+        // 移除所有非数字字符
+        String digitsOnly = deviceId.replaceAll("[^0-9]", "");
+
+        if (digitsOnly.length() < 8) {
+            logger.warn("设备ID {} 提取的数字位数不足8位: {}", deviceId, digitsOnly);
+            return null;
+        }
+
+        // 返回后8位
+        return digitsOnly.substring(digitsOnly.length() - 8);
+    }
+
+    /**
+     * 查询area_fence_data表，根据设备ID后8位匹配并按area_name分组找出最早记录
+     * 
+     * @param deviceIdLast8 设备ID后8位
+     * @return 区域围栏数据列表
+     */
+    private List<Map<String, Object>> queryAreaFenceDataByDeviceId(String deviceIdLast8) {
+        List<Map<String, Object>> resultList = new ArrayList<>();
+
+        try {
+            // 构建SQL查询语句
+            // 查询当天该设备在各个区域的所有记录，然后在Java中处理排序和分组
+            // device_id格式为 B0:8E:22:31:03:39，需要去掉冒号后匹配后8位
+            String sql = String.format(
+                    "SELECT time, area_name FROM %s.area_fence_data " +
+                            "WHERE REPLACE(device_id, ':', '') LIKE '%%%s' " +
+                            "AND time >= TODAY() AND time < TODAY() + 1d " +
+                            "ORDER BY time ASC",
+                    dbname, deviceIdLast8);
+
+            logger.info("查询area_fence_data的SQL: {}", sql);
+
+            // 执行查询
+            R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
+
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                JSONObject data = queryResult.getData();
+                JSONArray rows = data.getJSONArray("data");
+                JSONArray columnMeta = data.getJSONArray("column_meta");
+
+                if (rows != null && rows.size() > 0) {
+                    logger.info("查询到 {} 条区域围栏数据", rows.size());
+
+                    // 使用Map来存储每个区域的最早记录
+                    Map<String, Map<String, Object>> areaFirstRecordMap = new LinkedHashMap<>();
+
+                    // 解析查询结果，由于已经按时间排序，第一次出现的区域就是最早的
+                    for (int i = 0; i < rows.size(); i++) {
+                        JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() >= 2) {
+                            String time = String.valueOf(row.get(0));
+                            String areaName = String.valueOf(row.get(1));
+
+                            // 如果这个区域还没有记录，则添加（因为已按时间排序，这就是最早的）
+                            if (!areaFirstRecordMap.containsKey(areaName)) {
+                                Map<String, Object> record = new HashMap<>();
+                                record.put("time", time);
+                                record.put("area_name", areaName);
+                                areaFirstRecordMap.put(areaName, record);
+                            }
+                        }
+                    }
+
+                    // 将结果转换为List，并按时间排序
+                    resultList = new ArrayList<>(areaFirstRecordMap.values());
+                    resultList.sort((a, b) -> {
+                        String timeA = (String) a.get("time");
+                        String timeB = (String) b.get("time");
+                        return timeA.compareTo(timeB);
+                    });
+
+                    logger.info("处理后得到 {} 个区域的最早记录", resultList.size());
+                } else {
+                    logger.info("未找到匹配的区域围栏数据，设备ID后8位: {}", deviceIdLast8);
+                }
+            } else {
+                logger.error("查询area_fence_data失败: {}", queryResult.getMsg());
+            }
+
+        } catch (Exception e) {
+            logger.error("查询area_fence_data异常，设备ID后8位: {}", deviceIdLast8, e);
+        }
+
+        return resultList;
     }
 }
