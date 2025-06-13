@@ -214,6 +214,132 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
     }
 
     /**
+     * 根据身份证号和时间范围获取轨迹坐标
+     * 
+     * @param idCard    身份证号
+     * @param startDate 开始日期 (格式: YYYY-MM-DD)
+     * @param endDate   结束日期 (格式: YYYY-MM-DD)
+     * @param startTime 开始时间（当日的秒数，可选）
+     * @param endTime   结束时间（当日的秒数，可选）
+     * @return 轨迹坐标列表
+     */
+    @Override
+    public R<List<Map<String, Object>>> getTrajectoryByIdCardAndTimeRange(String idCard, String startDate,
+            String endDate, Integer startTime, Integer endTime) {
+        log.info("从external_coordinate_data根据身份证号和时间范围获取轨迹坐标, 身份证: {}, 开始日期: {}, 结束日期: {}, 开始时间: {}, 结束时间: {}",
+                idCard, startDate, endDate, startTime, endTime);
+
+        if (StringUtils.isBlank(idCard)) {
+            return R.fail("身份证号不能为空");
+        }
+
+        try {
+            // 构建时间条件
+            String timeCondition = buildTimeCondition(startDate, endDate, startTime, endTime);
+
+            // 查询该身份证在指定时间范围内的所有坐标数据，按时间排序
+            String sql = String.format(
+                    "select id_card, x, y, time from %s.%s " +
+                            "where id_card='%s' %s " +
+                            "order by time asc",
+                    dbname, EXTERNAL_COORDINATE_SUPER_TABLE_NAME,
+                    idCard, timeCondition);
+
+            log.info("查询external_coordinate_data时间范围轨迹坐标SQL: {}", sql);
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            if (result.getCode() == R.SUCCESS) {
+                List<Map<String, Object>> rows = processQueryResult(result.getData());
+                List<Map<String, Object>> trajectoryPoints = new ArrayList<>();
+
+                for (Map<String, Object> row : rows) {
+                    String resultIdCard = (String) row.get("id_card");
+                    Object xObj = row.get("x");
+                    Object yObj = row.get("y");
+                    Object timeObj = row.get("time");
+
+                    if (resultIdCard != null && !resultIdCard.trim().isEmpty() && xObj != null && yObj != null) {
+                        Map<String, Object> point = new HashMap<>();
+                        point.put("x", xObj);
+                        point.put("y", yObj);
+                        point.put("time", timeObj);
+                        point.put("id_card", resultIdCard);
+
+                        trajectoryPoints.add(point);
+                    }
+                }
+
+                log.info("从external_coordinate_data获取身份证 {} 时间范围轨迹点数量: {}", idCard, trajectoryPoints.size());
+                return R.ok(trajectoryPoints);
+            }
+
+            return R.fail("查询失败: " + result.getMsg());
+        } catch (Exception e) {
+            log.error("从external_coordinate_data根据身份证号和时间范围获取轨迹坐标失败, idCard: {}", idCard, e);
+            return R.fail("查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 构建时间查询条件
+     * 
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @param startTime 开始时间（秒数）
+     * @param endTime   结束时间（秒数）
+     * @return 时间查询条件
+     */
+    private String buildTimeCondition(String startDate, String endDate, Integer startTime, Integer endTime) {
+        StringBuilder condition = new StringBuilder();
+
+        // 如果没有指定日期，使用当天
+        if (StringUtils.isBlank(startDate) && StringUtils.isBlank(endDate)) {
+            String currentDate = DateUtil.today();
+            startDate = currentDate;
+            endDate = currentDate;
+        } else if (StringUtils.isBlank(startDate)) {
+            startDate = endDate;
+        } else if (StringUtils.isBlank(endDate)) {
+            endDate = startDate;
+        }
+
+        // 构建基本的日期范围条件
+        String queryStartDateTime;
+        String queryEndDateTime;
+
+        if (startTime != null && endTime != null) {
+            // 如果指定了具体时间（秒数），转换为时分秒
+            String startTimeStr = formatSecondsToTime(startTime);
+            String endTimeStr = formatSecondsToTime(endTime);
+
+            queryStartDateTime = startDate + " " + startTimeStr;
+            queryEndDateTime = endDate + " " + endTimeStr;
+        } else {
+            // 如果没有指定具体时间，使用全天
+            queryStartDateTime = startDate + " 00:00:00";
+            queryEndDateTime = endDate + " 23:59:59";
+        }
+
+        condition.append(" and time >= '").append(queryStartDateTime).append("'");
+        condition.append(" and time <= '").append(queryEndDateTime).append("'");
+
+        return condition.toString();
+    }
+
+    /**
+     * 将秒数转换为时分秒格式
+     * 
+     * @param seconds 秒数
+     * @return 时分秒格式字符串 (HH:mm:ss)
+     */
+    private String formatSecondsToTime(int seconds) {
+        int hours = seconds / 3600;
+        int minutes = (seconds % 3600) / 60;
+        int secs = seconds % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, secs);
+    }
+
+    /**
      * 保存外部坐标数据
      * 
      * @param dataMap 坐标数据

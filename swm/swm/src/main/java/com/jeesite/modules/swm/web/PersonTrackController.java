@@ -316,7 +316,11 @@ public class PersonTrackController extends BaseController {
                     organization,
                     workShop,
                     teamGroup,
-                    idCard);
+                    idCard,
+                    startDate,
+                    endDate,
+                    startTime,
+                    endTime);
 
             // 构建时间线事件数据
             List<Map<String, Object>> timelineEvents = Arrays.asList(
@@ -368,20 +372,33 @@ public class PersonTrackController extends BaseController {
      * @param workShop     车间
      * @param teamGroup    班组
      * @param idCard       身份证号
+     * @param startDate    开始日期
+     * @param endDate      结束日期
+     * @param startTime    开始时间（秒数）
+     * @param endTime      结束时间（秒数）
      * @return 轨迹点列表
      * @author Shawn
      * @date 2025-01-14
      */
     private List<Map<String, Object>> getTrajectoryPoints(Integer personId, String personName,
-            String workType, String organization, String workShop, String teamGroup, String idCard) {
+            String workType, String organization, String workShop, String teamGroup, String idCard,
+            String startDate, String endDate, Integer startTime, Integer endTime) {
 
         List<Map<String, Object>> trajectoryPoints = new ArrayList<>();
 
         // 从external_coordinate_data表获取真实轨迹数据
         if (idCard != null && !idCard.trim().isEmpty()) {
             try {
-                R<List<Map<String, Object>>> trajectoryResult = externalCoordinateDataService
-                        .getTodayTrajectoryByIdCard(idCard);
+                R<List<Map<String, Object>>> trajectoryResult;
+
+                // 如果指定了时间范围参数，使用时间范围查询；否则使用当天查询
+                if (startDate != null || endDate != null || startTime != null || endTime != null) {
+                    trajectoryResult = externalCoordinateDataService
+                            .getTrajectoryByIdCardAndTimeRange(idCard, startDate, endDate, startTime, endTime);
+                } else {
+                    trajectoryResult = externalCoordinateDataService
+                            .getTodayTrajectoryByIdCard(idCard);
+                }
                 if (trajectoryResult.getCode() == R.SUCCESS && trajectoryResult.getData() != null) {
                     List<Map<String, Object>> realTrajectory = trajectoryResult.getData();
 
