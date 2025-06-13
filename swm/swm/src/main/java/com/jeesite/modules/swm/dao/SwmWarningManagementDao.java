@@ -5,6 +5,7 @@ import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 预警管理DAO接口
@@ -20,4 +21,43 @@ public interface SwmWarningManagementDao extends CrudDao<SwmWarningManagement> {
      */
     List<SwmWarningManagement> findAllWithoutStatusFilter();
     
+    /**
+     * 向MySQL数据库插入预警处置记录
+     * 
+     * @param swmWarningManagement 预警管理实体
+     * @return 影响的行数
+     */
+    int insertToMySql(SwmWarningManagement swmWarningManagement);
+    
+    /**
+     * 根据ID集合批量查询MySQL数据库中的预警记录
+     * 
+     * @param idList 预警ID集合
+     * @return 预警记录列表
+     */
+    List<SwmWarningManagement> findInMySqlByIds(@Param("idList") List<String> idList);
+    
+    /**
+     * 根据ID和身份证号查询MySQL数据库中的预警记录
+     * 
+     * @param id 预警ID
+     * @param idCard 身份证号
+     * @return 预警记录
+     */
+    SwmWarningManagement findInMySqlByIdAndIdCard(@Param("id") String id, @Param("idCard") String idCard);
+    
+    /**
+     * 在MySQL中按条件查询已处置的预警数据
+     * 
+     * @param swmWarningManagement 包含查询条件的预警管理对象
+     * @return 符合条件的已处置预警记录列表
+     */
+    List<SwmWarningManagement> findProcessedInMySql(SwmWarningManagement swmWarningManagement);
+    
+    /**
+     * 查询所有已处置记录的ID
+     * 
+     * @return 已处置记录ID列表
+     */
+    List<String> findAllProcessedIds();
 } 

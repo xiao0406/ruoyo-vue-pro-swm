@@ -30,6 +30,8 @@ import java.util.Date;
         @Column(name = "handle_process", attrName = "handleProcess", label = "处置过程"),
         @Column(name = "handle_status", attrName = "handleStatus", label = "处置状态"),
         @Column(name = "attachment", attrName = "attachment", label = "附件路径", comment = "附件路径"),
+        @Column(name = "device_id", attrName = "deviceId", label = "设备ID"),
+        @Column(name = "id_card", attrName = "idCard", label = "身份证号"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.warning_time DESC")
 public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
@@ -122,6 +124,8 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private String handleProcess; // 处置过程
     private String handleStatus; // 处置状态
     private String attachment; // 附件路径
+    private String deviceId; // 设备ID
+    private String idCard; // 身份证号
 
     // 用于显示的属性，不对应数据库字段
     private String warningTypeText; // 预警类型显示文本
@@ -271,5 +275,23 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setAttachment(String attachment) {
         this.attachment = attachment;
+    }
+    
+    @Length(min = 0, max = 64, message = "设备ID不能超过64个字符")
+    public String getDeviceId() {
+        return deviceId;
+    }
+    
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+    
+    @Length(min = 0, max = 18, message = "身份证号不能超过18个字符")
+    public String getIdCard() {
+        return idCard;
+    }
+    
+    public void setIdCard(String idCard) {
+        this.idCard = idCard;
     }
 }

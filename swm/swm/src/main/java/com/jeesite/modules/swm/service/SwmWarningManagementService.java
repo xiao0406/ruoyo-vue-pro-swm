@@ -13,10 +13,7 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.modules.utils.R;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
@@ -214,14 +211,18 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "warning_time":
                         try {
-                            entity.setWarningTime(new Date(row.getLong(i)));
+                            // 移除8小时时区调整
+                            Date warningTime = new Date(row.getLong(i));
+                            entity.setWarningTime(warningTime);
                         } catch (Exception e) {
                             // 如果转换失败，尝试作为字符串解析
                             try {
                                 String timeStr = row.getStr(i);
                                 if (timeStr != null && !timeStr.isEmpty()) {
                                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                                    entity.setWarningTime(sdf.parse(timeStr));
+                                    Date parsedTime = sdf.parse(timeStr);
+                                    // 移除8小时时区调整
+                                    entity.setWarningTime(parsedTime);
                                 }
                             } catch (ParseException pe) {
                                 logger.warn("解析warning_time失败: {}", pe.getMessage());
@@ -233,14 +234,18 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "alarm_time":
                         try {
-                            entity.setAlarmTime(new Date(row.getLong(i)));
+                            // 移除8小时时区调整
+                            Date alarmTime = new Date(row.getLong(i));
+                            entity.setAlarmTime(alarmTime);
                         } catch (Exception e) {
                             // 如果转换失败，尝试作为字符串解析
                             try {
                                 String timeStr = row.getStr(i);
                                 if (timeStr != null && !timeStr.isEmpty()) {
                                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                                    entity.setAlarmTime(sdf.parse(timeStr));
+                                    Date parsedTime = sdf.parse(timeStr);
+                                    // 移除8小时时区调整
+                                    entity.setAlarmTime(parsedTime);
                                 }
                             } catch (ParseException pe) {
                                 logger.warn("解析alarm_time失败: {}", pe.getMessage());
@@ -256,14 +261,18 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     case "handle_time":
                         if (row.get(i) != null) {
                             try {
-                                entity.setHandleTime(new Date(row.getLong(i)));
+                                // 移除8小时时区调整
+                                Date handleTime = new Date(row.getLong(i));
+                                entity.setHandleTime(handleTime);
                             } catch (Exception e) {
                                 // 如果转换失败，尝试作为字符串解析
                                 try {
                                     String timeStr = row.getStr(i);
                                     if (timeStr != null && !timeStr.isEmpty()) {
                                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                                        entity.setHandleTime(sdf.parse(timeStr));
+                                        Date parsedTime = sdf.parse(timeStr);
+                                        // 移除8小时时区调整
+                                        entity.setHandleTime(parsedTime);
                                     }
                                 } catch (ParseException pe) {
                                     logger.warn("解析handle_time失败: {}", pe.getMessage());
@@ -285,14 +294,18 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "create_date":
                         try {
-                            entity.setCreateDate(new Date(row.getLong(i)));
+                            // 移除8小时时区调整
+                            Date createDate = new Date(row.getLong(i));
+                            entity.setCreateDate(createDate);
                         } catch (Exception e) {
                             // 如果转换失败，尝试作为字符串解析
                             try {
                                 String timeStr = row.getStr(i);
                                 if (timeStr != null && !timeStr.isEmpty()) {
                                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                                    entity.setCreateDate(sdf.parse(timeStr));
+                                    Date parsedTime = sdf.parse(timeStr);
+                                    // 移除8小时时区调整
+                                    entity.setCreateDate(parsedTime);
                                 }
                             } catch (ParseException pe) {
                                 logger.warn("解析create_date失败: {}", pe.getMessage());
@@ -305,14 +318,18 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     case "update_date":
                         if (row.get(i) != null) {
                             try {
-                                entity.setUpdateDate(new Date(row.getLong(i)));
+                                // 移除8小时时区调整
+                                Date updateDate = new Date(row.getLong(i));
+                                entity.setUpdateDate(updateDate);
                             } catch (Exception e) {
                                 // 如果转换失败，尝试作为字符串解析
                                 try {
                                     String timeStr = row.getStr(i);
                                     if (timeStr != null && !timeStr.isEmpty()) {
                                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                                        entity.setUpdateDate(sdf.parse(timeStr));
+                                        Date parsedTime = sdf.parse(timeStr);
+                                        // 移除8小时时区调整
+                                        entity.setUpdateDate(parsedTime);
                                     }
                                 } catch (ParseException pe) {
                                     logger.warn("解析update_date失败: {}", pe.getMessage());
@@ -325,6 +342,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "status":
                         entity.setStatus(row.getStr(i));
+                        break;
+                    case "device_id":
+                        entity.setDeviceId(row.getStr(i));
+                        break;
+                    case "id_card":
+                        entity.setIdCard(row.getStr(i));
                         break;
                 }
             }
@@ -523,5 +546,185 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             // 如果TDengine删除失败，回退到原始删除
         super.delete(swmWarningManagement);
         }
+    }
+
+    /**
+     * 处理预警并向MySQL插入完整记录（仅查询时序数据库，不修改）
+     * 
+     * @param id 预警ID
+     * @param handler 处置人
+     * @param handleTime 处置时间
+     * @param handleProcess 处置过程
+     * @param handleStatus 处置状态
+     * @param attachment 附件路径
+     * @return 处理结果
+     */
+    @Transactional(readOnly = false)
+    public boolean processWarningToMySql(String id, String handler, Date handleTime, String handleProcess, String handleStatus, String attachment) {
+        logger.info("处理预警并向MySQL插入完整记录，预警ID：{}", id);
+        
+        // 只查询时序数据库中的预警记录，不进行修改
+        SwmWarningManagement swmWarningManagement = this.get(id);
+        if (swmWarningManagement == null) {
+            logger.error("预警记录不存在，ID：{}", id);
+            return false;
+        }
+        
+        // 创建一个新对象用于MySQL插入
+        SwmWarningManagement mysqlWarning = new SwmWarningManagement();
+        
+        // 从时序数据库查询的记录中复制基础属性
+        mysqlWarning.setId(swmWarningManagement.getId());
+        mysqlWarning.setCreateBy(swmWarningManagement.getCreateBy());
+        mysqlWarning.setCreateDate(swmWarningManagement.getCreateDate());
+        mysqlWarning.setUpdateBy(swmWarningManagement.getUpdateBy());
+        mysqlWarning.setUpdateDate(new Date()); // 使用当前时间作为更新时间
+        mysqlWarning.setRemarks(swmWarningManagement.getRemarks());
+        mysqlWarning.setStatus("0"); // 正常状态
+        mysqlWarning.setPersonName(swmWarningManagement.getPersonName());
+        mysqlWarning.setWarningType(swmWarningManagement.getWarningType());
+        mysqlWarning.setWarningContent(swmWarningManagement.getWarningContent());
+        mysqlWarning.setWarningTime(swmWarningManagement.getWarningTime());
+        mysqlWarning.setAlarmRecord(swmWarningManagement.getAlarmRecord());
+        mysqlWarning.setAlarmTime(swmWarningManagement.getAlarmTime());
+        mysqlWarning.setTriggerReason(swmWarningManagement.getTriggerReason());
+        mysqlWarning.setDeviceId(swmWarningManagement.getDeviceId());
+        mysqlWarning.setIdCard(swmWarningManagement.getIdCard());
+        
+        // 设置前端传入的处置信息
+        mysqlWarning.setHandler(handler);
+        mysqlWarning.setHandleTime(handleTime);
+        mysqlWarning.setHandleProcess(handleProcess);
+        mysqlWarning.setHandleStatus(handleStatus);
+        mysqlWarning.setAttachment(attachment);
+        
+        try {
+            // 使用自定义方法直接向MySQL插入数据
+            dao.insertToMySql(mysqlWarning);
+            logger.info("成功向MySQL数据库插入预警处置记录，ID：{}", id);
+            return true;
+        } catch (Exception e) {
+            logger.error("向MySQL数据库插入预警处置记录失败", e);
+            return false;
+        }
+    }
+
+    /**
+     * 混合查询分页数据（从时序数据库和MySQL混合查询）
+     * 
+     * @param page 分页对象
+     * @param swmWarningManagement 查询条件
+     * @return 混合数据的分页结果
+     */
+    public Page<SwmWarningManagement> hybridFindPage(Page<SwmWarningManagement> page, SwmWarningManagement swmWarningManagement) {
+        logger.info("开始混合查询分页数据...");
+        
+        // 检查是否是查询已处置数据(handleStatus=1)
+        if (swmWarningManagement != null && "1".equals(swmWarningManagement.getHandleStatus())) {
+            logger.info("查询已处置数据，直接从MySQL数据库查询");
+            
+            // 创建一个简单的分页查询
+            Page<SwmWarningManagement> mysqlPage = new Page<>(page.getPageNo(), page.getPageSize());
+            
+            // 直接使用新增的DAO方法查询已处置数据
+            List<SwmWarningManagement> mysqlList = dao.findProcessedInMySql(swmWarningManagement);
+            
+            // 设置显示文本值
+            if (mysqlList != null) {
+                for (SwmWarningManagement item : mysqlList) {
+                    if (item.getWarningType() != null) {
+                        item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
+                    }
+                    if (item.getHandleStatus() != null) {
+                        item.setHandleStatusText(DictUtils.getDictLabel("handle_status_enum", item.getHandleStatus(), item.getHandleStatus()));
+                    }
+                }
+            }
+            
+            // 手动计算总数和分页
+            long total = mysqlList != null ? mysqlList.size() : 0;
+            int fromIndex = (page.getPageNo() - 1) * page.getPageSize();
+            int toIndex = Math.min(fromIndex + page.getPageSize(), mysqlList.size());
+            
+            // 得到当前页的数据子集
+            List<SwmWarningManagement> pageList = fromIndex < toIndex ? 
+                    mysqlList.subList(fromIndex, toIndex) : new ArrayList<>();
+                    
+            // 设置结果页和返回
+            mysqlPage.setCount(total);
+            mysqlPage.setList(pageList);
+            logger.info("从MySQL查询到 {} 条已处置数据", total);
+            
+            return mysqlPage;
+        }
+        
+        // 1. 首先从MySQL获取所有已处置的记录ID（无论是否符合查询条件）
+        List<String> processedIds = dao.findAllProcessedIds();
+        Set<String> processedIdSet = new HashSet<>(processedIds);
+        logger.info("从MySQL获取到 {} 条已处置记录ID", processedIdSet.size());
+        
+        // 2. 从时序数据库获取数据（非已处置数据的查询）
+        Page<SwmWarningManagement> tdEnginePage = this.findPage(page, swmWarningManagement);
+        List<SwmWarningManagement> tdEngineList = tdEnginePage.getList();
+        
+        if (tdEngineList == null || tdEngineList.isEmpty()) {
+            logger.info("时序数据库查询结果为空，直接返回空结果");
+            return tdEnginePage;
+        }
+        
+        // 3. 过滤掉时序数据库中已经在MySQL中标记为已处置的记录，防止重复
+        List<SwmWarningManagement> filteredTdEngineList = new ArrayList<>();
+        List<String> needMySqlIds = new ArrayList<>();
+        
+        for (SwmWarningManagement item : tdEngineList) {
+            if (processedIdSet.contains(item.getId())) {
+                // 这条记录在MySQL中已标记为处置过，我们需要查询MySQL获取处置后的数据
+                needMySqlIds.add(item.getId());
+            } else {
+                // 这条记录在MySQL中没有，保留时序数据库的数据
+                filteredTdEngineList.add(item);
+            }
+        }
+        
+        // 4. 从MySQL中查询已处置的记录
+        List<SwmWarningManagement> mysqlList = new ArrayList<>();
+        if (!needMySqlIds.isEmpty()) {
+            mysqlList = dao.findInMySqlByIds(needMySqlIds);
+        }
+        
+        // 5. 合并结果，去重并确保正确排序
+        Map<String, SwmWarningManagement> resultMap = new HashMap<>();
+        
+        // 先添加时序数据库中未处置的数据
+        for (SwmWarningManagement item : filteredTdEngineList) {
+            resultMap.put(item.getId(), item);
+        }
+        
+        // 再添加MySQL中已处置的数据
+        for (SwmWarningManagement item : mysqlList) {
+            // 设置显示文本值
+            if (item.getWarningType() != null) {
+                item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
+            }
+            if (item.getHandleStatus() != null) {
+                item.setHandleStatusText(DictUtils.getDictLabel("handle_status_enum", item.getHandleStatus(), item.getHandleStatus()));
+            }
+            // 覆盖原有记录（如果有的话）
+            resultMap.put(item.getId(), item);
+        }
+        
+        // 6. 恢复原始排序
+        List<SwmWarningManagement> resultList = new ArrayList<>();
+        for (SwmWarningManagement item : tdEngineList) {
+            SwmWarningManagement resultItem = resultMap.get(item.getId());
+            if (resultItem != null) {
+                resultList.add(resultItem);
+            }
+        }
+        
+        // 7. 设置结果列表并返回
+        tdEnginePage.setList(resultList);
+        logger.info("混合查询完成，返回 {} 条记录", resultList.size());
+        return tdEnginePage;
     }
 }
