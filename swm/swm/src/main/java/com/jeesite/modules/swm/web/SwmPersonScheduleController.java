@@ -9,6 +9,9 @@ import com.jeesite.modules.swm.service.SwmPersonScheduleService;
 import com.jeesite.modules.swm.service.SwmScheduleTimeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,6 +35,8 @@ import java.util.Map;
     @RequestMapping(value = "${adminPath}/personSchedule")
 @Api(value = "人员排班管理接口", tags = "人员排班管理接口")
 public class SwmPersonScheduleController extends BaseController {
+
+    private static final Logger logger = LoggerFactory.getLogger(SwmPersonScheduleController.class);
 
     @Autowired
     private SwmPersonScheduleService swmPersonScheduleService;
@@ -70,6 +75,9 @@ public class SwmPersonScheduleController extends BaseController {
         Map<String, Object> result = new HashMap<>();
         List<Map<String, Object>> enhancedList = new ArrayList<>();
         
+        // 获取前端传递的班组筛选参数
+        String workGroupNameFilter = request.getParameter("workGroupName");
+        
         // 处理每个对象，添加枚举的文本显示
         for (SwmPersonSchedule schedule : page.getList()) {
             Map<String, Object> scheduleMap = new HashMap<>();
@@ -87,10 +95,28 @@ public class SwmPersonScheduleController extends BaseController {
             scheduleMap.put("personName", schedule.getPersonName());
             scheduleMap.put("month", schedule.getMonth());
             scheduleMap.put("classes", schedule.getClasses());
+            scheduleMap.put("idCard", schedule.getIdCard());
             scheduleMap.put("isNewRecord", schedule.getIsNewRecord());
             
             // 添加枚举文本显示值
             scheduleMap.put("classesText", schedule.getClassesText());
+            
+            // 添加班组名称
+            String workGroupName = "";
+            if (schedule.getIdCard() != null && !schedule.getIdCard().isEmpty()) {
+                workGroupName = swmPersonScheduleService.getWorkGroupNameByIdCard(schedule.getIdCard());
+                scheduleMap.put("workGroupName", workGroupName);
+            } else {
+                scheduleMap.put("workGroupName", "");
+            }
+            
+            // 如果有班组筛选条件，检查当前记录是否符合条件
+            if (workGroupNameFilter != null && !workGroupNameFilter.isEmpty()) {
+                if (workGroupName == null || !workGroupName.contains(workGroupNameFilter)) {
+                    // 不符合班组筛选条件，跳过此记录
+                    continue;
+                }
+            }
             
             // 添加到列表
             enhancedList.add(scheduleMap);
@@ -121,10 +147,19 @@ public class SwmPersonScheduleController extends BaseController {
             scheduleData.put("personName", swmPersonSchedule.getPersonName());
             scheduleData.put("month", swmPersonSchedule.getMonth());
             scheduleData.put("classes", swmPersonSchedule.getClasses());
+            scheduleData.put("idCard", swmPersonSchedule.getIdCard());
             scheduleData.put("remarks", swmPersonSchedule.getRemarks());
             
             // 处理枚举值
             scheduleData.put("classesText", swmPersonSchedule.getClassesText());
+            
+            // 添加班组名称
+            if (swmPersonSchedule.getIdCard() != null && !swmPersonSchedule.getIdCard().isEmpty()) {
+                String workGroupName = swmPersonScheduleService.getWorkGroupNameByIdCard(swmPersonSchedule.getIdCard());
+                scheduleData.put("workGroupName", workGroupName);
+            } else {
+                scheduleData.put("workGroupName", "");
+            }
             
             result.putAll(scheduleData);
         }
@@ -149,6 +184,16 @@ public class SwmPersonScheduleController extends BaseController {
     @ResponseBody
     @ApiOperation("批量保存数据")
     public String batchSave(@RequestBody List<SwmPersonSchedule> scheduleList) {
+        // 打印接收到的数据，用于调试
+        if (scheduleList != null && !scheduleList.isEmpty()) {
+            for (SwmPersonSchedule schedule : scheduleList) {
+                // 记录日志，用于调试，生产环境可以移除
+                logger.info("接收到排班数据: 姓名={}, 月份={}, 班次={}, 身份证号={}",
+                        schedule.getPersonName(), schedule.getMonth(),
+                        schedule.getClasses(), schedule.getIdCard());
+            }
+        }
+        
         swmPersonScheduleService.batchSave(scheduleList);
         return renderResult(Global.TRUE, text("批量保存人员排班成功！"));
     }
@@ -206,6 +251,58 @@ public class SwmPersonScheduleController extends BaseController {
         }
         
         result.put("shiftOptions", shiftOptions);
+        
+        return result;
+    }
+
+    /**
+     * 根据身份证号查询排班记录
+     */
+    @GetMapping(value = "findByIdCard")
+    @ResponseBody
+    @ApiOperation("根据身份证号查询排班记录")
+    public Map<String, Object> findByIdCard(@RequestParam("idCard") String idCard) {
+        Map<String, Object> result = new HashMap<>();
+        
+        if (idCard == null || idCard.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "身份证号不能为空");
+            return result;
+        }
+        
+        List<SwmPersonSchedule> scheduleList = swmPersonScheduleService.findByIdCard(idCard);
+        List<Map<String, Object>> enhancedList = new ArrayList<>();
+        
+        // 获取班组名称
+        String workGroupName = swmPersonScheduleService.getWorkGroupNameByIdCard(idCard);
+        
+        // 处理每个对象，添加枚举的文本显示
+        for (SwmPersonSchedule schedule : scheduleList) {
+            Map<String, Object> scheduleMap = new HashMap<>();
+            
+            // 复制基本属性
+            scheduleMap.put("id", schedule.getId());
+            scheduleMap.put("personName", schedule.getPersonName());
+            scheduleMap.put("month", schedule.getMonth());
+            scheduleMap.put("classes", schedule.getClasses());
+            scheduleMap.put("idCard", schedule.getIdCard());
+            scheduleMap.put("createDate", schedule.getCreateDate());
+            scheduleMap.put("updateDate", schedule.getUpdateDate());
+            scheduleMap.put("remarks", schedule.getRemarks());
+            
+            // 添加枚举文本显示值
+            scheduleMap.put("classesText", schedule.getClassesText());
+            
+            // 添加班组名称
+            scheduleMap.put("workGroupName", workGroupName);
+            
+            // 添加到列表
+            enhancedList.add(scheduleMap);
+        }
+        
+        result.put("success", true);
+        result.put("list", enhancedList);
+        result.put("count", enhancedList.size());
         
         return result;
     }

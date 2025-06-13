@@ -1,5 +1,6 @@
 package com.jeesite.modules.job.config;
 
+import com.jeesite.modules.swm.job.FmsMonthPlanProlongTask;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
@@ -23,5 +24,20 @@ import javax.annotation.Resource;
 @Component
 @Slf4j
 public class XxlJobHandler {
+
+    @Resource
+    private FmsMonthPlanProlongTask fmsMonthPlanProlongTask;
+
+
+
+    private static Logger logger = LoggerFactory.getLogger(XxlJobHandler.class);
+    /**
+     * 构件定额编码相关信息更新
+     */
+    @XxlJob("componentUnitCodeInfoUpdateTask")
+    public void componentUnitCodeInfoUpdateTask() throws Exception {
+        XxlJobHelper.log("XXL-JOB, 构件定额编码相关信息更新.");
+        fmsMonthPlanProlongTask.execute();
+    }
 
 }

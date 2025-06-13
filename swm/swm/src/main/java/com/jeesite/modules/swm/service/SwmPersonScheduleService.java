@@ -6,6 +6,8 @@ import com.jeesite.modules.swm.dao.SwmPersonScheduleDao;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -18,6 +20,8 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, SwmPersonSchedule> {
+
+    private static final Logger logger = LoggerFactory.getLogger(SwmPersonScheduleService.class);
 
     /**
      * 获取单条数据
@@ -78,6 +82,19 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
     public void batchSave(List<SwmPersonSchedule> scheduleList) {
         if (scheduleList != null && !scheduleList.isEmpty()) {
             for (SwmPersonSchedule schedule : scheduleList) {
+                // 如果传入了身份证号，可以使用它进行相关处理
+                if (schedule.getIdCard() != null && !schedule.getIdCard().isEmpty()) {
+                    // 检查该人员在当月是否已有排班
+                    List<SwmPersonSchedule> existingSchedules = dao.findByIdCardAndMonth(schedule.getIdCard(), schedule.getMonth());
+                    
+                    // 如果已有排班，且当前不是修改操作（没有ID），则跳过
+                    if (!existingSchedules.isEmpty() && (schedule.getId() == null || schedule.getId().isEmpty())) {
+                        logger.info("人员 {} (身份证: {}) 在 {} 月已有排班，跳过添加新排班", 
+                                schedule.getPersonName(), schedule.getIdCard(), schedule.getMonth());
+                        continue;
+                    }
+                }
+                
                 this.save(schedule);
             }
         }
@@ -91,5 +108,33 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
     @Transactional(readOnly = false)
     public void delete(SwmPersonSchedule swmPersonSchedule) {
         super.delete(swmPersonSchedule);
+    }
+
+    /**
+     * 根据身份证号查询排班记录
+     * @param idCard 身份证号码
+     * @return 排班记录列表
+     */
+    public List<SwmPersonSchedule> findByIdCard(String idCard) {
+        return dao.findByIdCard(idCard);
+    }
+    
+    /**
+     * 根据身份证号和月份查询排班记录
+     * @param idCard 身份证号码
+     * @param month 月份
+     * @return 排班记录列表
+     */
+    public List<SwmPersonSchedule> findByIdCardAndMonth(String idCard, String month) {
+        return dao.findByIdCardAndMonth(idCard, month);
+    }
+    
+    /**
+     * 根据身份证号获取班组名称
+     * @param idCard 身份证号码
+     * @return 班组名称
+     */
+    public String getWorkGroupNameByIdCard(String idCard) {
+        return dao.getWorkGroupNameByIdCard(idCard);
     }
 } 

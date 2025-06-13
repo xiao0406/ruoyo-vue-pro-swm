@@ -19,6 +19,7 @@ public class TreeNode implements Serializable {
     private String key;       // 节点键
     private String nodeType;  // 节点类型: office(厂间), workshop(车间), prodLine(产线), workGroup(班组), worker(员工)
     private boolean isLeaf;   // 是否叶子节点
+    private String idCard;    // 身份证号码（仅用于员工节点）
 
     public TreeNode() {
     }
@@ -86,5 +87,13 @@ public class TreeNode implements Serializable {
 
     public void setLeaf(boolean leaf) {
         isLeaf = leaf;
+    }
+    
+    public String getIdCard() {
+        return idCard;
+    }
+
+    public void setIdCard(String idCard) {
+        this.idCard = idCard;
     }
 } 
