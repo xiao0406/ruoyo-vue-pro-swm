@@ -3,6 +3,9 @@ package com.jeesite.modules.swm.web;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.service.PersonTrackService;
 import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
+import com.jeesite.modules.swm.service.SwmHelmetCacheService;
+import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
+import com.jeesite.modules.swm.service.TDengineService;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -10,7 +13,10 @@ import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 
 import java.util.*;
 
@@ -30,6 +36,18 @@ public class PersonTrackController extends BaseController {
 
     @Autowired
     private ExternalCoordinateDataService externalCoordinateDataService;
+
+    @Autowired
+    private SwmHelmetCacheService helmetCacheService;
+
+    @Autowired
+    private SwmHelmetDeviceService swmHelmetDeviceService;
+
+    @Autowired
+    private TDengineService tdengineService;
+
+    @Value("${tdengine.dbname}")
+    private String dbname;
 
     private static final Logger logger = LoggerFactory.getLogger(PersonTrackController.class);
 
@@ -459,5 +477,166 @@ public class PersonTrackController extends BaseController {
         event.put("type", type); // 1-正常 2-报警 3-警告
 
         return event;
+    }
+
+    /**
+     * 根据身份证查询区域围栏数据
+     * 通过身份证号从Redis缓存中查找设备ID，然后匹配area_fence_data表中的设备ID后8位，
+     * 查询该表并按area_name分组找出最早的记录
+     * 
+     * @param idCard 身份证号
+     * @return 区域围栏数据
+     * @author Shawn
+     * @date 2025-01-15
+     */
+    @GetMapping("/getAreaFenceDataByIdCard")
+    @ResponseBody
+    @ApiOperation("根据身份证查询区域围栏数据")
+    public Map<String, Object> getAreaFenceDataByIdCard(
+            @ApiParam(value = "身份证号", required = true) @RequestParam String idCard) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            logger.info("根据身份证查询区域围栏数据，身份证号: {}", idCard);
+
+            // 1. 根据身份证从Redis缓存中查找设备ID
+            String deviceId = helmetCacheService.getAssignedDeviceFromCache(idCard, swmHelmetDeviceService);
+
+            if (deviceId == null || deviceId.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "未找到身份证号 " + idCard + " 对应的设备ID");
+                return result;
+            }
+
+            logger.info("身份证 {} 对应的设备ID: {}", idCard, deviceId);
+
+            // 2. 获取设备ID的后8位用于匹配
+            String deviceIdLast8 = getLastEightDigits(deviceId);
+            if (deviceIdLast8 == null) {
+                result.put("success", false);
+                result.put("message", "设备ID格式不正确，无法提取后8位数字");
+                return result;
+            }
+
+            logger.info("设备ID {} 的后8位: {}", deviceId, deviceIdLast8);
+
+            // 3. 查询area_fence_data表，匹配device_id的后8位
+            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8);
+
+            result.put("success", true);
+            result.put("data", areaFenceData);
+            result.put("deviceId", deviceId);
+            result.put("deviceIdLast8", deviceIdLast8);
+            result.put("total", areaFenceData.size());
+            result.put("message", "查询区域围栏数据成功");
+
+        } catch (Exception e) {
+            logger.error("根据身份证查询区域围栏数据失败，身份证号: {}", idCard, e);
+            result.put("success", false);
+            result.put("message", "查询区域围栏数据失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 提取设备ID的后8位数字
+     * 从类似 "866652022415351" 的字符串中提取后8位 "22415351"
+     * 
+     * @param deviceId 设备ID
+     * @return 后8位数字字符串，如果格式不正确则返回null
+     */
+    private String getLastEightDigits(String deviceId) {
+        if (deviceId == null || deviceId.trim().isEmpty()) {
+            return null;
+        }
+
+        // 移除所有非数字字符
+        String digitsOnly = deviceId.replaceAll("[^0-9]", "");
+
+        if (digitsOnly.length() < 8) {
+            logger.warn("设备ID {} 提取的数字位数不足8位: {}", deviceId, digitsOnly);
+            return null;
+        }
+
+        // 返回后8位
+        return digitsOnly.substring(digitsOnly.length() - 8);
+    }
+
+    /**
+     * 查询area_fence_data表，根据设备ID后8位匹配并按area_name分组找出最早记录
+     * 
+     * @param deviceIdLast8 设备ID后8位
+     * @return 区域围栏数据列表
+     */
+    private List<Map<String, Object>> queryAreaFenceDataByDeviceId(String deviceIdLast8) {
+        List<Map<String, Object>> resultList = new ArrayList<>();
+
+        try {
+            // 构建SQL查询语句
+            // 查询当天该设备在各个区域的所有记录，然后在Java中处理排序和分组
+            // device_id格式为 B0:8E:22:31:03:39，需要去掉冒号后匹配后8位
+            String sql = String.format(
+                    "SELECT time, area_name FROM %s.area_fence_data " +
+                            "WHERE REPLACE(device_id, ':', '') LIKE '%%%s' " +
+                            "AND time >= TODAY() AND time < TODAY() + 1d " +
+                            "ORDER BY time ASC",
+                    dbname, deviceIdLast8);
+
+            logger.info("查询area_fence_data的SQL: {}", sql);
+
+            // 执行查询
+            R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
+
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                JSONObject data = queryResult.getData();
+                JSONArray rows = data.getJSONArray("data");
+                JSONArray columnMeta = data.getJSONArray("column_meta");
+
+                if (rows != null && rows.size() > 0) {
+                    logger.info("查询到 {} 条区域围栏数据", rows.size());
+
+                    // 使用Map来存储每个区域的最早记录
+                    Map<String, Map<String, Object>> areaFirstRecordMap = new LinkedHashMap<>();
+
+                    // 解析查询结果，由于已经按时间排序，第一次出现的区域就是最早的
+                    for (int i = 0; i < rows.size(); i++) {
+                        JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() >= 2) {
+                            String time = String.valueOf(row.get(0));
+                            String areaName = String.valueOf(row.get(1));
+
+                            // 如果这个区域还没有记录，则添加（因为已按时间排序，这就是最早的）
+                            if (!areaFirstRecordMap.containsKey(areaName)) {
+                                Map<String, Object> record = new HashMap<>();
+                                record.put("time", time);
+                                record.put("area_name", areaName);
+                                areaFirstRecordMap.put(areaName, record);
+                            }
+                        }
+                    }
+
+                    // 将结果转换为List，并按时间排序
+                    resultList = new ArrayList<>(areaFirstRecordMap.values());
+                    resultList.sort((a, b) -> {
+                        String timeA = (String) a.get("time");
+                        String timeB = (String) b.get("time");
+                        return timeA.compareTo(timeB);
+                    });
+
+                    logger.info("处理后得到 {} 个区域的最早记录", resultList.size());
+                } else {
+                    logger.info("未找到匹配的区域围栏数据，设备ID后8位: {}", deviceIdLast8);
+                }
+            } else {
+                logger.error("查询area_fence_data失败: {}", queryResult.getMsg());
+            }
+
+        } catch (Exception e) {
+            logger.error("查询area_fence_data异常，设备ID后8位: {}", deviceIdLast8, e);
+        }
+
+        return resultList;
     }
 }
