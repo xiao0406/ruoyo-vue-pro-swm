@@ -10,8 +10,10 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmHazardSource;
 import com.jeesite.modules.swm.entity.SwmInspectionPlan;
+import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.service.SwmHazardSourceService;
 import com.jeesite.modules.swm.service.SwmInspectionPlanService;
+import com.jeesite.modules.swm.service.SwmPersonService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,8 @@ public class SwmHazardSourceController extends BaseController {
     private SwmHazardSourceService swmHazardSourceService;
     @Autowired
     private SwmInspectionPlanService swmInspectionPlanService;
+    @Autowired
+    private SwmPersonService swmPersonService;
 
     /**
      * 获取数据
@@ -177,6 +181,14 @@ public class SwmHazardSourceController extends BaseController {
     @ResponseBody
     @ApiOperation(value = "保存危险源")
     public String save(@Validated SwmHazardSource swmHazardSource) {
+        if(swmHazardSource.getResponsiblePersonId() != null){
+            SwmPerson swmPerson = swmPersonService.get(swmHazardSource.getResponsiblePersonId());
+            if(swmPerson == null){
+                return renderResult(Global.FALSE, text("巡检负责人不存在！"));
+            }else{
+                swmHazardSource.setResponsiblePerson(swmPerson.getName());
+            }
+        }
         swmHazardSourceService.save(swmHazardSource);
         //如果设置为加入巡检需要生成巡检计划
         if("1".equals(swmHazardSource.getIsPatrolIncluded())){
@@ -190,6 +202,7 @@ public class SwmHazardSourceController extends BaseController {
             //危险源巡检
             swmInspectionPlan.setInspectionType("3");
             swmInspectionPlan.setResponsiblePersonId(swmHazardSource.getResponsiblePersonId());
+            swmInspectionPlan.setResponsiblePerson(swmHazardSource.getResponsiblePerson());
             swmInspectionPlan.setFirstInspectionTime(swmHazardSource.getFirstInspectionTime());
             swmInspectionPlanService.save(swmInspectionPlan);
         }

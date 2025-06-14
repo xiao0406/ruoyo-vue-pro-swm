@@ -23,19 +23,21 @@ import java.util.Date;
         @Column(name = "plan_id", attrName = "planId", label = "巡检计划ID"),
         @Column(name = "plan_name", attrName = "planName", label = "计划名称", queryType = QueryType.LIKE),
         @Column(name = "inspection_type", attrName = "inspectionType", label = "巡检类型"),
-        @Column(name = "inspector_id", attrName = "inspectorId", label = "巡检人"),
+        @Column(name = "inspector_id", attrName = "inspectorId", label = "巡检人ID"),
         @Column(name = "start_time", attrName = "startTime", label = "开始时间"),
         @Column(name = "end_time", attrName = "endTime", label = "结束时间"),
         @Column(name = "attachment_path", attrName = "attachmentPath", label = "附件路径"),
         @Column(name = "inspection_list_status", attrName = "inspectionListStatus", label = "巡检列表状态"),
         @Column(includeEntity = DataEntity.class)
-},joinTable={
-        @JoinTable(type= JoinTable.Type.LEFT_JOIN, entity=SwmPerson.class, attrName="this", alias="b",
-                on="b.id = a.inspector_id",
-                columns={
-                        @Column(name="name", attrName="inspector", label="姓名"),
-                }),
-}, orderBy = "a.create_date DESC")
+},
+        // 联合查询出外键编码的名称数据（attrName="this"，指定this代表，当前实体）
+        joinTable={
+                @JoinTable(type= JoinTable.Type.LEFT_JOIN, entity=SwmPerson.class, attrName="this", alias="b",
+                        on="b.id = a.inspector_id",
+                        columns={
+                                @Column(name="name", attrName="inspector", label="名称"),
+                        }),
+        },orderBy = "a.create_date DESC")
 public class SwmInspectionList extends DataEntity<SwmInspectionList> {
 
     private static final long serialVersionUID = 1L;

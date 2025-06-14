@@ -139,8 +139,8 @@
 
     <!-- 查询过去7天的预警 -->
     <select id="listPast7DaysWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
-        SELECT ${sqlMap.column.toSql()}
-        FROM ${sqlMap.table.toSql()}
+        SELECT *
+        FROM swm_warning_management
         WHERE warning_time &gt;= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
         AND status = '0'
@@ -148,10 +148,10 @@
 
     <!-- 获取今日的预警 -->
     <select id="listTodayWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
-        SELECT ${sqlMap.column.toSql()}
-        FROM ${sqlMap.table.toSql()}
+        SELECT *
+        FROM swm_warning_management
         WHERE warning_time &gt;= CURDATE()
-        AND warning_time &lt; (CURDATE(), INTERVAL 1 DAY)
+        AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
         AND status = '0'
     </select>
 

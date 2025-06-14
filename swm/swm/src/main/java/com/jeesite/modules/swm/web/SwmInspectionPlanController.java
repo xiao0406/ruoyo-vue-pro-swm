@@ -1,8 +1,12 @@
 package com.jeesite.modules.swm.web;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.jeesite.common.config.Global;
+import com.jeesite.common.entity.Page;
+import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.swm.entity.SwmInspectionPlan;
+import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.service.SwmInspectionPlanService;
+import com.jeesite.modules.swm.service.SwmPersonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,15 +16,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.jeesite.common.config.Global;
-import com.jeesite.common.entity.Page;
-import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.swm.entity.SwmInspectionPlan;
-import com.jeesite.modules.swm.service.SwmInspectionPlanService;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * 巡检计划Controller
- * 
+ *
  * @author Shawn
  * @version 2025-05-21
  */
@@ -30,6 +32,8 @@ public class SwmInspectionPlanController extends BaseController {
 
     @Autowired
     private SwmInspectionPlanService swmInspectionPlanService;
+    @Autowired
+    private SwmPersonService swmPersonService;
 
     /**
      * 获取数据
@@ -59,6 +63,14 @@ public class SwmInspectionPlanController extends BaseController {
         Page<SwmInspectionPlan> page = swmInspectionPlanService.findPage(swmInspectionPlan);
         return page;
     }
+    /**
+     * 查询列表数据
+     */
+    @RequestMapping(value = "listTest")
+    @ResponseBody
+    public List<SwmInspectionPlan> listTest() {
+        return swmInspectionPlanService.findList(new SwmInspectionPlan());
+    }
 
     /**
      * 查看编辑表单
@@ -75,6 +87,12 @@ public class SwmInspectionPlanController extends BaseController {
     @PostMapping(value = "save")
     @ResponseBody
     public String save(@Validated SwmInspectionPlan swmInspectionPlan) {
+        SwmPerson swmPerson = swmPersonService.get(swmInspectionPlan.getResponsiblePersonId());
+        if(swmPerson == null){
+            return renderResult(Global.FALSE, text("巡检负责人不存在！"));
+        }else{
+            swmInspectionPlan.setResponsiblePerson(swmPerson.getName());
+        }
         swmInspectionPlanService.save(swmInspectionPlan);
         return renderResult(Global.TRUE, text("保存巡检计划成功！"));
     }

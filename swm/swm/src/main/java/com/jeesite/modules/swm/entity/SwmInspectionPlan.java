@@ -3,7 +3,6 @@ package com.jeesite.modules.swm.entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
-import com.jeesite.common.mybatis.annotation.JoinTable;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 
@@ -24,15 +23,10 @@ import java.util.Date;
         @Column(name = "frequency_days", attrName = "frequencyDays", label = "巡检频次（天数）"),
         @Column(name = "inspection_type", attrName = "inspectionType", label = "巡检类型"),
         @Column(name = "responsible_person_id", attrName = "responsiblePersonId", label = "巡检负责人id"),
+        @Column(name = "responsible_person", attrName = "responsiblePerson", label = "巡检负责人名称"),
         @Column(name = "first_inspection_time", attrName = "firstInspectionTime", label = "首次巡检时间"),
         @Column(includeEntity = DataEntity.class)
-}, joinTable={
-        @JoinTable(type= JoinTable.Type.LEFT_JOIN, entity=SwmPerson.class, attrName="this", alias="b",
-                on="b.id = a.responsible_person_id",
-                columns={
-                        @Column(name="name", attrName="responsiblePerson", label="姓名"),
-                }),
-},orderBy = "a.create_date DESC")
+}, orderBy = "a.create_date DESC")
 public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 
     private static final long serialVersionUID = 1L;
@@ -91,8 +85,6 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
         this.responsiblePersonId = responsiblePersonId;
     }
 
-    @NotBlank(message = "巡检负责人不能为空")
-    @Size(min = 0, max = 64, message = "巡检负责人长度不能超过 64 个字符")
     public String getResponsiblePerson() {
         return responsiblePerson;
     }
