@@ -41,10 +41,10 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
      * 预警类型枚举
      */
     public static class WarningTypeEnum {
-        /** 主动预警 */
-        public static final String ACTIVE = "0";
+        /** 主动报警 */
+        public static final String ACTIVE = "1";
         /** 被动预警 */
-        public static final String PASSIVE = "1";
+        public static final String PASSIVE = "2";
 
         /**
          * 获取预警类型显示文本
@@ -52,6 +52,12 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
         public static String getText(String value) {
             System.out.println("WarningTypeEnum.getText被调用，参数value=" + value);
             String result;
+            
+            // 特殊处理warningType=1的情况，直接返回主动报警
+            if ("1".equals(value)) {
+                System.out.println("WarningTypeEnum.getText: 特殊处理warningType=1，返回主动报警");
+                return "主动报警";
+            }
 
             // 如果是数字，从字典获取标签
             if (value != null && value.matches("\\d+")) {
@@ -161,11 +167,13 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
      * 获取预警类型显示文本
      */
     public String getWarningTypeText() {
-        System.out.println("getWarningTypeText被调用，this.warningType=" + this.warningType + ", this.warningTypeText="
-                + this.warningTypeText);
         if (this.warningTypeText == null && this.warningType != null) {
-            this.warningTypeText = WarningTypeEnum.getText(this.warningType);
-            System.out.println("getWarningTypeText设置后，this.warningTypeText=" + this.warningTypeText);
+            // 修复warningType=1时显示为"主动报警"的问题
+            if ("1".equals(this.warningType)) {
+                this.warningTypeText = "主动报警"; // 直接使用硬编码值，绕过字典查询
+            } else {
+                this.warningTypeText = WarningTypeEnum.getText(this.warningType);
+            }
         }
         return this.warningTypeText;
     }
@@ -254,11 +262,8 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
      * 获取处置状态显示文本
      */
     public String getHandleStatusText() {
-        System.out.println("getHandleStatusText被调用，this.handleStatus=" + this.handleStatus + ", this.handleStatusText="
-                + this.handleStatusText);
         if (this.handleStatusText == null && this.handleStatus != null) {
             this.handleStatusText = HandleStatusEnum.getText(this.handleStatus);
-            System.out.println("getHandleStatusText设置后，this.handleStatusText=" + this.handleStatusText);
         }
         return this.handleStatusText;
     }

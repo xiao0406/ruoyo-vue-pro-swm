@@ -75,7 +75,13 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         
         // 构建TDengine查询SQL
         StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT * FROM ").append(dbname).append(".swm_warning_management");
+        // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
+        sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
+               .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
+               .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
+               .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+               .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card ")
+               .append("FROM ").append(dbname).append(".swm_warning_management");
         
         // 添加查询条件
         List<String> conditions = new ArrayList<>();
@@ -211,7 +217,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "warning_time":
                         try {
-                            // 移除8小时时区调整
+                            // 保持原始时间，不做时区调整，统一由Controller处理
                             Date warningTime = new Date(row.getLong(i));
                             entity.setWarningTime(warningTime);
                         } catch (Exception e) {
@@ -221,7 +227,6 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 if (timeStr != null && !timeStr.isEmpty()) {
                                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
                                     Date parsedTime = sdf.parse(timeStr);
-                                    // 移除8小时时区调整
                                     entity.setWarningTime(parsedTime);
                                 }
                             } catch (ParseException pe) {
@@ -234,7 +239,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "alarm_time":
                         try {
-                            // 移除8小时时区调整
+                            // 保持原始时间，不做时区调整，统一由Controller处理
                             Date alarmTime = new Date(row.getLong(i));
                             entity.setAlarmTime(alarmTime);
                         } catch (Exception e) {
@@ -244,7 +249,6 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 if (timeStr != null && !timeStr.isEmpty()) {
                                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
                                     Date parsedTime = sdf.parse(timeStr);
-                                    // 移除8小时时区调整
                                     entity.setAlarmTime(parsedTime);
                                 }
                             } catch (ParseException pe) {
@@ -354,7 +358,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             
             // 设置显示文本值
             if (entity.getWarningType() != null) {
-                entity.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", entity.getWarningType(), entity.getWarningType()));
+                // 修复warningType=1时显示为"主动报警"的问题
+                if ("1".equals(entity.getWarningType())) {
+                    entity.setWarningTypeText("主动报警");
+                } else {
+                    entity.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", entity.getWarningType(), entity.getWarningType()));
+                }
             }
             
             if (entity.getHandleStatus() != null) {
@@ -633,7 +642,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             if (mysqlList != null) {
                 for (SwmWarningManagement item : mysqlList) {
                     if (item.getWarningType() != null) {
-                        item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
+                        // 修复warningType=1时显示为"主动报警"的问题
+                        if ("1".equals(item.getWarningType())) {
+                            item.setWarningTypeText("主动报警");
+                        } else {
+                            item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
+                        }
                     }
                     if (item.getHandleStatus() != null) {
                         item.setHandleStatusText(DictUtils.getDictLabel("handle_status_enum", item.getHandleStatus(), item.getHandleStatus()));
@@ -704,7 +718,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         for (SwmWarningManagement item : mysqlList) {
             // 设置显示文本值
             if (item.getWarningType() != null) {
-                item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
+                // 修复warningType=1时显示为"主动报警"的问题
+                if ("1".equals(item.getWarningType())) {
+                    item.setWarningTypeText("主动报警");
+                } else {
+                    item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
+                }
             }
             if (item.getHandleStatus() != null) {
                 item.setHandleStatusText(DictUtils.getDictLabel("handle_status_enum", item.getHandleStatus(), item.getHandleStatus()));
