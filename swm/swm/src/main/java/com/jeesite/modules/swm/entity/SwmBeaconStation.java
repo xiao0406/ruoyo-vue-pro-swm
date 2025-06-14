@@ -28,6 +28,8 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "map_coord", attrName = "mapCoord", label = "图中坐标"),
         @Column(name = "pixel_x", attrName = "pixelX", label = "图纸像素X坐标"),
         @Column(name = "pixel_y", attrName = "pixelY", label = "图纸像素Y坐标"),
+        @Column(name = "real_x", attrName = "realX", label = "实际地址X坐标"),
+        @Column(name = "real_y", attrName = "realY", label = "实际地址Y坐标"),
         @Column(name = "gps_coord", attrName = "gpsCoord", label = "GPS坐标"),
         @Column(name = "gps_longitude", attrName = "gpsLongitude", label = "GPS经度"),
         @Column(name = "gps_latitude", attrName = "gpsLatitude", label = "GPS纬度"),
@@ -100,6 +102,8 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     private String mapCoord; // 图中坐标
     private Double pixelX; // 图纸像素X坐标
     private Double pixelY; // 图纸像素Y坐标
+    private Double realX; // 实际地址X坐标
+    private Double realY; // 实际地址Y坐标
     private String gpsCoord; // GPS坐标
     private Double gpsLongitude; // GPS经度
     private Double gpsLatitude; // GPS纬度
@@ -238,5 +242,21 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     public void setGpsLatitude(Double gpsLatitude) {
         this.gpsLatitude = gpsLatitude;
+    }
+
+    public Double getRealX() {
+        return realX;
+    }
+
+    public void setRealX(Double realX) {
+        this.realX = realX;
+    }
+
+    public Double getRealY() {
+        return realY;
+    }
+
+    public void setRealY(Double realY) {
+        this.realY = realY;
     }
 }
