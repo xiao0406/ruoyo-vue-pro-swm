@@ -88,24 +88,9 @@ public class SwmWarningManagementController extends BaseController {
             swmWarningManagement.getHandleStatus());
 
         // 调用服务层方法，使用混合查询获取数据（时序数据库 + MySQL）
+        // 时区调整已在SQL查询中完成，无需再次调整
         Page<SwmWarningManagement> resultPage = swmWarningManagementService.hybridFindPage(page, swmWarningManagement);
-
-        // 时区调整：为所有时间字段增加8小时
-        if (resultPage != null && resultPage.getList() != null) {
-            for (SwmWarningManagement item : resultPage.getList()) {
-                // 调整预警时间
-                if (item.getWarningTime() != null) {
-                    Date adjustedWarningTime = new Date(item.getWarningTime().getTime() + 8 * 60 * 60 * 1000);
-                    item.setWarningTime(adjustedWarningTime);
-                }
-                // 调整报警时间
-                if (item.getAlarmTime() != null) {
-                    Date adjustedAlarmTime = new Date(item.getAlarmTime().getTime() + 8 * 60 * 60 * 1000);
-                    item.setAlarmTime(adjustedAlarmTime);
-                }
-            }
-            logger.info("已为所有时间字段调整为北京时间（+8小时）");
-        }
+        logger.info("查询完成，数据中的时区调整已在SQL中进行");
 
         // 添加日志检查返回的数据
         if (resultPage != null && resultPage.getList() != null && !resultPage.getList().isEmpty()) {
@@ -161,23 +146,13 @@ public class SwmWarningManagementController extends BaseController {
                 warningData.put("id", mysqlRecord.getId());
                 warningData.put("personName", mysqlRecord.getPersonName());
                 
-                // 调整预警时间（+8小时）
-                if(mysqlRecord.getWarningTime() != null) {
-                    Date adjustedWarningTime = new Date(mysqlRecord.getWarningTime().getTime() + 8 * 60 * 60 * 1000);
-                    warningData.put("warningTime", adjustedWarningTime);
-                } else {
-                    warningData.put("warningTime", null);
-                }
+                // 预警时间已在SQL中调整时区，这里直接使用
+                warningData.put("warningTime", mysqlRecord.getWarningTime());
                 
                 warningData.put("alarmRecord", mysqlRecord.getAlarmRecord());
                 
-                // 调整报警时间（+8小时）
-                if(mysqlRecord.getAlarmTime() != null) {
-                    Date adjustedAlarmTime = new Date(mysqlRecord.getAlarmTime().getTime() + 8 * 60 * 60 * 1000);
-                    warningData.put("alarmTime", adjustedAlarmTime);
-                } else {
-                    warningData.put("alarmTime", null);
-                }
+                // 报警时间已在SQL中调整时区，这里直接使用
+                warningData.put("alarmTime", mysqlRecord.getAlarmTime());
                 
                 warningData.put("triggerReason", mysqlRecord.getTriggerReason());
                 warningData.put("handler", mysqlRecord.getHandler());

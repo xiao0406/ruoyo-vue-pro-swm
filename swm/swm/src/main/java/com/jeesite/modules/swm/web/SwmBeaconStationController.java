@@ -102,6 +102,8 @@ public class SwmBeaconStationController extends BaseController {
             data.put("mapCoord", swmBeaconStation.getMapCoord());
             data.put("pixelX", swmBeaconStation.getPixelX());
             data.put("pixelY", swmBeaconStation.getPixelY());
+            data.put("realX", swmBeaconStation.getRealX());
+            data.put("realY", swmBeaconStation.getRealY());
             data.put("gpsCoord", swmBeaconStation.getGpsCoord());
             data.put("gpsLongitude", swmBeaconStation.getGpsLongitude());
             data.put("gpsLatitude", swmBeaconStation.getGpsLatitude());
