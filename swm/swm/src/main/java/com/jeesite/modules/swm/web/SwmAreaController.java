@@ -2,6 +2,8 @@ package com.jeesite.modules.swm.web;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -73,6 +75,33 @@ public class SwmAreaController extends BaseController {
     public String form(SwmArea swmArea, Model model) {
         model.addAttribute("swmArea", swmArea);
         return "modules/swm/swmAreaForm";
+    }
+
+    /**
+     * 获取区域表单数据(JSON格式)
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @RequestMapping(value = "formData")
+    @ResponseBody
+    @ApiOperation("获取区域表单数据")
+    public Map<String, Object> formData(SwmArea swmArea, Model model) {
+        Map<String, Object> result = new HashMap<>();
+        if (swmArea != null) {
+            Map<String, Object> data = new HashMap<>();
+            // 复制基本属性
+            data.put("id", swmArea.getId());
+            data.put("areaName", swmArea.getAreaName());
+            data.put("workShop", swmArea.getWorkShop());
+            data.put("voicePrompt", swmArea.getVoicePrompt());
+            data.put("filePath", swmArea.getFilePath());
+            data.put("status", swmArea.getStatus());
+            data.put("remarks", swmArea.getRemarks());
+
+            result.putAll(data);
+        }
+        return result;
     }
 
     /**

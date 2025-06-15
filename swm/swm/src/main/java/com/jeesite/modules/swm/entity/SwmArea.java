@@ -20,6 +20,8 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "area_name", attrName = "areaName", label = "区域名称", queryType = QueryType.LIKE),
         @Column(name = "work_shop", attrName = "workShop", label = "车间ID"),
+        @Column(name = "voice_prompt", attrName = "voicePrompt", label = "语音提示"),
+        @Column(name = "file_path", attrName = "filePath", label = "文件路径"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmArea extends DataEntity<SwmArea> {
@@ -28,6 +30,8 @@ public class SwmArea extends DataEntity<SwmArea> {
 
     private String areaName; // 区域名称
     private String workShop; // 车间ID
+    private String voicePrompt; // 语音提示
+    private String filePath; // 文件路径
 
     public SwmArea() {
         this(null);
@@ -54,5 +58,22 @@ public class SwmArea extends DataEntity<SwmArea> {
 
     public void setWorkShop(String workShop) {
         this.workShop = workShop;
+    }
+
+    @Length(min = 0, max = 500, message = "语音提示长度不能超过 500 个字符")
+    public String getVoicePrompt() {
+        return voicePrompt;
+    }
+
+    public void setVoicePrompt(String voicePrompt) {
+        this.voicePrompt = voicePrompt;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 }
