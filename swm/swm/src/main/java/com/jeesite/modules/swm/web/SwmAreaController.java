@@ -2,6 +2,7 @@ package com.jeesite.modules.swm.web;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -371,6 +372,48 @@ public class SwmAreaController extends BaseController {
             result.put("success", false);
             result.put("message", "查询失败：" + e.getMessage());
             logger.error("查询失败", e);
+        }
+        return result;
+    }
+
+    /**
+     * 获取区域选项列表（用于下拉选择）
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @RequestMapping(value = "getAreaOptions")
+    @ResponseBody
+    @ApiOperation("获取区域选项列表")
+    public Map<String, Object> getAreaOptions() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // 获取所有启用的区域
+            SwmArea queryArea = new SwmArea();
+            queryArea.setStatus("0"); // 正常状态
+            List<SwmArea> areaList = swmAreaService.findList(queryArea);
+
+            // 转换为选项格式
+            List<Map<String, Object>> options = new ArrayList<>();
+            if (areaList != null && !areaList.isEmpty()) {
+                for (SwmArea area : areaList) {
+                    Map<String, Object> option = new HashMap<>();
+                    option.put("value", area.getId());
+                    option.put("label", area.getAreaName());
+                    option.put("areaName", area.getAreaName()); // 额外信息
+                    options.add(option);
+                }
+            }
+
+            result.put("success", true);
+            result.put("options", options);
+            result.put("total", options.size());
+            result.put("message", "获取区域选项成功");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("options", new ArrayList<>());
+            result.put("message", "获取区域选项失败: " + e.getMessage());
+            logger.error("获取区域选项失败", e);
         }
         return result;
     }
