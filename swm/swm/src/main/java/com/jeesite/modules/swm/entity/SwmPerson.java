@@ -9,7 +9,6 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
-import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
@@ -19,7 +18,7 @@ import java.util.Date;
 
 /**
  * 人员登记表实体类
- * 
+ *
  * @author Shawn
  */
 @Table(name = "swm_person", alias = "a", columns = {
@@ -125,6 +124,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String departureType; // 离职类型
     private String departureReason; // 离职原因
     private Date departureDate; // 离职时间
+    private String classes;//所属班次
 
     public SwmPerson() {
         this(null);
@@ -323,5 +323,13 @@ public class SwmPerson extends DataEntity<SwmPerson> {
 
     public void setDepartureDate(Date departureDate) {
         this.departureDate = departureDate;
+    }
+
+    public String getClasses() {
+        return classes;
+    }
+
+    public void setClasses(String classes) {
+        this.classes = classes;
     }
 }

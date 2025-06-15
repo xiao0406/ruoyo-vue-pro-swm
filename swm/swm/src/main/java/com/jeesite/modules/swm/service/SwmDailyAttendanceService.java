@@ -541,7 +541,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         data.put("xAxis", xAxis);
         data.put("scheduledHours", scheduledHours);
         data.put("actualHours", actualHours);
-
+        data.put("records",  records);
         return data;
     }
 }

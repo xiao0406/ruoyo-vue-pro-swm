@@ -1,18 +1,25 @@
 package com.jeesite.modules.swm.web;
 
+import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
+import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
+import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
+import com.jeesite.modules.swm.service.SwmPersonScheduleService;
+import com.jeesite.modules.swm.service.SwmPersonService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,7 +43,13 @@ public class SwmAttendanceSummaryController extends BaseController {
 
     @Autowired
     private SwmAttendanceSummaryService swmAttendanceSummaryService;
-    
+    @Autowired
+    private SwmPersonService swmPersonService;
+    @Autowired
+    private SwmPersonScheduleService swmPersonScheduleService;
+    @Autowired
+    private SwmDailyAttendanceService swmDailyAttendanceService;
+
     /**
      * 获取数据
      */
@@ -44,7 +57,7 @@ public class SwmAttendanceSummaryController extends BaseController {
     public SwmAttendanceSummary get(String id, boolean isNewRecord) {
         return swmAttendanceSummaryService.get(id, isNewRecord);
     }
-    
+
     /**
      * 查询列表
      */
@@ -53,7 +66,7 @@ public class SwmAttendanceSummaryController extends BaseController {
         model.addAttribute("swmAttendanceSummary", swmAttendanceSummary);
         return "modules/swm/swmAttendanceSummaryList";
     }
-    
+
     /**
      * 查询列表数据
      */
@@ -63,11 +76,11 @@ public class SwmAttendanceSummaryController extends BaseController {
         // 处理月份格式转换
         if (StringUtils.isNotBlank(swmAttendanceSummary.getMonth())) {
             String monthStr = swmAttendanceSummary.getMonth();
-            
+
             // 检查是否是"yyyy年MM月"格式
             Pattern pattern = Pattern.compile("(\\d{4})年(\\d{1,2})月");
             Matcher matcher = pattern.matcher(monthStr);
-            
+
             if (matcher.matches()) {
                 // 提取年和月
                 String year = matcher.group(1);
@@ -87,10 +100,10 @@ public class SwmAttendanceSummaryController extends BaseController {
             String currentMonth = monthFormat.format(now);
             swmAttendanceSummary.setMonth(currentMonth);
         }
-        
+
         // 清除status条件，让查询包括所有状态的记录
         swmAttendanceSummary.setStatus(null);
-        
+
         // 设置分页参数
         swmAttendanceSummary.setPage(new Page<>(request, response));
         // 查询数据
@@ -117,7 +130,7 @@ public class SwmAttendanceSummaryController extends BaseController {
         swmAttendanceSummaryService.save(swmAttendanceSummary);
         return renderResult(Global.TRUE, text("保存考勤月统计表成功！"));
     }
-    
+
     /**
      * 删除数据
      */
@@ -128,7 +141,7 @@ public class SwmAttendanceSummaryController extends BaseController {
         swmAttendanceSummaryService.delete(swmAttendanceSummary);
         return renderResult(Global.TRUE, text("删除考勤月统计表成功！"));
     }
-    
+
     /**
      * 根据月份查询考勤统计记录
      */
@@ -147,7 +160,7 @@ public class SwmAttendanceSummaryController extends BaseController {
         }
         return result;
     }
-    
+
     /**
      * 根据员工和月份查询考勤统计记录
      */
@@ -175,10 +188,10 @@ public class SwmAttendanceSummaryController extends BaseController {
     @ApiOperation("根据ID获取考勤月统计记录")
     public Map<String, Object> getDataById(String id, String month) {
         Map<String, Object> result = new HashMap<>();
-        
+
         if (StringUtils.isNotBlank(id)) {
             SwmAttendanceSummary attendanceSummary = swmAttendanceSummaryService.get(id);
-            
+
             if (attendanceSummary != null) {
                 result.put("data", attendanceSummary);
                 result.put("success", true);
@@ -191,7 +204,49 @@ public class SwmAttendanceSummaryController extends BaseController {
             result.put("success", false);
             result.put("message", "ID参数不能为空");
         }
-        
+
         return result;
     }
-} 
+
+    /**
+     * 轨迹信息-个人考勤记录明细
+     * @param employeeId 员工ID
+     */
+    @GetMapping(value = "attendanceDetails")
+    @ResponseBody
+    @ApiOperation("轨迹信息-个人考勤记录明细")
+    public Map<String, Object> attendanceDetails(String employeeId) {
+        Map<String, Object> result = new HashMap<>();
+        SwmPerson swmPerson = swmPersonService.get(employeeId);
+        if (swmPerson != null) {
+            SwmPersonSchedule queryPersonSchedule = new SwmPersonSchedule();
+            queryPersonSchedule.setIdCard(swmPerson.getIdentityCard());
+            queryPersonSchedule.setMonth(DateUtil.format(new Date(), "yyyy-MM"));
+            SwmPersonSchedule swmPersonSchedule = swmPersonScheduleService.get(queryPersonSchedule);
+            if (swmPersonSchedule != null) {
+                swmPerson.setClasses(swmPersonSchedule.getClasses());
+            }
+            result.put("person", swmPerson);
+
+            //查询日考勤
+            SwmDailyAttendance queryDailyAttendance = new SwmDailyAttendance();
+            queryDailyAttendance.setEmployeeId(employeeId);
+            queryDailyAttendance.setAttendanceDate(DateUtil.date());
+            SwmDailyAttendance dailyAttendance = swmDailyAttendanceService.get(queryDailyAttendance);
+            result.put("dailyAttendance", dailyAttendance);
+
+            //查询月考勤
+            SwmAttendanceSummary queryAttendanceSummary = new SwmAttendanceSummary();
+            queryAttendanceSummary.setEmployeeId(employeeId);
+            queryAttendanceSummary.setMonth(DateUtil.format(new Date(), "yyyy-MM"));
+            SwmAttendanceSummary attendanceSummary = swmAttendanceSummaryService.get(queryAttendanceSummary);
+            result.put("attendanceSummary", attendanceSummary);
+
+            //本月考勤时间和功效统计
+            result.put("attendanceChartData", swmDailyAttendanceService.getMonthlyAttendanceData(employeeId, DateUtil.year(new Date()), DateUtil.month(new Date())));
+            result.put("efficiencyChartData", swmDailyAttendanceService.getMonthlyChartData(employeeId, DateUtil.year(new Date()), DateUtil.month(new Date())));
+        }
+
+        return result;
+    }
+}

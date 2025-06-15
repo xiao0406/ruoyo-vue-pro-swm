@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jeesite.modules.swm.dao.SwmHazardSourceDao">
-    
+
     <!-- 获取单条数据 -->
     <select id="get" resultType="com.jeesite.modules.swm.entity.SwmHazardSource">
         SELECT
@@ -9,7 +9,7 @@
         FROM swm_hazard_source a
         WHERE a.id = #{id}
     </select>
-    
+
     <!-- 查询数据列表 -->
     <select id="findList" resultType="com.jeesite.modules.swm.entity.SwmHazardSource">
         SELECT
@@ -41,5 +41,37 @@
         </where>
         ORDER BY a.create_date DESC
     </select>
-    
-</mapper> 
+
+    <!-- 根据状态统计数量 -->
+    <select id="countByStatusAndMonth" resultType="int">
+        SELECT COUNT(*)
+        FROM swm_hazard_source
+        WHERE hazard_status = #{status}
+          AND YEAR(registration_time) = #{year}
+          AND MONTH(registration_time) = #{month}
+    </select>
+
+    <!-- 按危险源类别统计数量 -->
+    <select id="countByCategoryAndMonth" resultType="map">
+        SELECT
+            hazard_category AS category,
+            COUNT(*) AS count
+        FROM swm_hazard_source
+        WHERE YEAR(registration_time) = #{year}
+          AND MONTH(registration_time) = #{month}
+        GROUP BY hazard_category
+    </select>
+
+    <!-- 获取危险源类别排名前10 -->
+    <select id="getTop10Categories" resultType="map">
+        SELECT
+            hazard_category AS category,
+            COUNT(*) AS count
+        FROM swm_hazard_source
+        WHERE YEAR(registration_time) = #{year}
+          AND MONTH(registration_time) = #{month}
+        GROUP BY hazard_category
+        ORDER BY count DESC
+        LIMIT 10
+    </select>
+</mapper>
