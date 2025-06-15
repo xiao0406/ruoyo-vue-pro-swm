@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,34 @@ public class SwmBeaconStationController extends BaseController {
             HttpServletResponse response) {
         Page<SwmBeaconStation> page = swmBeaconStationService.findPage(new Page<>(request, response), swmBeaconStation);
         return page;
+    }
+
+    /**
+     * 获取全部信标基站列表(用于信标地图显示)
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @RequestMapping(value = "listAll")
+    @ResponseBody
+    @ApiOperation(value = "获取全部信标基站列表用于地图显示")
+    public Map<String, Object> listAll(SwmBeaconStation swmBeaconStation) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // 获取全部信标基站数据，不分页
+            List<SwmBeaconStation> beaconList = swmBeaconStationService.findList(swmBeaconStation);
+
+            result.put("success", true);
+            result.put("list", beaconList);
+            result.put("total", beaconList.size());
+            result.put("message", "获取信标列表成功");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("list", new ArrayList<>());
+            result.put("total", 0);
+            result.put("message", "获取信标列表失败：" + e.getMessage());
+        }
+        return result;
     }
 
     /**
