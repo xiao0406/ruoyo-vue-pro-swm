@@ -22,6 +22,7 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "beacon_id", attrName = "beaconId", label = "信标编号", queryType = QueryType.LIKE),
         @Column(name = "beacon_type", attrName = "beaconType", label = "信标类型"),
+        @Column(name = "beacon_color", attrName = "beaconColor", label = "信标颜色"),
         @Column(name = "control_type", attrName = "controlType", label = "围栏类型"),
         @Column(name = "location", attrName = "location", label = "所在位置", queryType = QueryType.LIKE),
         @Column(name = "area", attrName = "area", label = "所属区域", queryType = QueryType.LIKE),
@@ -96,6 +97,7 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     private String beaconId; // 信标编号
     private String beaconType; // 信标类型
+    private String beaconColor; // 信标颜色
     private String controlType; // 围栏类型
     private String location; // 所在位置
     private String area; // 所属区域
@@ -139,6 +141,15 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     public String getBeaconTypeText() {
         return BeaconTypeEnum.getText(this.beaconType);
+    }
+
+    @Length(min = 0, max = 50, message = "信标颜色不能超过50个字符")
+    public String getBeaconColor() {
+        return beaconColor;
+    }
+
+    public void setBeaconColor(String beaconColor) {
+        this.beaconColor = beaconColor;
     }
 
     @Length(min = 0, max = 50, message = "围栏类型不能超过50个字符")

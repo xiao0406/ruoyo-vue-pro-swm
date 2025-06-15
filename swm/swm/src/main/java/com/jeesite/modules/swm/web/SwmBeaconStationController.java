@@ -125,6 +125,7 @@ public class SwmBeaconStationController extends BaseController {
             data.put("id", swmBeaconStation.getId());
             data.put("beaconId", swmBeaconStation.getBeaconId());
             data.put("beaconType", swmBeaconStation.getBeaconType());
+            data.put("beaconColor", swmBeaconStation.getBeaconColor());
             data.put("controlType", swmBeaconStation.getControlType());
             data.put("location", swmBeaconStation.getLocation());
             data.put("area", swmBeaconStation.getArea());
@@ -294,5 +295,40 @@ public class SwmBeaconStationController extends BaseController {
         swmBeaconStation.setArea(area);
         swmBeaconStationService.save(swmBeaconStation);
         return renderResult(Global.TRUE, text("更新基站区域成功！"));
+    }
+
+    /**
+     * 根据颜色查询基站列表
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @GetMapping("findByBeaconColor")
+    @ResponseBody
+    @ApiOperation(value = "根据颜色查询基站列表")
+    public List<SwmBeaconStation> findByBeaconColor(String beaconColor) {
+        SwmBeaconStation queryParam = new SwmBeaconStation();
+        queryParam.setBeaconColor(beaconColor);
+        return swmBeaconStationService.findList(queryParam);
+    }
+
+    /**
+     * 更新基站颜色信息
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @PostMapping("updateBeaconColor")
+    @ResponseBody
+    @ApiOperation(value = "更新基站颜色信息")
+    public String updateBeaconColor(String id, String beaconColor) {
+        SwmBeaconStation swmBeaconStation = swmBeaconStationService.get(id);
+        if (swmBeaconStation == null) {
+            return renderResult(Global.FALSE, text("基站不存在！"));
+        }
+
+        swmBeaconStation.setBeaconColor(beaconColor);
+        swmBeaconStationService.save(swmBeaconStation);
+        return renderResult(Global.TRUE, text("更新基站颜色成功！"));
     }
 }
