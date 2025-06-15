@@ -105,6 +105,33 @@ public class SwmAreaController extends BaseController {
     }
 
     /**
+     * 获取全部区域列表(用于信标地图显示)
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @RequestMapping(value = "listAll")
+    @ResponseBody
+    @ApiOperation(value = "获取全部区域列表用于地图显示")
+    public Map<String, Object> listAll(SwmArea swmArea) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // 获取全部区域数据，不分页
+            java.util.List<SwmArea> areaList = swmAreaService.findList(swmArea);
+
+            result.put("success", true);
+            result.put("list", areaList);
+            result.put("total", areaList.size());
+            result.put("message", "获取区域列表成功");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "获取区域列表失败: " + e.getMessage());
+            logger.error("获取区域列表失败", e);
+        }
+        return result;
+    }
+
+    /**
      * 保存区域
      */
     @PostMapping(value = "save")
