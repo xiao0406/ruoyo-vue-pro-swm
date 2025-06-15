@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -151,5 +152,48 @@ public class SwmAreaController extends BaseController {
     public String delete(SwmArea swmArea) {
         swmAreaService.delete(swmArea);
         return renderResult(Global.TRUE, text("删除区域成功！"));
+    }
+
+    /**
+     * 保存区域并更新信标
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @PostMapping(value = "saveAreaWithBeacons")
+    @ResponseBody
+    @ApiOperation("保存区域并更新信标")
+    public Map<String, Object> saveAreaWithBeacons(@RequestBody Map<String, Object> params) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String areaName = (String) params.get("areaName");
+            String voicePrompt = (String) params.get("voicePrompt");
+            String filePath = (String) params.get("filePath");
+            String beaconList = (String) params.get("beaconList");
+            String beaconColor = (String) params.get("beaconColor");
+
+            // 创建区域对象
+            SwmArea swmArea = new SwmArea();
+            swmArea.setAreaName(areaName);
+            swmArea.setVoicePrompt(voicePrompt);
+            swmArea.setFilePath(filePath);
+
+            // 保存区域
+            swmAreaService.save(swmArea);
+
+            // 解析信标列表并更新信标
+            if (beaconList != null && !beaconList.trim().isEmpty()) {
+                swmAreaService.updateBeaconsByCoordinates(swmArea.getId(), beaconList, beaconColor);
+            }
+
+            result.put("success", true);
+            result.put("message", "保存区域成功！");
+            result.put("data", swmArea);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "保存区域失败：" + e.getMessage());
+            logger.error("保存区域失败", e);
+        }
+        return result;
     }
 }

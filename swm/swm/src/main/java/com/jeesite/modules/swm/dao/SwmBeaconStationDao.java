@@ -59,4 +59,12 @@ public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
          * 获取所有区域列表
          */
         List<String> findAllAreas();
+
+        /**
+         * 根据精确的像素坐标查找信标
+         * 
+         * @author Shawn
+         * @date 2025-01-14
+         */
+        List<SwmBeaconStation> findByPixelCoordinates(@Param("pixelX") Double pixelX, @Param("pixelY") Double pixelY);
 }

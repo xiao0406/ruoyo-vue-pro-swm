@@ -196,4 +196,20 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     public List<String> findAllAreas() {
         return dao.findAllAreas();
     }
+
+    /**
+     * 根据精确的像素坐标查找信标
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     * @param pixelX X坐标
+     * @param pixelY Y坐标
+     * @return 匹配的信标列表
+     */
+    public List<SwmBeaconStation> findByPixelCoordinates(Double pixelX, Double pixelY) {
+        if (pixelX == null || pixelY == null) {
+            return new ArrayList<>();
+        }
+        return dao.findByPixelCoordinates(pixelX, pixelY);
+    }
 }
