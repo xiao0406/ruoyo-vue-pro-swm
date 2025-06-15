@@ -5,14 +5,15 @@
  */
 package com.jeesite.modules.swm.service;
 
-import java.util.List;
+import com.jeesite.common.entity.Page;
+import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.swm.dao.SwmHazardSourceDao;
+import com.jeesite.modules.swm.entity.SwmHazardSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.jeesite.common.entity.Page;
-import com.jeesite.common.service.CrudService;
-import com.jeesite.modules.swm.entity.SwmHazardSource;
-import com.jeesite.modules.swm.dao.SwmHazardSourceDao;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 危险源信息Service
@@ -23,7 +24,7 @@ public class SwmHazardSourceService extends CrudService<SwmHazardSourceDao, SwmH
 
     /**
      * 获取单条数据
-     * 
+     *
      * @param swmHazardSource
      * @return
      */
@@ -34,7 +35,7 @@ public class SwmHazardSourceService extends CrudService<SwmHazardSourceDao, SwmH
 
     /**
      * 查询分页数据
-     * 
+     *
      * @param swmHazardSource
      * @return
      */
@@ -44,7 +45,7 @@ public class SwmHazardSourceService extends CrudService<SwmHazardSourceDao, SwmH
 
     /**
      * 保存数据（插入或更新）
-     * 
+     *
      * @param swmHazardSource
      */
     @Override
@@ -55,7 +56,7 @@ public class SwmHazardSourceService extends CrudService<SwmHazardSourceDao, SwmH
 
     /**
      * 更新状态
-     * 
+     *
      * @param swmHazardSource
      */
     @Override
@@ -66,7 +67,7 @@ public class SwmHazardSourceService extends CrudService<SwmHazardSourceDao, SwmH
 
     /**
      * 删除数据
-     * 
+     *
      * @param swmHazardSource
      */
     @Override
@@ -74,5 +75,37 @@ public class SwmHazardSourceService extends CrudService<SwmHazardSourceDao, SwmH
     public void delete(SwmHazardSource swmHazardSource) {
         super.delete(swmHazardSource);
     }
+
+    /**
+     * 根据状态统计数量
+     * @param status 状态
+     * @param year 年
+     * @param month 月
+     * @return
+     */
+    public int countByStatusAndMonth(String status, String year, String month) {
+        return dao.countByStatusAndMonth(status, year, month);
+    }
+
+    /**
+     * 根据类别统计数量
+     * @param year 年
+     * @param month 月
+     * @return
+     */
+    public List<Map<String, Object>> countByCategoryAndMonth(String year, String month) {
+        return dao.countByCategoryAndMonth(year, month);
+    }
+
+    /**
+     * 获取Top10 dangerous categories
+     * @param year 年
+     * @param month 月
+     * @return
+     */
+    public List<Map<String, Object>> getTop10Categories(String year, String month) {
+        return dao.getTop10Categories(year, month);
+    }
+
 
 }

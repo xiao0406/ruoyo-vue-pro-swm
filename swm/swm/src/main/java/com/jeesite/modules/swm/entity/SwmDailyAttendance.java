@@ -29,6 +29,7 @@ import java.util.Date;
         @Column(name = "idle_hours", attrName = "idleHours", label = "怠工时长(h)"),
         @Column(name = "daily_efficiency", attrName = "dailyEfficiency", label = "今日功效"),
         @Column(name = "daily_achievement_rate", attrName = "dailyAchievementRate", label = "今日达成率"),
+        @Column(name = "attendance_normal", attrName = "attendanceNormal", label = "考勤是否正常(0正常 1异常)"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.attendance_date DESC")
 public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
@@ -46,7 +47,8 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private BigDecimal idleHours;          // 怠工时长(h)
     private BigDecimal dailyEfficiency;    // 今日功效
     private BigDecimal dailyAchievementRate; // 今日达成率
-    
+    private String attendanceNormal; // 考勤是否正常(0正常 1异常)
+
     // 查询条件字段
     private Date beginAttendanceDate;      // 查询开始考勤日期
     private Date endAttendanceDate;        // 查询结束考勤日期
@@ -167,4 +169,12 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     public void setEndAttendanceDate(Date endAttendanceDate) {
         this.endAttendanceDate = endAttendanceDate;
     }
-} 
+
+    public String getAttendanceNormal() {
+        return attendanceNormal;
+    }
+
+    public void setAttendanceNormal(String attendanceNormal) {
+        this.attendanceNormal = attendanceNormal;
+    }
+}

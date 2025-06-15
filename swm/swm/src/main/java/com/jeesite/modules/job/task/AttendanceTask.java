@@ -1,20 +1,17 @@
 package com.jeesite.modules.job.task;
 
 import cn.hutool.core.date.DateUtil;
-import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
-import com.jeesite.modules.swm.entity.SwmDailyAttendance;
-import com.jeesite.modules.swm.entity.SwmPerson;
-import com.jeesite.modules.swm.entity.SwmPersonSchedule;
-import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
-import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
-import com.jeesite.modules.swm.service.SwmPersonScheduleService;
-import com.jeesite.modules.swm.service.SwmPersonService;
+import com.jeesite.modules.swm.entity.*;
+import com.jeesite.modules.swm.service.*;
+import com.xxl.job.core.context.XxlJobHelper;
+import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -22,13 +19,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 月考勤统计定时任务
+ * 考勤统计定时任务
  * @author: cjie
  * @date: 2025/6/10
  */
 @Component
 @Slf4j
-public class MonthlyAttendanceSummaryTask {
+public class AttendanceTask {
     @Autowired
     private SwmDailyAttendanceService swmDailyAttendanceService;
     @Autowired
@@ -37,11 +34,14 @@ public class MonthlyAttendanceSummaryTask {
     private SwmPersonService swmPersonService;
     @Autowired
     private SwmPersonScheduleService swmPersonScheduleService;
+    @Autowired
+    private SwmScheduleTimeService swmScheduleTimeService;
 
     /**
      * 统计当月考勤数据
      */
-    public void currentMonth() {
+    @XxlJob("calculateMonthlyAttendance")
+    public void calculateMonthlyAttendance() {
         log.info("开始执行月考勤统计定时任务");
 
         // 1. 获取当月日期范围
@@ -126,7 +126,7 @@ public class MonthlyAttendanceSummaryTask {
 
             //获取人员本月班次(不确定人员一个月是不是只能有一个班次，这里用list查询，取第一个)
             SwmPersonSchedule queryPersonSchedule = new SwmPersonSchedule();
-            queryPersonSchedule.setPersonName(person.getName());
+            queryPersonSchedule.setIdCard(person.getIdentityCard());
             queryPersonSchedule.setMonth(monthStr);
             List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService.findList(queryPersonSchedule);
             if(personScheduleList != null && !personScheduleList.isEmpty()){
@@ -160,5 +160,154 @@ public class MonthlyAttendanceSummaryTask {
         }
 
         log.info("月考勤统计定时任务执行完成，共处理{}名员工的考勤数据", attendanceByEmployee.size());
+    }
+
+    /**
+     * 创建每日考勤数据
+     */
+    @XxlJob("createDailyAttendance")
+    public void createDailyAttendance() {
+        try {
+            XxlJobHelper.log("开始执行每日考勤数据创建任务...");
+
+            // 1. 获取当前日期
+            Date today = new Date();
+
+            // 2. 查询所有在职人员
+            SwmPerson query = new SwmPerson();
+            query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 在职状态
+            query.setStatus("0");//正常状态
+            List<SwmPerson> activePersons = swmPersonService.findList(query);
+
+            if (activePersons.isEmpty()) {
+                XxlJobHelper.log("没有在职人员，无需创建考勤记录");
+                return;
+            }
+
+            int createdCount = 0;
+            int updatedCount = 0;
+
+            // 3. 为每个在职人员创建/更新考勤记录
+            for (SwmPerson person : activePersons) {
+                // 3.1 检查是否已有当天的考勤记录
+                SwmDailyAttendance attendanceQuery = new SwmDailyAttendance();
+                attendanceQuery.setEmployeeId(person.getId());
+                attendanceQuery.setAttendanceDate(today);
+                SwmDailyAttendance existingAttendance = swmDailyAttendanceService.get(attendanceQuery);
+
+                // 3.2 获取员工的排班信息
+                String workTimeRange = getWorkTimeRangeForPerson(person, today);
+                if (workTimeRange == null) {
+                    XxlJobHelper.log("员工[{}]{}没有排班信息，跳过创建考勤记录", person.getId(), person.getName());
+                    continue;
+                }
+
+                // 3.3 计算应考勤时长
+                BigDecimal scheduledHours = calculateScheduledHours(workTimeRange);
+
+                // 3.4 创建或更新考勤记录
+                if (existingAttendance == null) {
+                    // 创建新记录
+                    SwmDailyAttendance newAttendance = new SwmDailyAttendance();
+                    newAttendance.setEmployeeId(person.getId());
+                    newAttendance.setEmployeeName(person.getName());
+                    newAttendance.setAttendanceDate(today);
+                    newAttendance.setWorkTimeRange(workTimeRange);
+                    newAttendance.setScheduledHours(scheduledHours);
+                    newAttendance.setActualHours(BigDecimal.ZERO); // 默认实际考勤时长为0
+                    newAttendance.setIdleHours(BigDecimal.ZERO); // 默认怠工时长为0
+                    newAttendance.setDailyEfficiency(BigDecimal.ZERO); // 默认功效为0
+                    newAttendance.setDailyAchievementRate(BigDecimal.ZERO); // 默认达成率为0
+                    newAttendance.setAttendanceNormal("0"); // 默认考勤正常
+
+                    swmDailyAttendanceService.save(newAttendance);
+                    createdCount++;
+                } else {
+                    // 更新现有记录
+                    existingAttendance.setWorkTimeRange(workTimeRange);
+                    existingAttendance.setScheduledHours(scheduledHours);
+                    //todo 调用接口获取怠工时长、考勤是否正常等
+
+                    // 保留原有的实际考勤数据
+                    swmDailyAttendanceService.save(existingAttendance);
+                    updatedCount++;
+                }
+            }
+
+            XxlJobHelper.log("每日考勤数据创建任务完成。共创建{}条记录，更新{}条记录", createdCount, updatedCount);
+        } catch (Exception e) {
+            XxlJobHelper.log("创建每日考勤数据时发生异常", e);
+        }
+    }
+
+    /**
+     * 获取员工的应考勤时间范围
+     * @param person 员工信息
+     * @param date 考勤日期
+     * @return 应考勤时间范围字符串，格式如"08:00-17:00"
+     */
+    private String getWorkTimeRangeForPerson(SwmPerson person, Date date) {
+        // 1. 获取当前月份
+        String month = DateUtil.format(date, "yyyy-MM");
+
+        // 2. 查询员工的排班信息
+        SwmPersonSchedule scheduleQuery = new SwmPersonSchedule();
+        scheduleQuery.setIdCard(person.getIdentityCard());
+        scheduleQuery.setMonth(month);
+        SwmPersonSchedule personSchedule = swmPersonScheduleService.get(scheduleQuery);
+
+        if (personSchedule == null || personSchedule.getClasses() == null) {
+            return null;
+        }
+
+        // 3. 查询班次对应的时间
+        SwmScheduleTime scheduleTimeQuery = new SwmScheduleTime();
+        scheduleTimeQuery.setShiftType(personSchedule.getClasses());
+        SwmScheduleTime scheduleTime = swmScheduleTimeService.get(scheduleTimeQuery);
+
+        if (scheduleTime == null) {
+            return null;
+        }
+
+        // 4. 组合时间范围字符串
+        return scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
+    }
+
+    /**
+     * 计算应考勤时长
+     * @param workTimeRange 工作时间范围，格式如"08:00-17:00"
+     * @return 应考勤时长(小时)
+     */
+    private BigDecimal calculateScheduledHours(String workTimeRange) {
+        if (workTimeRange == null || !workTimeRange.contains("-")) {
+            return BigDecimal.ZERO;
+        }
+
+        try {
+            String[] times = workTimeRange.split("-");
+            String startTimeStr = times[0];
+            String endTimeStr = times[1];
+
+            // 解析时间
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+            Date startTime = sdf.parse(startTimeStr);
+            Date endTime = sdf.parse(endTimeStr);
+
+            // 计算时间差(毫秒)
+            long diffMillis = endTime.getTime() - startTime.getTime();
+
+            // 转换为小时
+            double hours = diffMillis / (1000.0 * 60 * 60);
+
+            // 考虑跨日班次的情况(如夜班)
+            if (hours < 0) {
+                hours += 24;
+            }
+
+            return BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
+        } catch (Exception e) {
+            log.error("计算应考勤时长时发生异常，workTimeRange: {}", workTimeRange, e);
+            return BigDecimal.ZERO;
+        }
     }
 }

@@ -1,9 +1,11 @@
 package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.swm.entity.SwmHazardSource;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
 import com.jeesite.modules.swm.service.SwmDashboardService;
+import com.jeesite.modules.swm.service.SwmHazardSourceService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmWarningManagementService;
 import io.swagger.annotations.Api;
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.HashMap;
@@ -36,6 +39,8 @@ public class SwmDashboardController extends BaseController {
     private SwmWarningManagementService swmWarningManagementService;
     @Autowired
     private SwmPersonService swmPersonService;
+    @Autowired
+    private SwmHazardSourceService swmHazardSourceService;
 
     /**
      * 获取启用状态的地图路径
@@ -127,4 +132,29 @@ public class SwmDashboardController extends BaseController {
         return map;
     }
 
+    /**
+     * 危险源top10
+     */
+    @GetMapping("/hazard")
+    @ResponseBody
+    @ApiOperation("危险源")
+    public Map<String,Object> hazard(@RequestParam("year") String year,  @RequestParam("month") String month) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 按状态统计数量
+        Map<String, Integer> statusCounts = new HashMap<>();
+        statusCounts.put("WAIT", swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.WAIT, year, month));
+        statusCounts.put("IN_PROGRESS", swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.IN_PROGRESS, year, month));
+        statusCounts.put("COMPLETED", swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.COMPLETED, year, month));
+        result.put("statusCounts", statusCounts);
+
+        // 2. 按危险源类别统计数量
+        List<Map<String, Object>> categoryCounts = swmHazardSourceService.countByCategoryAndMonth(year, month);
+        result.put("categoryCounts", categoryCounts);
+
+        // 3. 危险源类别排名前10
+        List<Map<String, Object>> top10Categories = swmHazardSourceService.getTop10Categories(year, month);
+        result.put("top10Categories", top10Categories);
+        return result;
+    }
 }

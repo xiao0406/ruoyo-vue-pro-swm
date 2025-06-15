@@ -10,6 +10,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -40,6 +41,22 @@ import java.util.Date;
 public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 
     private static final long serialVersionUID = 1L;
+
+
+    /**
+     * 危险源状态枚举
+     */
+    @Data
+    public static class HazardSourceStatusEnum {
+        /** 待处理 */
+        public static final String WAIT = "0";
+        /** 处理中 */
+        public static final String IN_PROGRESS = "1";
+        /** 已关闭 */
+        public static final String COMPLETED = "2";
+        /** 已忽略 */
+        public static final String CANCELLED = "3";
+    }
 
     private String hazardName; // 危险源名称
     private String hazardCategory; // 危险源类别
