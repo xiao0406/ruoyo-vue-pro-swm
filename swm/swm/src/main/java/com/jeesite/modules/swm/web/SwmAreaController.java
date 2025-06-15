@@ -157,6 +157,48 @@ public class SwmAreaController extends BaseController {
     }
 
     /**
+     * 删除区域并清空相关信标
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @PostMapping(value = "deleteAreaWithBeacons")
+    @ResponseBody
+    @ApiOperation("删除区域并清空相关信标")
+    public Map<String, Object> deleteAreaWithBeacons(@RequestBody Map<String, Object> params) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String areaId = (String) params.get("id");
+
+            if (areaId == null || areaId.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "区域ID不能为空！");
+                return result;
+            }
+
+            // 先获取区域信息
+            SwmArea area = swmAreaService.get(areaId);
+            if (area == null) {
+                result.put("success", false);
+                result.put("message", "区域不存在！");
+                return result;
+            }
+
+            // 删除区域并清空相关信标
+            swmAreaService.deleteAreaWithBeacons(areaId);
+
+            result.put("success", true);
+            result.put("message", "删除区域成功！");
+            logger.info("成功删除区域: {}", area.getAreaName());
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "删除区域失败：" + e.getMessage());
+            logger.error("删除区域失败", e);
+        }
+        return result;
+    }
+
+    /**
      * 保存区域并更新信标
      * 
      * @author Shawn

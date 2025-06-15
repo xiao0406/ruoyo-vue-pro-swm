@@ -303,4 +303,31 @@ public class SwmAreaService extends CrudService<SwmAreaDao, SwmArea> {
     public List<SwmBeaconStation> getBeaconsByArea(String areaId) {
         return swmBeaconStationService.findByArea(areaId);
     }
+
+    /**
+     * 删除区域并清空相关信标
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     * @param areaId 区域ID
+     */
+    @Transactional(readOnly = false)
+    public void deleteAreaWithBeacons(String areaId) {
+        if (areaId == null || areaId.trim().isEmpty()) {
+            logger.warn("deleteAreaWithBeacons: areaId为空");
+            return;
+        }
+
+        logger.info("开始删除区域 {} 并清空相关信标", areaId);
+
+        // 先清空该区域下所有信标的关联
+        clearBeaconAreaAndColor(areaId);
+
+        // 再删除区域记录
+        SwmArea area = new SwmArea();
+        area.setId(areaId);
+        delete(area);
+
+        logger.info("成功删除区域 {} 并清空相关信标", areaId);
+    }
 }
