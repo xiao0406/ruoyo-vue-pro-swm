@@ -212,4 +212,37 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         }
         return dao.findByPixelCoordinates(pixelX, pixelY);
     }
+
+    /**
+     * 清空指定区域下所有信标的区域和颜色字段
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     * @param area       区域ID
+     * @param updateBy   更新人
+     * @param updateDate 更新时间
+     * @return 更新的记录数
+     */
+    @Transactional(readOnly = false)
+    public int clearAreaAndColorByArea(String area, String updateBy, java.util.Date updateDate) {
+        return dao.clearAreaAndColorByArea(area, updateBy, updateDate);
+    }
+
+    /**
+     * 批量清空指定信标的区域和颜色字段
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     * @param ids        信标ID列表
+     * @param updateBy   更新人
+     * @param updateDate 更新时间
+     * @return 更新的记录数
+     */
+    @Transactional(readOnly = false)
+    public int clearAreaAndColorByIds(List<String> ids, String updateBy, java.util.Date updateDate) {
+        if (ids == null || ids.isEmpty()) {
+            return 0;
+        }
+        return dao.clearAreaAndColorByIds(ids, updateBy, updateDate);
+    }
 }
