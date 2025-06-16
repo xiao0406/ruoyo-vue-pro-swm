@@ -142,7 +142,20 @@ public class SwmWarningManagementController extends BaseController {
                 
                 // 复制基本属性
                 warningData.put("id", mysqlRecord.getId());
-                warningData.put("personName", mysqlRecord.getPersonName());
+                
+                // 修改personName格式，添加idCard信息和触发的预警内容
+                String idCard = mysqlRecord.getIdCard() != null ? mysqlRecord.getIdCard() : "未知";
+                String originalPersonName = mysqlRecord.getPersonName() != null ? mysqlRecord.getPersonName() : "未知人员";
+                String warningContent = mysqlRecord.getWarningContent() != null ? mysqlRecord.getWarningContent() : "未知预警";
+                
+                // 处理预警内容，如果是数字则转换为对应的文本
+                if (warningContent != null && warningContent.matches("\\d+")) {
+                    warningContent = DictUtils.getDictLabel("warning_content_enum", warningContent, warningContent);
+                }
+                
+                // 新的personName格式：【idCard】某某触发warningContent
+                String formattedPersonName = "【" + idCard + "】" + originalPersonName + "触发" + warningContent;
+                warningData.put("personName", formattedPersonName);
                 
                 // 预警时间已在SQL中调整时区，这里直接使用
                 warningData.put("warningTime", mysqlRecord.getWarningTime());

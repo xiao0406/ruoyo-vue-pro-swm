@@ -60,6 +60,13 @@ public interface SwmWarningManagementDao extends CrudDao<SwmWarningManagement> {
      * @return 已处置记录ID列表
      */
     List<String> findAllProcessedIds();
+    
+    /**
+     * 获取所有已处置的记录（handle_status为1）
+     * 
+     * @return 已处置的预警记录列表
+     */
+    List<SwmWarningManagement> findAllProcessedWarnings();
 
     /**
      * 查询近7天的预警记录

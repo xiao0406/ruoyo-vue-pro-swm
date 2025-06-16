@@ -30,6 +30,7 @@ import java.math.BigDecimal;
         @Column(name = "attendance_count", attrName = "attendanceCount", label = "本月出勤次数"),
         @Column(name = "working_hours", attrName = "workingHours", label = "本月工作时长(小时)"),
         @Column(name = "idle_hours", attrName = "idleHours", label = "本月怠工时长(小时)"),
+        @Column(name = "id_card", attrName = "idCard", label = "身份证号码"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
@@ -99,6 +100,7 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
     private Integer attendanceCount; // 本月出勤次数
     private BigDecimal workingHours; // 本月工作时长(小时)
     private BigDecimal idleHours; // 本月怠工时长(小时)
+    private String idCard; // 身份证号码
 
     // 用于显示的文本属性，不对应数据库字段
     private String workStatusText; // 工作状态显示文本
@@ -259,5 +261,14 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
 
     public void setIdleHours(BigDecimal idleHours) {
         this.idleHours = idleHours;
+    }
+    
+    @Length(min = 0, max = 20, message = "身份证号码不能超过20个字符")
+    public String getIdCard() {
+        return idCard;
+    }
+
+    public void setIdCard(String idCard) {
+        this.idCard = idCard;
     }
 }
