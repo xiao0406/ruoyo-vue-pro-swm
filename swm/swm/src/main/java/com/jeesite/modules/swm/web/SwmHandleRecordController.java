@@ -387,53 +387,71 @@ public class SwmHandleRecordController extends BaseController {
     @GetMapping(value = "unhandledWarnings")
     @ResponseBody
     @ApiOperation("获取未处置的预警记录列表")
-    public Map<String, Object> getUnhandledWarnings() {
+    public Map<String, Object> getUnhandledWarnings(@RequestParam(required = false) String keyword) {
         Map<String, Object> result = new HashMap<>();
         
-        // 创建查询条件 - 未处置状态
-        SwmWarningManagement criteria = new SwmWarningManagement();
-        criteria.setHandleStatus(SwmWarningManagement.HandleStatusEnum.UNHANDLED);
-        
-        // 查询未处置的预警记录
-        List<SwmWarningManagement> unhandledWarnings = swmWarningManagementService.findList(criteria);
-        
-        // 构建返回数据
-        if (unhandledWarnings != null && !unhandledWarnings.isEmpty()) {
-            // 转换为前端所需的格式，包含ID和格式化的记录名称
-            List<Map<String, Object>> formattedList = new ArrayList<>();
-            for (SwmWarningManagement warning : unhandledWarnings) {
-                Map<String, Object> item = new HashMap<>();
-                item.put("id", warning.getId());
-                
-                // 获取预警内容的实际文本值（从字典获取）
-                String warningContentText = DictUtils.getDictLabel("warning_content_enum", 
-                        warning.getWarningContent(), warning.getWarningContent());
-                
-                // 构造格式：处置personName触发warningContent
-                String formattedName = "处置" + warning.getPersonName() + "触发" + warningContentText;
-                
-                item.put("recordName", formattedName);
-                item.put("personName", warning.getPersonName());
-                // 使用文本值而不是编码
-                item.put("warningContent", warningContentText);
-                item.put("warningTime", warning.getWarningTime());
-                item.put("triggerReason", warning.getTriggerReason());
-                item.put("handleStatus", SwmWarningManagement.HandleStatusEnum.getText(warning.getHandleStatus()));
-                
-                formattedList.add(item);
-            }
+        try {
+            logger.info("开始查询未处置的预警记录，关键字: {}", keyword);
+            
+            // 调用业务层方法获取未处置的预警记录
+            List<SwmWarningManagement> unhandledWarnings = swmWarningManagementService.findUnhandledWarnings(keyword);
+            logger.info("查询到 {} 条未处置预警记录", unhandledWarnings.size());
+            
+            // 构建返回数据
+            List<Map<String, Object>> formattedList = formatWarningRecords(unhandledWarnings);
             
             result.put("list", formattedList);
             result.put("success", true);
             result.put("count", formattedList.size());
-        } else {
+            
+            if (formattedList.isEmpty()) {
+                result.put("message", "暂无未处置的预警记录");
+            }
+            
+        } catch (Exception e) {
+            logger.error("获取未处置预警记录失败", e);
             result.put("list", new ArrayList<>());
-            result.put("success", true);
-            result.put("count", 0);
-            result.put("message", "暂无未处置的预警记录");
+            result.put("success", false);
+            result.put("message", "获取未处置预警记录失败: " + e.getMessage());
         }
         
         return result;
+    }
+    
+    /**
+     * 格式化预警记录为前端需要的格式
+     */
+    private List<Map<String, Object>> formatWarningRecords(List<SwmWarningManagement> warnings) {
+        List<Map<String, Object>> formattedList = new ArrayList<>();
+        
+        for (SwmWarningManagement warning : warnings) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", warning.getId());
+            
+            // 获取预警内容的实际文本值（从字典获取）
+            String warningContentText = warning.getWarningContent();
+            if (warningContentText != null && warningContentText.matches("\\d+")) {
+                warningContentText = DictUtils.getDictLabel("warning_content_enum", 
+                        warningContentText, warningContentText);
+            }
+            
+            // 构造格式：处置personName触发warningContent
+            String formattedName = "处置" + warning.getPersonName() + "触发" + warningContentText;
+            
+            item.put("recordName", formattedName);
+            item.put("personName", warning.getPersonName());
+            // 添加身份证号字段
+            item.put("idCard", warning.getIdCard());
+            // 使用文本值而不是编码
+            item.put("warningContent", warningContentText);
+            item.put("warningTime", warning.getWarningTime());
+            item.put("triggerReason", warning.getTriggerReason());
+            item.put("handleStatus", SwmWarningManagement.HandleStatusEnum.getText(warning.getHandleStatus()));
+            
+            formattedList.add(item);
+        }
+        
+        return formattedList;
     }
     
     /**

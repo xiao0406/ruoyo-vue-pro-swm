@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
+import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.utils.R;
 
 import java.util.*;
@@ -918,5 +919,156 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.error("处理告警确认失败", e);
             return false;
         }
+    }
+
+    /**
+     * 查询未处置的预警记录
+     * 逻辑：
+     * 1. 从时序数据库查询所有数据
+     * 2. 从MySQL筛选相同id和id_card且handle_status为1的记录（已处置的记录）
+     * 3. 将时序数据库查到的所有数据减去MySQL中已处置的记录，得到未处置的数据
+     * 
+     * @param keyword 搜索关键词（可选）
+     * @return 未处置的预警记录列表
+     */
+    public List<SwmWarningManagement> findUnhandledWarnings(String keyword) {
+        logger.info("开始查询未处置预警记录，关键词: {}", keyword);
+        
+        // 1. 从时序数据库查询所有数据
+        StringBuilder sqlBuilder = new StringBuilder();
+        // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段，保证时区正确
+        sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
+               .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
+               .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
+               .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+               .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card ")
+               .append("FROM ").append(dbname).append(".swm_warning_management");
+        
+        // 添加排序条件
+        sqlBuilder.append(" ORDER BY warning_time DESC");
+        
+        // 执行查询，获取时序数据库所有记录
+        List<SwmWarningManagement> tdEngineList = new ArrayList<>();
+        try {
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+                JSONObject data = result.getData();
+                JSONArray rows = data.getJSONArray("data");
+                JSONArray columnMeta = data.getJSONArray("column_meta");
+                
+                if (rows != null) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        try {
+                            JSONArray row = rows.getJSONArray(i);
+                            SwmWarningManagement entity = convertToEntity(row, columnMeta);
+                            if (entity != null) {
+                                tdEngineList.add(entity);
+                            }
+                        } catch (Exception e) {
+                            logger.error("转换行数据异常: {}", e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("从时序数据库查询数据失败: {}", e.getMessage());
+        }
+        
+        logger.info("从时序数据库获取到 {} 条记录", tdEngineList.size());
+        
+        // 2. 从MySQL获取所有已处置的记录（handle_status为1）的ID和idCard
+        List<SwmWarningManagement> processedList = dao.findAllProcessedWarnings();
+        logger.info("从MySQL获取到 {} 条已处置记录", processedList.size());
+        
+        // 创建已处置记录的映射，用于快速查找
+        Map<String, Set<String>> processedMap = new HashMap<>();
+        for (SwmWarningManagement processed : processedList) {
+            String id = processed.getId();
+            String idCard = processed.getIdCard();
+            
+            if (id != null) {
+                if (!processedMap.containsKey(id)) {
+                    processedMap.put(id, new HashSet<>());
+                }
+                
+                if (idCard != null) {
+                    processedMap.get(id).add(idCard);
+                } else {
+                    // 如果idCard为空，使用特殊标记
+                    processedMap.get(id).add("NULL");
+                }
+            }
+        }
+        
+        // 3. 过滤时序数据库记录，只保留未处置的记录
+        List<SwmWarningManagement> unhandledList = new ArrayList<>();
+        for (SwmWarningManagement tdEntity : tdEngineList) {
+            String id = tdEntity.getId();
+            String idCard = tdEntity.getIdCard();
+            
+            boolean isProcessed = false;
+            if (processedMap.containsKey(id)) {
+                Set<String> processedIdCards = processedMap.get(id);
+                if (idCard != null) {
+                    if (processedIdCards.contains(idCard)) {
+                        isProcessed = true;
+                    }
+                } else if (processedIdCards.contains("NULL")) {
+                    isProcessed = true;
+                }
+            }
+            
+            // 只添加未处置的记录
+            if (!isProcessed) {
+                // 设置未处置状态
+                tdEntity.setHandleStatus(SwmWarningManagement.HandleStatusEnum.UNHANDLED);
+                unhandledList.add(tdEntity);
+            }
+        }
+        
+        // 4. 根据关键词过滤结果（如果提供了关键词）
+        List<SwmWarningManagement> filteredList = unhandledList;
+        if (StringUtils.isNotBlank(keyword)) {
+            filteredList = new ArrayList<>();
+            String lowerKeyword = keyword.toLowerCase();
+            
+            for (SwmWarningManagement warning : unhandledList) {
+                boolean matches = false;
+                
+                // 检查人员姓名
+                if (warning.getPersonName() != null && 
+                    warning.getPersonName().toLowerCase().contains(lowerKeyword)) {
+                    matches = true;
+                }
+                
+                // 检查身份证号
+                if (!matches && warning.getIdCard() != null && 
+                    warning.getIdCard().toLowerCase().contains(lowerKeyword)) {
+                    matches = true;
+                }
+                
+                // 检查预警内容
+                String warningContent = warning.getWarningContent();
+                if (!matches && warningContent != null) {
+                    // 如果预警内容是数字，尝试转换为文本形式
+                    if (warningContent.matches("\\d+")) {
+                        warningContent = DictUtils.getDictLabel("warning_content_enum", 
+                            warningContent, warningContent);
+                    }
+                    
+                    if (warningContent.toLowerCase().contains(lowerKeyword)) {
+                        matches = true;
+                    }
+                }
+                
+                if (matches) {
+                    filteredList.add(warning);
+                }
+            }
+        }
+        
+        logger.info("过滤后得到 {} 条未处置预警记录", filteredList.size());
+        
+        return filteredList;
     }
 }
