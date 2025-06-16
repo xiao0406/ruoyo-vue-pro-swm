@@ -31,6 +31,7 @@ import java.util.Date;
         @Column(name = "attachment", attrName = "attachment", label = "附件路径", comment = "附件路径"),
         @Column(name = "device_id", attrName = "deviceId", label = "设备ID"),
         @Column(name = "id_card", attrName = "idCard", label = "身份证号"),
+        @Column(name = "front_alarm", attrName = "frontAlarm", label = "前端弹框提示", comment = "前端全局弹框提示（0不弹框，1弹框）"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.warning_time DESC")
 public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
@@ -131,6 +132,7 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private String attachment; // 附件路径
     private String deviceId; // 设备ID
     private String idCard; // 身份证号
+    private String frontAlarm; // 前端弹框提示
 
     // 用于显示的属性，不对应数据库字段
     private String warningTypeText; // 预警类型显示文本
@@ -297,6 +299,15 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setIdCard(String idCard) {
         this.idCard = idCard;
+    }
+
+    @Length(min = 0, max = 1, message = "前端弹框提示不能超过1个字符")
+    public String getFrontAlarm() {
+        return frontAlarm;
+    }
+
+    public void setFrontAlarm(String frontAlarm) {
+        this.frontAlarm = frontAlarm;
     }
 
     // 添加预警时间不为空的查询条件

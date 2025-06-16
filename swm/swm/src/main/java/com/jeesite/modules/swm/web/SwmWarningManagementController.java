@@ -4,15 +4,17 @@ import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.swm.entity.SwmWarningManagement;
 import com.jeesite.modules.swm.entity.SwmHandleRecord;
-import com.jeesite.modules.swm.service.SwmWarningManagementService;
+import com.jeesite.modules.swm.entity.SwmWarningManagement;
 import com.jeesite.modules.swm.service.SwmHandleRecordService;
+import com.jeesite.modules.swm.service.SwmWarningManagementService;
 import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
+import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,15 +22,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * 预警管理Controller
@@ -352,5 +350,54 @@ public class SwmWarningManagementController extends BaseController {
         swmHandleRecordService.save(handleRecord);
         
         return renderResult(Global.TRUE, text("预警处置成功！"));
+    }
+
+    /**
+     * 获取需要弹框显示的告警数据
+     */
+    @RequestMapping(value = "getPopupWarnings")
+    @ResponseBody
+    @ApiOperation("获取需要弹框显示的告警数据")
+    public R<List<Map<String, Object>>> getPopupWarnings() {
+        List<SwmWarningManagement> list = swmWarningManagementService.getPopupWarnings();
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        if (list != null && !list.isEmpty()) {
+            for (SwmWarningManagement item : list) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", item.getId());
+                map.put("personName", item.getPersonName());
+                map.put("warningType", item.getWarningType());
+                map.put("warningTypeText", item.getWarningTypeText());
+                map.put("warningContent", item.getWarningContent());
+                map.put("warningTime", item.getWarningTime());
+                map.put("idCard", item.getIdCard());
+                
+                result.add(map);
+            }
+        }
+        
+        return R.ok(result);
+    }
+
+    /**
+     * 确认告警
+     */
+    @RequestMapping(value = "confirmWarning")
+    @ResponseBody
+    @ApiOperation("确认告警")
+    public R confirmWarning(String id) {
+        logger.info("接收到告警确认请求，ID: {}", id);
+        
+        if (id == null || id.isEmpty()) {
+            return R.fail("告警ID不能为空");
+        }
+        
+        boolean success = swmWarningManagementService.confirmWarning(id);
+        if (success) {
+            return R.ok("告警已确认");
+        } else {
+            return R.fail("告警确认失败");
+        }
     }
 }
