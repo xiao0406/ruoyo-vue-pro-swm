@@ -362,7 +362,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 if ("1".equals(entity.getWarningType())) {
                     entity.setWarningTypeText("主动报警");
                 } else {
-                    entity.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", entity.getWarningType(), entity.getWarningType()));
+                entity.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", entity.getWarningType(), entity.getWarningType()));
                 }
             }
             
@@ -558,7 +558,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     }
 
     /**
-     * 处理预警并向MySQL插入完整记录（仅查询时序数据库，不修改）
+     * 处理预警并向MySQL插入或更新完整记录
      * 
      * @param id 预警ID
      * @param handler 处置人
@@ -570,7 +570,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
      */
     @Transactional(readOnly = false)
     public boolean processWarningToMySql(String id, String handler, Date handleTime, String handleProcess, String handleStatus, String attachment) {
-        logger.info("处理预警并向MySQL插入完整记录，预警ID：{}", id);
+        logger.info("处理预警并向MySQL插入或更新完整记录，预警ID：{}", id);
         
         // 只查询时序数据库中的预警记录，不进行修改
         SwmWarningManagement swmWarningManagement = this.get(id);
@@ -578,6 +578,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.error("预警记录不存在，ID：{}", id);
             return false;
         }
+        
+        try {
+            // 先查询MySQL中是否已存在该记录
+            SwmWarningManagement query = new SwmWarningManagement();
+            query.setId(id);
+            SwmWarningManagement existingRecord = super.get(query);
+            
+            if (existingRecord == null) {
+                // MySQL中不存在，需要插入
+                logger.info("MySQL中不存在该预警记录，准备插入新记录，ID：{}", id);
         
         // 创建一个新对象用于MySQL插入
         SwmWarningManagement mysqlWarning = new SwmWarningManagement();
@@ -607,13 +617,33 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         mysqlWarning.setHandleStatus(handleStatus);
         mysqlWarning.setAttachment(attachment);
         
-        try {
             // 使用自定义方法直接向MySQL插入数据
             dao.insertToMySql(mysqlWarning);
             logger.info("成功向MySQL数据库插入预警处置记录，ID：{}", id);
+            } else {
+                // MySQL中已存在该记录，进行更新
+                logger.info("MySQL中已存在该预警记录，准备更新记录，ID：{}", id);
+                
+                // 更新处置信息
+                existingRecord.setHandler(handler);
+                existingRecord.setHandleTime(handleTime);
+                existingRecord.setHandleProcess(handleProcess);
+                existingRecord.setHandleStatus(handleStatus);
+                existingRecord.setUpdateDate(new Date()); // 更新时间
+                
+                // 如果附件不为空，则更新
+                if (attachment != null && !attachment.isEmpty()) {
+                    existingRecord.setAttachment(attachment);
+                }
+                
+                // 使用父类的save方法更新记录
+                super.save(existingRecord);
+                logger.info("成功更新MySQL数据库中的预警处置记录，ID：{}", id);
+            }
+            
             return true;
         } catch (Exception e) {
-            logger.error("向MySQL数据库插入预警处置记录失败", e);
+            logger.error("向MySQL数据库插入或更新预警处置记录失败", e);
             return false;
         }
     }
@@ -646,7 +676,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         if ("1".equals(item.getWarningType())) {
                             item.setWarningTypeText("主动报警");
                         } else {
-                            item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
+                        item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
                         }
                     }
                     if (item.getHandleStatus() != null) {
@@ -722,7 +752,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 if ("1".equals(item.getWarningType())) {
                     item.setWarningTypeText("主动报警");
                 } else {
-                    item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
+                item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
                 }
             }
             if (item.getHandleStatus() != null) {
@@ -761,5 +791,132 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
      */
     public List<SwmWarningManagement> listTodayWarning() {
         return dao.listTodayWarning();
+    }
+
+    /**
+     * 获取需要前端弹框显示的告警数据
+     * 条件：时序数据库中front_alarm=1，且在MySQL中不存在相同id和id_card的记录
+     * 如果MySQL中存在记录且front_alarm=0，则不需要告警
+     * @return 告警数据列表，最多5条
+     */
+    public List<SwmWarningManagement> getPopupWarnings() {
+        List<SwmWarningManagement> resultList = new ArrayList<>();
+        
+        try {
+            // 1. 查询时序数据库中front_alarm=1的记录
+            String sql = String.format("SELECT * FROM %s.swm_warning_management WHERE front_alarm='1' ORDER BY warning_time DESC LIMIT 10", dbname);
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+            
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+                JSONObject data = result.getData();
+                JSONArray rows = data.getJSONArray("data");
+                JSONArray columnMeta = data.getJSONArray("column_meta");
+                
+                if (rows != null) {
+                    for (int i = 0; i < rows.size() && resultList.size() < 5; i++) {
+                        try {
+                            JSONArray row = rows.getJSONArray(i);
+                            SwmWarningManagement tdEntity = convertToEntity(row, columnMeta);
+                            if (tdEntity == null || tdEntity.getId() == null || tdEntity.getIdCard() == null) {
+                                continue;
+                            }
+                            
+                            // 手动对预警时间加8小时
+                            if (tdEntity.getWarningTime() != null) {
+                                Calendar calendar = Calendar.getInstance();
+                                calendar.setTime(tdEntity.getWarningTime());
+                                calendar.add(Calendar.HOUR_OF_DAY, 8);
+                                tdEntity.setWarningTime(calendar.getTime());
+                            }
+                            
+                            // 2. 在MySQL中检查是否存在相同ID和身份证号的记录
+                            SwmWarningManagement query = new SwmWarningManagement();
+                            query.setId(tdEntity.getId());
+                            query.setIdCard(tdEntity.getIdCard());
+                            SwmWarningManagement mysqlEntity = super.get(query);
+                            
+                            // 3. 只有MySQL中不存在该记录时才加入结果列表（需要告警）
+                            // 如果MySQL中存在且front_alarm=0，则不需要告警
+                            if (mysqlEntity == null) {
+                                resultList.add(tdEntity);
+                            }
+                            // 如果MySQL中存在记录但front_alarm不为0，也需要告警
+                            else if (!"0".equals(mysqlEntity.getFrontAlarm())) {
+                                resultList.add(tdEntity);
+                            }
+                        } catch (Exception e) {
+                            logger.error("处理告警数据异常: {}", e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("获取告警数据失败", e);
+        }
+        
+        return resultList;
+    }
+
+    /**
+     * 处理告警确认
+     * 如果MySQL中不存在该记录，则插入；如果存在，则更新front_alarm为0
+     * @param id 告警ID
+     * @return 处理结果
+     */
+    @Transactional(readOnly = false)
+    public boolean confirmWarning(String id) {
+        if (id == null || id.isEmpty()) {
+            logger.warn("告警ID为空，无法处理确认");
+            return false;
+        }
+        
+        try {
+            // 1. 从时序数据库获取完整记录
+            String sql = String.format("SELECT * FROM %s.swm_warning_management WHERE id='%s' LIMIT 1", dbname, id);
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+            
+            if (result.getCode() != R.SUCCESS || result.getData() == null) {
+                logger.error("从时序数据库获取告警数据失败，ID: {}", id);
+                return false;
+            }
+            
+            JSONObject data = result.getData();
+            JSONArray rows = data.getJSONArray("data");
+            if (rows == null || rows.size() == 0) {
+                logger.error("告警记录不存在，ID: {}", id);
+                return false;
+            }
+            
+            // 2. 转换为实体
+            SwmWarningManagement entity = convertToEntity(rows.getJSONArray(0), data.getJSONArray("column_meta"));
+            if (entity == null) {
+                logger.error("告警数据转换失败，ID: {}", id);
+                return false;
+            }
+            
+            // 3. 查询MySQL中是否存在
+            SwmWarningManagement query = new SwmWarningManagement();
+            query.setId(id);
+            SwmWarningManagement mysqlEntity = super.get(query);
+            
+            // 4. 根据查询结果决定插入或更新
+            if (mysqlEntity == null) {
+                // MySQL中不存在，需要插入
+                entity.setFrontAlarm("0"); // 设置为已确认
+                // 使用MyBatis的insert方法而不是save方法
+                dao.insert(entity);
+                logger.info("告警确认：向MySQL插入新记录, ID: {}", id);
+            } else {
+                // MySQL中已存在，更新front_alarm字段
+                mysqlEntity.setFrontAlarm("0");
+                super.save(mysqlEntity);
+                logger.info("告警确认：更新MySQL记录front_alarm=0, ID: {}", id);
+            }
+            
+            return true;
+        } catch (Exception e) {
+            logger.error("处理告警确认失败", e);
+            return false;
+        }
     }
 }
