@@ -203,6 +203,21 @@ public class SwmPersonController extends BaseController {
     @PostMapping(value = "save")
     @ResponseBody
     public String save(@Validated SwmPerson swmPerson) {
+        // 检查身份证号码是否已存在（新增时或修改身份证时）
+        if (StringUtils.isNotBlank(swmPerson.getIdentityCard())) {
+            SwmPerson existingPerson = swmPersonService.getByIdentityCard(swmPerson.getIdentityCard());
+
+            // 如果是新增，或者是修改但身份证号码不是当前记录的
+            if (existingPerson != null &&
+                    (swmPerson.getIsNewRecord() || !existingPerson.getId().equals(swmPerson.getId()))) {
+
+                // 检查是否存在相同身份证的在职人员
+                if (SwmPerson.PersonStatusEnum.ACTIVE.equals(existingPerson.getPersonnelStatus())) {
+                    return renderResult(Global.FALSE, text("身份证号码已存在，该人员已在职：" + existingPerson.getName()));
+                }
+            }
+        }
+
         swmPersonService.save(swmPerson);
         return renderResult(Global.TRUE, text("保存人员登记成功！"));
     }
@@ -883,6 +898,60 @@ public class SwmPersonController extends BaseController {
             logger.error("获取所有在职人员缓存信息异常", e);
             result.put("success", false);
             result.put("message", "获取失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 检查身份证号码是否已存在
+     */
+    @GetMapping(value = "checkIdentityCard")
+    @ResponseBody
+    public Map<String, Object> checkIdentityCard(@RequestParam("identityCard") String identityCard,
+            @RequestParam(value = "excludeId", required = false) String excludeId) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            if (StringUtils.isBlank(identityCard)) {
+                result.put("success", true);
+                result.put("exists", false);
+                result.put("message", "身份证号码为空");
+                return result;
+            }
+
+            SwmPerson existingPerson = swmPersonService.getByIdentityCard(identityCard);
+
+            if (existingPerson == null) {
+                result.put("success", true);
+                result.put("exists", false);
+                result.put("message", "身份证号码可用");
+            } else {
+                // 如果是编辑模式，排除当前记录
+                if (StringUtils.isNotBlank(excludeId) && excludeId.equals(existingPerson.getId())) {
+                    result.put("success", true);
+                    result.put("exists", false);
+                    result.put("message", "身份证号码可用");
+                } else if (SwmPerson.PersonStatusEnum.ACTIVE.equals(existingPerson.getPersonnelStatus())) {
+                    // 存在相同身份证的在职人员
+                    result.put("success", true);
+                    result.put("exists", true);
+                    result.put("existingPerson", existingPerson.getName());
+                    result.put("message", "身份证号码已存在，该人员已在职：" + existingPerson.getName());
+                } else {
+                    // 存在相同身份证的离职人员，提示但允许使用
+                    result.put("success", true);
+                    result.put("exists", false);
+                    result.put("hasInactivePerson", true);
+                    result.put("inactivePerson", existingPerson.getName());
+                    result.put("message", "该身份证号码存在离职记录：" + existingPerson.getName());
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error("检查身份证号码异常", e);
+            result.put("success", false);
+            result.put("message", "检查身份证号码失败：" + e.getMessage());
         }
 
         return result;
