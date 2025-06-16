@@ -96,6 +96,8 @@ public class SwmPersonnelBoardController extends BaseController {
             boardMap.put("workingHours", board.getWorkingHours());
             boardMap.put("idleHours", board.getIdleHours());
             boardMap.put("isNewRecord", board.getIsNewRecord());
+            // 添加身份证号码
+            boardMap.put("id_card", board.getIdCard());
 
             // 添加枚举文本显示值
             boardMap.put("workStatusText", board.getWorkStatusText());
@@ -138,6 +140,8 @@ public class SwmPersonnelBoardController extends BaseController {
             boardData.put("workingHours", swmPersonnelBoard.getWorkingHours());
             boardData.put("idleHours", swmPersonnelBoard.getIdleHours());
             boardData.put("remarks", swmPersonnelBoard.getRemarks());
+            // 添加身份证号码
+            boardData.put("id_card", swmPersonnelBoard.getIdCard());
 
             // 处理枚举值
             boardData.put("workStatus", swmPersonnelBoard.getWorkStatus());
