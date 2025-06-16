@@ -137,9 +137,9 @@
             a.handle_status = '1'
     </select>
 
-    <!-- 查询过去7天的预警，在SQL中添加8小时时区调整 -->
+    <!-- 查询近7天(包含今天)的预警，在SQL中添加8小时时区调整 -->
     <select id="listPast7DaysWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
-        SELECT 
+        SELECT
             id, create_by AS createBy, create_date AS createDate,
             update_by AS updateBy, update_date AS updateDate,
             remarks, status, person_name AS personName,
@@ -150,14 +150,14 @@
             handle_process AS handleProcess, handle_status AS handleStatus,
             attachment, device_id AS deviceId, id_card AS idCard
         FROM swm_warning_management
-        WHERE warning_time &gt;= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        WHERE warning_time &gt;= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
         AND status = '0'
     </select>
 
     <!-- 获取今日的预警，在SQL中添加8小时时区调整 -->
     <select id="listTodayWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
-        SELECT 
+        SELECT
             id, create_by AS createBy, create_date AS createDate,
             update_by AS updateBy, update_date AS updateDate,
             remarks, status, person_name AS personName,

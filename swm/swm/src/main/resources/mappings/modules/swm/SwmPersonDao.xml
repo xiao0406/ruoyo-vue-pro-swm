@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jeesite.modules.swm.dao.SwmPersonDao">
-    
+
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmPerson">
-        SELECT 
+        SELECT
                a.id AS "id",
                a.name AS "name",
                a.person_type AS "personType",
@@ -40,14 +40,14 @@
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
-    
+
     <!-- 根据身份证号码查询离职人员 -->
     <select id="findDepartedByIdentityCard" resultType="SwmPerson">
-        SELECT 
+        SELECT
             a.id, a.name, a.person_type, a.gender, a.company, a.department, a.prod_line,
             a.work_process, a.team, a.job_type, a.safety_helmet_id, a.personnel_status,
             a.safety_education, a.identity_card, a.phone_number, a.helmet_returned,
-            a.departure_type, a.departure_reason, a.departure_date, 
+            a.departure_type, a.departure_reason, a.departure_date,
             a.create_by, a.create_date, a.update_by, a.update_date, a.remarks
         FROM swm_person a
         <where>
@@ -57,5 +57,11 @@
         </where>
         ORDER BY a.departure_date DESC
     </select>
-    
-</mapper> 
+
+    <select id="findListByIds" resultType="com.jeesite.modules.swm.entity.SwmPerson">
+        select * from swm_person where id in
+        <foreach item="item" index="index" collection="employeeIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

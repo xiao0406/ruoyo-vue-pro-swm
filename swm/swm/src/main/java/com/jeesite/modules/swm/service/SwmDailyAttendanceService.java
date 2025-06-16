@@ -544,4 +544,14 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         data.put("records",  records);
         return data;
     }
+
+    /**
+     * 查询指定月份的日考勤记录
+     * @param employeeId 员工ID(可选)
+     * @param month 月份(格式: yyyy-MM)
+     * @return 日考勤记录列表
+     */
+    public List<SwmDailyAttendance> findByMonth(String employeeId,String month){
+        return dao.findByMonth(employeeId,month);
+    }
 }

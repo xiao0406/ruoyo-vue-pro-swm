@@ -47,6 +47,25 @@ public class SwmPerson extends DataEntity<SwmPerson> {
 
     private static final long serialVersionUID = 1L;
 
+
+    /**
+     * 人员类型枚举
+     */
+    public static class PersonTypeEnum {
+        /** 工人 */
+        public static final String WORKER = "0";
+        /** 管理者 */
+        public static final String MANAGER = "1";
+
+        /**
+         * 获取人员状态显示文本
+         */
+        public static String getText(String value) {
+            String label = DictUtils.getDictLabel("person_type_enum", value, "");
+            return label;
+        }
+    }
+
     /**
      * 人员状态枚举
      */

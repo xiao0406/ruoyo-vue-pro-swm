@@ -1,7 +1,32 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jeesite.modules.swm.dao.SwmDailyAttendanceDao">
-    
+
+    <!-- 基础结果映射 -->
+    <resultMap id="swmDailyAttendanceResult" type="com.jeesite.modules.swm.entity.SwmDailyAttendance">
+        <id property="id" column="id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="employeeName" column="employee_name"/>
+        <result property="attendanceDate" column="attendance_date"/>
+        <result property="workTimeRange" column="work_time_range"/>
+        <result property="clockInTime" column="clock_in_time"/>
+        <result property="clockOutTime" column="clock_out_time"/>
+        <result property="scheduledHours" column="scheduled_hours"/>
+        <result property="actualHours" column="actual_hours"/>
+        <result property="idleHours" column="idle_hours"/>
+        <result property="dailyEfficiency" column="daily_efficiency"/>
+        <result property="dailyAchievementRate" column="daily_achievement_rate"/>
+        <result property="attendanceNormal" column="attendance_normal"/>
+        <result property="currentPosition" column="current_position"/>
+        <!-- 包含DataEntity的基础字段 -->
+        <result property="createBy" column="create_by"/>
+        <result property="createDate" column="create_date"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateDate" column="update_date"/>
+        <result property="remarks" column="remarks"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmDailyAttendance">
         SELECT ${sqlMap.column.toSql()}
@@ -30,10 +55,10 @@
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
-    
+
     <!-- 根据员工ID和日期查询考勤记录 -->
     <select id="findByEmployeeIdAndDate" resultType="SwmDailyAttendance">
-        SELECT 
+        SELECT
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
@@ -58,10 +83,10 @@
             AND DATE(a.attendance_date) = DATE(#{attendanceDate})
         </where>
     </select>
-    
+
     <!-- 根据员工姓名和日期查询考勤记录 -->
     <select id="findByEmployeeAndDate" resultType="SwmDailyAttendance">
-        SELECT 
+        SELECT
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
@@ -86,10 +111,10 @@
             AND DATE(a.attendance_date) = DATE(#{attendanceDate})
         </where>
     </select>
-    
+
     <!-- 根据员工ID和日期范围查询考勤记录 -->
     <select id="findByEmployeeIdAndDateRange" resultType="SwmDailyAttendance">
-        SELECT 
+        SELECT
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
@@ -115,10 +140,10 @@
         </where>
         ORDER BY a.attendance_date ASC
     </select>
-    
+
     <!-- 根据员工姓名和日期范围查询考勤记录 -->
     <select id="findByEmployeeAndDateRange" resultType="SwmDailyAttendance">
-        SELECT 
+        SELECT
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
@@ -144,10 +169,10 @@
         </where>
         ORDER BY a.attendance_date ASC
     </select>
-    
+
     <!-- 根据日期查询所有考勤记录 -->
     <select id="findByDate" resultType="SwmDailyAttendance">
-        SELECT 
+        SELECT
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
@@ -172,10 +197,10 @@
         </where>
         ORDER BY a.employee_name ASC
     </select>
-    
+
     <!-- 根据员工ID和月份查询考勤记录 -->
     <select id="findByEmployeeIdAndMonth" resultType="SwmDailyAttendance">
-        SELECT 
+        SELECT
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
@@ -202,10 +227,10 @@
         </where>
         ORDER BY a.attendance_date ASC
     </select>
-    
+
     <!-- 根据员工姓名和月份查询考勤记录 -->
     <select id="findByEmployeeAndMonth" resultType="SwmDailyAttendance">
-        SELECT 
+        SELECT
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
@@ -232,5 +257,40 @@
         </where>
         ORDER BY a.attendance_date ASC
     </select>
-    
-</mapper> 
+
+    <!-- 按月查询日考勤记录 -->
+    <select id="findByMonth" resultMap="swmDailyAttendanceResult">
+        SELECT
+        a.id,
+        a.employee_id,
+        a.employee_name,
+        a.attendance_date,
+        a.work_time_range,
+        a.clock_in_time,
+        a.clock_out_time,
+        a.scheduled_hours,
+        a.actual_hours,
+        a.idle_hours,
+        a.daily_efficiency,
+        a.daily_achievement_rate,
+        a.attendance_normal,
+        a.current_position,
+        a.create_by,
+        a.create_date,
+        a.update_by,
+        a.update_date,
+        a.remarks,
+        a.status
+        FROM
+        swm_daily_attendance a
+        WHERE
+        a.status = '0'
+        <if test="employeeId != null and employeeId != ''">
+            AND a.employee_id = #{employeeId}
+        </if>
+        AND DATE_FORMAT(a.attendance_date, '%Y-%m') = #{month}
+        ORDER BY
+        a.attendance_date DESC, a.update_date DESC
+    </select>
+
+</mapper>

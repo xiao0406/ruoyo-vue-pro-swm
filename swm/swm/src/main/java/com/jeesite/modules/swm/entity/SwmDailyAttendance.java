@@ -30,6 +30,7 @@ import java.util.Date;
         @Column(name = "daily_efficiency", attrName = "dailyEfficiency", label = "今日功效"),
         @Column(name = "daily_achievement_rate", attrName = "dailyAchievementRate", label = "今日达成率"),
         @Column(name = "attendance_normal", attrName = "attendanceNormal", label = "考勤是否正常(0正常 1异常)"),
+        @Column(name = "current_position", attrName = "currentPosition", label = "当前位置(0工作区 1休息区)"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.attendance_date DESC")
 public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
@@ -48,6 +49,7 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private BigDecimal dailyEfficiency;    // 今日功效
     private BigDecimal dailyAchievementRate; // 今日达成率
     private String attendanceNormal; // 考勤是否正常(0正常 1异常)
+    private String currentPosition; //当前位置(0工作区 1休息区)
 
     // 查询条件字段
     private Date beginAttendanceDate;      // 查询开始考勤日期
@@ -176,5 +178,13 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     public void setAttendanceNormal(String attendanceNormal) {
         this.attendanceNormal = attendanceNormal;
+    }
+
+    public String getCurrentPosition() {
+        return currentPosition;
+    }
+
+    public void setCurrentPosition(String currentPosition) {
+        this.currentPosition = currentPosition;
     }
 }

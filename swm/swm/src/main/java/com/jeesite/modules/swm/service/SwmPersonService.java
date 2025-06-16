@@ -5,7 +5,6 @@
 package com.jeesite.modules.swm.service;
 
 import com.google.common.collect.Lists;
-import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
@@ -18,11 +17,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 人员登记表service
- * 
+ *
  * @author Shawn
  */
 @Service
@@ -36,7 +37,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 获取单条数据
-     * 
+     *
      * @param swmPerson
      * @return
      */
@@ -47,7 +48,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 查询分页数据
-     * 
+     *
      * @param swmPerson 查询条件
      * @return
      */
@@ -58,7 +59,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 查询分页数据（带分页参数）
-     * 
+     *
      * @param page      分页参数
      * @param swmPerson 查询条件
      * @return
@@ -73,7 +74,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 保存数据（插入或更新）
-     * 
+     *
      * @param swmPerson
      */
     @Override
@@ -95,7 +96,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 更新状态
-     * 
+     *
      * @param swmPerson
      */
     @Override
@@ -106,7 +107,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 删除数据
-     * 
+     *
      * @param swmPerson
      */
     @Override
@@ -128,7 +129,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 根据身份证号码查询离职人员
-     * 
+     *
      * @param identityCard 身份证号码
      * @return 离职人员列表
      */
@@ -146,7 +147,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 根据身份证号码查询人员
-     * 
+     *
      * @param identityCard 身份证号码
      * @return 人员信息，如果不存在则返回null
      */
@@ -162,4 +163,15 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         return list.isEmpty() ? null : list.get(0);
     }
 
+    /**
+     * 通过员工ID查询员工
+     * @param employeeIds 员工ID列表
+     * @return
+     */
+    public List<SwmPerson> findListByIds(Set<String> employeeIds) {
+        if (employeeIds == null || employeeIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return dao.findListByIds(employeeIds);
+    }
 }
