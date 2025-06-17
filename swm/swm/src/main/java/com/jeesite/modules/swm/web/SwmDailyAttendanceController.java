@@ -165,9 +165,88 @@ public class SwmDailyAttendanceController extends BaseController {
     @PostMapping(value = "save")
     @ResponseBody
     @ApiOperation("保存数据")
-    public String save(@Validated SwmDailyAttendance swmDailyAttendance) {
-        swmDailyAttendanceService.save(swmDailyAttendance);
-        return renderResult(Global.TRUE, text("保存日考勤统计表成功！"));
+    public String save(@Validated SwmDailyAttendance swmDailyAttendance, HttpServletRequest request) {
+        logger.info("接收到的考勤数据: {}", swmDailyAttendance.toString());
+        
+        try {
+            // 处理上班打卡时间
+            if (request.getParameter("clockInTime") != null && !request.getParameter("clockInTime").isEmpty()) {
+                String clockInTimeStr = request.getParameter("clockInTime");
+                logger.info("接收到的上班打卡时间: {}", clockInTimeStr);
+                
+                try {
+                    // 先尝试解析完整的日期时间格式
+                    SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    swmDailyAttendance.setClockInTime(fullDateFormat.parse(clockInTimeStr));
+                } catch (Exception e1) {
+                    try {
+                        // 如果失败，尝试解析只有时间部分的格式
+                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+                        Date timeOnly = timeFormat.parse(clockInTimeStr);
+                        
+                        // 合并日期部分和时间部分
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTime(swmDailyAttendance.getAttendanceDate()); // 使用考勤日期的日期部分
+                        Calendar timeCal = Calendar.getInstance();
+                        timeCal.setTime(timeOnly);
+                        
+                        calendar.set(Calendar.HOUR_OF_DAY, timeCal.get(Calendar.HOUR_OF_DAY));
+                        calendar.set(Calendar.MINUTE, timeCal.get(Calendar.MINUTE));
+                        calendar.set(Calendar.SECOND, timeCal.get(Calendar.SECOND));
+                        
+                        swmDailyAttendance.setClockInTime(calendar.getTime());
+                    } catch (Exception e2) {
+                        logger.error("解析上班打卡时间失败: {}", e2.getMessage());
+                    }
+                }
+            }
+            
+            // 处理下班打卡时间
+            if (request.getParameter("clockOutTime") != null && !request.getParameter("clockOutTime").isEmpty()) {
+                String clockOutTimeStr = request.getParameter("clockOutTime");
+                logger.info("接收到的下班打卡时间: {}", clockOutTimeStr);
+                
+                try {
+                    // 先尝试解析完整的日期时间格式
+                    SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    swmDailyAttendance.setClockOutTime(fullDateFormat.parse(clockOutTimeStr));
+                } catch (Exception e1) {
+                    try {
+                        // 如果失败，尝试解析只有时间部分的格式
+                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+                        Date timeOnly = timeFormat.parse(clockOutTimeStr);
+                        
+                        // 合并日期部分和时间部分
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTime(swmDailyAttendance.getAttendanceDate()); // 使用考勤日期的日期部分
+                        Calendar timeCal = Calendar.getInstance();
+                        timeCal.setTime(timeOnly);
+                        
+                        calendar.set(Calendar.HOUR_OF_DAY, timeCal.get(Calendar.HOUR_OF_DAY));
+                        calendar.set(Calendar.MINUTE, timeCal.get(Calendar.MINUTE));
+                        calendar.set(Calendar.SECOND, timeCal.get(Calendar.SECOND));
+                        
+                        swmDailyAttendance.setClockOutTime(calendar.getTime());
+                    } catch (Exception e2) {
+                        logger.error("解析下班打卡时间失败: {}", e2.getMessage());
+                    }
+                }
+            }
+            
+            // 确保打卡时间已经设置
+            logger.info("处理后的上班打卡时间: {}, 下班打卡时间: {}", 
+                    swmDailyAttendance.getClockInTime(), 
+                    swmDailyAttendance.getClockOutTime());
+            
+            // 保存数据
+            swmDailyAttendanceService.save(swmDailyAttendance);
+            
+            logger.info("保存成功，ID: {}", swmDailyAttendance.getId());
+            return renderResult(Global.TRUE, text("保存日考勤统计表成功！"));
+        } catch (Exception e) {
+            logger.error("保存考勤记录失败: {}", e.getMessage(), e);
+            return renderResult(Global.FALSE, text("保存日考勤统计表失败！") + e.getMessage());
+        }
     }
     
     /**
