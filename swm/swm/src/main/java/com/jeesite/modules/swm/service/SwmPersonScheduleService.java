@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * 人员排班Service
- * 
+ *
  * @author zwf
  * @version 2025-05-15
  */
@@ -86,15 +86,15 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
                 if (schedule.getIdCard() != null && !schedule.getIdCard().isEmpty()) {
                     // 检查该人员在当月是否已有排班
                     List<SwmPersonSchedule> existingSchedules = dao.findByIdCardAndMonth(schedule.getIdCard(), schedule.getMonth());
-                    
+
                     // 如果已有排班，且当前不是修改操作（没有ID），则跳过
                     if (!existingSchedules.isEmpty() && (schedule.getId() == null || schedule.getId().isEmpty())) {
-                        logger.info("人员 {} (身份证: {}) 在 {} 月已有排班，跳过添加新排班", 
+                        logger.info("人员 {} (身份证: {}) 在 {} 月已有排班，跳过添加新排班",
                                 schedule.getPersonName(), schedule.getIdCard(), schedule.getMonth());
                         continue;
                     }
                 }
-                
+
                 this.save(schedule);
             }
         }
@@ -118,7 +118,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
     public List<SwmPersonSchedule> findByIdCard(String idCard) {
         return dao.findByIdCard(idCard);
     }
-    
+
     /**
      * 根据身份证号和月份查询排班记录
      * @param idCard 身份证号码
@@ -128,7 +128,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
     public List<SwmPersonSchedule> findByIdCardAndMonth(String idCard, String month) {
         return dao.findByIdCardAndMonth(idCard, month);
     }
-    
+
     /**
      * 根据身份证号获取班组名称
      * @param idCard 身份证号码
@@ -137,4 +137,13 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
     public String getWorkGroupNameByIdCard(String idCard) {
         return dao.getWorkGroupNameByIdCard(idCard);
     }
-} 
+
+    /**
+     * 根据实体对象查询数据
+     * @param entity
+     * @return
+     */
+    public SwmPersonSchedule getByEntity(SwmPersonSchedule entity) {
+        return dao.getByEntity(entity);
+    }
+}

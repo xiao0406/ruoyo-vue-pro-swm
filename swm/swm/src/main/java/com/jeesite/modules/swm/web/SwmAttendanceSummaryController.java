@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 
 /**
  * 考勤月统计表Controller
- * 
+ *
  * @author zwf
  * @version 2025-05-20
  */
@@ -220,7 +220,7 @@ public class SwmAttendanceSummaryController extends BaseController {
 
     /**
      * 轨迹信息-个人考勤记录明细
-     * 
+     *
      * @param employeeId 员工ID
      */
     @GetMapping(value = "attendanceDetails")
@@ -233,31 +233,27 @@ public class SwmAttendanceSummaryController extends BaseController {
             SwmPersonSchedule queryPersonSchedule = new SwmPersonSchedule();
             queryPersonSchedule.setIdCard(swmPerson.getIdentityCard());
             queryPersonSchedule.setMonth(DateUtil.format(new Date(), "yyyy-MM"));
-            SwmPersonSchedule swmPersonSchedule = swmPersonScheduleService.get(queryPersonSchedule);
+
+            SwmPersonSchedule swmPersonSchedule = swmPersonScheduleService.getByEntity(queryPersonSchedule);
             if (swmPersonSchedule != null) {
                 swmPerson.setClasses(swmPersonSchedule.getClasses());
             }
             result.put("person", swmPerson);
 
             // 查询日考勤
-            SwmDailyAttendance queryDailyAttendance = new SwmDailyAttendance();
-            queryDailyAttendance.setEmployeeId(employeeId);
-            queryDailyAttendance.setAttendanceDate(DateUtil.date());
-            SwmDailyAttendance dailyAttendance = swmDailyAttendanceService.get(queryDailyAttendance);
+            SwmDailyAttendance dailyAttendance = swmDailyAttendanceService.findByEmployeeIdAndDate(employeeId,DateUtil.date());
             result.put("dailyAttendance", dailyAttendance);
 
             // 查询月考勤
             SwmAttendanceSummary queryAttendanceSummary = new SwmAttendanceSummary();
             queryAttendanceSummary.setEmployeeId(employeeId);
             queryAttendanceSummary.setMonth(DateUtil.format(new Date(), "yyyy-MM"));
-            SwmAttendanceSummary attendanceSummary = swmAttendanceSummaryService.get(queryAttendanceSummary);
+            SwmAttendanceSummary attendanceSummary = swmAttendanceSummaryService.getByEntity(queryAttendanceSummary);
             result.put("attendanceSummary", attendanceSummary);
 
             // 本月考勤时间和功效统计
-            result.put("attendanceChartData", swmDailyAttendanceService.getMonthlyAttendanceData(employeeId,
-                    DateUtil.year(new Date()), DateUtil.month(new Date())));
-            result.put("efficiencyChartData", swmDailyAttendanceService.getMonthlyChartData(employeeId,
-                    DateUtil.year(new Date()), DateUtil.month(new Date())));
+            result.put("attendanceChartData", swmDailyAttendanceService.getMonthlyAttendanceData(employeeId, DateUtil.year(new Date()), DateUtil.month(new Date())+1));
+            result.put("efficiencyChartData", swmDailyAttendanceService.getMonthlyChartData(employeeId, DateUtil.year(new Date()), DateUtil.month(new Date())+1));
         }
 
         return result;
@@ -265,7 +261,7 @@ public class SwmAttendanceSummaryController extends BaseController {
 
     /**
      * 根据身份证查询考勤情况
-     * 
+     *
      * @param idCard    身份证号
      * @param checkDate 检查日期（可选，默认当天，格式：yyyy-MM-dd）
      * @return 考勤检查结果
