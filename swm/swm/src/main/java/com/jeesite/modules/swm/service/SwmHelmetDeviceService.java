@@ -71,7 +71,11 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     private static final String HELMET_SUPER_TABLE_NAME = "helmet_runde_ca_report_location";
 
     /**
-     * 服务启动后初始化Redis缓存
+     * 程序启动时初始化设备缓存
+     * 框架会自动添加status='0'条件，只查询正常状态的设备
+     * 
+     * @author Shawn
+     * @date 2025-01-13
      */
     @PostConstruct
     public void initCache() {
@@ -82,14 +86,14 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                 return;
             }
 
-            // 查询所有头盔设备数据
+            // 查询所有头盔设备数据（框架自动添加status='0'条件）
             SwmHelmetDevice queryCondition = new SwmHelmetDevice();
             List<SwmHelmetDevice> allDevices = this.findList(queryCondition);
 
             // 初始化Redis缓存
             helmetCacheService.initHelmetCache(allDevices);
 
-            logger.info("头盔设备Redis缓存初始化完成，共{}条设备", allDevices.size());
+            logger.info("头盔设备Redis缓存初始化完成，共{}条正常状态设备", allDevices.size());
         } catch (Exception e) {
             logger.error("初始化头盔设备Redis缓存失败", e);
         }
