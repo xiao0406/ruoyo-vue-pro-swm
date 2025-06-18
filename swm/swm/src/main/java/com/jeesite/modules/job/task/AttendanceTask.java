@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * 考勤统计定时任务
+ * 
  * @author: cjie
  * @date: 2025/6/10
  */
@@ -79,9 +80,9 @@ public class AttendanceTask {
                     .count();
 
             // 出勤率 = 实际出勤天数/应出勤天数
-            BigDecimal attendanceRate = actualDays > 0 ?
-                    BigDecimal.valueOf(actualDays).divide(BigDecimal.valueOf(scheduledDays), 4, RoundingMode.HALF_UP) :
-                    BigDecimal.ZERO;
+            BigDecimal attendanceRate = actualDays > 0
+                    ? BigDecimal.valueOf(actualDays).divide(BigDecimal.valueOf(scheduledDays), 4, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
 
             // 计算总时长
             BigDecimal totalScheduledHours = employeeAttendance.stream()
@@ -124,12 +125,12 @@ public class AttendanceTask {
             summary.setTeam(person.getTeam());
             summary.setJobType(person.getJobType());
 
-            //获取人员本月班次(不确定人员一个月是不是只能有一个班次，这里用list查询，取第一个)
+            // 获取人员本月班次(不确定人员一个月是不是只能有一个班次，这里用list查询，取第一个)
             SwmPersonSchedule queryPersonSchedule = new SwmPersonSchedule();
             queryPersonSchedule.setIdCard(person.getIdentityCard());
             queryPersonSchedule.setMonth(monthStr);
             List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService.findList(queryPersonSchedule);
-            if(personScheduleList != null && !personScheduleList.isEmpty()){
+            if (personScheduleList != null && !personScheduleList.isEmpty()) {
                 summary.setWorkShift(personScheduleList.get(0).getClasses());
             }
             summary.setMonth(monthStr);
@@ -176,7 +177,8 @@ public class AttendanceTask {
             // 2. 查询所有在职人员
             SwmPerson query = new SwmPerson();
             query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 在职状态
-            query.setStatus("0");//正常状态
+            query.setStatus("0");// 正常状态
+//            query.setIdentityCard("430312122334343333"); // todo为了测试身份证先写死
             List<SwmPerson> activePersons = swmPersonService.findList(query);
 
             if (activePersons.isEmpty()) {
@@ -226,7 +228,7 @@ public class AttendanceTask {
                     // 更新现有记录
                     existingAttendance.setWorkTimeRange(workTimeRange);
                     existingAttendance.setScheduledHours(scheduledHours);
-                    //todo 调用接口获取怠工时长、考勤是否正常等
+                    // todo 调用接口获取怠工时长、考勤是否正常等
 
                     // 保留原有的实际考勤数据
                     swmDailyAttendanceService.save(existingAttendance);
@@ -242,8 +244,9 @@ public class AttendanceTask {
 
     /**
      * 获取员工的应考勤时间范围
+     * 
      * @param person 员工信息
-     * @param date 考勤日期
+     * @param date   考勤日期
      * @return 应考勤时间范围字符串，格式如"08:00-17:00"
      */
     private String getWorkTimeRangeForPerson(SwmPerson person, Date date) {
@@ -251,11 +254,13 @@ public class AttendanceTask {
         String month = DateUtil.format(date, "yyyy-MM");
 
         // 2. 查询员工的排班信息
-        SwmPersonSchedule scheduleQuery = new SwmPersonSchedule();
-        scheduleQuery.setIdCard(person.getIdentityCard());
-        scheduleQuery.setMonth(month);
-        SwmPersonSchedule personSchedule = swmPersonScheduleService.get(scheduleQuery);
+        List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService
+                .findByIdCardAndMonth(person.getIdentityCard(), month);
+        if (personScheduleList == null || personScheduleList.isEmpty()) {
+            return null;
+        }
 
+        SwmPersonSchedule personSchedule = personScheduleList.get(0);
         if (personSchedule == null || personSchedule.getClasses() == null) {
             return null;
         }
@@ -263,7 +268,11 @@ public class AttendanceTask {
         // 3. 查询班次对应的时间
         SwmScheduleTime scheduleTimeQuery = new SwmScheduleTime();
         scheduleTimeQuery.setShiftType(personSchedule.getClasses());
-        SwmScheduleTime scheduleTime = swmScheduleTimeService.get(scheduleTimeQuery);
+        List<SwmScheduleTime> scheduleTimeList = swmScheduleTimeService.findList(scheduleTimeQuery);
+        if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
+            return null;
+        }
+        SwmScheduleTime scheduleTime = scheduleTimeList.get(0);
 
         if (scheduleTime == null) {
             return null;
@@ -275,6 +284,7 @@ public class AttendanceTask {
 
     /**
      * 计算应考勤时长
+     * 
      * @param workTimeRange 工作时间范围，格式如"08:00-17:00"
      * @return 应考勤时长(小时)
      */

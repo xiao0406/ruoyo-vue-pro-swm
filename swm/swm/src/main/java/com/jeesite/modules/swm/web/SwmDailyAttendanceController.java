@@ -7,6 +7,7 @@ import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
+import com.jeesite.modules.job.task.AttendanceTask;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * 日考勤统计表Controller
+ * 
  * @author zwf
  * @version 2025-05-20
  */
@@ -45,31 +47,34 @@ public class SwmDailyAttendanceController extends BaseController {
 
     @Autowired
     private SwmDailyAttendanceService swmDailyAttendanceService;
-    
+
     @Autowired
     private SwmAttendanceSummaryService swmAttendanceSummaryService;
-    
+
+    @Autowired
+    private AttendanceTask attendanceTask;
+
     // 自定义ObjectMapper，用于处理时间字段的序列化
     private final ObjectMapper objectMapper;
-    
+
     // 构造函数初始化objectMapper
     public SwmDailyAttendanceController() {
         this.objectMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        
+
         // 为Date类型注册时间格式化序列化器
         module.addSerializer(Date.class, new JsonSerializer<Date>() {
             @Override
-            public void serialize(Date date, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) 
+            public void serialize(Date date, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
                     throws java.io.IOException {
                 if (date == null) {
                     jsonGenerator.writeNull();
                     return;
                 }
-                
+
                 // 获取字段名，用于判断是否是时间字段
                 String fieldName = jsonGenerator.getOutputContext().getCurrentName();
-                
+
                 // 为打卡时间字段使用仅时间的格式
                 if ("clockInTime".equals(fieldName) || "clockOutTime".equals(fieldName)) {
                     SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
@@ -81,11 +86,11 @@ public class SwmDailyAttendanceController extends BaseController {
                 }
             }
         });
-        
+
         objectMapper.registerModule(module);
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
-    
+
     // 将对象转换为Map，处理日期格式
     private Map<String, Object> convertToMap(Object object) {
         try {
@@ -97,7 +102,7 @@ public class SwmDailyAttendanceController extends BaseController {
             return Collections.emptyMap();
         }
     }
-    
+
     /**
      * 获取数据
      */
@@ -105,48 +110,49 @@ public class SwmDailyAttendanceController extends BaseController {
     public SwmDailyAttendance get(String id, boolean isNewRecord) {
         return swmDailyAttendanceService.get(id, isNewRecord);
     }
-    
+
     /**
      * 查询列表
      */
-    @RequestMapping(value = {"list", ""})
+    @RequestMapping(value = { "list", "" })
     public String list(SwmDailyAttendance swmDailyAttendance, Model model) {
         model.addAttribute("swmDailyAttendance", swmDailyAttendance);
         return "modules/swm/swmDailyAttendanceList";
     }
-    
+
     /**
      * 查询列表数据
      */
     @RequestMapping(value = "listData")
     @ResponseBody
-    public Page<Map<String, Object>> listData(SwmDailyAttendance swmDailyAttendance, HttpServletRequest request, HttpServletResponse response) {
-        if (swmDailyAttendance.getAttendanceDate() == null && 
-            swmDailyAttendance.getBeginAttendanceDate() == null && 
-            swmDailyAttendance.getEndAttendanceDate() == null) {
-            
+    public Page<Map<String, Object>> listData(SwmDailyAttendance swmDailyAttendance, HttpServletRequest request,
+            HttpServletResponse response) {
+        if (swmDailyAttendance.getAttendanceDate() == null &&
+                swmDailyAttendance.getBeginAttendanceDate() == null &&
+                swmDailyAttendance.getEndAttendanceDate() == null) {
+
             Date today = new Date();
-            
+
             swmDailyAttendance.setAttendanceDate(today);
         }
-        
+
         swmDailyAttendance.setPage(new Page<>(request, response));
         Page<SwmDailyAttendance> originalPage = swmDailyAttendanceService.findPage(swmDailyAttendance);
-        
+
         // 创建新的分页对象，用于存储格式化后的数据
         Page<Map<String, Object>> formattedPage = new Page<>(request, response);
         formattedPage.setCount(originalPage.getCount());
         formattedPage.setPageNo(originalPage.getPageNo());
         formattedPage.setPageSize(originalPage.getPageSize());
-        
+
         // 处理日期格式
         List<Map<String, Object>> formattedList = new ArrayList<>();
         for (SwmDailyAttendance record : originalPage.getList()) {
             formattedList.add(convertToMap(record));
         }
-        
+
         formattedPage.setList(formattedList);
-        
+
         return formattedPage;
     }
 
@@ -167,13 +173,13 @@ public class SwmDailyAttendanceController extends BaseController {
     @ApiOperation("保存数据")
     public String save(@Validated SwmDailyAttendance swmDailyAttendance, HttpServletRequest request) {
         logger.info("接收到的考勤数据: {}", swmDailyAttendance.toString());
-        
+
         try {
             // 处理上班打卡时间
             if (request.getParameter("clockInTime") != null && !request.getParameter("clockInTime").isEmpty()) {
                 String clockInTimeStr = request.getParameter("clockInTime");
                 logger.info("接收到的上班打卡时间: {}", clockInTimeStr);
-                
+
                 try {
                     // 先尝试解析完整的日期时间格式
                     SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -183,29 +189,29 @@ public class SwmDailyAttendanceController extends BaseController {
                         // 如果失败，尝试解析只有时间部分的格式
                         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
                         Date timeOnly = timeFormat.parse(clockInTimeStr);
-                        
+
                         // 合并日期部分和时间部分
                         Calendar calendar = Calendar.getInstance();
                         calendar.setTime(swmDailyAttendance.getAttendanceDate()); // 使用考勤日期的日期部分
                         Calendar timeCal = Calendar.getInstance();
                         timeCal.setTime(timeOnly);
-                        
+
                         calendar.set(Calendar.HOUR_OF_DAY, timeCal.get(Calendar.HOUR_OF_DAY));
                         calendar.set(Calendar.MINUTE, timeCal.get(Calendar.MINUTE));
                         calendar.set(Calendar.SECOND, timeCal.get(Calendar.SECOND));
-                        
+
                         swmDailyAttendance.setClockInTime(calendar.getTime());
                     } catch (Exception e2) {
                         logger.error("解析上班打卡时间失败: {}", e2.getMessage());
                     }
                 }
             }
-            
+
             // 处理下班打卡时间
             if (request.getParameter("clockOutTime") != null && !request.getParameter("clockOutTime").isEmpty()) {
                 String clockOutTimeStr = request.getParameter("clockOutTime");
                 logger.info("接收到的下班打卡时间: {}", clockOutTimeStr);
-                
+
                 try {
                     // 先尝试解析完整的日期时间格式
                     SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -215,32 +221,32 @@ public class SwmDailyAttendanceController extends BaseController {
                         // 如果失败，尝试解析只有时间部分的格式
                         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
                         Date timeOnly = timeFormat.parse(clockOutTimeStr);
-                        
+
                         // 合并日期部分和时间部分
                         Calendar calendar = Calendar.getInstance();
                         calendar.setTime(swmDailyAttendance.getAttendanceDate()); // 使用考勤日期的日期部分
                         Calendar timeCal = Calendar.getInstance();
                         timeCal.setTime(timeOnly);
-                        
+
                         calendar.set(Calendar.HOUR_OF_DAY, timeCal.get(Calendar.HOUR_OF_DAY));
                         calendar.set(Calendar.MINUTE, timeCal.get(Calendar.MINUTE));
                         calendar.set(Calendar.SECOND, timeCal.get(Calendar.SECOND));
-                        
+
                         swmDailyAttendance.setClockOutTime(calendar.getTime());
                     } catch (Exception e2) {
                         logger.error("解析下班打卡时间失败: {}", e2.getMessage());
                     }
                 }
             }
-            
+
             // 确保打卡时间已经设置
-            logger.info("处理后的上班打卡时间: {}, 下班打卡时间: {}", 
-                    swmDailyAttendance.getClockInTime(), 
+            logger.info("处理后的上班打卡时间: {}, 下班打卡时间: {}",
+                    swmDailyAttendance.getClockInTime(),
                     swmDailyAttendance.getClockOutTime());
-            
+
             // 保存数据
             swmDailyAttendanceService.save(swmDailyAttendance);
-            
+
             logger.info("保存成功，ID: {}", swmDailyAttendance.getId());
             return renderResult(Global.TRUE, text("保存日考勤统计表成功！"));
         } catch (Exception e) {
@@ -248,7 +254,7 @@ public class SwmDailyAttendanceController extends BaseController {
             return renderResult(Global.FALSE, text("保存日考勤统计表失败！") + e.getMessage());
         }
     }
-    
+
     /**
      * 删除数据
      */
@@ -259,15 +265,15 @@ public class SwmDailyAttendanceController extends BaseController {
         swmDailyAttendanceService.delete(swmDailyAttendance);
         return renderResult(Global.TRUE, text("删除日考勤统计表成功！"));
     }
-    
+
     /**
      * 根据员工姓名和日期查询考勤记录
      */
     @GetMapping(value = "findByEmployeeAndDate")
     @ResponseBody
     @ApiOperation("根据员工姓名和日期查询考勤记录")
-    public Map<String, Object> findByEmployeeAndDate(String employeeName, 
-                                                   @DateTimeFormat(pattern = "yyyy-MM-dd") Date attendanceDate) {
+    public Map<String, Object> findByEmployeeAndDate(String employeeName,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") Date attendanceDate) {
         Map<String, Object> result = new HashMap<>();
         if (employeeName != null && !employeeName.isEmpty() && attendanceDate != null) {
             SwmDailyAttendance record = swmDailyAttendanceService.findByEmployeeAndDate(employeeName, attendanceDate);
@@ -287,26 +293,27 @@ public class SwmDailyAttendanceController extends BaseController {
         }
         return result;
     }
-    
+
     /**
      * 根据员工姓名和日期范围查询考勤记录
      */
     @GetMapping(value = "findByEmployeeAndDateRange")
     @ResponseBody
     @ApiOperation("根据员工姓名和日期范围查询考勤记录")
-    public Map<String, Object> findByEmployeeAndDateRange(String employeeName, 
-                                                        @DateTimeFormat(pattern = "yyyy-MM-dd") Date beginDate,
-                                                        @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
+    public Map<String, Object> findByEmployeeAndDateRange(String employeeName,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") Date beginDate,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
         Map<String, Object> result = new HashMap<>();
         if (employeeName != null && !employeeName.isEmpty() && beginDate != null && endDate != null) {
-            List<SwmDailyAttendance> recordList = swmDailyAttendanceService.findByEmployeeAndDateRange(employeeName, beginDate, endDate);
-            
+            List<SwmDailyAttendance> recordList = swmDailyAttendanceService.findByEmployeeAndDateRange(employeeName,
+                    beginDate, endDate);
+
             // 处理日期格式
             List<Map<String, Object>> formattedList = new ArrayList<>();
             for (SwmDailyAttendance record : recordList) {
                 formattedList.add(convertToMap(record));
             }
-            
+
             result.put("list", formattedList);
             result.put("success", true);
         } else {
@@ -315,7 +322,7 @@ public class SwmDailyAttendanceController extends BaseController {
         }
         return result;
     }
-    
+
     /**
      * 根据日期查询所有考勤记录
      */
@@ -326,13 +333,13 @@ public class SwmDailyAttendanceController extends BaseController {
         Map<String, Object> result = new HashMap<>();
         if (attendanceDate != null) {
             List<SwmDailyAttendance> recordList = swmDailyAttendanceService.findByDate(attendanceDate);
-            
+
             // 处理日期格式
             List<Map<String, Object>> formattedList = new ArrayList<>();
             for (SwmDailyAttendance record : recordList) {
                 formattedList.add(convertToMap(record));
             }
-            
+
             result.put("list", formattedList);
             result.put("success", true);
         } else {
@@ -341,7 +348,7 @@ public class SwmDailyAttendanceController extends BaseController {
         }
         return result;
     }
-    
+
     /**
      * 计算月统计数据并保存
      */
@@ -352,15 +359,16 @@ public class SwmDailyAttendanceController extends BaseController {
         if (employeeName == null || employeeName.isEmpty()) {
             return renderResult(Global.FALSE, text("员工姓名不能为空！"));
         }
-        
+
         SwmAttendanceSummary summary = swmDailyAttendanceService.calculateMonthlyStats(employeeName, year, month);
-        
-        SwmAttendanceSummary existing = swmAttendanceSummaryService.findByEmployeeAndMonth(employeeName, String.format("%04d-%02d", year, month));
-        
+
+        SwmAttendanceSummary existing = swmAttendanceSummaryService.findByEmployeeAndMonth(employeeName,
+                String.format("%04d-%02d", year, month));
+
         if (existing != null) {
             summary.setId(existing.getId());
             summary.setIsNewRecord(false);
-            
+
             if (existing.getDepartment() != null) {
                 summary.setDepartment(existing.getDepartment());
             }
@@ -377,9 +385,9 @@ public class SwmDailyAttendanceController extends BaseController {
                 summary.setWorkShift(existing.getWorkShift());
             }
         }
-        
+
         swmAttendanceSummaryService.save(summary);
-        
+
         return renderResult(Global.TRUE, text("计算并保存月统计数据成功！"));
     }
 
@@ -392,7 +400,7 @@ public class SwmDailyAttendanceController extends BaseController {
     @ApiOperation("获取员工月度考勤图表数据")
     public Map<String, Object> getMonthlyChartData(String employeeId, String month) {
         Map<String, Object> result = new HashMap<>();
-        
+
         // 验证参数
         if (employeeId == null || employeeId.isEmpty() || month == null || month.isEmpty()) {
             result.put("code", 400);
@@ -400,7 +408,7 @@ public class SwmDailyAttendanceController extends BaseController {
             result.put("message", "员工ID和月份不能为空");
             return result;
         }
-        
+
         // 解析月份格式 (YYYY-MM)
         int year, monthOfYear;
         try {
@@ -410,7 +418,7 @@ public class SwmDailyAttendanceController extends BaseController {
             }
             year = Integer.parseInt(parts[0]);
             monthOfYear = Integer.parseInt(parts[1]);
-            
+
             if (monthOfYear < 1 || monthOfYear > 12) {
                 throw new ParseException("月份必须在1-12之间", 0);
             }
@@ -420,15 +428,15 @@ public class SwmDailyAttendanceController extends BaseController {
             result.put("message", "月份格式不正确，应为YYYY-MM");
             return result;
         }
-        
+
         // 调用Service层方法获取图表数据
         Map<String, Object> data = swmDailyAttendanceService.getMonthlyChartData(employeeId, year, monthOfYear);
-        
+
         // 构建返回结果
         result.put("code", 200);
         result.put("success", true);
         result.put("data", data);
-        
+
         return result;
     }
 
@@ -441,7 +449,7 @@ public class SwmDailyAttendanceController extends BaseController {
     @ApiOperation("获取员工月度考勤时长数据")
     public Map<String, Object> getMonthlyAttendanceData(String employeeId, String month) {
         Map<String, Object> result = new HashMap<>();
-        
+
         // 验证参数
         if (employeeId == null || employeeId.isEmpty() || month == null || month.isEmpty()) {
             result.put("code", 400);
@@ -449,7 +457,7 @@ public class SwmDailyAttendanceController extends BaseController {
             result.put("message", "员工ID和月份不能为空");
             return result;
         }
-        
+
         // 解析月份格式 (YYYY-MM)
         int year, monthOfYear;
         try {
@@ -459,7 +467,7 @@ public class SwmDailyAttendanceController extends BaseController {
             }
             year = Integer.parseInt(parts[0]);
             monthOfYear = Integer.parseInt(parts[1]);
-            
+
             if (monthOfYear < 1 || monthOfYear > 12) {
                 throw new ParseException("月份必须在1-12之间", 0);
             }
@@ -469,15 +477,15 @@ public class SwmDailyAttendanceController extends BaseController {
             result.put("message", "月份格式不正确，应为YYYY-MM");
             return result;
         }
-        
+
         // 调用Service层方法获取考勤时长数据
         Map<String, Object> data = swmDailyAttendanceService.getMonthlyAttendanceData(employeeId, year, monthOfYear);
-        
+
         // 构建返回结果
         result.put("code", 200);
         result.put("success", true);
         result.put("data", data);
-        
+
         return result;
     }
 
@@ -487,8 +495,8 @@ public class SwmDailyAttendanceController extends BaseController {
     @GetMapping(value = "getAttendanceByEmployeeAndDate")
     @ResponseBody
     @ApiOperation("根据员工ID和日期查询单条考勤记录")
-    public Map<String, Object> getAttendanceByEmployeeAndDate(String employeeId, 
-                                                            @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
+    public Map<String, Object> getAttendanceByEmployeeAndDate(String employeeId,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
         Map<String, Object> result = new HashMap<>();
         if (employeeId != null && !employeeId.isEmpty() && date != null) {
             SwmDailyAttendance record = swmDailyAttendanceService.findByEmployeeIdAndDate(employeeId, date);
@@ -516,7 +524,7 @@ public class SwmDailyAttendanceController extends BaseController {
     @ApiOperation("根据ID获取单条考勤记录")
     public Map<String, Object> get(String id) {
         Map<String, Object> result = new HashMap<>();
-        
+
         if (id != null && !id.isEmpty()) {
             SwmDailyAttendance record = swmDailyAttendanceService.get(id);
             if (record != null) {
@@ -531,7 +539,29 @@ public class SwmDailyAttendanceController extends BaseController {
             result.put("success", false);
             result.put("message", "ID不能为空");
         }
-        
+
         return result;
     }
-} 
+
+    /**
+     * 手动创建每日考勤数据
+     * 用于测试或手动触发创建当日考勤记录
+     */
+    @PostMapping(value = "createDailyAttendance")
+    @ResponseBody
+    @ApiOperation("创建每日考勤数据")
+    public String createDailyAttendance() {
+        try {
+            logger.info("开始手动创建每日考勤数据");
+
+            // 调用定时任务中的方法
+            attendanceTask.createDailyAttendance();
+
+            logger.info("手动创建每日考勤数据完成");
+            return renderResult(Global.TRUE, "创建每日考勤数据成功！");
+        } catch (Exception e) {
+            logger.error("创建每日考勤数据失败: {}", e.getMessage(), e);
+            return renderResult(Global.FALSE, "创建每日考勤数据失败！" + e.getMessage());
+        }
+    }
+}
