@@ -21,6 +21,7 @@ import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmPersonCacheService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
+import com.jeesite.modules.swm.service.SwmHelmetCacheService;
 import com.jeesite.modules.swm.service.TDengineService;
 import com.jeesite.modules.utils.R;
 import org.springframework.context.ApplicationContext;
@@ -65,6 +66,9 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private TDengineService tdengineService;
+
+    @Autowired
+    private SwmHelmetCacheService helmetCacheService;
 
     @Value("${tdengine.dbname}")
     private String tdengineDbName;
@@ -942,7 +946,7 @@ public class SwmPersonController extends BaseController {
             // 从Redis内存中取出所有在职人员数据
             Map<Object, Object> allPersons = cacheService.getAllActivePersons();
 
-            // 过滤出当天有坐标数据的人员
+            // 过滤出当天有坐标数据的人员，并添加设备编号信息
             Map<Object, Object> personsWithCoordinates = new HashMap<>();
             if (allPersons != null) {
                 for (Map.Entry<Object, Object> entry : allPersons.entrySet()) {
@@ -953,9 +957,18 @@ public class SwmPersonController extends BaseController {
                         // 获取身份证信息
                         String idCard = (String) personData.get("identityCard");
                         logger.info("身份证号码是：" + idCard);
+
                         // 检查当天是否有坐标数据（不管身份证是否为空都检查）
                         if (hasCoordinateDataToday(idCard)) {
-                            personsWithCoordinates.put(entry.getKey(), entry.getValue());
+                            // 获取设备编号
+                            String deviceId = getDeviceIdByIdCard(idCard);
+
+                            // 创建增强的人员信息，添加设备编号
+                            Map<String, Object> enhancedPersonData = new HashMap<>(personData);
+                            enhancedPersonData.put("deviceId", deviceId);
+                            enhancedPersonData.put("safetyHelmetId", deviceId); // 兼容前端字段名
+
+                            personsWithCoordinates.put(entry.getKey(), enhancedPersonData);
                         }
                     }
                 }
@@ -973,6 +986,27 @@ public class SwmPersonController extends BaseController {
         }
 
         return result;
+    }
+
+    /**
+     * 根据身份证号从Redis缓存中获取设备编号
+     * 
+     * @param idCard 身份证号
+     * @return 设备编号，未找到则返回null
+     * @author Shawn
+     * @date 2025-01-17
+     */
+    private String getDeviceIdByIdCard(String idCard) {
+        if (idCard == null || idCard.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return helmetCacheService.getAssignedDeviceFromCache(idCard, swmHelmetDeviceService);
+        } catch (Exception e) {
+            logger.warn("从缓存获取身份证 {} 对应的设备编号失败: {}", idCard, e.getMessage());
+            return null;
+        }
     }
 
     /**
