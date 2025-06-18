@@ -966,11 +966,22 @@ public class SwmPersonController extends BaseController {
                             // 获取电量信息
                             Integer batteryLevel = getBatteryLevelByDeviceId(deviceId);
 
-                            // 创建增强的人员信息，添加设备编号和电量信息
+                            // 获取位置信息
+                            String location = getLocationByIdCard(idCard);
+
+                            // 如果没有查询到位置信息，使用默认位置
+                            if (location == null || location.trim().isEmpty()) {
+                                location = String.format("%s%s",
+                                        personData.get("company") != null ? personData.get("company") : "天津厂",
+                                        personData.get("department") != null ? personData.get("department") : "一车间");
+                            }
+
+                            // 创建增强的人员信息，添加设备编号、电量和位置信息
                             Map<String, Object> enhancedPersonData = new HashMap<>(personData);
                             enhancedPersonData.put("deviceId", deviceId);
                             enhancedPersonData.put("safetyHelmetId", deviceId); // 兼容前端字段名
                             enhancedPersonData.put("batteryLevel", batteryLevel); // 电量信息
+                            enhancedPersonData.put("location", location); // 位置信息
 
                             personsWithCoordinates.put(entry.getKey(), enhancedPersonData);
                         }
@@ -1060,6 +1071,58 @@ public class SwmPersonController extends BaseController {
 
         } catch (Exception e) {
             logger.warn("查询设备 {} 电量异常: {}", deviceId, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * 根据身份证号查询最新位置信息
+     * 
+     * @param idCard 身份证号
+     * @return 区域名称，查询失败则返回null
+     * @author Shawn
+     * @date 2025-01-17
+     */
+    private String getLocationByIdCard(String idCard) {
+        if (idCard == null || idCard.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            // 构建查询最新位置的SQL，查询30分钟内最后一条记录
+            String sql = String.format(
+                    "SELECT time, area_name FROM %s.area_fence_data " +
+                            "WHERE id_card = '%s' " +
+                            "AND time <= NOW() " +
+                            "AND time >= NOW() - 30m " +
+                            "ORDER BY time DESC " +
+                            "LIMIT 1",
+                    tdengineDbName, idCard);
+
+            logger.debug("查询身份证 {} 位置的SQL: {}", idCard, sql);
+
+            // 执行查询
+            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
+
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                cn.hutool.json.JSONObject data = queryResult.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null && rows.size() > 0) {
+                    cn.hutool.json.JSONArray row = rows.getJSONArray(0);
+                    if (row != null && row.size() > 1) {
+                        String areaName = String.valueOf(row.get(1));
+                        logger.debug("身份证 {} 当前位置: {}", idCard, areaName);
+                        return areaName;
+                    }
+                }
+            } else {
+                logger.debug("查询身份证 {} 位置数据失败: {}", idCard, queryResult.getMsg());
+            }
+
+        } catch (Exception e) {
+            logger.warn("查询身份证 {} 位置异常: {}", idCard, e.getMessage());
         }
 
         return null;
