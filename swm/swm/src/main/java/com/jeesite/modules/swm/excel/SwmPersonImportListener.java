@@ -123,12 +123,6 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
         person.setName(model.getName());
         person.setPersonType(model.getPersonType());
         person.setGender(model.getGender());
-        person.setCompany(model.getCompany());
-        person.setDepartment(model.getDepartment());
-        person.setProdLine(model.getProdLine());
-        person.setWorkProcess(model.getWorkProcess());
-        person.setTeam(model.getTeam());
-        person.setJobType(model.getJobType());
 
         // 设置默认安全教育状态为"未开始"
         person.setSafetyEducation(SwmPerson.SafetyEducationEnum.NOT_STARTED);

@@ -258,10 +258,17 @@ public class SwmPersonController extends BaseController {
         String fileName = URLEncoder.encode("人员信息导入模板", "UTF-8").replaceAll("\\+", "%20");
         response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
 
-        // 创建模板并写入到响应流
-        EasyExcel.write(response.getOutputStream(), SwmPersonExcelModel.class)
-                .sheet("人员信息")
-                .doWrite(new ArrayList<>());
+        try {
+            // 创建模板并写入到响应流
+            EasyExcel.write(response.getOutputStream(), SwmPersonExcelModel.class)
+                    .sheet("人员信息")
+                    .doWrite(new ArrayList<>());
+        } catch (Exception e) {
+            logger.error("生成Excel模板失败", e);
+            // 返回错误信息
+            response.setContentType("application/json;charset=utf-8");
+            response.getWriter().write("{\"success\":false,\"message\":\"模板生成失败，请稍后重试\"}");
+        }
     }
 
     /**
