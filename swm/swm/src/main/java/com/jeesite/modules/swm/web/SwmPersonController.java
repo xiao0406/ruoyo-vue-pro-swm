@@ -976,12 +976,21 @@ public class SwmPersonController extends BaseController {
                                         personData.get("department") != null ? personData.get("department") : "一车间");
                             }
 
-                            // 创建增强的人员信息，添加设备编号、电量和位置信息
+                            // 获取运动状态
+                            String motionStatus = getMotionStatusByIdCard(idCard);
+
+                            // 如果没有查询到运动状态，默认为运动状态
+                            if (motionStatus == null || motionStatus.trim().isEmpty()) {
+                                motionStatus = "运动";
+                            }
+
+                            // 创建增强的人员信息，添加设备编号、电量、位置和运动状态信息
                             Map<String, Object> enhancedPersonData = new HashMap<>(personData);
                             enhancedPersonData.put("deviceId", deviceId);
                             enhancedPersonData.put("safetyHelmetId", deviceId); // 兼容前端字段名
                             enhancedPersonData.put("batteryLevel", batteryLevel); // 电量信息
                             enhancedPersonData.put("location", location); // 位置信息
+                            enhancedPersonData.put("motionStatus", motionStatus); // 运动状态信息
 
                             personsWithCoordinates.put(entry.getKey(), enhancedPersonData);
                         }
@@ -1123,6 +1132,58 @@ public class SwmPersonController extends BaseController {
 
         } catch (Exception e) {
             logger.warn("查询身份证 {} 位置异常: {}", idCard, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * 根据身份证号查询运动状态
+     * 
+     * @param idCard 身份证号
+     * @return 运动状态：1-运动，0-静止，null-查询失败
+     * @author Shawn
+     * @date 2025-01-17
+     */
+    private String getMotionStatusByIdCard(String idCard) {
+        if (idCard == null || idCard.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            // 构建查询运动状态的SQL，查询5分钟内是否有type为1或6的记录
+            String sql = String.format(
+                    "SELECT COUNT(*) as count FROM %s.helmet_ca_sos " +
+                            "WHERE id_card = '%s' " +
+                            "AND time <= NOW() " +
+                            "AND time >= NOW() - 5m " +
+                            "AND (type = '1' OR type = '6')",
+                    tdengineDbName, idCard);
+
+            logger.debug("查询身份证 {} 运动状态的SQL: {}", idCard, sql);
+
+            // 执行查询
+            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
+
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                cn.hutool.json.JSONObject data = queryResult.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null && rows.size() > 0) {
+                    cn.hutool.json.JSONArray row = rows.getJSONArray(0);
+                    if (row != null && row.size() > 0) {
+                        int count = Integer.parseInt(row.get(0).toString());
+                        String status = count > 0 ? "静止" : "运动";
+                        logger.debug("身份证 {} 运动状态: {} (5分钟内静默报警次数: {})", idCard, status, count);
+                        return status;
+                    }
+                }
+            } else {
+                logger.debug("查询身份证 {} 运动状态失败: {}", idCard, queryResult.getMsg());
+            }
+
+        } catch (Exception e) {
+            logger.warn("查询身份证 {} 运动状态异常: {}", idCard, e.getMessage());
         }
 
         return null;
