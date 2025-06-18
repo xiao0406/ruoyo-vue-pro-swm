@@ -36,7 +36,7 @@
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
         LEFT JOIN fms_prod_line fpl on fpl.id = wg.prod_line_id
         <where>
-            ${sqlMap.where.toSql()}
+            p.id is not null and ${sqlMap.where.toSql()}
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
