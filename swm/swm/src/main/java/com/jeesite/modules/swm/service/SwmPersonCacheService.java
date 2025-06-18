@@ -116,6 +116,7 @@ public class SwmPersonCacheService {
         personInfo.put("department", person.getDepartment()); // 所属车间
         personInfo.put("prodLine", person.getProdLine()); // 产线
         personInfo.put("team", person.getTeam()); // 所属班组
+        personInfo.put("jobType", person.getJobType()); // 工种
         personInfo.put("identityCard", person.getIdentityCard()); // 身份证号码
 
         return personInfo;
