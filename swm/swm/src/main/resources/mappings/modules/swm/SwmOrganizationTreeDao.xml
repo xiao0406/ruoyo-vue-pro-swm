@@ -57,12 +57,16 @@
     <!-- 获取员工节点 -->
     <select id="getWorkerNodes" resultMap="treeNodeResultMap">
         SELECT 
-            id,
-            work_group_id AS parent_id,
-            person_name AS title,
-            identity_code AS id_card
-        FROM fms_worker
-        WHERE work_group_id = #{workGroupId}
+            fw.id,
+            fw.work_group_id AS parent_id,
+            sp.name AS title,
+            fw.identity_code AS id_card
+        FROM fms_worker fw
+        INNER JOIN swm_person sp ON fw.identity_code COLLATE utf8mb4_general_ci = sp.identity_card COLLATE utf8mb4_general_ci
+        WHERE fw.work_group_id = #{workGroupId}
+        AND sp.identity_card IS NOT NULL
+        AND sp.status = '0'
+        AND sp.personnel_status = '1'
     </select>
     
 </mapper> 
