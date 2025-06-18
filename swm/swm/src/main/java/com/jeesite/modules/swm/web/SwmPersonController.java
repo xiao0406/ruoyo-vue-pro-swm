@@ -21,10 +21,13 @@ import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmPersonCacheService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
+import com.jeesite.modules.swm.service.TDengineService;
+import com.jeesite.modules.utils.R;
 import org.springframework.context.ApplicationContext;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -59,6 +62,12 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private SwmHelmetDeviceService swmHelmetDeviceService;
+
+    @Autowired
+    private TDengineService tdengineService;
+
+    @Value("${tdengine.dbname}")
+    private String tdengineDbName;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -908,6 +917,118 @@ public class SwmPersonController extends BaseController {
         }
 
         return result;
+    }
+
+    /**
+     * 获取当天有坐标数据的所有在职人员缓存信息
+     * 
+     * @return 人员信息映射
+     * @author Shawn
+     * @date 2025-01-17
+     */
+    @GetMapping(value = "getAllActivePersonsWithIdCardFromCache")
+    @ResponseBody
+    public Map<String, Object> getAllActivePersonsWithIdCardFromCache() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            SwmPersonCacheService cacheService = getPersonCacheService();
+            if (cacheService == null) {
+                result.put("success", false);
+                result.put("message", "缓存服务不可用");
+                return result;
+            }
+
+            // 从Redis内存中取出所有在职人员数据
+            Map<Object, Object> allPersons = cacheService.getAllActivePersons();
+
+            // 过滤出当天有坐标数据的人员
+            Map<Object, Object> personsWithCoordinates = new HashMap<>();
+            if (allPersons != null) {
+                for (Map.Entry<Object, Object> entry : allPersons.entrySet()) {
+                    if (entry.getValue() instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> personData = (Map<String, Object>) entry.getValue();
+
+                        // 获取身份证信息
+                        String idCard = (String) personData.get("identityCard");
+                        logger.info("身份证号码是：" + idCard);
+                        // 检查当天是否有坐标数据（不管身份证是否为空都检查）
+                        if (hasCoordinateDataToday(idCard)) {
+                            personsWithCoordinates.put(entry.getKey(), entry.getValue());
+                        }
+                    }
+                }
+            }
+
+            result.put("success", true);
+            result.put("data", personsWithCoordinates);
+            result.put("total", personsWithCoordinates.size());
+            result.put("message", "获取当天有坐标数据的在职人员缓存信息成功");
+
+        } catch (Exception e) {
+            logger.error("获取当天有坐标数据的在职人员缓存信息异常", e);
+            result.put("success", false);
+            result.put("message", "获取失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 检查指定身份证号的人员当天是否有坐标数据
+     * 
+     * @param idCard 身份证号（可以为空）
+     * @return true-有坐标数据，false-无坐标数据
+     * @author Shawn
+     * @date 2025-01-17
+     */
+    private boolean hasCoordinateDataToday(String idCard) {
+        // 如果身份证为空，直接返回false
+        if (idCard == null || idCard.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            // 获取当前日期的开始和结束时间，参考ExternalCoordinateDataServiceImpl的写法
+            String currentDate = cn.hutool.core.date.DateUtil.today();
+            String startTime = currentDate + " 00:00:00";
+            String endTime = currentDate + " 23:59:59";
+
+            // 构建查询当天坐标数据的SQL，使用具体时间范围而不是TODAY()函数
+            String sql = String.format(
+                    "SELECT COUNT(*) FROM %s.external_coordinate_data " +
+                            "WHERE id_card = '%s' " +
+                            "AND time >= '%s' AND time <= '%s' " +
+                            "LIMIT 1",
+                    tdengineDbName, idCard, startTime, endTime);
+
+            logger.info("检查身份证 {} 当天坐标数据的SQL: {}", idCard, sql);
+
+            // 执行查询
+            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
+
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                cn.hutool.json.JSONObject data = queryResult.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null && rows.size() > 0) {
+                    cn.hutool.json.JSONArray row = rows.getJSONArray(0);
+                    if (row != null && row.size() > 0) {
+                        int count = Integer.parseInt(row.get(0).toString());
+                        logger.info("身份证 {} 当天坐标数据条数: {}", idCard, count);
+                        return count > 0;
+                    }
+                }
+            } else {
+                logger.warn("查询身份证 {} 当天坐标数据失败: {}", idCard, queryResult.getMsg());
+            }
+
+        } catch (Exception e) {
+            logger.warn("检查身份证 {} 当天坐标数据异常: {}", idCard, e.getMessage());
+        }
+
+        return false;
     }
 
     /**
