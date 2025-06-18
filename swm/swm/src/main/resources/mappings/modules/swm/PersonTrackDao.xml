@@ -35,7 +35,7 @@
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ' 
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id 
         LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-        WHERE a.personnel_status = '1'
+        WHERE a.personnel_status = '1' and a.status = '0'
         <if test="searchName != null and searchName != ''">
             AND a.name LIKE CONCAT('%', #{searchName}, '%')
         </if>
