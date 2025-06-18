@@ -963,10 +963,14 @@ public class SwmPersonController extends BaseController {
                             // 获取设备编号
                             String deviceId = getDeviceIdByIdCard(idCard);
 
-                            // 创建增强的人员信息，添加设备编号
+                            // 获取电量信息
+                            Integer batteryLevel = getBatteryLevelByDeviceId(deviceId);
+
+                            // 创建增强的人员信息，添加设备编号和电量信息
                             Map<String, Object> enhancedPersonData = new HashMap<>(personData);
                             enhancedPersonData.put("deviceId", deviceId);
                             enhancedPersonData.put("safetyHelmetId", deviceId); // 兼容前端字段名
+                            enhancedPersonData.put("batteryLevel", batteryLevel); // 电量信息
 
                             personsWithCoordinates.put(entry.getKey(), enhancedPersonData);
                         }
@@ -1007,6 +1011,58 @@ public class SwmPersonController extends BaseController {
             logger.warn("从缓存获取身份证 {} 对应的设备编号失败: {}", idCard, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * 根据设备编号查询最新电量信息
+     * 
+     * @param deviceId 设备编号
+     * @return 电量百分比，查询失败则返回null
+     * @author Shawn
+     * @date 2025-01-17
+     */
+    private Integer getBatteryLevelByDeviceId(String deviceId) {
+        if (deviceId == null || deviceId.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            // 构建查询最新电量的SQL，参考SwmHelmetDeviceService的实现
+            String sql = String.format(
+                    "SELECT time, bat_l FROM %s.helmet_runde_ca_report_location " +
+                            "WHERE device_id = '%s' " +
+                            "AND time <= NOW() " +
+                            "AND time >= NOW() - 5m " +
+                            "ORDER BY time DESC " +
+                            "LIMIT 1",
+                    tdengineDbName, deviceId);
+
+            logger.debug("查询设备 {} 电量的SQL: {}", deviceId, sql);
+
+            // 执行查询
+            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
+
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                cn.hutool.json.JSONObject data = queryResult.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null && rows.size() > 0) {
+                    cn.hutool.json.JSONArray row = rows.getJSONArray(0);
+                    if (row != null && row.size() > 1) {
+                        int batteryLevel = row.getInt(1);
+                        logger.debug("设备 {} 当前电量: {}%", deviceId, batteryLevel);
+                        return batteryLevel;
+                    }
+                }
+            } else {
+                logger.debug("查询设备 {} 电量数据失败: {}", deviceId, queryResult.getMsg());
+            }
+
+        } catch (Exception e) {
+            logger.warn("查询设备 {} 电量异常: {}", deviceId, e.getMessage());
+        }
+
+        return null;
     }
 
     /**
