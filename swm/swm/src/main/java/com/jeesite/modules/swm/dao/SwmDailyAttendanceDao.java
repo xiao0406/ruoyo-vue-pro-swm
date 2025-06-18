@@ -15,6 +15,13 @@ import java.util.List;
  */
 @MyBatisDao
 public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
+    
+    /**
+     * 自定义更新方法，确保包含打卡时间字段
+     * @param swmDailyAttendance 日考勤记录
+     * @return 影响的行数
+     */
+    int updateWithClockTime(SwmDailyAttendance swmDailyAttendance);
 
     /**
      * 根据员工ID和日期查询考勤记录

@@ -292,5 +292,27 @@
         ORDER BY
         a.attendance_date DESC, a.update_date DESC
     </select>
+    
+    <!-- 自定义更新方法，确保包含打卡时间字段 -->
+    <update id="updateWithClockTime">
+        UPDATE `swm_daily_attendance` SET 
+            `employee_id` = #{employeeId}, 
+            `employee_name` = #{employeeName}, 
+            `attendance_date` = #{attendanceDate}, 
+            `work_time_range` = #{workTimeRange}, 
+            `clock_in_time` = #{clockInTime}, 
+            `clock_out_time` = #{clockOutTime}, 
+            `scheduled_hours` = #{scheduledHours}, 
+            `actual_hours` = #{actualHours}, 
+            `idle_hours` = #{idleHours}, 
+            `daily_efficiency` = #{dailyEfficiency}, 
+            `daily_achievement_rate` = #{dailyAchievementRate}, 
+            `attendance_normal` = #{attendanceNormal}, 
+            `current_position` = #{currentPosition}, 
+            `update_by` = #{updateBy}, 
+            `update_date` = #{updateDate}, 
+            `remarks` = #{remarks} 
+        WHERE `id` = #{id}
+    </update>
 
 </mapper>

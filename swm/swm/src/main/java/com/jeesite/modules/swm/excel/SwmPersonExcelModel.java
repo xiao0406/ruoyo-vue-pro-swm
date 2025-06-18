@@ -22,24 +22,6 @@ public class SwmPersonExcelModel {
     @ExcelProperty("性别")
     private String gender;
 
-    @ExcelProperty("所属单位")
-    private String company;
-
-    @ExcelProperty("所属车间")
-    private String department;
-
-    @ExcelProperty("产线")
-    private String prodLine;
-
-    @ExcelProperty("所属工序")
-    private String workProcess;
-
-    @ExcelProperty("所属班组")
-    private String team;
-
-    @ExcelProperty("所属工种")
-    private String jobType;
-
     @ExcelProperty("身份证号码")
     private String identityCard;
 

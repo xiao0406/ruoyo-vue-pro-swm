@@ -153,7 +153,16 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             swmDailyAttendance.setDailyEfficiency(BigDecimal.ZERO);
         }
 
-        super.save(swmDailyAttendance);
+        // 检查是否为更新操作且打卡时间不为空
+        if (!swmDailyAttendance.getIsNewRecord() && 
+            (swmDailyAttendance.getClockInTime() != null || swmDailyAttendance.getClockOutTime() != null)) {
+            // 使用自定义更新方法确保打卡时间字段被更新
+            logger.info("使用自定义更新方法，确保打卡时间字段被更新");
+            dao.updateWithClockTime(swmDailyAttendance);
+        } else {
+            // 否则使用标准保存方法
+            super.save(swmDailyAttendance);
+        }
     }
 
     /**
