@@ -31,7 +31,10 @@ public class TreeNode implements Serializable {
         this.value = id;
         this.key = id;
         this.nodeType = nodeType;
+
     }
+
+
 
     public String getId() {
         return id;
