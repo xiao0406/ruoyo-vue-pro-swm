@@ -4,7 +4,7 @@
 
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmPerson">
-        SELECT
+        SELECT DISTINCT
                a.id AS "id",
                a.name AS "name",
                a.person_type AS "personType",
@@ -36,7 +36,7 @@
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
         LEFT JOIN fms_prod_line fpl on fpl.id = wg.prod_line_id
         <where>
-            p.id is not null and ${sqlMap.where.toSql()}
+         ${sqlMap.where.toSql()}
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
