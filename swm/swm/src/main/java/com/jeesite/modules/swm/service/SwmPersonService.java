@@ -165,6 +165,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 通过员工ID查询员工
+     * 
      * @param employeeIds 员工ID列表
      * @return
      */
@@ -173,5 +174,18 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
             return Collections.emptyList();
         }
         return dao.findListByIds(employeeIds);
+    }
+
+    /**
+     * 根据部门条件查询在职人员
+     * 
+     * @param departmentCondition 部门条件参数，可以是车间ID、班组ID、产线ID、组织编码或身份证号
+     * @return 符合条件的在职人员列表
+     */
+    public List<SwmPerson> findPersonsByDepartmentCondition(String departmentCondition) {
+        if (departmentCondition == null || departmentCondition.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return dao.findPersonsByDepartmentCondition(departmentCondition);
     }
 }

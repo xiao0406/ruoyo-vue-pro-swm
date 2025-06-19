@@ -64,4 +64,49 @@
             #{item}
         </foreach>
     </select>
+
+    <!-- 根据部门条件查询在职人员 -->
+    <select id="findPersonsByDepartmentCondition" resultType="com.jeesite.modules.swm.entity.SwmPerson">
+        SELECT DISTINCT
+               a.id AS "id",                              
+               a.name AS "name",                          
+               a.person_type AS "personType",             
+               a.gender AS "gender",                      
+               o.office_name AS "company",                
+               p.position_name AS "department",           
+               fpl.prod_line_name AS "prodLine",          
+               wg.work_group_name AS "team",              
+               f.work_type AS "jobType",                  
+               a.safety_helmet_id AS "safetyHelmetId",    
+               a.personnel_status AS "personnelStatus",   
+               a.safety_education AS "safetyEducation",   
+               a.identity_card AS "identityCard",         
+               a.phone_number AS "phoneNumber",           
+               a.helmet_returned AS "helmetReturned",     
+               a.departure_type AS "departureType",       
+               a.departure_reason AS "departureReason",   
+               a.departure_date AS "departureDate",       
+               a.create_by AS "createBy",                 
+               a.create_date AS "createDate",             
+               a.update_by AS "updateBy",                 
+               a.update_date AS "updateDate",             
+               a.remarks AS "remarks",                    
+               a.status AS "status"                       
+        FROM swm_person a
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
+        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
+        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
+        WHERE a.personnel_status = '1' 
+        AND (
+            p.id = #{departmentCondition}  
+            OR wg.id = #{departmentCondition}  
+            OR fpl.id = #{departmentCondition} 
+            OR o.office_code = #{departmentCondition} 
+            OR a.identity_card = #{departmentCondition}
+        )
+        AND a.status = '0'
+        ORDER BY a.update_date DESC
+    </select>
 </mapper>

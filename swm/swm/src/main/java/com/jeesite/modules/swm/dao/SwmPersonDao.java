@@ -35,4 +35,12 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
      * @return 人员信息
      */
     List<SwmPerson> findListByIds(@Param("employeeIds") Set<String> employeeIds);
+
+    /**
+     * 根据部门条件查询在职人员
+     * 
+     * @param departmentCondition 部门条件参数，可以是车间ID、班组ID、产线ID、组织编码或身份证号
+     * @return 符合条件的在职人员列表
+     */
+    List<SwmPerson> findPersonsByDepartmentCondition(@Param("departmentCondition") String departmentCondition);
 }

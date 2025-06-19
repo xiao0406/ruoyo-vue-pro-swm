@@ -79,22 +79,22 @@ public class SwmSafetyEducationController extends BaseController {
     public Page<SwmSafetyEducation> listData(SwmSafetyEducation swmSafetyEducation, HttpServletRequest request,
             HttpServletResponse response) {
         // 添加日志记录请求参数
-        logger.info("接收到安全教育列表查询请求，参数: pageNo={}, pageSize={}, safetyEducationType={}, participationType={}, theme={}", 
-            request.getParameter("pageNo"), 
-            request.getParameter("pageSize"), 
-            request.getParameter("safety_education_type"),
-            request.getParameter("participation_type"),
-            request.getParameter("theme"));
-            
+        logger.info("接收到安全教育列表查询请求，参数: pageNo={}, pageSize={}, safetyEducationType={}, participationType={}, theme={}",
+                request.getParameter("pageNo"),
+                request.getParameter("pageSize"),
+                request.getParameter("safety_education_type"),
+                request.getParameter("participation_type"),
+                request.getParameter("theme"));
+
         // 创建分页对象
         Page<SwmSafetyEducation> page = new Page<>(request, response);
-        
+
         // 处理前端请求参数
         String theme = request.getParameter("theme");
         String safetyEducationType = request.getParameter("safety_education_type");
         String participationType = request.getParameter("participation_type");
         String safetyStatus = request.getParameter("status");
-        
+
         // 记录查询条件
         StringBuilder conditions = new StringBuilder("查询条件:");
         if (theme != null && !theme.isEmpty()) {
@@ -110,42 +110,42 @@ public class SwmSafetyEducationController extends BaseController {
             conditions.append(" 状态=").append(safetyStatus);
         }
         logger.info(conditions.toString());
-        
+
         // 直接调用数据库查询，使用动态SQL过滤
         List<SwmSafetyEducation> allRecords = swmSafetyEducationService.findByCustomConditions(
-            theme, safetyEducationType, participationType, safetyStatus);
-        
+                theme, safetyEducationType, participationType, safetyStatus);
+
         logger.info("从数据库获取记录总数: {}", allRecords.size());
-        
+
         // 设置分页结果
         int pageNo = page.getPageNo();
         int pageSize = page.getPageSize();
         int count = allRecords.size();
-        
+
         // 计算起止索引
         int fromIndex = (pageNo - 1) * pageSize;
         int toIndex = Math.min(fromIndex + pageSize, count);
-        
+
         // 防止越界
         if (fromIndex >= count) {
             fromIndex = Math.max(0, count - pageSize);
             toIndex = count;
         }
-        
+
         // 获取当前页数据
         List<SwmSafetyEducation> pageRecords = (fromIndex < toIndex) ? allRecords.subList(fromIndex, toIndex)
                 : new ArrayList<>();
-        
+
         // 处理枚举显示值并将状态替换为文本
         for (SwmSafetyEducation education : pageRecords) {
             // 获取枚举类型的文本值
             String typeText = education.getSafetyEducationTypeText();
             String participationTypeText = education.getParticipationTypeText();
-            
+
             // 将类型字段替换为文本值（safetyStatus已经是文本值，不需要转换）
             education.setSafetyEducationType(typeText);
             education.setParticipationType(participationTypeText);
-            
+
             // 处理参与对象字段的展示
             String participants = education.getParticipants();
             if (participants != null && !participants.isEmpty()) {
@@ -165,12 +165,12 @@ public class SwmSafetyEducationController extends BaseController {
                     }
                 }
             }
-            
+
             // 确保内容描述不为null
             if (education.getContentDescription() == null) {
                 education.setContentDescription("");
             }
-            
+
             // 确保参与对象名称不为null，并转换为与participants相同的格式
             String participantsName = education.getParticipantsName();
             if (participantsName == null) {
@@ -179,7 +179,8 @@ public class SwmSafetyEducationController extends BaseController {
                 try {
                     // 解析JSON数组
                     ObjectMapper mapper = new ObjectMapper();
-                    List<String> nameList = mapper.readValue(participantsName, new TypeReference<List<String>>() {});
+                    List<String> nameList = mapper.readValue(participantsName, new TypeReference<List<String>>() {
+                    });
                     // 将列表转换为逗号分隔的字符串
                     education.setParticipantsName(String.join(", ", nameList));
                 } catch (Exception e) {
@@ -187,28 +188,28 @@ public class SwmSafetyEducationController extends BaseController {
                 }
             }
         }
-        
+
         // 设置分页对象属性
         page.setList(pageRecords);
         page.setCount(count);
-        
+
         // 记录过滤和分页后的结果明细
         StringBuilder resultSummary = new StringBuilder();
         resultSummary.append("过滤后返回的记录: [");
         for (SwmSafetyEducation record : pageRecords) {
             resultSummary.append("\n  {id=").append(record.getId())
-                .append(", theme=").append(record.getTheme())
-                .append(", type=").append(record.getSafetyEducationType())
-                .append(", pType=").append(record.getParticipationType())
-                .append("},");
+                    .append(", theme=").append(record.getTheme())
+                    .append(", type=").append(record.getSafetyEducationType())
+                    .append(", pType=").append(record.getParticipationType())
+                    .append("},");
         }
         if (!pageRecords.isEmpty()) {
             resultSummary.deleteCharAt(resultSummary.length() - 1);
         }
         resultSummary.append("\n]");
-        logger.info("查询结果: 总记录数={}, 当前页={}, 每页记录数={}, 当前页记录数={}\n{}", 
-            count, page.getPageNo(), page.getPageSize(), pageRecords.size(), resultSummary);
-        
+        logger.info("查询结果: 总记录数={}, 当前页={}, 每页记录数={}, 当前页记录数={}\n{}",
+                count, page.getPageNo(), page.getPageSize(), pageRecords.size(), resultSummary);
+
         return page;
     }
 
@@ -360,13 +361,13 @@ public class SwmSafetyEducationController extends BaseController {
             String safetyEducationType = swmSafetyEducation.getSafetyEducationType();
             String participationType = swmSafetyEducation.getParticipationType();
             String safetyStatus = swmSafetyEducation.getSafetyStatus();
-            
+
             // 使用自定义查询方法直接从数据库获取过滤后的记录
             List<SwmSafetyEducation> filteredRecords = swmSafetyEducationService.findByCustomConditions(
-                theme, safetyEducationType, participationType, safetyStatus);
-            
+                    theme, safetyEducationType, participationType, safetyStatus);
+
             logger.info("导出数据：使用条件查询获取到 {} 条记录", filteredRecords.size());
-            
+
             // 处理枚举显示值并将状态替换为文本
             for (SwmSafetyEducation education : filteredRecords) {
                 // 获取枚举类型的文本值
@@ -400,11 +401,14 @@ public class SwmSafetyEducationController extends BaseController {
                 // 确保参与对象名称不为null
                 if (education.getParticipantsName() == null) {
                     education.setParticipantsName("");
-                } else if (education.getParticipantsName().startsWith("[") && education.getParticipantsName().endsWith("]")) {
+                } else if (education.getParticipantsName().startsWith("[")
+                        && education.getParticipantsName().endsWith("]")) {
                     try {
                         // 解析JSON数组
                         ObjectMapper mapper = new ObjectMapper();
-                        List<String> nameList = mapper.readValue(education.getParticipantsName(), new TypeReference<List<String>>() {});
+                        List<String> nameList = mapper.readValue(education.getParticipantsName(),
+                                new TypeReference<List<String>>() {
+                                });
                         // 将列表转换为逗号分隔的字符串
                         education.setParticipantsName(String.join(", ", nameList));
                     } catch (Exception e) {
@@ -702,7 +706,7 @@ public class SwmSafetyEducationController extends BaseController {
     /**
      * 根据部门更新人员的安全教育状态
      * 
-     * @param department 部门名称
+     * @param department 部门参数，可以是车间ID、班组ID、产线ID、组织编码或身份证号
      * @return 更新的记录数
      */
     private int updatePersonByDepartment(String department) {
@@ -711,22 +715,14 @@ public class SwmSafetyEducationController extends BaseController {
         }
 
         try {
-            // 创建查询条件
-            SwmPerson query = new SwmPerson();
-            query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 只更新在职人员
-
-            // 添加OR条件：部门 = department OR 班组 = department
-            query.getSqlMap().getDataScope().addFilter("departmentOrTeam",
-                    "(a.department = '" + department + "' OR a.team = '" + department + "')");
-
-            // 查询符合条件的人员
-            List<SwmPerson> personList = swmPersonService.findList(query);
+            // 使用自定义SQL查询符合条件的人员
+            List<SwmPerson> personList = swmPersonService.findPersonsByDepartmentCondition(department);
             if (personList == null || personList.isEmpty()) {
-                logger.info("未找到部门或班组 [{}] 的人员记录", department);
+                logger.info("根据条件 [{}] 未找到人员记录", department);
                 return 0;
             }
 
-            logger.info("部门或班组 [{}] 找到 {} 名人员", department, personList.size());
+            logger.info("根据条件 [{}] 找到 {} 名人员", department, personList.size());
 
             // 更新每个人员的安全教育状态
             int count = 0;
@@ -739,10 +735,10 @@ public class SwmSafetyEducationController extends BaseController {
                 }
             }
 
-            logger.info("部门或班组 [{}] 共更新了 {} 名人员的安全教育状态", department, count);
+            logger.info("根据条件 [{}] 共更新了 {} 名人员的安全教育状态", department, count);
             return count;
         } catch (Exception e) {
-            logger.error("更新部门或班组 [{}] 人员的安全教育状态时出现异常: {}", department, e.getMessage());
+            logger.error("根据条件 [{}] 更新人员安全教育状态时出现异常: {}", department, e.getMessage());
             return 0;
         }
     }
