@@ -8,6 +8,8 @@ import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 预警管理表实体类
@@ -32,6 +34,7 @@ import java.util.Date;
         @Column(name = "device_id", attrName = "deviceId", label = "设备ID"),
         @Column(name = "id_card", attrName = "idCard", label = "身份证号"),
         @Column(name = "front_alarm", attrName = "frontAlarm", label = "前端弹框提示", comment = "前端全局弹框提示（0不弹框，1弹框）"),
+        @Column(name = "type", attrName = "type", label = "告警类型", comment = "与alarm_config表的alarm_key匹配"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.warning_time DESC")
 public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
@@ -133,18 +136,24 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private String deviceId; // 设备ID
     private String idCard; // 身份证号
     private String frontAlarm; // 前端弹框提示
+    private String type; // 告警类型，与alarm_config表的alarm_key匹配
 
     // 用于显示的属性，不对应数据库字段
     private String warningTypeText; // 预警类型显示文本
     private String handleStatusText; // 处置状态显示文本
 
+    // 临时数据，不会被持久化到数据库
+    private transient Map<String, Object> extraData;
+
     public SwmWarningManagement() {
         this(null);
         this.handleStatus = HandleStatusEnum.UNHANDLED; // 默认未处置
+        this.extraData = new HashMap<>();
     }
 
     public SwmWarningManagement(String id) {
         super(id);
+        this.extraData = new HashMap<>();
     }
 
     @Length(min = 0, max = 100, message = "人员名称不能超过100个字符")
@@ -310,6 +319,14 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
         this.frontAlarm = frontAlarm;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     // 添加预警时间不为空的查询条件
     public Boolean getWarningTime_isNotNull() {
         return sqlMap.getWhere().getValue("warning_time", QueryType.IS_NOT_NULL);
@@ -330,5 +347,35 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
         if (isNotNull != null && isNotNull) {
             sqlMap.getWhere().and("alarm_time", QueryType.IS_NOT_NULL,null);
         }
+    }
+
+    /**
+     * 获取临时数据
+     */
+    public Map<String, Object> getExtraData() {
+        if (extraData == null) {
+            extraData = new HashMap<>();
+        }
+        return extraData;
+    }
+
+    /**
+     * 设置临时数据
+     */
+    public void setExtraData(String key, Object value) {
+        if (extraData == null) {
+            extraData = new HashMap<>();
+        }
+        extraData.put(key, value);
+    }
+
+    /**
+     * 获取指定键的临时数据
+     */
+    public Object getExtraDataValue(String key) {
+        if (extraData == null) {
+            return null;
+        }
+        return extraData.get(key);
     }
 }

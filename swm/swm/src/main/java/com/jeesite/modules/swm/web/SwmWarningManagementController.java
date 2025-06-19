@@ -1,9 +1,12 @@
 package com.jeesite.modules.swm.web;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.swm.entity.SwmAlarmConfig;
 import com.jeesite.modules.swm.entity.SwmHandleRecord;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
 import com.jeesite.modules.swm.service.SwmHandleRecordService;
@@ -27,16 +30,18 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * 预警管理Controller
- * 
+ * 预警管理表Controller
+ *
  * @author zwf
  * @version 2025-05-16
  */
 @Controller
 @RequestMapping(value = "${adminPath}/warningManagement")
-@Api(value = "预警管理接口", tags = "预警管理接口")
+@Api(tags = "预警管理")
 public class SwmWarningManagementController extends BaseController {
 
     private static final Logger logger = LoggerFactory.getLogger(SwmWarningManagementController.class);
@@ -366,17 +371,23 @@ public class SwmWarningManagementController extends BaseController {
     }
 
     /**
-     * 获取需要弹框显示的告警数据
+     * 获取需要弹窗显示的告警
+     * 返回两类告警数据：
+     * 1. confirmList：需要确认的告警列表（配置为enableAlarm=1且needConfirm=1）
+     * 2. notificationList：只需通知的告警列表（配置为enableAlarm=1，包含needConfirm=0和needConfirm=1的告警）
      */
     @RequestMapping(value = "getPopupWarnings")
     @ResponseBody
-    @ApiOperation("获取需要弹框显示的告警数据")
-    public R<List<Map<String, Object>>> getPopupWarnings() {
-        List<SwmWarningManagement> list = swmWarningManagementService.getPopupWarnings();
-        List<Map<String, Object>> result = new ArrayList<>();
+    public Map<String, Object> getPopupWarnings() {
+        Map<String, Object> resultData = swmWarningManagementService.getPopupWarnings();
         
-        if (list != null && !list.isEmpty()) {
-            for (SwmWarningManagement item : list) {
+        // 处理需要确认的告警数据
+        @SuppressWarnings("unchecked")
+        List<SwmWarningManagement> confirmList = (List<SwmWarningManagement>) resultData.get("confirmList");
+        List<Map<String, Object>> confirmResult = new ArrayList<>();
+        
+        if (confirmList != null && !confirmList.isEmpty()) {
+            for (SwmWarningManagement item : confirmList) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("id", item.getId());
                 map.put("personName", item.getPersonName());
@@ -384,13 +395,60 @@ public class SwmWarningManagementController extends BaseController {
                 map.put("warningTypeText", item.getWarningTypeText());
                 map.put("warningContent", item.getWarningContent());
                 map.put("warningTime", item.getWarningTime());
-                map.put("idCard", item.getIdCard());
                 
-                result.add(map);
+                // 附加告警配置信息
+                SwmAlarmConfig config = (SwmAlarmConfig) item.getExtraDataValue("alarmConfig");
+                if (config != null) {
+                    map.put("alarmName", config.getAlarmName());
+                    map.put("dialogPosition", config.getDialogPosition());
+                }
+                
+                confirmResult.add(map);
             }
         }
         
-        return R.ok(result);
+        // 处理通知类告警数据
+        @SuppressWarnings("unchecked")
+        List<SwmWarningManagement> notificationList = (List<SwmWarningManagement>) resultData.get("notificationList");
+        List<Map<String, Object>> notificationResult = new ArrayList<>();
+        
+        if (notificationList != null && !notificationList.isEmpty()) {
+            for (SwmWarningManagement item : notificationList) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", item.getId());
+                map.put("personName", item.getPersonName());
+                map.put("warningType", item.getWarningType());
+                map.put("warningTypeText", item.getWarningTypeText());
+                map.put("warningContent", item.getWarningContent());
+                map.put("warningTime", item.getWarningTime());
+                
+                // 附加告警配置信息
+                SwmAlarmConfig config = (SwmAlarmConfig) item.getExtraDataValue("alarmConfig");
+                if (config != null) {
+                    map.put("alarmName", config.getAlarmName());
+                }
+                
+                // 添加是否需要确认的标记
+                Boolean needConfirm = (Boolean) item.getExtraDataValue("needConfirm");
+                map.put("needConfirm", needConfirm != null ? needConfirm : false);
+                
+                notificationResult.add(map);
+            }
+        }
+        
+        // 构建返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 0);
+        result.put("msg", "success");
+        Map<String, Object> data = new HashMap<>();
+        data.put("confirmList", confirmResult);
+        data.put("notificationList", notificationResult);
+        result.put("data", data);
+        
+        logger.info("返回告警数据，confirmList: {}条, notificationList: {}条", 
+                  confirmResult.size(), notificationResult.size());
+        
+        return result;
     }
 
     /**
