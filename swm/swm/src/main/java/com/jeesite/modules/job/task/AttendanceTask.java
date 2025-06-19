@@ -191,11 +191,9 @@ public class AttendanceTask {
 
             // 3. 为每个在职人员创建/更新考勤记录
             for (SwmPerson person : activePersons) {
-                // 3.1 检查是否已有当天的考勤记录
-                SwmDailyAttendance attendanceQuery = new SwmDailyAttendance();
-                attendanceQuery.setEmployeeId(person.getId());
-                attendanceQuery.setAttendanceDate(today);
-                SwmDailyAttendance existingAttendance = swmDailyAttendanceService.get(attendanceQuery);
+                // 3.1 检查是否已有当天的考勤记录（使用专门的查询方法确保排重）
+                SwmDailyAttendance existingAttendance = swmDailyAttendanceService
+                        .findByEmployeeIdAndDate(person.getId(), today);
 
                 // 3.2 获取员工的排班信息
                 String workTimeRange = getWorkTimeRangeForPerson(person, today);
