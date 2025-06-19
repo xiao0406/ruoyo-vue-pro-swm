@@ -141,6 +141,7 @@ public class SwmBeaconStationController extends BaseController {
             data.put("beaconStatusText", swmBeaconStation.getBeaconStatusText());
             data.put("deployStatus", swmBeaconStation.getDeployStatus());
             data.put("deployStatusText", swmBeaconStation.getDeployStatusText());
+            data.put("streamUrl", swmBeaconStation.getStreamUrl());
             data.put("remarks", swmBeaconStation.getRemarks());
 
             result.putAll(data);

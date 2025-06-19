@@ -36,6 +36,7 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "gps_latitude", attrName = "gpsLatitude", label = "GPS纬度"),
         @Column(name = "beacon_status", attrName = "beaconStatus", label = "信标状态"),
         @Column(name = "deploy_status", attrName = "deployStatus", label = "部署状态"),
+        @Column(name = "stream_url", attrName = "streamUrl", label = "推流地址"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
@@ -52,6 +53,8 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
         public static final String FENCE = "2";
         /** 危险源信标 */
         public static final String DANGEROUS_SOURCE = "3";
+        /** 摄像头 */
+        public static final String CAMERA = "4";
 
         /**
          * 获取信标类型显示文本
@@ -111,6 +114,7 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     private Double gpsLatitude; // GPS纬度
     private String beaconStatus; // 信标状态
     private String deployStatus; // 部署状态
+    private String streamUrl; // 推流地址
 
     public SwmBeaconStation() {
         super();
@@ -221,6 +225,15 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     public String getDeployStatusText() {
         return DeployStatusEnum.getText(this.deployStatus);
+    }
+
+    @Length(min = 0, max = 255, message = "推流地址不能超过255个字符")
+    public String getStreamUrl() {
+        return streamUrl;
+    }
+
+    public void setStreamUrl(String streamUrl) {
+        this.streamUrl = streamUrl;
     }
 
     public Double getPixelX() {
