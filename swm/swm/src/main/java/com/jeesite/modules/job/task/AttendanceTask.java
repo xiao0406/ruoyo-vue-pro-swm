@@ -39,6 +39,94 @@ public class AttendanceTask {
     private SwmScheduleTimeService swmScheduleTimeService;
 
     /**
+     * 计算怠工时长定时任务
+     * 
+     * @author: Shawn
+     * @date: 2025/6/20
+     */
+    @XxlJob("calculateIdleHours")
+    public void calculateIdleHours() {
+        try {
+            XxlJobHelper.log("开始执行怠工时长计算任务...");
+
+            // 获取传入的日期参数，如果没有传入则使用当天
+            String jobParam = XxlJobHelper.getJobParam();
+            Date targetDate;
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+            if (jobParam != null && !jobParam.trim().isEmpty()) {
+                try {
+                    targetDate = dateFormat.parse(jobParam.trim());
+                    XxlJobHelper.log("使用传入的日期参数: {}", jobParam.trim());
+                } catch (Exception e) {
+                    XxlJobHelper.log("日期参数格式错误，使用当天日期。参数: {}", jobParam);
+                    targetDate = new Date();
+                }
+            } else {
+                targetDate = new Date();
+                XxlJobHelper.log("未传入日期参数，使用当天日期");
+            }
+
+            String dateStr = dateFormat.format(targetDate);
+
+            // 查询指定日期的所有考勤记录
+            SwmDailyAttendance query = new SwmDailyAttendance();
+            query.setAttendanceDate(targetDate);
+            query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉。
+            List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
+
+            if (attendanceList.isEmpty()) {
+                XxlJobHelper.log("{}没有考勤记录，无需计算怠工时长", dateStr);
+                return;
+            }
+
+            int successCount = 0;
+            int failCount = 0;
+
+            // 为每条考勤记录计算怠工时长
+            for (SwmDailyAttendance record : attendanceList) {
+                try {
+                    // 获取员工身份证号
+                    String idCard = swmDailyAttendanceService.getIdCardByEmployeeId(record.getEmployeeId());
+                    if (idCard != null) {
+                        // 获取工作时间范围
+                        String workTimeRange = record.getWorkTimeRange();
+                        if (workTimeRange == null || workTimeRange.trim().isEmpty()) {
+                            workTimeRange = "08:00-17:00"; // 默认工作时间
+                            XxlJobHelper.log("员工[{}]{}工作时间范围为空，使用默认时间范围: {}",
+                                    record.getEmployeeId(), record.getEmployeeName(), workTimeRange);
+                        }
+
+                        // 计算怠工时长，传递工作时间范围
+                        double calculatedIdleHours = swmDailyAttendanceService.calculateIdleTimeByIdCard(idCard,
+                                dateStr, workTimeRange);
+
+                        // 更新怠工时长字段
+                        record.setIdleHours(BigDecimal.valueOf(calculatedIdleHours).setScale(2, RoundingMode.HALF_UP));
+                        swmDailyAttendanceService.update(record);
+
+                        successCount++;
+                        XxlJobHelper.log("员工[{}]{}的怠工时长计算完成: {} 小时 (工作时间: {})",
+                                record.getEmployeeId(), record.getEmployeeName(), calculatedIdleHours, workTimeRange);
+                    } else {
+                        XxlJobHelper.log("员工[{}]{}未找到身份证号，跳过计算",
+                                record.getEmployeeId(), record.getEmployeeName());
+                        failCount++;
+                    }
+                } catch (Exception e) {
+                    XxlJobHelper.log("计算员工[{}]{}怠工时长失败: {}",
+                            record.getEmployeeId(), record.getEmployeeName(), e.getMessage());
+                    failCount++;
+                }
+            }
+
+            XxlJobHelper.log("怠工时长计算任务完成。成功: {}条，失败: {}条", successCount, failCount);
+        } catch (Exception e) {
+            XxlJobHelper.log("怠工时长计算任务执行异常", e);
+        }
+    }
+
+    /**
      * 统计当月考勤数据
      */
     @XxlJob("calculateMonthlyAttendance")
@@ -178,7 +266,7 @@ public class AttendanceTask {
             SwmPerson query = new SwmPerson();
             query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 在职状态
             query.setStatus("0");// 正常状态
-//            query.setIdentityCard("430312122334343333"); // todo为了测试身份证先写死
+            // query.setIdentityCard("430312122334343333"); // todo为了测试身份证先写死
             List<SwmPerson> activePersons = swmPersonService.findList(query);
 
             if (activePersons.isEmpty()) {

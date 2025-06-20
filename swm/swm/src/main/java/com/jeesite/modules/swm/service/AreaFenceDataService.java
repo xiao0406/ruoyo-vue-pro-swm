@@ -439,15 +439,16 @@ public class AreaFenceDataService {
     /**
      * 根据身份证号计算怠工时长
      * 
-     * @param idCard 身份证号
-     * @param date   日期 (yyyy-MM-dd格式)
+     * @param idCard        身份证号
+     * @param date          日期 (yyyy-MM-dd格式)
+     * @param workTimeRange 工作时间范围，格式如"07:00-18:00"或"18:00-03:00"
      * @return 怠工时长(小时)
      * @author Shawn
-     * @date 2025-01-27
+     * @date 2025/6/20
      */
-    public double calculateIdleTimeByIdCard(String idCard, String date) {
+    public double calculateIdleTimeByIdCard(String idCard, String date, String workTimeRange) {
         try {
-            logger.info("开始计算身份证号为 {} 在 {} 的怠工时长", idCard, date);
+            logger.info("开始计算身份证号为 {} 在 {} 工作时间范围 {} 的怠工时长", idCard, date, workTimeRange);
 
             // 1. 获取字典数据 - 查找所有区域配置
             List<DictData> areaList = getAreaFenceDataDictList();
@@ -457,22 +458,37 @@ public class AreaFenceDataService {
             }
 
             // 2. 查询心跳数据
-            List<Map<String, Object>> heartbeatData = queryAreaFenceDataByIdCardAndAreas(idCard, areaList, date);
+            List<Map<String, Object>> heartbeatData = queryAreaFenceDataByIdCardAndAreas(idCard, areaList, date,
+                    workTimeRange);
             if (heartbeatData.isEmpty()) {
-                logger.warn("身份证号 {} 在 {} 未找到心跳数据", idCard, date);
+                logger.warn("身份证号 {} 在 {} 工作时间范围 {} 未找到心跳数据", idCard, date, workTimeRange);
                 return 0.0;
             }
 
             // 3. 计算怠工时长
             double idleHours = calculateIdleHoursFromData(heartbeatData);
-            logger.info("身份证号 {} 在 {} 的怠工时长为: {} 小时", idCard, date, idleHours);
+            logger.info("身份证号 {} 在 {} 工作时间范围 {} 的怠工时长为: {} 小时", idCard, date, workTimeRange, idleHours);
 
             return idleHours;
 
         } catch (Exception e) {
-            logger.error("计算怠工时长失败，身份证号: {}, 日期: {}", idCard, date, e);
+            logger.error("计算怠工时长失败，身份证号: {}, 日期: {}, 工作时间范围: {}", idCard, date, workTimeRange, e);
             return 0.0;
         }
+    }
+
+    /**
+     * 根据身份证号计算怠工时长（兼容原方法）
+     * 
+     * @param idCard 身份证号
+     * @param date   日期 (yyyy-MM-dd格式)
+     * @return 怠工时长(小时)
+     * @author Shawn
+     * @date 2025/6/20
+     */
+    public double calculateIdleTimeByIdCard(String idCard, String date) {
+        // 兼容原方法，使用默认时间范围
+        return calculateIdleTimeByIdCard(idCard, date, "08:00-17:00");
     }
 
     /**
@@ -494,13 +510,14 @@ public class AreaFenceDataService {
     /**
      * 根据身份证和区域ID列表查询area_fence_data表中的数据
      * 
-     * @param idCard    身份证号
-     * @param checkDate 查询日期
-     * @param areaIds   区域ID列表
+     * @param idCard        身份证号
+     * @param areaList      区域配置列表
+     * @param checkDate     查询日期
+     * @param workTimeRange 工作时间范围，格式如"07:00-18:00"或"18:00-03:00"
      * @return 区域围栏数据列表
      */
     private List<Map<String, Object>> queryAreaFenceDataByIdCardAndAreas(String idCard, List<DictData> areaList,
-            String checkDate) {
+            String checkDate, String workTimeRange) {
         List<Map<String, Object>> allData = new ArrayList<>();
 
         try {
@@ -514,16 +531,54 @@ public class AreaFenceDataService {
             }
             areaIdCondition.append(")");
 
-            // 查询当天该身份证的所有区域围栏数据，按时间排序
+            // 解析工作时间范围并构建查询时间
+            String[] times = workTimeRange.split("-");
+            if (times.length != 2) {
+                logger.warn("工作时间范围格式错误: {}, 使用默认时间范围", workTimeRange);
+                times = new String[] { "08:00", "17:00" };
+            }
+
+            String startTime = times[0];
+            String endTime = times[1];
+
+            String queryStartDateTime;
+            String queryEndDateTime;
+
+            // 判断是否跨天班次
+            if (startTime.compareTo(endTime) > 0) {
+                // 跨天班次，如"18:00-03:00"
+                queryStartDateTime = checkDate + " " + startTime + ":00";
+                // 结束时间需要加一天
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                    Date checkDateParsed = sdf.parse(checkDate);
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(checkDateParsed);
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                    String nextDay = sdf.format(cal.getTime());
+                    queryEndDateTime = nextDay + " " + endTime + ":00";
+                } catch (Exception e) {
+                    logger.error("解析跨天班次日期失败", e);
+                    queryEndDateTime = checkDate + " 23:59:59";
+                }
+                logger.info("跨天班次查询时间范围: {} 到 {}", queryStartDateTime, queryEndDateTime);
+            } else {
+                // 普通班次，如"07:00-18:00"
+                queryStartDateTime = checkDate + " " + startTime + ":00";
+                queryEndDateTime = checkDate + " " + endTime + ":00";
+                logger.info("普通班次查询时间范围: {} 到 {}", queryStartDateTime, queryEndDateTime);
+            }
+
+            // 查询指定工作时间范围内该身份证的所有区域围栏数据，按时间排序
             String sql = String.format(
                     "SELECT time, x, y, area_name, area_id, device_id, id_card " +
                             "FROM %s.area_fence_data " +
                             "WHERE id_card = '%s' " +
-                            "AND time >= '%s 00:00:00' " +
-                            "AND time <= '%s 23:59:59' " +
+                            "AND time >= '%s' " +
+                            "AND time <= '%s' " +
                             "AND %s " +
                             "ORDER BY time ASC",
-                    dbname, idCard, checkDate, checkDate, areaIdCondition.toString());
+                    dbname, idCard, queryStartDateTime, queryEndDateTime, areaIdCondition.toString());
 
             logger.debug("查询区域围栏数据SQL: {}", sql);
 
@@ -550,7 +605,7 @@ public class AreaFenceDataService {
                     }
                 }
 
-                logger.info("查询到身份证 {} 在 {} 的区域围栏数据条数: {}", idCard, checkDate, allData.size());
+                logger.info("查询到身份证 {} 在 {} 工作时间范围 {} 的区域围栏数据条数: {}", idCard, checkDate, workTimeRange, allData.size());
             } else {
                 logger.warn("查询区域围栏数据失败: {}", response.getMsg());
             }
@@ -560,6 +615,20 @@ public class AreaFenceDataService {
         }
 
         return allData;
+    }
+
+    /**
+     * 根据身份证和区域ID列表查询area_fence_data表中的数据（兼容原方法）
+     * 
+     * @param idCard    身份证号
+     * @param areaList  区域配置列表
+     * @param checkDate 查询日期
+     * @return 区域围栏数据列表
+     */
+    private List<Map<String, Object>> queryAreaFenceDataByIdCardAndAreas(String idCard, List<DictData> areaList,
+            String checkDate) {
+        // 兼容原方法，使用默认时间范围
+        return queryAreaFenceDataByIdCardAndAreas(idCard, areaList, checkDate, "08:00-17:00");
     }
 
     /**

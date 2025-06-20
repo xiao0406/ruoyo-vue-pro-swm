@@ -600,6 +600,20 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     /**
      * 根据身份证号计算怠工时长
      * 
+     * @param idCard        身份证号
+     * @param date          日期
+     * @param workTimeRange 工作时间范围
+     * @return 怠工时长
+     * @author Shawn
+     * @date 2025/6/20
+     */
+    public double calculateIdleTimeByIdCard(String idCard, String date, String workTimeRange) {
+        return areaFenceDataService.calculateIdleTimeByIdCard(idCard, date, workTimeRange);
+    }
+
+    /**
+     * 根据身份证号计算怠工时长
+     * 
      * @param idCard 身份证号
      * @param date   日期
      * @return 怠工时长

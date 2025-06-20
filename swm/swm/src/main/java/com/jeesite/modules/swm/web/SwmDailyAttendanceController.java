@@ -572,4 +572,29 @@ public class SwmDailyAttendanceController extends BaseController {
         }
     }
 
+    /**
+     * 手动计算怠工时长
+     * 用于测试或手动触发怠工时长计算定时任务
+     * 
+     * @author: Shawn
+     * @date: 2025/6/20
+     */
+    @PostMapping(value = "calculateIdleHours")
+    @ResponseBody
+    @ApiOperation("计算怠工时长")
+    public String calculateIdleHours() {
+        try {
+            logger.info("开始手动计算怠工时长");
+
+            // 调用定时任务中的方法
+            attendanceTask.calculateIdleHours();
+
+            logger.info("手动计算怠工时长完成");
+            return renderResult(Global.TRUE, "计算怠工时长成功！");
+        } catch (Exception e) {
+            logger.error("计算怠工时长失败: {}", e.getMessage(), e);
+            return renderResult(Global.FALSE, "计算怠工时长失败！" + e.getMessage());
+        }
+    }
+
 }
