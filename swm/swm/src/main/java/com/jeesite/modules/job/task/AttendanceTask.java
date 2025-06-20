@@ -114,6 +114,24 @@ public class AttendanceTask {
 
                         // 更新怠工时长字段
                         record.setIdleHours(BigDecimal.valueOf(calculatedIdleHours).setScale(2, RoundingMode.HALF_UP));
+
+                        // 计算实际考勤时长 = 应考勤时长 - 怠工时长
+                        BigDecimal scheduledHours = record.getScheduledHours();
+                        if (scheduledHours != null && scheduledHours.compareTo(BigDecimal.ZERO) > 0) {
+                            BigDecimal actualHours = scheduledHours.subtract(record.getIdleHours());
+                            // 确保实际考勤时长不为负数
+                            if (actualHours.compareTo(BigDecimal.ZERO) < 0) {
+                                actualHours = BigDecimal.ZERO;
+                            }
+                            record.setActualHours(actualHours.setScale(2, RoundingMode.HALF_UP));
+                            XxlJobHelper.log("员工[{}]{}实际考勤时长计算: 应考勤{}小时 - 怠工{}小时 = 实际{}小时",
+                                    record.getEmployeeId(), record.getEmployeeName(),
+                                    scheduledHours, record.getIdleHours(), actualHours);
+                        } else {
+                            XxlJobHelper.log("员工[{}]{}应考勤时长为空或为0，无法计算实际考勤时长",
+                                    record.getEmployeeId(), record.getEmployeeName());
+                        }
+
                         swmDailyAttendanceService.update(record);
 
                         successCount++;
