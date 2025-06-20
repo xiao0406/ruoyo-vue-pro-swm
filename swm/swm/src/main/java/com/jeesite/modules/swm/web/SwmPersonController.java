@@ -1300,6 +1300,61 @@ public class SwmPersonController extends BaseController {
     }
 
     /**
+     * 统计安全教育完成情况
+     * 
+     * @return 安全教育统计信息
+     * @author Shawn
+     * @date 2025-01-18
+     */
+    @GetMapping(value = "getSafetyEducationStats")
+    @ResponseBody
+    public Map<String, Object> getSafetyEducationStats() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 查询所有在职人员的安全教育情况
+            SwmPerson query = new SwmPerson();
+            query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 只统计在职人员
+
+            List<SwmPerson> activePersons = swmPersonService.findList(query);
+
+            // 统计总人数
+            int totalCount = activePersons.size();
+
+            // 统计已完成安全教育的人数
+            int completedCount = 0;
+            int notStartedCount = 0;
+
+            for (SwmPerson person : activePersons) {
+                if (SwmPerson.SafetyEducationEnum.COMPLETED.equals(person.getSafetyEducation())) {
+                    completedCount++;
+                } else if (SwmPerson.SafetyEducationEnum.NOT_STARTED.equals(person.getSafetyEducation())) {
+                    notStartedCount++;
+                }
+            }
+
+            // 计算完成率（保留两位小数）
+            double completionRate = totalCount > 0 ? (double) completedCount / totalCount * 100 : 0.0;
+
+            // 构建返回结果
+            result.put("success", true);
+            result.put("totalCount", totalCount); // 总人数
+            result.put("completedCount", completedCount); // 已完成人数
+            result.put("notStartedCount", notStartedCount); // 未开始人数
+            result.put("completionRate", Math.round(completionRate * 100.0) / 100.0); // 完成率（百分比，保留两位小数）
+            result.put("message", String.format("统计完成：总计%d人，已完成安全教育%d人，完成率%.2f%%",
+                    totalCount, completedCount, completionRate));
+
+        } catch (Exception e) {
+            logger.error("统计安全教育完成情况异常", e);
+            result.put("success", false);
+            result.put("message", "统计安全教育完成情况失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
      * 测试接口 - 验证循环依赖是否解决
      */
     @GetMapping(value = "testCacheService")
