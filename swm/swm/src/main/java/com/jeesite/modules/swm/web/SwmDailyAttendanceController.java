@@ -33,6 +33,9 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.jeesite.common.lang.StringUtils;
+import com.jeesite.modules.utils.R;
+import com.jeesite.modules.swm.service.AreaFenceDataService;
 
 /**
  * 日考勤统计表Controller
@@ -53,6 +56,9 @@ public class SwmDailyAttendanceController extends BaseController {
 
     @Autowired
     private AttendanceTask attendanceTask;
+
+    @Autowired
+    private AreaFenceDataService areaFenceDataService;
 
     // 自定义ObjectMapper，用于处理时间字段的序列化
     private final ObjectMapper objectMapper;
@@ -145,10 +151,29 @@ public class SwmDailyAttendanceController extends BaseController {
         formattedPage.setPageNo(originalPage.getPageNo());
         formattedPage.setPageSize(originalPage.getPageSize());
 
-        // 处理日期格式
+        // 处理日期格式并计算怠工时长
         List<Map<String, Object>> formattedList = new ArrayList<>();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
         for (SwmDailyAttendance record : originalPage.getList()) {
-            formattedList.add(convertToMap(record));
+            Map<String, Object> recordMap = convertToMap(record);
+
+            // 计算怠工时长
+            try {
+                String idCard = swmDailyAttendanceService.getIdCardByEmployeeId(record.getEmployeeId());
+                if (idCard != null && record.getAttendanceDate() != null) {
+                    String dateStr = dateFormat.format(record.getAttendanceDate());
+                    double calculatedIdleHours = swmDailyAttendanceService.calculateIdleTimeByIdCard(idCard, dateStr);
+                    recordMap.put("idleHours", calculatedIdleHours); // 怠工时长字段。
+                    logger.debug("员工ID {} 身份证号 {} 在 {} 的怠工时长: {} 小时",
+                            record.getEmployeeId(), idCard, dateStr, calculatedIdleHours);
+                }
+            } catch (Exception e) {
+                logger.error("计算员工 {} 怠工时长失败", record.getEmployeeId(), e);
+                recordMap.put("calculatedIdleHours", 0.0);
+            }
+
+            formattedList.add(recordMap);
         }
 
         formattedPage.setList(formattedList);
@@ -564,4 +589,5 @@ public class SwmDailyAttendanceController extends BaseController {
             return renderResult(Global.FALSE, "创建每日考勤数据失败！" + e.getMessage());
         }
     }
+
 }

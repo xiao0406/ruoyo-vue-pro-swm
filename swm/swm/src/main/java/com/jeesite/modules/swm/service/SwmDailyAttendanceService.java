@@ -5,15 +5,20 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.jeesite.common.lang.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
  * 日考勤统计表Service
+ * 
  * @author zwf
  * @version 2025-05-20
  */
@@ -21,8 +26,17 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao, SwmDailyAttendance> {
 
+    @Autowired
+    private AreaFenceDataService areaFenceDataService;
+
+    @Autowired
+    private SwmPersonCacheService swmPersonCacheService;
+
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+
     /**
      * 获取单条数据
+     * 
      * @param swmDailyAttendance
      * @return
      */
@@ -33,6 +47,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 查询分页数据
+     * 
      * @param swmDailyAttendance
      * @return
      */
@@ -53,6 +68,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 查询列表数据
+     * 
      * @param swmDailyAttendance
      * @return
      */
@@ -74,6 +90,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     /**
      * 保存数据（插入或更新）
      * 保存时自动计算：实际考勤时长、怠工时长、今日达成率
+     * 
      * @param swmDailyAttendance
      */
     @Override
@@ -96,7 +113,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         // 计算实际考勤时长（如果上下班打卡时间都存在）
         if (swmDailyAttendance.getClockInTime() != null && swmDailyAttendance.getClockOutTime() != null) {
             // 计算上下班打卡时间的时间差（毫秒）
-            long timeDiffMs = swmDailyAttendance.getClockOutTime().getTime() - swmDailyAttendance.getClockInTime().getTime();
+            long timeDiffMs = swmDailyAttendance.getClockOutTime().getTime()
+                    - swmDailyAttendance.getClockInTime().getTime();
 
             // 转换为小时（四舍五入到2位小数）
             BigDecimal actualHours = new BigDecimal(timeDiffMs / (1000.0 * 60 * 60))
@@ -118,8 +136,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
         // 计算今日达成率 = 实际考勤时长 / 应考勤时长
         if (swmDailyAttendance.getScheduledHours() != null &&
-            swmDailyAttendance.getActualHours() != null &&
-            swmDailyAttendance.getScheduledHours().compareTo(BigDecimal.ZERO) > 0) {
+                swmDailyAttendance.getActualHours() != null &&
+                swmDailyAttendance.getScheduledHours().compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal dailyAchievementRate = swmDailyAttendance.getActualHours()
                     .divide(swmDailyAttendance.getScheduledHours(), 4, RoundingMode.HALF_UP);
             swmDailyAttendance.setDailyAchievementRate(dailyAchievementRate);
@@ -154,8 +172,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         }
 
         // 检查是否为更新操作且打卡时间不为空
-        if (!swmDailyAttendance.getIsNewRecord() && 
-            (swmDailyAttendance.getClockInTime() != null || swmDailyAttendance.getClockOutTime() != null)) {
+        if (!swmDailyAttendance.getIsNewRecord() &&
+                (swmDailyAttendance.getClockInTime() != null || swmDailyAttendance.getClockOutTime() != null)) {
             // 使用自定义更新方法确保打卡时间字段被更新
             logger.info("使用自定义更新方法，确保打卡时间字段被更新");
             dao.updateWithClockTime(swmDailyAttendance);
@@ -167,6 +185,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 更新状态
+     * 
      * @param swmDailyAttendance
      */
     @Override
@@ -177,6 +196,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 删除数据
+     * 
      * @param swmDailyAttendance
      */
     @Override
@@ -187,6 +207,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 处理日期，去除时间部分，只保留日期部分
+     * 
      * @param date 需要处理的日期
      * @return 只包含日期部分的Date对象
      */
@@ -205,7 +226,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工姓名和日期查询考勤记录
-     * @param employeeName 员工姓名
+     * 
+     * @param employeeName   员工姓名
      * @param attendanceDate 考勤日期
      * @return 考勤记录
      */
@@ -217,9 +239,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工姓名和日期范围查询考勤记录
+     * 
      * @param employeeName 员工姓名
-     * @param beginDate 开始日期
-     * @param endDate 结束日期
+     * @param beginDate    开始日期
+     * @param endDate      结束日期
      * @return 考勤记录列表
      */
     public List<SwmDailyAttendance> findByEmployeeAndDateRange(String employeeName, Date beginDate, Date endDate) {
@@ -231,6 +254,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据日期查询所有考勤记录
+     * 
      * @param attendanceDate 考勤日期
      * @return 考勤记录列表
      */
@@ -242,9 +266,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工姓名和月份查询考勤记录
+     * 
      * @param employeeName 员工姓名
-     * @param year 年份
-     * @param month 月份 (1-12)
+     * @param year         年份
+     * @param month        月份 (1-12)
      * @return 考勤记录列表
      */
     public List<SwmDailyAttendance> findByEmployeeAndMonth(String employeeName, int year, int month) {
@@ -253,9 +278,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 计算员工某月的统计数据
+     * 
      * @param employeeName 员工姓名
-     * @param year 年份
-     * @param month 月份 (1-12)
+     * @param year         年份
+     * @param month        月份 (1-12)
      * @return 月统计数据
      */
     public SwmAttendanceSummary calculateMonthlyStats(String employeeName, int year, int month) {
@@ -315,7 +341,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
         // 计算考勤达成率 = 实际工作时间 / 应考勤时间
         if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal attendanceAchievementRate = totalActualHours.divide(totalScheduledHours, 4, RoundingMode.HALF_UP);
+            BigDecimal attendanceAchievementRate = totalActualHours.divide(totalScheduledHours, 4,
+                    RoundingMode.HALF_UP);
             summary.setAttendanceAchievementRate(attendanceAchievementRate);
         } else {
             summary.setAttendanceAchievementRate(BigDecimal.ZERO);
@@ -326,7 +353,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工ID和日期查询考勤记录
-     * @param employeeId 员工ID
+     * 
+     * @param employeeId     员工ID
      * @param attendanceDate 考勤日期
      * @return 考勤记录
      */
@@ -338,9 +366,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工ID和日期范围查询考勤记录
+     * 
      * @param employeeId 员工ID
-     * @param beginDate 开始日期
-     * @param endDate 结束日期
+     * @param beginDate  开始日期
+     * @param endDate    结束日期
      * @return 考勤记录列表
      */
     public List<SwmDailyAttendance> findByEmployeeIdAndDateRange(String employeeId, Date beginDate, Date endDate) {
@@ -352,9 +381,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工ID和月份查询考勤记录
+     * 
      * @param employeeId 员工ID
-     * @param year 年份
-     * @param month 月份 (1-12)
+     * @param year       年份
+     * @param month      月份 (1-12)
      * @return 考勤记录列表
      */
     public List<SwmDailyAttendance> findByEmployeeIdAndMonth(String employeeId, int year, int month) {
@@ -363,10 +393,11 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 计算员工某月的统计数据
-     * @param employeeId 员工ID
+     * 
+     * @param employeeId   员工ID
      * @param employeeName 员工姓名
-     * @param year 年份
-     * @param month 月份 (1-12)
+     * @param year         年份
+     * @param month        月份 (1-12)
      * @return 月统计数据
      */
     public SwmAttendanceSummary calculateMonthlyStatsById(String employeeId, String employeeName, int year, int month) {
@@ -427,7 +458,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
         // 计算考勤达成率 = 实际工作时间 / 应考勤时间
         if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal attendanceAchievementRate = totalActualHours.divide(totalScheduledHours, 4, RoundingMode.HALF_UP);
+            BigDecimal attendanceAchievementRate = totalActualHours.divide(totalScheduledHours, 4,
+                    RoundingMode.HALF_UP);
             summary.setAttendanceAchievementRate(attendanceAchievementRate);
         } else {
             summary.setAttendanceAchievementRate(BigDecimal.ZERO);
@@ -441,8 +473,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
      * 根据员工ID和月份查询日考勤数据，返回适合图表展示的格式
      *
      * @param employeeId 员工ID
-     * @param year 年份
-     * @param month 月份 (1-12)
+     * @param year       年份
+     * @param month      月份 (1-12)
      * @return 包含图表数据的Map，包括xAxis(日期)、scheduledHours(应考勤时长)、idleHours(怠工时长)、efficiency(功效)
      */
     public Map<String, Object> getMonthlyChartData(String employeeId, int year, int month) {
@@ -502,8 +534,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
      * 根据员工ID和月份查询日考勤数据，返回应考勤时长和实际考勤时长
      *
      * @param employeeId 员工ID
-     * @param year 年份
-     * @param month 月份 (1-12)
+     * @param year       年份
+     * @param month      月份 (1-12)
      * @return 包含图表数据的Map，包括xAxis(日期)、scheduledHours(应考勤时长)、actualHours(实际考勤时长)
      */
     public Map<String, Object> getMonthlyAttendanceData(String employeeId, int year, int month) {
@@ -550,17 +582,59 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         data.put("xAxis", xAxis);
         data.put("scheduledHours", scheduledHours);
         data.put("actualHours", actualHours);
-        data.put("records",  records);
+        data.put("records", records);
         return data;
     }
 
     /**
      * 查询指定月份的日考勤记录
+     * 
      * @param employeeId 员工ID(可选)
-     * @param month 月份(格式: yyyy-MM)
+     * @param month      月份(格式: yyyy-MM)
      * @return 日考勤记录列表
      */
-    public List<SwmDailyAttendance> findByMonth(String employeeId,String month){
-        return dao.findByMonth(employeeId,month);
+    public List<SwmDailyAttendance> findByMonth(String employeeId, String month) {
+        return dao.findByMonth(employeeId, month);
+    }
+
+    /**
+     * 根据身份证号计算怠工时长
+     * 
+     * @param idCard 身份证号
+     * @param date   日期
+     * @return 怠工时长
+     * @author Shawn
+     * @date 2025-01-27
+     */
+    public double calculateIdleTimeByIdCard(String idCard, String date) {
+        return areaFenceDataService.calculateIdleTimeByIdCard(idCard, date);
+    }
+
+    /**
+     * 根据员工ID获取身份证号
+     * 
+     * @param employeeId 员工ID
+     * @return 身份证号
+     * @author Shawn
+     * @date 2025-01-27
+     */
+    public String getIdCardByEmployeeId(String employeeId) {
+        try {
+            if (StringUtils.isBlank(employeeId)) {
+                return null;
+            }
+
+            // 从Redis缓存中查询人员信息
+            Map<String, Object> personInfo = swmPersonCacheService.getActivePersonById(employeeId);
+
+            if (personInfo != null) {
+                return (String) personInfo.get("identityCard");
+            }
+
+            return null;
+        } catch (Exception e) {
+            logger.error("根据员工ID {} 从Redis查询身份证号失败", employeeId, e);
+            return null;
+        }
     }
 }

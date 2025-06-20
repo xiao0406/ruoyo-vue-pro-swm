@@ -435,4 +435,220 @@ public class AreaFenceDataService {
             return String.join("、", issues);
         }
     }
+
+    /**
+     * 根据身份证号计算怠工时长
+     * 
+     * @param idCard 身份证号
+     * @param date   日期 (yyyy-MM-dd格式)
+     * @return 怠工时长(小时)
+     * @author Shawn
+     * @date 2025-01-27
+     */
+    public double calculateIdleTimeByIdCard(String idCard, String date) {
+        try {
+            logger.info("开始计算身份证号为 {} 在 {} 的怠工时长", idCard, date);
+
+            // 1. 获取字典数据 - 查找所有区域配置
+            List<DictData> areaList = getAreaFenceDataDictList();
+            if (areaList.isEmpty()) {
+                logger.warn("未找到area_fence_data字典配置");
+                return 0.0;
+            }
+
+            // 2. 查询心跳数据
+            List<Map<String, Object>> heartbeatData = queryAreaFenceDataByIdCardAndAreas(idCard, areaList, date);
+            if (heartbeatData.isEmpty()) {
+                logger.warn("身份证号 {} 在 {} 未找到心跳数据", idCard, date);
+                return 0.0;
+            }
+
+            // 3. 计算怠工时长
+            double idleHours = calculateIdleHoursFromData(heartbeatData);
+            logger.info("身份证号 {} 在 {} 的怠工时长为: {} 小时", idCard, date, idleHours);
+
+            return idleHours;
+
+        } catch (Exception e) {
+            logger.error("计算怠工时长失败，身份证号: {}, 日期: {}", idCard, date, e);
+            return 0.0;
+        }
+    }
+
+    /**
+     * 获取字典类型area_fence_data的所有选项
+     * 
+     * @return 区域ID列表
+     */
+    private List<DictData> getAreaFenceDataDictList() {
+        try {
+            List<DictData> dictList = DictUtils.getDictList("area_fence_data");
+            logger.debug("获取到area_fence_data字典数据，区域数量: {}", dictList.size());
+            return dictList;
+        } catch (Exception e) {
+            logger.error("获取area_fence_data字典数据失败", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 根据身份证和区域ID列表查询area_fence_data表中的数据
+     * 
+     * @param idCard    身份证号
+     * @param checkDate 查询日期
+     * @param areaIds   区域ID列表
+     * @return 区域围栏数据列表
+     */
+    private List<Map<String, Object>> queryAreaFenceDataByIdCardAndAreas(String idCard, List<DictData> areaList,
+            String checkDate) {
+        List<Map<String, Object>> allData = new ArrayList<>();
+
+        try {
+            // 构建area_id的IN查询条件
+            StringBuilder areaIdCondition = new StringBuilder();
+            areaIdCondition.append("area_id IN (");
+            for (int i = 0; i < areaList.size(); i++) {
+                if (i > 0)
+                    areaIdCondition.append(",");
+                areaIdCondition.append("'").append(areaList.get(i).getDictLabelRaw()).append("'");
+            }
+            areaIdCondition.append(")");
+
+            // 查询当天该身份证的所有区域围栏数据，按时间排序
+            String sql = String.format(
+                    "SELECT time, x, y, area_name, area_id, device_id, id_card " +
+                            "FROM %s.area_fence_data " +
+                            "WHERE id_card = '%s' " +
+                            "AND time >= '%s 00:00:00' " +
+                            "AND time <= '%s 23:59:59' " +
+                            "AND %s " +
+                            "ORDER BY time ASC",
+                    dbname, idCard, checkDate, checkDate, areaIdCondition.toString());
+
+            logger.debug("查询区域围栏数据SQL: {}", sql);
+
+            R<JSONObject> response = tdengineService.executeTDengineSQL(sql);
+            if (response.getCode() == R.SUCCESS && response.getData() != null) {
+                JSONObject data = response.getData();
+                JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        JSONArray row = rows.getJSONArray(i);
+                        AreaFenceData fenceData = parseAreaFenceDataFromRow(row);
+                        if (fenceData != null) {
+                            Map<String, Object> dataMap = new HashMap<>();
+                            dataMap.put("time", fenceData.getTime());
+                            dataMap.put("x", fenceData.getX());
+                            dataMap.put("y", fenceData.getY());
+                            dataMap.put("area_name", fenceData.getAreaName());
+                            dataMap.put("area_id", fenceData.getAreaId());
+                            dataMap.put("device_id", fenceData.getDeviceId());
+                            dataMap.put("id_card", fenceData.getIdCard());
+                            allData.add(dataMap);
+                        }
+                    }
+                }
+
+                logger.info("查询到身份证 {} 在 {} 的区域围栏数据条数: {}", idCard, checkDate, allData.size());
+            } else {
+                logger.warn("查询区域围栏数据失败: {}", response.getMsg());
+            }
+
+        } catch (Exception e) {
+            logger.error("查询区域围栏数据异常", e);
+        }
+
+        return allData;
+    }
+
+    /**
+     * 从怠工区域心跳数据计算怠工时长
+     * 算法说明：
+     * 1. 查询到的数据都是员工在怠工区域（如休息区）的心跳数据
+     * 2. 将数据按时间排序
+     * 3. 找出连续的心跳数据段（相邻两个数据点时间间隔小于等于10分钟认为是连续的）
+     * 4. 计算每个连续段的时长（从段开始时间到段结束时间）
+     * 5. 怠工时长 = 所有连续怠工段的总时长
+     * 
+     * @param dataList 怠工区域心跳数据列表，必须按时间排序
+     * @return 怠工时长（小时）
+     */
+    private double calculateIdleHoursFromData(List<Map<String, Object>> dataList) {
+        if (dataList == null || dataList.isEmpty()) {
+            return 0.0;
+        }
+
+        // 确保数据按时间排序
+        dataList.sort(Comparator.comparing(data -> (Date) data.get("time")));
+
+        // 心跳间隔阈值：10分钟，如果超过这个时间则认为不连续
+        final long HEARTBEAT_THRESHOLD_MS = 10 * 60 * 1000;
+
+        long totalIdleMinutes = 0;
+        Date lastTime = null;
+        Date segmentStartTime = null;
+
+        logger.debug("开始分析怠工区域心跳数据，总数据条数: {}", dataList.size());
+
+        for (int i = 0; i < dataList.size(); i++) {
+            Map<String, Object> current = dataList.get(i);
+            Date currentTime = (Date) current.get("time");
+
+            if (currentTime == null) {
+                continue;
+            }
+
+            if (lastTime == null) {
+                // 第一条数据，开始新的连续怠工段
+                segmentStartTime = currentTime;
+                logger.debug("开始新的连续怠工段: {}", DATETIME_FORMAT.format(currentTime));
+            } else {
+                long timeDiff = currentTime.getTime() - lastTime.getTime();
+
+                if (timeDiff <= HEARTBEAT_THRESHOLD_MS) {
+                    // 连续的心跳数据，继续当前怠工段
+                    logger.debug("连续怠工心跳: {} -> {}, 间隔: {}ms",
+                            DATETIME_FORMAT.format(lastTime), DATETIME_FORMAT.format(currentTime), timeDiff);
+                } else {
+                    // 超过阈值，结束当前连续怠工段，计算时长
+                    if (segmentStartTime != null) {
+                        long segmentDurationMs = lastTime.getTime() - segmentStartTime.getTime();
+                        long segmentMinutes = segmentDurationMs / (60 * 1000);
+                        totalIdleMinutes += segmentMinutes;
+
+                        logger.debug("连续怠工段结束: {} -> {}, 持续时长: {} 分钟",
+                                DATETIME_FORMAT.format(segmentStartTime),
+                                DATETIME_FORMAT.format(lastTime),
+                                segmentMinutes);
+                    }
+
+                    // 开始新的连续怠工段
+                    segmentStartTime = currentTime;
+                    logger.debug("开始新的连续怠工段: {} (间隔过大: {}ms)",
+                            DATETIME_FORMAT.format(currentTime), timeDiff);
+                }
+            }
+
+            lastTime = currentTime;
+        }
+
+        // 处理最后一个连续怠工段
+        if (segmentStartTime != null && lastTime != null) {
+            long segmentDurationMs = lastTime.getTime() - segmentStartTime.getTime();
+            long segmentMinutes = segmentDurationMs / (60 * 1000);
+            totalIdleMinutes += segmentMinutes;
+
+            logger.debug("最后连续怠工段: {} -> {}, 持续时长: {} 分钟",
+                    DATETIME_FORMAT.format(segmentStartTime),
+                    DATETIME_FORMAT.format(lastTime),
+                    segmentMinutes);
+        }
+
+        double idleHours = totalIdleMinutes / 60.0;
+
+        logger.info("怠工时长计算完成 - 总怠工时长: {} 分钟 ({} 小时)", totalIdleMinutes, idleHours);
+
+        return idleHours;
+    }
 }
