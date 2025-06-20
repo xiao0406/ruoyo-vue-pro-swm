@@ -153,27 +153,9 @@ public class SwmDailyAttendanceController extends BaseController {
 
         // 处理日期格式并计算怠工时长
         List<Map<String, Object>> formattedList = new ArrayList<>();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
         for (SwmDailyAttendance record : originalPage.getList()) {
-            Map<String, Object> recordMap = convertToMap(record);
-
-            // 计算怠工时长
-            try {
-                String idCard = swmDailyAttendanceService.getIdCardByEmployeeId(record.getEmployeeId());
-                if (idCard != null && record.getAttendanceDate() != null) {
-                    String dateStr = dateFormat.format(record.getAttendanceDate());
-                    double calculatedIdleHours = swmDailyAttendanceService.calculateIdleTimeByIdCard(idCard, dateStr);
-                    recordMap.put("idleHours", calculatedIdleHours); // 怠工时长字段。
-                    logger.debug("员工ID {} 身份证号 {} 在 {} 的怠工时长: {} 小时",
-                            record.getEmployeeId(), idCard, dateStr, calculatedIdleHours);
-                }
-            } catch (Exception e) {
-                logger.error("计算员工 {} 怠工时长失败", record.getEmployeeId(), e);
-                recordMap.put("calculatedIdleHours", 0.0);
-            }
-
-            formattedList.add(recordMap);
+            formattedList.add(convertToMap(record));
         }
 
         formattedPage.setList(formattedList);
