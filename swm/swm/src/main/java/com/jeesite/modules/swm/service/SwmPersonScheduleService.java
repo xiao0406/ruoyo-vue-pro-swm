@@ -9,7 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 人员排班Service
@@ -145,5 +147,27 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
      */
     public SwmPersonSchedule getByEntity(SwmPersonSchedule entity) {
         return dao.getByEntity(entity);
+    }
+
+    /**
+     * 获取所有班组列表
+     * 
+     * @return 班组列表，包含id和名称
+     */
+    public List<Map<String, Object>> findWorkGroupList() {
+        return dao.findWorkGroupList();
+    }
+
+    /**
+     * 批量获取多个人员的班组信息
+     * 
+     * @param idCards 身份证号码列表
+     * @return 包含身份证号和班组名称的对象列表
+     */
+    public List<Map<String, Object>> batchGetWorkGroupNameByIdCards(List<String> idCards) {
+        if (idCards == null || idCards.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return dao.batchGetWorkGroupNameByIdCards(idCards);
     }
 }

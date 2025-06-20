@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,27 @@ public class SwmPersonScheduleController extends BaseController {
         // 获取前端传递的班组筛选参数
         String workGroupNameFilter = request.getParameter("workGroupName");
         
+        // 收集所有需要查询班组的身份证号
+        List<String> idCards = new ArrayList<>();
+        for (SwmPersonSchedule schedule : page.getList()) {
+            if (schedule.getIdCard() != null && !schedule.getIdCard().isEmpty()) {
+                idCards.add(schedule.getIdCard());
+            }
+        }
+        
+        // 批量查询班组信息
+        Map<String, String> workGroupMap = new HashMap<>();
+        if (!idCards.isEmpty()) {
+            List<Map<String, Object>> workGroupList = swmPersonScheduleService.batchGetWorkGroupNameByIdCards(idCards);
+            for (Map<String, Object> item : workGroupList) {
+                String idCard = (String) item.get("key");
+                String workGroupName = (String) item.get("value");
+                if (idCard != null) {
+                    workGroupMap.put(idCard, workGroupName != null ? workGroupName : "");
+                }
+            }
+        }
+        
         // 处理每个对象，添加枚举的文本显示
         for (SwmPersonSchedule schedule : page.getList()) {
             Map<String, Object> scheduleMap = new HashMap<>();
@@ -101,10 +123,10 @@ public class SwmPersonScheduleController extends BaseController {
             // 添加枚举文本显示值
             scheduleMap.put("classesText", schedule.getClassesText());
             
-            // 添加班组名称
+            // 添加班组名称 - 从批量查询结果获取
             String workGroupName = "";
             if (schedule.getIdCard() != null && !schedule.getIdCard().isEmpty()) {
-                workGroupName = swmPersonScheduleService.getWorkGroupNameByIdCard(schedule.getIdCard());
+                workGroupName = workGroupMap.getOrDefault(schedule.getIdCard(), "");
                 scheduleMap.put("workGroupName", workGroupName);
             } else {
                 scheduleMap.put("workGroupName", "");
@@ -153,10 +175,18 @@ public class SwmPersonScheduleController extends BaseController {
             // 处理枚举值
             scheduleData.put("classesText", swmPersonSchedule.getClassesText());
             
-            // 添加班组名称
+            // 添加班组名称 - 使用批量查询方法
             if (swmPersonSchedule.getIdCard() != null && !swmPersonSchedule.getIdCard().isEmpty()) {
-                String workGroupName = swmPersonScheduleService.getWorkGroupNameByIdCard(swmPersonSchedule.getIdCard());
-                scheduleData.put("workGroupName", workGroupName);
+                List<String> idCards = Collections.singletonList(swmPersonSchedule.getIdCard());
+                List<Map<String, Object>> workGroupList = swmPersonScheduleService.batchGetWorkGroupNameByIdCards(idCards);
+                
+                String workGroupName = "";
+                if (!workGroupList.isEmpty()) {
+                    Map<String, Object> item = workGroupList.get(0);
+                    workGroupName = (String) item.get("value");
+                }
+                
+                scheduleData.put("workGroupName", workGroupName != null ? workGroupName : "");
             } else {
                 scheduleData.put("workGroupName", "");
             }
@@ -305,5 +335,31 @@ public class SwmPersonScheduleController extends BaseController {
         result.put("count", enhancedList.size());
         
         return result;
+    }
+
+    /**
+     * 获取班组下拉列表数据
+     */
+    @GetMapping(value = "getWorkGroups")
+    @ResponseBody
+    @ApiOperation("获取班组下拉列表")
+    public List<Map<String, Object>> getWorkGroupList() {
+        try {
+            List<Map<String, Object>> workGroups = swmPersonScheduleService.findWorkGroupList();
+            List<Map<String, Object>> result = new ArrayList<>();
+            
+            // 转换为前端需要的格式
+            for (Map<String, Object> item : workGroups) {
+                Map<String, Object> workGroup = new HashMap<>();
+                workGroup.put("label", item.get("name"));
+                workGroup.put("value", item.get("name"));
+                result.add(workGroup);
+            }
+            
+            return result;
+        } catch (Exception e) {
+            logger.error("获取班组列表失败", e);
+            return Collections.emptyList();
+        }
     }
 } 

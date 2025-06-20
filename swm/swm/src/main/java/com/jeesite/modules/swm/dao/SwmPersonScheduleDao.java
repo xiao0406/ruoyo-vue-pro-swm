@@ -6,6 +6,7 @@ import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 人员排班表DAO接口
@@ -40,4 +41,19 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
      * @return 班组名称
      */
     String getWorkGroupNameByIdCard(String idCard);
+
+    /**
+     * 获取所有班组列表
+     * 
+     * @return 班组列表，包含id和名称
+     */
+    List<Map<String, Object>> findWorkGroupList();
+
+    /**
+     * 批量获取多个人员的班组信息
+     * 
+     * @param idCards 身份证号码列表
+     * @return 包含身份证号和班组名称的对象列表
+     */
+    List<Map<String, Object>> batchGetWorkGroupNameByIdCards(List<String> idCards);
 } 

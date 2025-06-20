@@ -70,4 +70,28 @@
         ORDER BY a.update_date DESC
     </select>
     
+    <!-- 获取所有班组列表 -->
+    <select id="findWorkGroupList" resultType="java.util.Map">
+        SELECT
+            id,
+            work_group_name AS "name"
+        FROM fms_work_group
+       
+        GROUP BY id, work_group_name
+        ORDER BY work_group_name
+    </select>
+    
+    <!-- 批量获取班组名称 -->
+    <select id="batchGetWorkGroupNameByIdCards" resultType="java.util.Map">
+        SELECT 
+            w.identity_code AS "key",
+            wg.work_group_name AS "value"
+        FROM fms_worker w
+        LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id
+        WHERE w.identity_code IN
+        <foreach collection="list" item="idCard" open="(" separator="," close=")">
+            #{idCard}
+        </foreach>
+    </select>
+    
 </mapper> 
