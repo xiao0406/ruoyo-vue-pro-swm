@@ -645,7 +645,7 @@ public class AreaFenceDataService {
                     segmentMinutes);
         }
 
-        double idleHours = totalIdleMinutes / 60.0;
+        double idleHours = Math.round(totalIdleMinutes / 60.0 * 10.0) / 10.0;
 
         logger.info("怠工时长计算完成 - 总怠工时长: {} 分钟 ({} 小时)", totalIdleMinutes, idleHours);
 
