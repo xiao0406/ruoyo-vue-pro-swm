@@ -1026,6 +1026,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
      * 1. 从时序数据库查询所有数据
      * 2. 从MySQL筛选相同id和id_card且handle_status为1的记录（已处置的记录）
      * 3. 将时序数据库查到的所有数据减去MySQL中已处置的记录，得到未处置的数据
+     * 4. 排除危险源报警类型的数据
      * 
      * @param keyword 搜索关键词（可选）
      * @return 未处置的预警记录列表
@@ -1099,11 +1100,17 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             }
         }
         
-        // 3. 过滤时序数据库记录，只保留未处置的记录
+        // 3. 过滤时序数据库记录，只保留未处置的记录并排除危险源报警
         List<SwmWarningManagement> unhandledList = new ArrayList<>();
         for (SwmWarningManagement tdEntity : tdEngineList) {
             String id = tdEntity.getId();
             String idCard = tdEntity.getIdCard();
+            String warningContent = tdEntity.getWarningContent();
+            
+            // 排除危险源报警
+            if ("危险源报警".equals(warningContent)) {
+                continue;
+            }
             
             boolean isProcessed = false;
             if (processedMap.containsKey(id)) {
