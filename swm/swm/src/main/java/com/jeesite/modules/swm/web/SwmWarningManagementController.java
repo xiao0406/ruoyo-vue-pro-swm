@@ -392,7 +392,23 @@ public class SwmWarningManagementController extends BaseController {
                 map.put("id", item.getId());
                 map.put("personName", item.getPersonName());
                 map.put("warningType", item.getWarningType());
-                map.put("warningTypeText", item.getWarningTypeText());
+                
+                // 确保warningTypeText正确显示
+                String warningTypeText;
+                if ("2".equals(item.getWarningType())) {
+                    warningTypeText = "被动报警";
+                } else if ("1".equals(item.getWarningType())) {
+                    warningTypeText = "主动报警";
+                } else {
+                    // 尝试从字典获取
+                    warningTypeText = DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningTypeText());
+                    // 如果仍然为空，设置默认值
+                    if (warningTypeText == null || warningTypeText.isEmpty() || warningTypeText.equals(item.getWarningType())) {
+                        warningTypeText = "被动报警"; // 默认值
+                    }
+                }
+                map.put("warningTypeText", warningTypeText);
+                
                 map.put("warningContent", item.getWarningContent());
                 map.put("warningTime", item.getWarningTime());
                 
@@ -418,7 +434,23 @@ public class SwmWarningManagementController extends BaseController {
                 map.put("id", item.getId());
                 map.put("personName", item.getPersonName());
                 map.put("warningType", item.getWarningType());
-                map.put("warningTypeText", item.getWarningTypeText());
+                
+                // 确保warningTypeText正确显示
+                String warningTypeText;
+                if ("2".equals(item.getWarningType())) {
+                    warningTypeText = "被动报警";
+                } else if ("1".equals(item.getWarningType())) {
+                    warningTypeText = "主动报警";
+                } else {
+                    // 尝试从字典获取
+                    warningTypeText = DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningTypeText());
+                    // 如果仍然为空，设置默认值
+                    if (warningTypeText == null || warningTypeText.isEmpty() || warningTypeText.equals(item.getWarningType())) {
+                        warningTypeText = "被动报警"; // 默认值
+                    }
+                }
+                map.put("warningTypeText", warningTypeText);
+                
                 map.put("warningContent", item.getWarningContent());
                 map.put("warningTime", item.getWarningTime());
                 
