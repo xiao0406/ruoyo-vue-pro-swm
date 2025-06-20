@@ -8,10 +8,12 @@ import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -54,17 +56,26 @@ public class AttendanceTask {
             Date targetDate;
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-            if (jobParam != null && !jobParam.trim().isEmpty()) {
+            if (StringUtils.hasText(jobParam)) {
                 try {
-                    targetDate = dateFormat.parse(jobParam.trim());
-                    XxlJobHelper.log("使用传入的日期参数: {}", jobParam.trim());
+                    targetDate = dateFormat.parse(jobParam);
                 } catch (Exception e) {
-                    XxlJobHelper.log("日期参数格式错误，使用当天日期。参数: {}", jobParam);
+                    XxlJobHelper.log("日期参数格式错误，使用当天: {}", jobParam);
                     targetDate = new Date();
                 }
             } else {
                 targetDate = new Date();
-                XxlJobHelper.log("未传入日期参数，使用当天日期");
+            }
+
+            // 如果当前时间是00:00到06:59，查询昨天的考勤记录
+            Calendar now = Calendar.getInstance();
+            int currentHour = now.get(Calendar.HOUR_OF_DAY);
+            if (currentHour >= 0 && currentHour <= 6) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(targetDate);
+                cal.add(Calendar.DAY_OF_MONTH, -1);
+                targetDate = cal.getTime();
+                XxlJobHelper.log("当前时间为早上{}点，查询昨天的考勤记录: {}", currentHour, dateFormat.format(targetDate));
             }
 
             String dateStr = dateFormat.format(targetDate);
