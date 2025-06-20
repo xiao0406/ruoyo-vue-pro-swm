@@ -720,4 +720,75 @@ public class AreaFenceDataService {
 
         return idleHours;
     }
+
+    /**
+     * 检查员工最近指定时间范围内是否在休息区域
+     * 
+     * @param idCard    身份证号
+     * @param startTime 开始时间 (yyyy-MM-dd HH:mm:ss)
+     * @param endTime   结束时间 (yyyy-MM-dd HH:mm:ss)
+     * @return true-在休息区域有数据，false-无数据
+     * @author Shawn
+     * @date 2025/6/20
+     */
+    public boolean checkInRestAreaRecently(String idCard, String startTime, String endTime) {
+        try {
+            logger.debug("检查身份证号 {} 在时间范围 {} 到 {} 是否在休息区域", idCard, startTime, endTime);
+
+            // 1. 获取字典数据 - 查找所有休息区域配置
+            List<DictData> areaList = getAreaFenceDataDictList();
+            if (areaList.isEmpty()) {
+                logger.warn("未找到area_fence_data字典配置");
+                return false;
+            }
+
+            // 2. 构建area_id的IN查询条件
+            StringBuilder areaIdCondition = new StringBuilder();
+            areaIdCondition.append("area_id IN (");
+            for (int i = 0; i < areaList.size(); i++) {
+                if (i > 0)
+                    areaIdCondition.append(",");
+                areaIdCondition.append("'").append(areaList.get(i).getDictLabelRaw()).append("'");
+            }
+            areaIdCondition.append(")");
+
+            // 3. 查询指定时间范围内该身份证在休息区域的数据
+            String sql = String.format(
+                    "SELECT COUNT(*) " +
+                            "FROM %s.area_fence_data " +
+                            "WHERE id_card = '%s' " +
+                            "AND time >= '%s' " +
+                            "AND time <= '%s' " +
+                            "AND %s " +
+                            "LIMIT 1",
+                    dbname, idCard, startTime, endTime, areaIdCondition.toString());
+
+            logger.debug("查询休息区域数据SQL: {}", sql);
+
+            R<JSONObject> response = tdengineService.executeTDengineSQL(sql);
+            if (response.getCode() == R.SUCCESS && response.getData() != null) {
+                JSONObject data = response.getData();
+                JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null && !rows.isEmpty()) {
+                    JSONArray row = rows.getJSONArray(0);
+                    if (row != null && row.size() > 0) {
+                        int count = row.getInt(0);
+                        boolean inRestArea = count > 0;
+                        logger.debug("身份证号 {} 在时间范围 {} 到 {} 休息区域数据条数: {}, 在休息区: {}",
+                                idCard, startTime, endTime, count, inRestArea);
+                        return inRestArea;
+                    }
+                }
+            } else {
+                logger.warn("查询休息区域数据失败: {}", response.getMsg());
+            }
+
+            return false;
+
+        } catch (Exception e) {
+            logger.error("检查休息区域状态失败，身份证号: {}, 时间范围: {} 到 {}", idCard, startTime, endTime, e);
+            return false;
+        }
+    }
 }
