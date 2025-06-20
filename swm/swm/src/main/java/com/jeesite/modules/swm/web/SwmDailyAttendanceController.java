@@ -107,12 +107,14 @@ public class SwmDailyAttendanceController extends BaseController {
             String json = objectMapper.writeValueAsString(object);
             Map<String, Object> result = objectMapper.readValue(json, Map.class);
 
-            // 如果是SwmDailyAttendance对象，添加实时休息区状态
+            // 如果是SwmDailyAttendance对象，检查是否在休息区并设置currentPosition
             if (object instanceof SwmDailyAttendance) {
                 SwmDailyAttendance attendance = (SwmDailyAttendance) object;
                 boolean inRestArea = checkIfInRestArea(attendance.getEmployeeId());
-                result.put("inRestArea", inRestArea);
-                result.put("currentPosition", "1");
+                // 如果在休息区，设置currentPosition为1
+                if (inRestArea) {
+                    result.put("currentPosition", 1);
+                }
             }
 
             return result;
