@@ -111,6 +111,7 @@ public class SwmPersonCacheService {
         Map<String, Object> personInfo = new HashMap<>();
 
         // 只缓存需要的字段
+        personInfo.put("id", person.getId()); // 人员ID
         personInfo.put("name", person.getName()); // 姓名
         personInfo.put("company", person.getCompany()); // 所属单位
         personInfo.put("department", person.getDepartment()); // 所属车间
