@@ -81,6 +81,12 @@ public class SwmPersonCacheService {
 
                 // 建立身份证到人员ID的映射
                 if (person.getIdentityCard() != null && !person.getIdentityCard().trim().isEmpty()) {
+                    // 检查身份证是否已存在，如果存在则记录警告
+                    if (identityCardMap.containsKey(person.getIdentityCard())) {
+                        String existingPersonId = (String) identityCardMap.get(person.getIdentityCard());
+                        log.warn("发现重复身份证号码：{}，人员ID：{}，已存在人员ID：{}，将使用最新的人员记录",
+                                person.getIdentityCard(), person.getId(), existingPersonId);
+                    }
                     identityCardMap.put(person.getIdentityCard(), person.getId());
                 }
             }
