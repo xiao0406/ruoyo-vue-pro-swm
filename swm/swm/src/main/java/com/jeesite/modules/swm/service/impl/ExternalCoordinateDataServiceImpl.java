@@ -68,9 +68,11 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
             idCardCondition.append(")");
 
             // 使用LAST_ROW函数配合PARTITION BY进行批量查询external_coordinate_data表
+            // 添加过滤条件排除original_x或original_y小于等于0的数据
             String sql = String.format(
                     "select LAST_ROW(id_card, x, y, time) from %s.%s " +
                             "where %s and time >= '%s' and time <= '%s' " +
+                            "and original_x > 0 and original_y > 0 " +
                             "partition by id_card",
                     dbname, EXTERNAL_COORDINATE_SUPER_TABLE_NAME,
                     idCardCondition.toString(), startTime, endTime);
@@ -121,6 +123,8 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
      * 
      * @param idCard 身份证号
      * @return 坐标信息
+     * @author Shawn
+     * @date 2025/06/21
      */
     @Override
     public R<Map<String, Object>> getLatestLocationByIdCard(String idCard) {
@@ -155,6 +159,8 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
      * 
      * @param idCard 身份证号
      * @return 轨迹坐标列表
+     * @author Shawn
+     * @date 2025/06/21
      */
     @Override
     public R<List<Map<String, Object>>> getTodayTrajectoryByIdCard(String idCard) {
@@ -171,9 +177,11 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
             String endTime = currentDate + " 23:59:59";
 
             // 查询当天该身份证的所有坐标数据，按时间排序
+            // 添加过滤条件排除original_x或original_y小于等于0的数据
             String sql = String.format(
                     "select id_card, x, y, time from %s.%s " +
                             "where id_card='%s' and time >= '%s' and time <= '%s' " +
+                            "and original_x > 0 and original_y > 0 " +
                             "order by time asc",
                     dbname, EXTERNAL_COORDINATE_SUPER_TABLE_NAME,
                     idCard, startTime, endTime);
@@ -222,6 +230,8 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
      * @param startTime 开始时间（当日的秒数，可选）
      * @param endTime   结束时间（当日的秒数，可选）
      * @return 轨迹坐标列表
+     * @author Shawn
+     * @date 2025/06/21
      */
     @Override
     public R<List<Map<String, Object>>> getTrajectoryByIdCardAndTimeRange(String idCard, String startDate,
@@ -238,9 +248,11 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
             String timeCondition = buildTimeCondition(startDate, endDate, startTime, endTime);
 
             // 查询该身份证在指定时间范围内的所有坐标数据，按时间排序
+            // 添加过滤条件排除original_x或original_y小于等于0的数据
             String sql = String.format(
                     "select id_card, x, y, time from %s.%s " +
                             "where id_card='%s' %s " +
+                            "and original_x > 0 and original_y > 0 " +
                             "order by time asc",
                     dbname, EXTERNAL_COORDINATE_SUPER_TABLE_NAME,
                     idCard, timeCondition);
