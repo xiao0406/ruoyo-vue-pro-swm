@@ -1424,5 +1424,88 @@ public class SwmPersonController extends BaseController {
             logger.error("根据部门条件查询人员异常: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
+    }    /**
+     * 搜索人员（支持姓名、身份证、电话搜索）
+     *
+     * @param keyword    搜索关键词
+     * @param searchType 搜索类型：name(姓名)、idCard(身份证)、phone(电话)、all(全部)
+     * @param pageNo     页码
+     * @param pageSize   页面大小
+     * @return 搜索结果
+     * @author Shawn
+     * @date 2025-06-21
+     */
+    @GetMapping(value = "searchPersons")
+    @ResponseBody
+    public Map<String, Object> searchPersons(
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "searchType", defaultValue = "all") String searchType,
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "50") Integer pageSize) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            if (StringUtils.isBlank(keyword)) {
+                result.put("success", true);
+                result.put("list", new ArrayList<>());
+                result.put("total", 0);
+                result.put("message", "搜索关键词为空");
+                return result;
+            }
+
+            String trimmedKeyword = keyword.trim();
+            List<SwmPerson> personList;
+
+            if ("name".equals(searchType)) {
+                // 只搜索姓名
+                SwmPerson query = new SwmPerson();
+                query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
+                query.setName(trimmedKeyword);
+                personList = swmPersonService.findList(query);
+            } else if ("idCard".equals(searchType)) {
+                // 只搜索身份证
+                SwmPerson query = new SwmPerson();
+                query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
+                query.setIdentityCard(trimmedKeyword);
+                personList = swmPersonService.findList(query);
+            } else if ("phone".equals(searchType)) {
+                // 只搜索电话
+                SwmPerson query = new SwmPerson();
+                query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
+                query.setPhoneNumber(trimmedKeyword);
+                personList = swmPersonService.findList(query);
+            } else {
+                // 搜索所有字段（姓名、身份证、电话）
+                personList = swmPersonService.searchPersonsByKeyword(trimmedKeyword);
+            }
+
+            // 应用分页（手动分页）
+            int total = personList.size();
+            int startIndex = (pageNo - 1) * pageSize;
+            int endIndex = Math.min(startIndex + pageSize, total);
+
+            List<SwmPerson> pagedList;
+            if (startIndex < total) {
+                pagedList = personList.subList(startIndex, endIndex);
+            } else {
+                pagedList = new ArrayList<>();
+            }
+
+            // 构建返回结果
+            result.put("success", true);
+            result.put("list", pagedList);
+            result.put("total", total);
+            result.put("message", String.format("搜索完成，找到 %d 条记录", total));
+
+        } catch (Exception e) {
+            logger.error("搜索人员异常", e);
+            result.put("success", false);
+            result.put("list", new ArrayList<>());
+            result.put("total", 0);
+            result.put("message", "搜索失败：" + e.getMessage());
+        }
+
+        return result;
     }
 }

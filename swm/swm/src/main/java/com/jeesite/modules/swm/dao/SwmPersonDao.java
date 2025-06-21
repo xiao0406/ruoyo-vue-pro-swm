@@ -43,4 +43,12 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
      * @return 符合条件的在职人员列表
      */
     List<SwmPerson> findPersonsByDepartmentCondition(@Param("departmentCondition") String departmentCondition);
+
+    /**
+     * 根据关键词搜索人员（支持姓名、身份证、电话多字段搜索）
+     * 
+     * @param keyword 搜索关键词
+     * @return 符合条件的在职人员列表
+     */
+    List<SwmPerson> searchPersonsByKeyword(@Param("keyword") String keyword);
 }
