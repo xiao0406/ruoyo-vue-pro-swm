@@ -377,6 +377,46 @@ public class SwmAreaController extends BaseController {
     }
 
     /**
+     * 检查信标坐标是否已被其他区域使用
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @PostMapping(value = "checkBeaconConflicts")
+    @ResponseBody
+    @ApiOperation("检查信标坐标是否已被其他区域使用")
+    public Map<String, Object> checkBeaconConflicts(@RequestBody Map<String, Object> params) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String coordinateList = (String) params.get("coordinateList");
+            String currentAreaId = (String) params.get("currentAreaId"); // 当前区域ID，编辑时传入
+
+            if (coordinateList == null || coordinateList.trim().isEmpty()) {
+                result.put("success", true);
+                result.put("hasConflicts", false);
+                result.put("conflicts", new ArrayList<>());
+                result.put("message", "坐标列表为空");
+                return result;
+            }
+
+            List<Map<String, Object>> conflicts = swmAreaService.checkBeaconConflicts(coordinateList, currentAreaId);
+
+            result.put("success", true);
+            result.put("hasConflicts", !conflicts.isEmpty());
+            result.put("conflicts", conflicts);
+            result.put("message", conflicts.isEmpty() ? "没有发现冲突" : "发现信标冲突");
+
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("hasConflicts", false);
+            result.put("conflicts", new ArrayList<>());
+            result.put("message", "检查失败：" + e.getMessage());
+            logger.error("检查信标冲突失败", e);
+        }
+        return result;
+    }
+
+    /**
      * 获取区域选项列表（用于下拉选择）
      * 
      * @author Shawn

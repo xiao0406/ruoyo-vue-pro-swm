@@ -14,6 +14,9 @@ import com.jeesite.modules.swm.dao.SwmAreaDao;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * 区域管理Service
@@ -329,5 +332,80 @@ public class SwmAreaService extends CrudService<SwmAreaDao, SwmArea> {
         delete(area);
 
         logger.info("成功删除区域 {} 并清空相关信标", areaId);
+    }
+
+    /**
+     * 检查信标坐标是否已被其他区域使用
+     * 
+     * @author Shawn
+     * @date 2025-01-14
+     * @param coordinateList 坐标列表，格式如："(1860, 1622), (7132, 3146)"
+     * @param currentAreaId  当前区域ID，编辑时传入（可为空）
+     * @return 冲突信息列表
+     */
+    public List<Map<String, Object>> checkBeaconConflicts(String coordinateList, String currentAreaId) {
+        List<Map<String, Object>> conflicts = new ArrayList<>();
+
+        if (coordinateList == null || coordinateList.trim().isEmpty()) {
+            return conflicts;
+        }
+
+        logger.info("开始检查信标坐标冲突，坐标列表: {}, 当前区域ID: {}", coordinateList, currentAreaId);
+
+        // 使用正则表达式解析坐标
+        Pattern pattern = Pattern.compile("\\((\\d+(?:\\.\\d+)?),\\s*(\\d+(?:\\.\\d+)?)\\)");
+        Matcher matcher = pattern.matcher(coordinateList);
+
+        while (matcher.find()) {
+            try {
+                Double pixelX = Double.parseDouble(matcher.group(1));
+                Double pixelY = Double.parseDouble(matcher.group(2));
+
+                logger.info("检查坐标: ({}, {})", pixelX, pixelY);
+
+                // 根据坐标查找信标
+                List<SwmBeaconStation> beacons = swmBeaconStationService.findByPixelCoordinates(pixelX, pixelY);
+
+                if (beacons != null && !beacons.isEmpty()) {
+                    for (SwmBeaconStation beacon : beacons) {
+                        String beaconArea = beacon.getArea();
+
+                        // 如果信标已被其他区域使用（不是当前区域）
+                        if (beaconArea != null && !beaconArea.trim().isEmpty() &&
+                                !beaconArea.equals(currentAreaId)) {
+
+                            // 获取区域名称
+                            String areaName = "";
+                            try {
+                                SwmArea area = get(beaconArea);
+                                if (area != null) {
+                                    areaName = area.getAreaName();
+                                }
+                            } catch (Exception e) {
+                                logger.warn("获取区域名称失败: {}", beaconArea, e);
+                                areaName = "未知区域";
+                            }
+
+                            Map<String, Object> conflict = new HashMap<>();
+                            conflict.put("coordinate", "(" + pixelX.intValue() + ", " + pixelY.intValue() + ")");
+                            conflict.put("beaconId", beacon.getBeaconId());
+                            conflict.put("conflictAreaId", beaconArea);
+                            conflict.put("conflictAreaName", areaName);
+
+                            conflicts.add(conflict);
+
+                            logger.warn("发现信标冲突: 坐标({}, {}), 信标ID: {}, 已被区域 {} ({}) 使用",
+                                    pixelX, pixelY, beacon.getBeaconId(), areaName, beaconArea);
+                        }
+                    }
+                }
+            } catch (NumberFormatException e) {
+                logger.error("解析坐标失败: {}", matcher.group(), e);
+                continue;
+            }
+        }
+
+        logger.info("信标冲突检查完成，共发现 {} 个冲突", conflicts.size());
+        return conflicts;
     }
 }
