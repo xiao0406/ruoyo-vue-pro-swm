@@ -501,7 +501,11 @@ public class PersonTrackController extends BaseController {
      * 通过身份证号从Redis缓存中查找设备ID，然后匹配area_fence_data表中的设备ID后8位，
      * 查询该表并按area_name分组找出最早的记录
      * 
-     * @param idCard 身份证号
+     * @param idCard    身份证号
+     * @param startDate 开始日期 (可选，格式：yyyy-MM-dd)
+     * @param endDate   结束日期 (可选，格式：yyyy-MM-dd)
+     * @param startTime 开始时间（秒，可选）
+     * @param endTime   结束时间（秒，可选）
      * @return 区域围栏数据
      * @author Shawn
      * @date 2025-01-15
@@ -510,7 +514,11 @@ public class PersonTrackController extends BaseController {
     @ResponseBody
     @ApiOperation("根据身份证查询区域围栏数据")
     public Map<String, Object> getAreaFenceDataByIdCard(
-            @ApiParam(value = "身份证号", required = true) @RequestParam String idCard) {
+            @ApiParam(value = "身份证号", required = true) @RequestParam String idCard,
+            @ApiParam(value = "开始日期") @RequestParam(required = false) String startDate,
+            @ApiParam(value = "结束日期") @RequestParam(required = false) String endDate,
+            @ApiParam(value = "开始时间（秒）") @RequestParam(required = false) Integer startTime,
+            @ApiParam(value = "结束时间（秒）") @RequestParam(required = false) Integer endTime) {
 
         Map<String, Object> result = new HashMap<>();
 
@@ -539,7 +547,8 @@ public class PersonTrackController extends BaseController {
             logger.info("设备ID {} 的后8位: {}", deviceId, deviceIdLast8);
 
             // 3. 查询area_fence_data表，匹配device_id的后8位
-            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8);
+            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8, startDate, endDate,
+                    startTime, endTime);
 
             result.put("success", true);
             result.put("data", areaFenceData);
@@ -585,22 +594,35 @@ public class PersonTrackController extends BaseController {
      * 查询area_fence_data表，根据设备ID后8位匹配并按area_name分组找出最早记录
      * 
      * @param deviceIdLast8 设备ID后8位
+     * @param startDate     开始日期 (可选，格式：yyyy-MM-dd)
+     * @param endDate       结束日期 (可选，格式：yyyy-MM-dd)
+     * @param startTime     开始时间（秒，可选）
+     * @param endTime       结束时间（秒，可选）
      * @return 区域围栏数据列表
      */
-    private List<Map<String, Object>> queryAreaFenceDataByDeviceId(String deviceIdLast8) {
+    private List<Map<String, Object>> queryAreaFenceDataByDeviceId(String deviceIdLast8, String startDate,
+            String endDate, Integer startTime, Integer endTime) {
         List<Map<String, Object>> resultList = new ArrayList<>();
 
         try {
             // 构建SQL查询语句
-            // 查询当天该设备在各个区域的所有记录，然后在Java中处理排序和分组
             // device_id格式为 B0:8E:22:31:03:39，需要去掉冒号后匹配后8位
-            String sql = String.format(
-                    "SELECT time, area_name FROM %s.area_fence_data " +
-                            "WHERE REPLACE(device_id, ':', '') LIKE '%%%s' " +
-                            "AND time >= TODAY() AND time < TODAY() + 1d " +
-                            "ORDER BY time ASC",
-                    dbname, deviceIdLast8);
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT time, area_name FROM ").append(dbname).append(".area_fence_data ");
+            sqlBuilder.append("WHERE REPLACE(device_id, ':', '') LIKE '%").append(deviceIdLast8).append("' ");
 
+            // 构建时间条件
+            String timeCondition = buildTimeCondition(startDate, endDate, startTime, endTime);
+            if (timeCondition != null && !timeCondition.trim().isEmpty()) {
+                sqlBuilder.append("AND ").append(timeCondition).append(" ");
+            } else {
+                // 默认查询当天
+                sqlBuilder.append("AND time >= TODAY() AND time < TODAY() + 1d ");
+            }
+
+            sqlBuilder.append("ORDER BY time ASC");
+
+            String sql = sqlBuilder.toString();
             logger.info("查询area_fence_data的SQL: {}", sql);
 
             // 执行查询
@@ -655,5 +677,56 @@ public class PersonTrackController extends BaseController {
         }
 
         return resultList;
+    }
+
+    /**
+     * 构建时间查询条件
+     * 
+     * @param startDate 开始日期 (格式：yyyy-MM-dd)
+     * @param endDate   结束日期 (格式：yyyy-MM-dd)
+     * @param startTime 开始时间（秒）
+     * @param endTime   结束时间（秒）
+     * @return 时间条件SQL片段
+     */
+    private String buildTimeCondition(String startDate, String endDate, Integer startTime, Integer endTime) {
+        try {
+            // 如果没有提供日期，返回null使用默认条件
+            if (startDate == null || startDate.trim().isEmpty()) {
+                return null;
+            }
+
+            // 如果没有提供结束日期，使用开始日期作为结束日期
+            if (endDate == null || endDate.trim().isEmpty()) {
+                endDate = startDate;
+            }
+
+            // 将秒数转换为时分秒格式
+            String startTimeStr = "00:00:00";
+            String endTimeStr = "23:59:59";
+
+            if (startTime != null && startTime >= 0) {
+                int hours = startTime / 3600;
+                int minutes = (startTime % 3600) / 60;
+                int seconds = startTime % 60;
+                startTimeStr = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+            }
+
+            if (endTime != null && endTime >= 0) {
+                int hours = endTime / 3600;
+                int minutes = (endTime % 3600) / 60;
+                int seconds = endTime % 60;
+                endTimeStr = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+            }
+
+            // 构建时间条件
+            String startDateTime = startDate + " " + startTimeStr;
+            String endDateTime = endDate + " " + endTimeStr;
+
+            return String.format("time >= '%s' AND time <= '%s'", startDateTime, endDateTime);
+
+        } catch (Exception e) {
+            logger.error("构建时间条件失败", e);
+            return null;
+        }
     }
 }
