@@ -667,79 +667,55 @@ public class SwmSafetyEducationController extends BaseController {
         try {
             // 获取参与对象
             String participants = education.getParticipants();
-            List<String> workshopList = new ArrayList<>();
+            List<String> personIdList = new ArrayList<>();
 
             // 解析参与对象（支持JSON格式和逗号分隔的字符串）
             if (participants.startsWith("[") && participants.endsWith("]")) {
                 // JSON格式
                 ObjectMapper mapper = new ObjectMapper();
-                workshopList = mapper.readValue(participants, new TypeReference<List<String>>() {
+                personIdList = mapper.readValue(participants, new TypeReference<List<String>>() {
                 });
             } else {
                 // 逗号分隔的字符串
-                workshopList = java.util.Arrays.asList(participants.split(","))
+                personIdList = java.util.Arrays.asList(participants.split(","))
                         .stream()
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())
                         .collect(Collectors.toList());
             }
 
-            // 直接将参与对象视为车间名称进行更新
+            // 现在参与对象存储的是人员ID，直接更新对应人员的安全教育状态
             logger.info("安全教育ID: {}，主题: {}，开始更新人员安全教育状态",
                     education.getId(), education.getTheme());
 
-            // 查询每个车间的人员并更新
+            // 直接根据人员ID更新安全教育状态
             int updatedCount = 0;
-            for (String workshop : workshopList) {
-                // 根据部门查询人员并更新
-                int count = updatePersonByDepartment(workshop);
-                logger.info("车间 [{}] 更新了 {} 名人员的安全教育状态", workshop, count);
-                updatedCount += count;
+            for (String personId : personIdList) {
+                try {
+                    // 根据人员ID获取人员信息
+                    SwmPerson person = swmPersonService.get(personId);
+                    if (person != null) {
+                        // 只更新安全教育状态为未开始的人员
+                        if (SwmPerson.SafetyEducationEnum.NOT_STARTED.equals(person.getSafetyEducation())) {
+                            person.setSafetyEducation(SwmPerson.SafetyEducationEnum.COMPLETED);
+                            swmPersonService.save(person);
+                            updatedCount++;
+                            logger.info("更新人员 [{}] 的安全教育状态为已完成", person.getName());
+                        } else {
+                            logger.info("人员 [{}] 的安全教育状态已为已完成，跳过更新", person.getName());
+                        }
+                    } else {
+                        logger.warn("根据人员ID [{}] 未找到人员记录", personId);
+                    }
+                } catch (Exception e) {
+                    logger.error("更新人员ID [{}] 的安全教育状态时出现异常: {}", personId, e.getMessage());
+                }
             }
+
             logger.info("安全教育（ID: {}, 主题: {}）完成后成功更新了 {} 名人员的安全教育状态",
                     education.getId(), education.getTheme(), updatedCount);
         } catch (Exception e) {
             logger.error("更新人员安全教育状态时出现异常", e);
-        }
-    }
-
-    /**
-     * 根据部门更新人员的安全教育状态
-     * 
-     * @param department 部门参数，可以是车间ID、班组ID、产线ID、组织编码或身份证号
-     * @return 更新的记录数
-     */
-    private int updatePersonByDepartment(String department) {
-        if (department == null || department.isEmpty()) {
-            return 0;
-        }
-
-        try {
-            // 使用自定义SQL查询符合条件的人员
-            List<SwmPerson> personList = swmPersonService.findPersonsByDepartmentCondition(department);
-            if (personList == null || personList.isEmpty()) {
-                logger.info("根据条件 [{}] 未找到人员记录", department);
-                return 0;
-            }
-
-            logger.info("根据条件 [{}] 找到 {} 名人员", department, personList.size());
-
-            // 更新每个人员的安全教育状态
-            int count = 0;
-            for (SwmPerson person : personList) {
-                // 只更新安全教育状态为未开始的人员
-                if (SwmPerson.SafetyEducationEnum.NOT_STARTED.equals(person.getSafetyEducation())) {
-                    person.setSafetyEducation(SwmPerson.SafetyEducationEnum.COMPLETED);
-                    swmPersonService.save(person);
-                    count++;
-                }
-            }
-
-            logger.info("根据条件 [{}] 共更新了 {} 名人员的安全教育状态", department, count);
-            return count;
-        } catch (Exception e) {
-            logger.error("根据条件 [{}] 更新人员安全教育状态时出现异常: {}", department, e.getMessage());
-            return 0;
         }
     }
 

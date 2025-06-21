@@ -1389,4 +1389,40 @@ public class SwmPersonController extends BaseController {
 
         return result;
     }
+
+    /**
+     * 根据部门条件查询在职人员
+     * 
+     * @param departmentCondition 部门条件参数，可以是车间ID、班组ID、产线ID、组织编码或身份证号
+     * @return 符合条件的在职人员列表
+     * @author Shawn
+     * @date 2025/01/18
+     */
+    @GetMapping(value = "findPersonsByDepartmentCondition")
+    @ResponseBody
+    public List<SwmPerson> findPersonsByDepartmentCondition(
+            @RequestParam("departmentCondition") String departmentCondition) {
+        try {
+            logger.info("根据部门条件查询在职人员，条件: {}", departmentCondition);
+
+            if (departmentCondition == null || departmentCondition.trim().isEmpty()) {
+                logger.warn("部门条件为空，返回空列表");
+                return new ArrayList<>();
+            }
+
+            List<SwmPerson> personList = swmPersonService.findPersonsByDepartmentCondition(departmentCondition);
+
+            if (personList == null || personList.isEmpty()) {
+                logger.info("根据条件 [{}] 未找到人员记录", departmentCondition);
+                return new ArrayList<>();
+            }
+
+            logger.info("根据条件 [{}] 找到 {} 名人员", departmentCondition, personList.size());
+            return personList;
+
+        } catch (Exception e) {
+            logger.error("根据部门条件查询人员异常: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
 }
