@@ -51,9 +51,6 @@
             <if test="workStatus != null and workStatus != ''">
                 AND a.personnel_status = #{workStatus}
             </if>
-            <if test="sqlMap.where != null and sqlMap.where.toSql() != ''">
-                AND ${sqlMap.where.toSql()}
-            </if>
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmCommonOptionsDao">
+    
+    <!-- 获取单位选项 -->
+    <select id="getCompanyOptions" resultType="java.util.Map">
+        SELECT office_code as value, office_name as label 
+        FROM js_sys_office 
+        WHERE zip_code IS NOT NULL 
+    </select>
+    
+    <!-- 获取车间选项 -->
+    <select id="getDepartmentOptions" resultType="java.util.Map">
+        SELECT id as value, position_name as label 
+        FROM fms_position_archive 
+        WHERE type = 'CJ' 
+    </select>
+    
+    <!-- 获取产线选项 -->
+    <select id="getProdLineOptions" resultType="java.util.Map">
+        SELECT id as value, prod_line_name as label 
+        FROM fms_prod_line 
+        
+    </select>
+    
+    <!-- 获取班组选项 -->
+    <select id="getWorkGroupOptions" resultType="java.util.Map">
+        SELECT id as value, work_group_name as label 
+        FROM fms_work_group 
+        
+    </select>
+    
+</mapper> 
