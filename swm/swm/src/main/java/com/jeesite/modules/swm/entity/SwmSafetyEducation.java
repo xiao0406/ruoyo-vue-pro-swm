@@ -222,7 +222,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         this.startTime = startTime;
     }
 
-    @Length(min = 0, max = 500, message = "参与对象长度不能超过 500 个字符")
+    @Length(min = 0, max = 50000, message = "参与对象长度不能超过 50000 个字符")
     public String getParticipants() {
         return participants;
     }
@@ -231,7 +231,7 @@ public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
         this.participants = participants;
     }
 
-    @Length(min = 0, max = 500, message = "参与对象名称长度不能超过 500 个字符")
+    @Length(min = 0, max = 50000, message = "参与对象名称长度不能超过 50000 个字符")
     public String getParticipantsName() {
         return participantsName;
     }
