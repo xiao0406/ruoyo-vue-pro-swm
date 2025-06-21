@@ -45,6 +45,7 @@
                 OR fpl.id LIKE CONCAT('%', #{organizationKey}, '%')            -- 🏗️ 产线ID查询  
                 OR wg.id LIKE CONCAT('%', #{organizationKey}, '%')             -- 👥 班组ID查询
                 OR f.office_code = #{organizationKey}                          -- 🏢 厂间编码查询
+                OR f.id = #{organizationKey}                                   -- 人员编码
             )
         </if>
         LIMIT 50000
