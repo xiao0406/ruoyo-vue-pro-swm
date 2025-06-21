@@ -28,6 +28,8 @@ import java.util.Date;
         @Column(name = "ip", attrName = "ip", label = "IP地址"),
         @Column(name = "mac_address", attrName = "macAddress", label = "MAC地址"),
         @Column(name = "assigned_person", attrName = "assignedPerson", label = "绑定人员"),
+        @Column(name = "person_name", attrName = "personName", label = "人员姓名"),
+        @Column(name = "person_phone", attrName = "personPhone", label = "手机号码"),
         @Column(name = "assigned_workshop", attrName = "assignedWorkshop", label = "所属车间"),
         @Column(name = "assigned_process", attrName = "assignedProcess", label = "所属工序"),
         @Column(name = "assigned_team", attrName = "assignedTeam", label = "所属班组"),
@@ -101,6 +103,8 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     private String ip; // IP地址
     private String macAddress; // MAC地址
     private String assignedPerson; // 绑定人员
+    private String personName; // 人员姓名
+    private String personPhone; // 手机号码
     private String assignedWorkshop;// 所属车间
     private String assignedProcess; // 所属工序
     private String assignedTeam; // 所属班组
@@ -175,6 +179,24 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
 
     public void setAssignedPerson(String assignedPerson) {
         this.assignedPerson = assignedPerson;
+    }
+
+    @Length(min = 0, max = 100, message = "人员姓名长度不能超过100个字符")
+    public String getPersonName() {
+        return personName;
+    }
+
+    public void setPersonName(String personName) {
+        this.personName = personName;
+    }
+
+    @Length(min = 0, max = 20, message = "手机号码长度不能超过20个字符")
+    public String getPersonPhone() {
+        return personPhone;
+    }
+
+    public void setPersonPhone(String personPhone) {
+        this.personPhone = personPhone;
     }
 
     @Length(min = 0, max = 100, message = "所属车间长度不能超过100个字符")

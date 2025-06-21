@@ -17,6 +17,8 @@
             a.ip,
             a.mac_address,
             a.assigned_person,
+            a.person_name,
+            a.person_phone,
             a.assigned_workshop,
             a.assigned_process,
             a.assigned_team,
@@ -48,6 +50,8 @@
             a.ip,
             a.mac_address,
             a.assigned_person,
+            a.person_name,
+            a.person_phone,
             a.assigned_workshop,
             a.assigned_process,
             a.assigned_team,
@@ -71,6 +75,8 @@
         UPDATE swm_helmet_device 
         SET 
             assigned_person = NULL,
+            person_name = NULL,
+            person_phone = NULL,
             assigned_workshop = NULL,
             assigned_process = NULL,
             assigned_team = NULL,
@@ -91,6 +97,8 @@
             a.ip,
             a.mac_address,
             a.assigned_person,
+            a.person_name,
+            a.person_phone,
             CASE 
                 WHEN a.assigned_person IS NOT NULL AND a.assigned_person != '' THEN pa.position_name
                 ELSE a.assigned_workshop

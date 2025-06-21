@@ -215,6 +215,8 @@ public class SwmHelmetDeviceController extends BaseController {
 
         // 设备已存在，使用专门的更新方法
         device.setAssignedPerson(personIdCard);
+        device.setPersonName(person.getName());
+        device.setPersonPhone(person.getPhoneNumber());
         swmHelmetDeviceService.updateDevice(device);
 
         result.put("success", true);
