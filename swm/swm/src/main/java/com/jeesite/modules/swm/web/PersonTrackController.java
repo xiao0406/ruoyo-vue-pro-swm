@@ -322,15 +322,8 @@ public class PersonTrackController extends BaseController {
                     startTime,
                     endTime);
 
-            // 构建时间线事件数据
-            List<Map<String, Object>> timelineEvents = Arrays.asList(
-                    createTimelineEvent("2025-01-01 09:52:34", personName, "进入厂区", 1),
-                    createTimelineEvent("2025-01-01 10:15:20", personName, "开始工作", 1),
-                    createTimelineEvent("2025-01-01 12:00:00", personName, "午休时间", 1),
-                    createTimelineEvent("2025-01-01 13:30:15", personName, "继续工作", 1),
-                    createTimelineEvent("2025-01-01 15:45:56", personName, "接近危险源", 3),
-                    createTimelineEvent("2025-01-01 17:00:00", personName, "结束工作", 1),
-                    createTimelineEvent("2025-01-01 17:30:00", personName, "离开厂区", 1));
+            // 构建时间线事件数据 - 返回空列表，让前端从区域围栏数据获取
+            List<Map<String, Object>> timelineEvents = new ArrayList<>();
 
             Map<String, Object> data = new HashMap<>();
             data.put("trajectoryPoints", trajectoryPoints);
@@ -523,7 +516,8 @@ public class PersonTrackController extends BaseController {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            logger.info("根据身份证查询区域围栏数据，身份证号: {}", idCard);
+            logger.info("根据身份证查询区域围栏数据，身份证号: {}, 开始日期: {}, 结束日期: {}, 开始时间: {}, 结束时间: {}",
+                    idCard, startDate, endDate, startTime, endTime);
 
             // 1. 根据身份证从Redis缓存中查找设备ID
             String deviceId = helmetCacheService.getAssignedDeviceFromCache(idCard, swmHelmetDeviceService);
@@ -628,10 +622,16 @@ public class PersonTrackController extends BaseController {
             // 执行查询
             R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
 
+            logger.info("TDengine查询结果 - 状态码: {}, 消息: {}", queryResult.getCode(), queryResult.getMsg());
+
             if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
                 JSONObject data = queryResult.getData();
                 JSONArray rows = data.getJSONArray("data");
                 JSONArray columnMeta = data.getJSONArray("column_meta");
+
+                logger.info("TDengine返回数据结构 - rows: {}, columnMeta: {}",
+                        rows != null ? rows.size() : "null",
+                        columnMeta != null ? columnMeta.size() : "null");
 
                 if (rows != null && rows.size() > 0) {
                     logger.info("查询到 {} 条区域围栏数据", rows.size());
