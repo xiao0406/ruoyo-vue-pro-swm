@@ -97,6 +97,7 @@ public class SwmAreaController extends BaseController {
             // 复制基本属性
             data.put("id", swmArea.getId());
             data.put("areaName", swmArea.getAreaName());
+            data.put("areaType", swmArea.getAreaType());
             data.put("workShop", swmArea.getWorkShop());
             data.put("voicePrompt", swmArea.getVoicePrompt());
             data.put("filePath", swmArea.getFilePath());
@@ -213,6 +214,7 @@ public class SwmAreaController extends BaseController {
         try {
             String id = (String) params.get("id");
             String areaName = (String) params.get("areaName");
+            String areaType = (String) params.get("areaType");
             String voicePrompt = (String) params.get("voicePrompt");
             String filePath = (String) params.get("filePath");
             String beaconList = (String) params.get("beaconList");
@@ -235,6 +237,7 @@ public class SwmAreaController extends BaseController {
 
             // 设置区域属性
             swmArea.setAreaName(areaName);
+            swmArea.setAreaType(areaType);
             swmArea.setVoicePrompt(voicePrompt);
             swmArea.setFilePath(filePath);
 

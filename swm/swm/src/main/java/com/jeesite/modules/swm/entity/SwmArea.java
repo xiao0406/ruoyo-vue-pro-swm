@@ -19,6 +19,7 @@ import javax.validation.constraints.NotBlank;
 @Table(name = "swm_area", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "area_name", attrName = "areaName", label = "区域名称", queryType = QueryType.LIKE),
+        @Column(name = "area_type", attrName = "areaType", label = "区域类型"),
         @Column(name = "work_shop", attrName = "workShop", label = "车间ID"),
         @Column(name = "voice_prompt", attrName = "voicePrompt", label = "语音提示"),
         @Column(name = "file_path", attrName = "filePath", label = "文件路径"),
@@ -29,6 +30,7 @@ public class SwmArea extends DataEntity<SwmArea> {
     private static final long serialVersionUID = 1L;
 
     private String areaName; // 区域名称
+    private String areaType; // 区域类型
     private String workShop; // 车间ID
     private String voicePrompt; // 语音提示
     private String filePath; // 文件路径
@@ -49,6 +51,15 @@ public class SwmArea extends DataEntity<SwmArea> {
 
     public void setAreaName(String areaName) {
         this.areaName = areaName;
+    }
+
+    @Length(min = 0, max = 50, message = "区域类型长度不能超过 50 个字符")
+    public String getAreaType() {
+        return areaType;
+    }
+
+    public void setAreaType(String areaType) {
+        this.areaType = areaType;
     }
 
     @Length(min = 0, max = 64, message = "车间ID长度不能超过 64 个字符")
