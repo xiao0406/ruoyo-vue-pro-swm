@@ -11,9 +11,11 @@ import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmHazardSource;
 import com.jeesite.modules.swm.entity.SwmInspectionPlan;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.entity.SwmVoiceTemplate;
 import com.jeesite.modules.swm.service.SwmHazardSourceService;
 import com.jeesite.modules.swm.service.SwmInspectionPlanService;
 import com.jeesite.modules.swm.service.SwmPersonService;
+import com.jeesite.modules.swm.service.SwmVoiceTemplateService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +43,8 @@ public class SwmHazardSourceController extends BaseController {
     private SwmInspectionPlanService swmInspectionPlanService;
     @Autowired
     private SwmPersonService swmPersonService;
+    @Autowired
+    private SwmVoiceTemplateService swmVoiceTemplateService;
 
     /**
      * 获取数据
@@ -106,6 +110,14 @@ public class SwmHazardSourceController extends BaseController {
             } else if ("3".equals(item.getHazardStatus())) {
                 item.setHazardStatusText("已忽略");
             }
+
+            // 语音模板名称
+            if (item.getVoiceTemplateId() != null && !item.getVoiceTemplateId().isEmpty()) {
+                SwmVoiceTemplate voiceTemplate = swmVoiceTemplateService.get(item.getVoiceTemplateId());
+                if (voiceTemplate != null) {
+                    item.setVoiceTemplateText(voiceTemplate.getTemplateName());
+                }
+            }
         }
 
         return page;
@@ -131,6 +143,8 @@ public class SwmHazardSourceController extends BaseController {
             data.put("patrolRecordSummary", swmHazardSource.getPatrolRecordSummary());
             data.put("registrationTime", swmHazardSource.getRegistrationTime());
             data.put("hazardStatus", swmHazardSource.getHazardStatus());
+            data.put("voiceTemplateId", swmHazardSource.getVoiceTemplateId());
+            data.put("beaconTag", swmHazardSource.getBeaconTag());
             data.put("remarks", swmHazardSource.getRemarks());
 
             // 手动设置字典文本
@@ -169,6 +183,14 @@ public class SwmHazardSourceController extends BaseController {
                 data.put("hazardStatusText", "已忽略");
             }
 
+            // 语音模板名称
+            if (swmHazardSource.getVoiceTemplateId() != null && !swmHazardSource.getVoiceTemplateId().isEmpty()) {
+                SwmVoiceTemplate voiceTemplate = swmVoiceTemplateService.get(swmHazardSource.getVoiceTemplateId());
+                if (voiceTemplate != null) {
+                    data.put("voiceTemplateText", voiceTemplate.getTemplateName());
+                }
+            }
+
             result.putAll(data);
         }
         return result;
@@ -181,25 +203,26 @@ public class SwmHazardSourceController extends BaseController {
     @ResponseBody
     @ApiOperation(value = "保存危险源")
     public String save(@Validated SwmHazardSource swmHazardSource) {
-        if(swmHazardSource.getResponsiblePersonId() != null){
+        if (swmHazardSource.getResponsiblePersonId() != null) {
             SwmPerson swmPerson = swmPersonService.get(swmHazardSource.getResponsiblePersonId());
-            if(swmPerson == null){
+            if (swmPerson == null) {
                 return renderResult(Global.FALSE, text("巡检负责人不存在！"));
-            }else{
+            } else {
                 swmHazardSource.setResponsiblePerson(swmPerson.getName());
             }
         }
         swmHazardSourceService.save(swmHazardSource);
-        //如果设置为加入巡检需要生成巡检计划
-        if("1".equals(swmHazardSource.getIsPatrolIncluded())){
-            //判断必要字段是否为空
-            if(swmHazardSource.getFirstInspectionTime() == null || swmHazardSource.getFrequencyDays() == null ||  swmHazardSource.getResponsiblePersonId() == null){
+        // 如果设置为加入巡检需要生成巡检计划
+        if ("1".equals(swmHazardSource.getIsPatrolIncluded())) {
+            // 判断必要字段是否为空
+            if (swmHazardSource.getFirstInspectionTime() == null || swmHazardSource.getFrequencyDays() == null
+                    || swmHazardSource.getResponsiblePersonId() == null) {
                 return renderResult(Global.FALSE, text("加入巡检的危险源巡检负责人、巡检频次、首检时间不能为空"));
             }
             SwmInspectionPlan swmInspectionPlan = new SwmInspectionPlan();
             swmInspectionPlan.setPlanName(swmHazardSource.getHazardName());
             swmInspectionPlan.setFrequencyDays(swmHazardSource.getFrequencyDays());
-            //危险源巡检
+            // 危险源巡检
             swmInspectionPlan.setInspectionType("3");
             swmInspectionPlan.setResponsiblePersonId(swmHazardSource.getResponsiblePersonId());
             swmInspectionPlan.setResponsiblePerson(swmHazardSource.getResponsiblePerson());

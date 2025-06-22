@@ -37,11 +37,12 @@ import java.util.Date;
         @Column(name = "responsible_person_id", attrName = "responsiblePersonId", label = "巡检负责人id"),
         @Column(name = "responsible_person", attrName = "responsiblePerson", label = "巡检负责人"),
         @Column(name = "first_inspection_time", attrName = "firstInspectionTime", label = "首次巡检时间"),
-},orderBy = "a.create_date DESC")
+        @Column(name = "voice_template_id", attrName = "voiceTemplateId", label = "语音模板ID"),
+        @Column(name = "beacon_tag", attrName = "beaconTag", label = "信标标记", queryType = QueryType.LIKE),
+}, orderBy = "a.create_date DESC")
 public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 
     private static final long serialVersionUID = 1L;
-
 
     /**
      * 危险源状态枚举
@@ -70,11 +71,14 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
     private String responsiblePersonId; // 巡检负责人id
     private String responsiblePerson; // 巡检负责人
     private Date firstInspectionTime; // 首次巡检时间
+    private String voiceTemplateId; // 语音模板ID
+    private String beaconTag; // 信标标记
 
     // 非持久化的文本展示字段，不再由数据库JOIN查询获取，而是在Controller中手动设置
     private String hazardCategoryText; // 危险源类别文本
     private String isPatrolIncludedText; // 是否加入巡检文本
     private String hazardStatusText; // 危险源状态文本
+    private String voiceTemplateText; // 语音模板名称文本
 
     public SwmHazardSource() {
         this(null);
@@ -197,6 +201,32 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 
     public void setFirstInspectionTime(Date firstInspectionTime) {
         this.firstInspectionTime = firstInspectionTime;
+    }
+
+    @Length(min = 0, max = 64, message = "语音模板ID长度不能超过 64 个字符")
+    public String getVoiceTemplateId() {
+        return voiceTemplateId;
+    }
+
+    public void setVoiceTemplateId(String voiceTemplateId) {
+        this.voiceTemplateId = voiceTemplateId;
+    }
+
+    public String getVoiceTemplateText() {
+        return voiceTemplateText;
+    }
+
+    public void setVoiceTemplateText(String voiceTemplateText) {
+        this.voiceTemplateText = voiceTemplateText;
+    }
+
+    @Length(min = 0, max = 200, message = "信标标记长度不能超过 200 个字符")
+    public String getBeaconTag() {
+        return beaconTag;
+    }
+
+    public void setBeaconTag(String beaconTag) {
+        this.beaconTag = beaconTag;
     }
 
     public String getHazardStatusText() {
