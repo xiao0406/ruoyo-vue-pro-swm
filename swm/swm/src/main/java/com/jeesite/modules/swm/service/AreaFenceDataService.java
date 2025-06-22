@@ -14,6 +14,8 @@ import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,12 @@ public class AreaFenceDataService {
 
     @Autowired
     private SwmPersonService swmPersonService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Value("${tdengine.dbname:swm_db}")
     private String dbname;
@@ -492,18 +500,141 @@ public class AreaFenceDataService {
     }
 
     /**
-     * 获取字典类型area_fence_data的所有选项
+     * 获取休息区域的配置列表（从Redis缓存swm:area:all中获取area_type为"1"的区域）
      * 
-     * @return 区域ID列表
+     * @return 休息区域ID列表
+     * @author Shawn
+     * @date 2025/01/27
      */
+    @SuppressWarnings("unchecked")
     private List<DictData> getAreaFenceDataDictList() {
         try {
-            List<DictData> dictList = DictUtils.getDictList("area_fence_data");
-            logger.debug("获取到area_fence_data字典数据，区域数量: {}", dictList.size());
+            List<DictData> dictList = new ArrayList<>();
+
+            logger.info("开始从Redis缓存swm:area:all获取休息区域数据...");
+
+            // 使用StringRedisTemplate来获取原始字符串数据，避免序列化问题
+            try {
+                String rawData = stringRedisTemplate.opsForValue().get("swm:area:all");
+                if (rawData != null && !rawData.isEmpty()) {
+                    logger.debug("从Redis获取到原始数据长度: {}", rawData.length());
+
+                    // 解析Jackson序列化格式: ["java.util.ArrayList", [实际数据数组]]
+                    JSONArray outerArray = new JSONArray(rawData);
+
+                    if (outerArray.size() >= 2) {
+                        // 第一个元素是类型标识符，第二个元素是实际数据
+                        Object dataElement = outerArray.get(1);
+
+                        if (dataElement instanceof JSONArray) {
+                            JSONArray dataArray = (JSONArray) dataElement;
+                            logger.debug("解析到区域数据数组，数量: {}", dataArray.size());
+
+                            for (int i = 0; i < dataArray.size(); i++) {
+                                try {
+                                    Object item = dataArray.get(i);
+
+                                    // 每个区域项也是一个数组: ["类型", {实际数据对象}]
+                                    if (item instanceof JSONArray) {
+                                        JSONArray itemArray = (JSONArray) item;
+                                        if (itemArray.size() >= 2) {
+                                            Object areaDataObj = itemArray.get(1);
+
+                                            if (areaDataObj instanceof JSONObject) {
+                                                JSONObject areaJson = (JSONObject) areaDataObj;
+                                                String areaType = areaJson.getStr("areaType");
+
+                                                if ("1".equals(areaType)) {
+                                                    String areaId = areaJson.getStr("id");
+                                                    String areaName = areaJson.getStr("areaName");
+
+                                                    // 创建DictData对象，保持与原有逻辑的兼容性
+                                                    DictData dictData = new DictData();
+                                                    dictData.setDictValue(areaId); // 区域ID作为字典值
+                                                    dictData.setDictLabel(areaName); // 区域名称作为字典标签
+                                                    dictData.setDictLabelRaw(areaId); // 原始标签也使用区域ID，用于SQL查询
+                                                    dictList.add(dictData);
+
+                                                    logger.debug("找到休息区域: ID={}, 名称={}", areaId, areaName);
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    logger.warn("解析第{}个区域数据时出错，跳过: {}", i, e.getMessage());
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+
+                    logger.info("从Redis缓存swm:area:all中获取到休息区域数量: {}", dictList.size());
+                } else {
+                    logger.warn("Redis缓存swm:area:all为空或不存在");
+                }
+            } catch (Exception e) {
+                logger.warn("从Redis缓存swm:area:all解析数据失败: {}", e.getMessage());
+
+                // 尝试使用RedisTemplate的方式
+                try {
+                    logger.info("尝试使用RedisTemplate方式获取数据...");
+                    Object cachedData = redisTemplate.opsForValue().get("swm:area:all");
+
+                    if (cachedData instanceof List) {
+                        List<?> areaList = (List<?>) cachedData;
+                        logger.debug("获取到区域列表，数量: {}", areaList.size());
+
+                        for (Object item : areaList) {
+                            try {
+                                if (item instanceof Map) {
+                                    Map<String, Object> areaData = (Map<String, Object>) item;
+                                    String areaType = (String) areaData.get("areaType");
+
+                                    if ("1".equals(areaType)) {
+                                        String areaId = (String) areaData.get("id");
+                                        String areaName = (String) areaData.get("areaName");
+
+                                        DictData dictData = new DictData();
+                                        dictData.setDictValue(areaId);
+                                        dictData.setDictLabel(areaName);
+                                        dictData.setDictLabelRaw(areaId);
+                                        dictList.add(dictData);
+
+                                        logger.debug("找到休息区域: ID={}, 名称={}", areaId, areaName);
+                                    }
+                                }
+                            } catch (Exception itemException) {
+                                logger.warn("处理区域项时出错，跳过: {}", itemException.getMessage());
+                                continue;
+                            }
+                        }
+                    }
+                } catch (Exception redisTemplateException) {
+                    logger.warn("使用RedisTemplate方式也失败: {}", redisTemplateException.getMessage());
+                }
+            }
+
+            // 如果从缓存获取失败或没有数据，回退到字典表
+            if (dictList.isEmpty()) {
+                logger.warn("从Redis缓存获取休息区域失败或无数据，回退到字典表");
+                List<DictData> fallbackList = DictUtils.getDictList("area_fence_data");
+                logger.info("从字典表获取到area_fence_data数据，区域数量: {}", fallbackList.size());
+                return fallbackList;
+            }
+
             return dictList;
+
         } catch (Exception e) {
-            logger.error("获取area_fence_data字典数据失败", e);
-            return new ArrayList<>();
+            logger.error("从Redis缓存获取休息区域数据失败，回退到字典表", e);
+            // 发生异常时回退到原来的字典表方式
+            try {
+                List<DictData> fallbackList = DictUtils.getDictList("area_fence_data");
+                logger.info("回退：从字典表获取到area_fence_data数据，区域数量: {}", fallbackList.size());
+                return fallbackList;
+            } catch (Exception fallbackException) {
+                logger.error("回退到字典表也失败", fallbackException);
+                return new ArrayList<>();
+            }
         }
     }
 
