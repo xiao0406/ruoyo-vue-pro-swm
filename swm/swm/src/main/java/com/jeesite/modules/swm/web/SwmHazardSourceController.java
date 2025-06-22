@@ -206,7 +206,7 @@ public class SwmHazardSourceController extends BaseController {
         if (swmHazardSource.getResponsiblePersonId() != null) {
             SwmPerson swmPerson = swmPersonService.get(swmHazardSource.getResponsiblePersonId());
             if (swmPerson == null) {
-                return renderResult(Global.FALSE, text("巡检负责人不存在！"));
+//                return renderResult(Global.FALSE, text("巡检负责人不存在！"));
             } else {
                 swmHazardSource.setResponsiblePerson(swmPerson.getName());
             }
