@@ -124,6 +124,7 @@ public class SwmBeaconStationController extends BaseController {
             // 复制基本属性
             data.put("id", swmBeaconStation.getId());
             data.put("beaconId", swmBeaconStation.getBeaconId());
+            data.put("deviceName", swmBeaconStation.getDeviceName());
             data.put("beaconType", swmBeaconStation.getBeaconType());
             data.put("beaconColor", swmBeaconStation.getBeaconColor());
             data.put("controlType", swmBeaconStation.getControlType());

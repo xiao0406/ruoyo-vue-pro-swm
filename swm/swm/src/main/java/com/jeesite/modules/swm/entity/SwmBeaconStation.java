@@ -21,6 +21,7 @@ import javax.validation.constraints.NotBlank;
 @Table(name = "swm_beacon_station", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "beacon_id", attrName = "beaconId", label = "信标编号", queryType = QueryType.LIKE),
+        @Column(name = "device_name", attrName = "deviceName", label = "设备名称", queryType = QueryType.LIKE),
         @Column(name = "beacon_type", attrName = "beaconType", label = "信标类型"),
         @Column(name = "beacon_color", attrName = "beaconColor", label = "信标颜色"),
         @Column(name = "control_type", attrName = "controlType", label = "围栏类型"),
@@ -99,6 +100,7 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     }
 
     private String beaconId; // 信标编号
+    private String deviceName; // 设备名称
     private String beaconType; // 信标类型
     private String beaconColor; // 信标颜色
     private String controlType; // 围栏类型
@@ -132,6 +134,15 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     public void setBeaconId(String beaconId) {
         this.beaconId = beaconId;
+    }
+
+    @Length(min = 0, max = 100, message = "设备名称不能超过100个字符")
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
     }
 
     @Length(min = 0, max = 50, message = "信标类型不能超过50个字符")
