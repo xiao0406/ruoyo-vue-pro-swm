@@ -43,6 +43,7 @@ public class SwmHiddenDanger extends DataEntity<SwmHiddenDanger> {
     // 用于显示的属性，不对应数据库字段
     private String isBeaconDeployedText; // 是否布设信标显示文本
     private String isHandledText; // 是否已处置显示文本
+    private String inspectionPlanName; // 巡检计划名称
 
     public SwmHiddenDanger() {
         this(null);
@@ -116,5 +117,13 @@ public class SwmHiddenDanger extends DataEntity<SwmHiddenDanger> {
             return "";
         }
         return DictUtils.getDictLabel("is_handled_enum", this.isHandled, "");
+    }
+
+    public String getInspectionPlanName() {
+        return inspectionPlanName;
+    }
+
+    public void setInspectionPlanName(String inspectionPlanName) {
+        this.inspectionPlanName = inspectionPlanName;
     }
 }
