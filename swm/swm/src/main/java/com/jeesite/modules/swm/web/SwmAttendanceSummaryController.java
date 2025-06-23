@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Calendar;
 
 /**
  * 考勤月统计表Controller
@@ -219,6 +220,69 @@ public class SwmAttendanceSummaryController extends BaseController {
     }
 
     /**
+     * 格式化考勤记录中的时间字段
+     * 解决数据库时间字段显示1970-01-01的问题
+     * 
+     * @param attendance 考勤记录对象
+     * @return 格式化后的Map对象
+     * @author: Shawn
+     * @date: 2025/06/23
+     */
+    private Map<String, Object> formatAttendanceTime(SwmDailyAttendance attendance) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (attendance == null) {
+            return result;
+        }
+
+        // 复制所有基本字段
+        result.put("id", attendance.getId());
+        result.put("employeeId", attendance.getEmployeeId());
+        result.put("employeeName", attendance.getEmployeeName());
+        result.put("workTimeRange", attendance.getWorkTimeRange());
+        result.put("scheduledHours", attendance.getScheduledHours());
+        result.put("actualHours", attendance.getActualHours());
+        result.put("idleHours", attendance.getIdleHours());
+        result.put("dailyEfficiency", attendance.getDailyEfficiency());
+        result.put("dailyAchievementRate", attendance.getDailyAchievementRate());
+        result.put("attendanceNormal", attendance.getAttendanceNormal());
+        result.put("currentPosition", attendance.getCurrentPosition());
+        result.put("status", attendance.getStatus());
+        result.put("createBy", attendance.getCreateBy());
+        result.put("updateBy", attendance.getUpdateBy());
+        result.put("remarks", attendance.getRemarks());
+
+        // 格式化日期字段
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat dateOnlyFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        if (attendance.getAttendanceDate() != null) {
+            result.put("attendanceDate", dateOnlyFormat.format(attendance.getAttendanceDate()));
+        }
+
+        if (attendance.getCreateDate() != null) {
+            result.put("createDate", dateFormat.format(attendance.getCreateDate()));
+        }
+
+        if (attendance.getUpdateDate() != null) {
+            result.put("updateDate", dateFormat.format(attendance.getUpdateDate()));
+        }
+
+        // 特殊处理时间字段 - 只提取时分秒部分
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+
+        if (attendance.getClockInTime() != null) {
+            result.put("clockInTime", timeFormat.format(attendance.getClockInTime()));
+        }
+
+        if (attendance.getClockOutTime() != null) {
+            result.put("clockOutTime", timeFormat.format(attendance.getClockOutTime()));
+        }
+
+        return result;
+    }
+
+    /**
      * 轨迹信息-个人考勤记录明细
      *
      * @param employeeId 员工ID
@@ -240,9 +304,10 @@ public class SwmAttendanceSummaryController extends BaseController {
             }
             result.put("person", swmPerson);
 
-            // 查询日考勤
-            SwmDailyAttendance dailyAttendance = swmDailyAttendanceService.findByEmployeeIdAndDate(employeeId,DateUtil.date());
-            result.put("dailyAttendance", dailyAttendance);
+            // 查询日考勤 - 使用格式化方法处理时间字段
+            SwmDailyAttendance dailyAttendance = swmDailyAttendanceService.findByEmployeeIdAndDate(employeeId,
+                    DateUtil.date());
+            result.put("dailyAttendance", formatAttendanceTime(dailyAttendance));
 
             // 查询月考勤
             SwmAttendanceSummary queryAttendanceSummary = new SwmAttendanceSummary();
@@ -252,8 +317,10 @@ public class SwmAttendanceSummaryController extends BaseController {
             result.put("attendanceSummary", attendanceSummary);
 
             // 本月考勤时间和功效统计
-            result.put("attendanceChartData", swmDailyAttendanceService.getMonthlyAttendanceData(employeeId, DateUtil.year(new Date()), DateUtil.month(new Date())+1));
-            result.put("efficiencyChartData", swmDailyAttendanceService.getMonthlyChartData(employeeId, DateUtil.year(new Date()), DateUtil.month(new Date())+1));
+            result.put("attendanceChartData", swmDailyAttendanceService.getMonthlyAttendanceData(employeeId,
+                    DateUtil.year(new Date()), DateUtil.month(new Date()) + 1));
+            result.put("efficiencyChartData", swmDailyAttendanceService.getMonthlyChartData(employeeId,
+                    DateUtil.year(new Date()), DateUtil.month(new Date()) + 1));
         }
 
         return result;
