@@ -15,9 +15,9 @@
             NULL AS "workStatus",
             NULL AS "helmetStatus",
             a.personnel_status AS "personnelStatus",
-            0 AS "attendanceCount",
-            0 AS "workingHours",
-            0 AS "idleHours",
+            COALESCE(asm.actual_days, 0) AS "attendanceCount",
+            COALESCE(asm.actual_hours, 0) AS "workingHours",
+            COALESCE(asm.idle_hours, 0) AS "idleHours",
             a.identity_card AS "idCard",
             a.create_by AS "createBy",
             a.create_date AS "createDate",
@@ -32,6 +32,8 @@
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
         LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
         LEFT JOIN swm_helmet_device hd ON a.identity_card = hd.assigned_person
+        LEFT JOIN swm_attendance_summary asm ON a.id = asm.employee_id 
+            AND asm.month = DATE_FORMAT(NOW(), '%Y-%m') AND asm.status = '0'
         <where>
             <if test="name != null and name != ''">
                 AND a.name LIKE CONCAT('%', #{name}, '%')
