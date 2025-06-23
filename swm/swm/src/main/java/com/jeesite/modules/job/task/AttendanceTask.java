@@ -83,7 +83,7 @@ public class AttendanceTask {
             // 查询指定日期的所有考勤记录
             SwmDailyAttendance query = new SwmDailyAttendance();
             query.setAttendanceDate(targetDate);
-            query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉。
+            // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
 
             if (attendanceList.isEmpty()) {
@@ -115,21 +115,33 @@ public class AttendanceTask {
                         // 更新怠工时长字段
                         record.setIdleHours(BigDecimal.valueOf(calculatedIdleHours).setScale(2, RoundingMode.HALF_UP));
 
-                        // 计算实际考勤时长 = 应考勤时长 - 怠工时长
-                        BigDecimal scheduledHours = record.getScheduledHours();
-                        if (scheduledHours != null && scheduledHours.compareTo(BigDecimal.ZERO) > 0) {
-                            BigDecimal actualHours = scheduledHours.subtract(record.getIdleHours());
+                        // 计算实际考勤时长
+                        // 修改逻辑: 1. 如果没有上下班打卡时间，实际考勤为0
+                        // 2. 如果有上下班打卡时间，实际考勤 = 下班打卡时间 - 上班打卡时间 - 怠工时长
+                        // @author: Shawn
+                        // @date: 2025/06/23
+                        if (record.getClockInTime() == null || record.getClockOutTime() == null) {
+                            // 没有打卡时间，实际考勤时长为0
+                            record.setActualHours(BigDecimal.ZERO);
+                            XxlJobHelper.log("员工[{}]{}没有完整的上下班打卡记录，实际考勤时长为0",
+                                    record.getEmployeeId(), record.getEmployeeName());
+                        } else {
+                            // 有完整打卡时间，计算实际工作时长
+                            BigDecimal clockWorkHours = calculateWorkHoursBetweenTimes(
+                                    record.getClockInTime(), record.getClockOutTime());
+
+                            // 实际考勤时长 = 打卡工作时长 - 怠工时长
+                            BigDecimal actualHours = clockWorkHours.subtract(record.getIdleHours());
+
                             // 确保实际考勤时长不为负数
                             if (actualHours.compareTo(BigDecimal.ZERO) < 0) {
                                 actualHours = BigDecimal.ZERO;
                             }
+
                             record.setActualHours(actualHours.setScale(2, RoundingMode.HALF_UP));
-                            XxlJobHelper.log("员工[{}]{}实际考勤时长计算: 应考勤{}小时 - 怠工{}小时 = 实际{}小时",
+                            XxlJobHelper.log("员工[{}]{}实际考勤时长计算: 打卡工作{}小时 - 怠工{}小时 = 实际{}小时",
                                     record.getEmployeeId(), record.getEmployeeName(),
-                                    scheduledHours, record.getIdleHours(), actualHours);
-                        } else {
-                            XxlJobHelper.log("员工[{}]{}应考勤时长为空或为0，无法计算实际考勤时长",
-                                    record.getEmployeeId(), record.getEmployeeName());
+                                    clockWorkHours, record.getIdleHours(), actualHours);
                         }
 
                         swmDailyAttendanceService.update(record);
@@ -432,6 +444,39 @@ public class AttendanceTask {
             return BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
         } catch (Exception e) {
             log.error("计算应考勤时长时发生异常，workTimeRange: {}", workTimeRange, e);
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * 计算两个时间之间的工作时长
+     * 
+     * @param clockInTime  上班打卡时间
+     * @param clockOutTime 下班打卡时间
+     * @return 工作时长(小时)
+     * @author: Shawn
+     * @date: 2025/06/23
+     */
+    private BigDecimal calculateWorkHoursBetweenTimes(Date clockInTime, Date clockOutTime) {
+        if (clockInTime == null || clockOutTime == null) {
+            return BigDecimal.ZERO;
+        }
+
+        try {
+            // 计算时间差(毫秒)
+            long diffMillis = clockOutTime.getTime() - clockInTime.getTime();
+
+            // 如果下班时间小于上班时间，说明是跨日班次
+            if (diffMillis < 0) {
+                diffMillis += 24 * 60 * 60 * 1000; // 加上24小时的毫秒数
+            }
+
+            // 转换为小时
+            double hours = diffMillis / (1000.0 * 60 * 60);
+
+            return BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
+        } catch (Exception e) {
+            log.error("计算打卡工作时长时发生异常，clockInTime: {}, clockOutTime: {}", clockInTime, clockOutTime, e);
             return BigDecimal.ZERO;
         }
     }
