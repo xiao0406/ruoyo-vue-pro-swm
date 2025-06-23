@@ -38,6 +38,17 @@
         LIMIT 1
     </select>
     
+    <!-- 检查是否存在相同信标编号且状态为正常的记录（用于重复性校验） -->
+    <select id="countByBeaconIdAndStatus" resultType="int">
+        SELECT COUNT(1)
+        FROM swm_beacon_station a
+        WHERE a.beacon_id = #{beaconId}
+        AND a.status = '0' <!-- 正常状态 -->
+        <if test="id != null and id != ''">
+            AND a.id != #{id} <!-- 排除当前记录ID，用于编辑时校验 -->
+        </if>
+    </select>
+    
     <!-- 查询指定位置的基站列表 -->
     <select id="findByLocation" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT 

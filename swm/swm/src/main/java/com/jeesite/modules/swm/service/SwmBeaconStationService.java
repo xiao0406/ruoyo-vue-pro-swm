@@ -67,7 +67,29 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     @Override
     @Transactional(readOnly = false)
     public void save(SwmBeaconStation swmBeaconStation) {
+        // 校验信标编号重复性
+        validateBeaconIdDuplicate(swmBeaconStation);
         super.save(swmBeaconStation);
+    }
+
+    /**
+     * 校验信标编号重复性
+     * 
+     * @author Shawn
+     * @date 2025/06/22
+     * @param swmBeaconStation 信标基站对象
+     */
+    private void validateBeaconIdDuplicate(SwmBeaconStation swmBeaconStation) {
+        if (swmBeaconStation == null || swmBeaconStation.getBeaconId() == null
+                || swmBeaconStation.getBeaconId().trim().isEmpty()) {
+            return;
+        }
+
+        // 检查是否存在相同信标编号且状态为正常的记录
+        int count = dao.countByBeaconIdAndStatus(swmBeaconStation.getBeaconId(), swmBeaconStation.getId());
+        if (count > 0) {
+            throw new RuntimeException("信标编号 [" + swmBeaconStation.getBeaconId() + "] 已存在，不能重复保存！");
+        }
     }
 
     /**

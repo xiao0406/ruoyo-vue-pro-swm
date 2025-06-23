@@ -157,8 +157,20 @@ public class SwmBeaconStationController extends BaseController {
     @ResponseBody
     @ApiOperation(value = "保存信标基站")
     public String save(@Validated SwmBeaconStation swmBeaconStation) {
-        swmBeaconStationService.save(swmBeaconStation);
-        return renderResult(Global.TRUE, text("保存信标基站成功！"));
+        try {
+            swmBeaconStationService.save(swmBeaconStation);
+            return renderResult(Global.TRUE, text("保存信标基站成功！"));
+        } catch (RuntimeException e) {
+            // 处理业务异常，如重复信标编号等
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.contains("已存在")) {
+                return renderResult(Global.FALSE, errorMessage);
+            }
+            return renderResult(Global.FALSE, text("保存信标基站失败：") + errorMessage);
+        } catch (Exception e) {
+            logger.error("保存信标基站失败", e);
+            return renderResult(Global.FALSE, text("保存信标基站失败，请联系管理员！"));
+        }
     }
 
     /**
