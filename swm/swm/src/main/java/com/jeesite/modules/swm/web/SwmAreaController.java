@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -23,6 +26,7 @@ import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmArea;
 import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.SwmAreaService;
+import com.jeesite.modules.swm.service.SwmBeaconStationService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -40,6 +44,9 @@ public class SwmAreaController extends BaseController {
 
     @Autowired
     private SwmAreaService swmAreaService;
+
+    @Autowired
+    private SwmBeaconStationService swmBeaconStationService;
 
     /**
      * 获取数据
@@ -332,16 +339,44 @@ public class SwmAreaController extends BaseController {
     @RequestMapping(value = "testCoordinateMatch")
     @ResponseBody
     @ApiOperation("测试坐标匹配")
-    public Map<String, Object> testCoordinateMatch(String coordinates) {
+    public Map<String, Object> testCoordinateMatch(String coordinateList) {
         Map<String, Object> result = new HashMap<>();
         try {
-            logger.info("测试坐标匹配: {}", coordinates);
+            logger.info("测试坐标匹配: {}", coordinateList);
+
+            // 解析坐标列表
+            Pattern pattern = Pattern.compile("\\((\\d+(?:\\.\\d+)?),\\s*(\\d+(?:\\.\\d+)?)\\)");
+            Matcher matcher = pattern.matcher(coordinateList);
+
+            List<Map<String, Object>> matchResults = new ArrayList<>();
+
+            while (matcher.find()) {
+                Double pixelX = Double.parseDouble(matcher.group(1));
+                Double pixelY = Double.parseDouble(matcher.group(2));
+
+                List<SwmBeaconStation> beacons = swmBeaconStationService.findByPixelCoordinates(pixelX, pixelY);
+
+                Map<String, Object> matchResult = new HashMap<>();
+                matchResult.put("coordinates", String.format("(%.0f, %.0f)", pixelX, pixelY));
+                matchResult.put("found", beacons != null && !beacons.isEmpty());
+                matchResult.put("count", beacons != null ? beacons.size() : 0);
+
+                if (beacons != null && !beacons.isEmpty()) {
+                    matchResult.put("beacons", beacons.stream()
+                            .map(b -> b.getBeaconId() + " [" + b.getPixelX() + "," + b.getPixelY() + "]")
+                            .collect(Collectors.toList()));
+                }
+
+                matchResults.add(matchResult);
+            }
+
             result.put("success", true);
-            result.put("message", "测试完成，请查看日志");
+            result.put("results", matchResults);
+            result.put("message", "坐标匹配测试完成");
         } catch (Exception e) {
             result.put("success", false);
-            result.put("message", "测试失败：" + e.getMessage());
-            logger.error("测试失败", e);
+            result.put("message", "坐标匹配测试失败：" + e.getMessage());
+            logger.error("坐标匹配测试失败", e);
         }
         return result;
     }
@@ -457,6 +492,80 @@ public class SwmAreaController extends BaseController {
             result.put("options", new ArrayList<>());
             result.put("message", "获取区域选项失败: " + e.getMessage());
             logger.error("获取区域选项失败", e);
+        }
+        return result;
+    }
+
+    /**
+     * 批量更新区域下所有信标的颜色
+     * 
+     * @author Shawn
+     * @date 2025/06/23
+     */
+    @PostMapping(value = "updateAreaBeaconColors")
+    @ResponseBody
+    @ApiOperation("批量更新区域下所有信标的颜色")
+    public Map<String, Object> updateAreaBeaconColors(@RequestBody Map<String, Object> params) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String areaId = (String) params.get("areaId");
+            String beaconColor = (String) params.get("beaconColor");
+            String remarks = (String) params.get("remarks");
+
+            if (areaId == null || areaId.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "区域ID不能为空！");
+                return result;
+            }
+
+            if (beaconColor == null || beaconColor.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "颜色值不能为空！");
+                return result;
+            }
+
+            // 获取区域信息
+            SwmArea area = swmAreaService.get(areaId);
+            if (area == null) {
+                result.put("success", false);
+                result.put("message", "区域不存在！");
+                return result;
+            }
+
+            // 如果有备注需要更新，则更新区域信息
+            if (remarks != null && !remarks.trim().isEmpty()) {
+                area.setRemarks(remarks);
+                swmAreaService.save(area);
+                logger.info("更新区域 {} 的备注信息", area.getAreaName());
+            }
+
+            // 获取该区域下的所有信标
+            List<SwmBeaconStation> beacons = swmBeaconStationService.findByArea(areaId);
+            if (beacons == null || beacons.isEmpty()) {
+                result.put("success", true);
+                result.put("message", "该区域下没有关联的信标，无需更新颜色");
+                result.put("updatedCount", 0);
+                return result;
+            }
+
+            // 批量更新信标颜色
+            int updatedCount = 0;
+            for (SwmBeaconStation beacon : beacons) {
+                beacon.setBeaconColor(beaconColor);
+                swmBeaconStationService.save(beacon);
+                updatedCount++;
+                logger.info("更新信标 {} 的颜色为: {}", beacon.getBeaconId(), beaconColor);
+            }
+
+            result.put("success", true);
+            result.put("message", String.format("成功更新区域 \"%s\" 下 %d 个信标的颜色", area.getAreaName(), updatedCount));
+            result.put("updatedCount", updatedCount);
+            logger.info("批量更新区域 {} 下 {} 个信标的颜色为: {}", area.getAreaName(), updatedCount, beaconColor);
+
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "批量更新信标颜色失败：" + e.getMessage());
+            logger.error("批量更新信标颜色失败", e);
         }
         return result;
     }
