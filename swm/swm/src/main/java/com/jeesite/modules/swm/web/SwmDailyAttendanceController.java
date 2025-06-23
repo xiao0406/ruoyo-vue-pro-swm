@@ -646,4 +646,29 @@ public class SwmDailyAttendanceController extends BaseController {
         }
     }
 
+    /**
+     * 手动执行月考勤统计任务
+     * 用于测试或手动触发月考勤统计定时任务
+     * 
+     * @author: Shawn
+     * @date: 2025/01/27
+     */
+    @PostMapping(value = "calculateMonthlyAttendance")
+    @ResponseBody
+    @ApiOperation("执行月考勤统计任务")
+    public String calculateMonthlyAttendance() {
+        try {
+            logger.info("开始手动执行月考勤统计任务");
+
+            // 调用定时任务中的方法
+            attendanceTask.calculateMonthlyAttendance();
+
+            logger.info("手动执行月考勤统计任务完成");
+            return renderResult(Global.TRUE, "月考勤统计任务执行成功！");
+        } catch (Exception e) {
+            logger.error("月考勤统计任务执行失败: {}", e.getMessage(), e);
+            return renderResult(Global.FALSE, "月考勤统计任务执行失败！" + e.getMessage());
+        }
+    }
+
 }
