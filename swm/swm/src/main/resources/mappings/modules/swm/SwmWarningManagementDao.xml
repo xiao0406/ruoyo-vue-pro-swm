@@ -123,6 +123,10 @@
             <if test="warningContent != null and warningContent != ''">
                 AND a.warning_content = #{warningContent}
             </if>
+            <!-- 排除一键SOS预警 -->
+            <if test="excludeSOS == true">
+                AND a.warning_content != '一键SOS'
+            </if>
         ORDER BY
             a.warning_time DESC
     </select>
