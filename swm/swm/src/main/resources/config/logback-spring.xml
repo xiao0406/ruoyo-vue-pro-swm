@@ -9,6 +9,11 @@
 
 	<!-- Project level setting -->
 	<!-- 	<logger name="your.package" level="DEBUG" /> -->
+	<!-- 屏蔽SwmWarningManagementDao的SQL日志，避免频繁的告警查询日志干扰 -->
+	<!-- Author: Shawn -->
+	<!-- Date: 2025/06/23 -->
+	<logger name="com.jeesite.modules.swm.dao.SwmWarningManagementDao" level="INFO" />
+	
 	<logger name="io.seata" level="INFO" />
 	<logger name="zipkin2.reporter.AsyncReporter$BoundedAsyncReporter" level="ERROR" />
 	<logger name="org.springframework.cloud.openfeign.FeignClientFactoryBean" level="ERROR" />
