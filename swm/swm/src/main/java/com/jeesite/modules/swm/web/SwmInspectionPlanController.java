@@ -18,7 +18,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 巡检计划Controller
@@ -70,6 +73,37 @@ public class SwmInspectionPlanController extends BaseController {
     @ResponseBody
     public List<SwmInspectionPlan> listTest() {
         return swmInspectionPlanService.findList(new SwmInspectionPlan());
+    }
+
+    /**
+     * 查询巡检计划下拉选择数据
+     */
+    @RequestMapping(value = "selectData")
+    @ResponseBody
+    public List<Map<String, Object>> selectData(String keyword) {
+        SwmInspectionPlan query = new SwmInspectionPlan();
+        // 如果有关键字，按计划名称进行模糊查询
+        if (keyword != null && !keyword.isEmpty()) {
+            query.setPlanName(keyword);
+        }
+        
+        List<SwmInspectionPlan> planList = swmInspectionPlanService.findList(query);
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        // 转换为前端需要的格式
+        for (SwmInspectionPlan plan : planList) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("value", plan.getId());  // 值为ID
+            item.put("label", plan.getPlanName());  // 显示为计划名称
+            
+            // 可以添加更多需要的信息
+            item.put("inspectionType", plan.getInspectionType());
+            item.put("responsiblePerson", plan.getResponsiblePerson());
+            
+            result.add(item);
+        }
+        
+        return result;
     }
 
     /**

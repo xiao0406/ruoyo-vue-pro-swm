@@ -300,13 +300,13 @@ public class SwmDashboardController extends BaseController {
                 () -> getMonthlyEfficiencyChartData(filteredAttendance, currentMonth));
 
         CompletableFuture<List<Map<String, Object>>> todayTeamRanking = CompletableFuture.supplyAsync(
-                () -> getTeamRanking(filteredAttendance, personMap, true, 3));
+                () -> getTeamRanking(filteredAttendance, personMap, true, 10));
 
         CompletableFuture<List<Map<String, Object>>> todayJobDistribution = CompletableFuture.supplyAsync(
-                () -> getJobDistribution(filteredAttendance, personMap, true, 3));
+                () -> getJobDistribution(filteredAttendance, personMap, true, 10));
 
         CompletableFuture<List<Map<String, Object>>> monthlyTeamRanking = CompletableFuture.supplyAsync(
-                () -> getTeamRanking(filteredAttendance, personMap, false, 3));
+                () -> getTeamRanking(filteredAttendance, personMap, false, 10));
 
         // 等待所有任务完成
         CompletableFuture.allOf(todayStats, monthlyEfficiency, monthlyAttendanceChart,
@@ -351,7 +351,7 @@ public class SwmDashboardController extends BaseController {
         return attendances.parallelStream()
                 .filter(a -> {
                     SwmPerson person = personMap.get(a.getEmployeeId());
-                    return person != null && matchesQuery(person, queryParams);
+                    return matchesQuery(person, queryParams);
                 })
                 .collect(Collectors.toList());
     }

@@ -9,6 +9,7 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmHiddenDangerDao;
 import com.jeesite.modules.swm.entity.SwmHiddenDanger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class SwmHiddenDangerService extends CrudService<SwmHiddenDangerDao, SwmHiddenDanger> {
 
+    @Autowired
+    private SwmHiddenDangerDao swmHiddenDangerDao;
+
     /**
      * 获取单条数据
      * 
@@ -32,7 +36,15 @@ public class SwmHiddenDangerService extends CrudService<SwmHiddenDangerDao, SwmH
      */
     @Override
     public SwmHiddenDanger get(SwmHiddenDanger swmHiddenDanger) {
-        return super.get(swmHiddenDanger);
+        SwmHiddenDanger entity = super.get(swmHiddenDanger);
+        // 如果找到记录，并且有关联的巡检计划ID，但没有巡检计划名称，则重新查询
+        if (entity != null && entity.getInspectionPlanId() != null && entity.getInspectionPlanName() == null) {
+            List<SwmHiddenDanger> list = swmHiddenDangerDao.findListWithPlanName(entity);
+            if (list != null && !list.isEmpty()) {
+                return list.get(0);
+            }
+        }
+        return entity;
     }
 
     /**
@@ -43,7 +55,20 @@ public class SwmHiddenDangerService extends CrudService<SwmHiddenDangerDao, SwmH
      */
     @Override
     public Page<SwmHiddenDanger> findPage(SwmHiddenDanger swmHiddenDanger) {
-        return super.findPage(swmHiddenDanger);
+        Page<SwmHiddenDanger> page = swmHiddenDanger.getPage();
+        
+        // 设置默认排序
+        if (page.getOrderBy() == null || page.getOrderBy().isEmpty()) {
+            page.setOrderBy("a.create_date DESC");
+        }
+        
+        // 执行分页查询
+        page.setCount(swmHiddenDangerDao.findCount(swmHiddenDanger));
+        if (page.getCount() > 0) {
+            page.setList(swmHiddenDangerDao.findListWithPlanName(swmHiddenDanger));
+        }
+        
+        return page;
     }
 
     /**
@@ -64,8 +89,9 @@ public class SwmHiddenDangerService extends CrudService<SwmHiddenDangerDao, SwmH
      * @param swmHiddenDanger 查询条件
      * @return
      */
+    @Override
     public List<SwmHiddenDanger> findList(SwmHiddenDanger swmHiddenDanger) {
-        return super.findList(swmHiddenDanger);
+        return swmHiddenDangerDao.findListWithPlanName(swmHiddenDanger);
     }
 
     /**
