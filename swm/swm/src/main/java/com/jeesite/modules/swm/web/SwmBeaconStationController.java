@@ -14,10 +14,10 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -156,12 +156,18 @@ public class SwmBeaconStationController extends BaseController {
     @PostMapping(value = "save")
     @ResponseBody
     @ApiOperation(value = "保存信标基站")
-    public String save(@Validated SwmBeaconStation swmBeaconStation) {
+    public String save(@RequestBody SwmBeaconStation swmBeaconStation) {
         try {
+            // 手动验证：如果不是电子围栏，则beaconId不能为空
+            if (!"2".equals(swmBeaconStation.getBeaconType())
+                    && (swmBeaconStation.getBeaconId() == null || swmBeaconStation.getBeaconId().trim().isEmpty())) {
+                return renderResult(Global.FALSE, text("MAC地址不能为空！"));
+            }
+
             swmBeaconStationService.save(swmBeaconStation);
             return renderResult(Global.TRUE, text("保存信标基站成功！"));
         } catch (RuntimeException e) {
-            // 处理业务异常，如重复信标编号等
+            // 处理业务异常，如重复MAC地址等
             String errorMessage = e.getMessage();
             if (errorMessage != null && errorMessage.contains("已存在")) {
                 return renderResult(Global.FALSE, errorMessage);
@@ -202,11 +208,11 @@ public class SwmBeaconStationController extends BaseController {
     }
 
     /**
-     * 根据信标编号获取基站
+     * 根据MAC地址获取基站
      */
     @GetMapping("getByBeaconId")
     @ResponseBody
-    @ApiOperation(value = "根据信标编号获取基站")
+    @ApiOperation(value = "根据MAC地址获取基站")
     public SwmBeaconStation getByBeaconId(String beaconId) {
         return swmBeaconStationService.getByBeaconId(beaconId);
     }

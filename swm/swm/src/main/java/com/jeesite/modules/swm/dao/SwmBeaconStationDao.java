@@ -20,12 +20,12 @@ import java.util.List;
 public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
 
         /**
-         * 根据信标编号查询基站
+         * 根据MAC地址查询基站
          */
         SwmBeaconStation getByBeaconId(@Param("beaconId") String beaconId);
 
         /**
-         * 检查是否存在相同信标编号且状态为正常的记录（用于重复性校验）
+         * 检查是否存在相同MAC地址且状态为正常的记录（用于重复性校验）
          * 
          * @author Shawn
          * @date 2025/06/22

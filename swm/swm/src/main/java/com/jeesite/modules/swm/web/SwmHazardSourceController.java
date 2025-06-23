@@ -206,7 +206,7 @@ public class SwmHazardSourceController extends BaseController {
         if (swmHazardSource.getResponsiblePersonId() != null) {
             SwmPerson swmPerson = swmPersonService.get(swmHazardSource.getResponsiblePersonId());
             if (swmPerson == null) {
-//                return renderResult(Global.FALSE, text("巡检负责人不存在！"));
+                // return renderResult(Global.FALSE, text("巡检负责人不存在！"));
             } else {
                 swmHazardSource.setResponsiblePerson(swmPerson.getName());
             }
@@ -244,11 +244,11 @@ public class SwmHazardSourceController extends BaseController {
     }
 
     /**
-     * 根据信标编号查询危险源
+     * 根据MAC地址查询危险源
      */
     @GetMapping("findByBeacon")
     @ResponseBody
-    @ApiOperation(value = "根据信标编号查询危险源")
+    @ApiOperation(value = "根据MAC地址查询危险源")
     public SwmHazardSource findByBeacon(String beaconIdentifier) {
         SwmHazardSource hazardSource = new SwmHazardSource();
         hazardSource.setBeaconIdentifier(beaconIdentifier);

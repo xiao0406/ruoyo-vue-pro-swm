@@ -67,13 +67,86 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     @Override
     @Transactional(readOnly = false)
     public void save(SwmBeaconStation swmBeaconStation) {
-        // 校验信标编号重复性
+        // 如果是电子围栏且MAC地址为空，自动生成
+        generateBeaconIdForElectronicFence(swmBeaconStation);
+
+        // 校验MAC地址重复性
         validateBeaconIdDuplicate(swmBeaconStation);
         super.save(swmBeaconStation);
     }
 
     /**
-     * 校验信标编号重复性
+     * 为电子围栏生成唯一的MAC地址
+     * 
+     * @author Shawn
+     * @date 2025/01/14
+     * @param swmBeaconStation 信标基站对象
+     */
+    private void generateBeaconIdForElectronicFence(SwmBeaconStation swmBeaconStation) {
+        // 检查是否为电子围栏且MAC地址为空
+        if (swmBeaconStation != null && "2".equals(swmBeaconStation.getBeaconType())
+                && (swmBeaconStation.getBeaconId() == null || swmBeaconStation.getBeaconId().trim().isEmpty())) {
+
+            String generatedId;
+            int attempts = 0;
+            int maxAttempts = 10; // 最大尝试次数，防止无限循环
+
+            do {
+                generatedId = generateUniqueBeaconId();
+                attempts++;
+
+                if (attempts >= maxAttempts) {
+                    throw new RuntimeException("生成唯一MAC地址失败，请重试！");
+                }
+            } while (isBeaconIdExists(generatedId));
+
+            swmBeaconStation.setBeaconId(generatedId);
+        }
+    }
+
+    /**
+     * 生成MAC地址
+     * 格式：mac + 时间戳后6位 + 随机字符串
+     * 
+     * @author Shawn
+     * @date 2025/01/14
+     * @return 生成的MAC地址
+     */
+    private String generateUniqueBeaconId() {
+        // 获取当前时间戳的后6位
+        long timestamp = System.currentTimeMillis();
+        String timestampSuffix = String.valueOf(timestamp).substring(7);
+
+        // 生成4位随机字符串（数字和字母）
+        String chars = "0123456789abcdefghijklmnopqrstuvwxyz";
+        StringBuilder randomStr = new StringBuilder();
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 4; i++) {
+            randomStr.append(chars.charAt(random.nextInt(chars.length())));
+        }
+
+        return "mac" + timestampSuffix + randomStr.toString();
+    }
+
+    /**
+     * 检查MAC地址是否已存在
+     * 
+     * @author Shawn
+     * @date 2025/01/14
+     * @param beaconId MAC地址
+     * @return true-已存在，false-不存在
+     */
+    private boolean isBeaconIdExists(String beaconId) {
+        if (beaconId == null || beaconId.trim().isEmpty()) {
+            return false;
+        }
+
+        SwmBeaconStation existingBeacon = dao.getByBeaconId(beaconId);
+        return existingBeacon != null;
+    }
+
+    /**
+     * 校验MAC地址重复性
      * 
      * @author Shawn
      * @date 2025/06/22
@@ -85,10 +158,10 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             return;
         }
 
-        // 检查是否存在相同信标编号且状态为正常的记录
+        // 检查是否存在相同MAC地址且状态为正常的记录
         int count = dao.countByBeaconIdAndStatus(swmBeaconStation.getBeaconId(), swmBeaconStation.getId());
         if (count > 0) {
-            throw new RuntimeException("信标编号 [" + swmBeaconStation.getBeaconId() + "] 已存在，不能重复保存！");
+            throw new RuntimeException("MAC地址 [" + swmBeaconStation.getBeaconId() + "] 已存在，不能重复保存！");
         }
     }
 
@@ -115,9 +188,9 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     }
 
     /**
-     * 根据信标编号获取信标基站
+     * 根据MAC地址获取信标基站
      * 
-     * @param beaconId 信标编号
+     * @param beaconId MAC地址
      * @return 信标基站对象
      */
     public SwmBeaconStation getByBeaconId(String beaconId) {
@@ -160,8 +233,8 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         if (beaconList != null && !beaconList.isEmpty()) {
             for (SwmBeaconStation beacon : beaconList) {
                 Map<String, Object> map = new HashMap<>();
-                map.put("value", beacon.getBeaconId()); // 值使用信标ID
-                map.put("label", beacon.getBeaconId()); // 显示文本也使用信标ID
+                map.put("value", beacon.getBeaconId()); // 值使用MAC地址
+                map.put("label", beacon.getBeaconId()); // 显示文本也使用MAC地址
                 // 可以添加额外信息，如位置
                 map.put("location", beacon.getLocation());
                 resultList.add(map);

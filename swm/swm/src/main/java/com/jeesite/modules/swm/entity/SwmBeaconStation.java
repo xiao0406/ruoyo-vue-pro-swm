@@ -20,7 +20,7 @@ import javax.validation.constraints.NotBlank;
  */
 @Table(name = "swm_beacon_station", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
-        @Column(name = "beacon_id", attrName = "beaconId", label = "信标编号", queryType = QueryType.LIKE),
+        @Column(name = "beacon_id", attrName = "beaconId", label = "MAC地址", queryType = QueryType.LIKE),
         @Column(name = "device_name", attrName = "deviceName", label = "设备名称", queryType = QueryType.LIKE),
         @Column(name = "beacon_type", attrName = "beaconType", label = "信标类型"),
         @Column(name = "beacon_color", attrName = "beaconColor", label = "信标颜色"),
@@ -99,7 +99,7 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
         }
     }
 
-    private String beaconId; // 信标编号
+    private String beaconId; // MAC地址
     private String deviceName; // 设备名称
     private String beaconType; // 信标类型
     private String beaconColor; // 信标颜色
@@ -126,8 +126,8 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
         super(id);
     }
 
-    @NotBlank(message = "信标编号不能为空")
-    @Length(min = 0, max = 50, message = "信标编号不能超过50个字符")
+    @NotBlank(message = "MAC地址不能为空")
+    @Length(min = 0, max = 50, message = "MAC地址不能超过50个字符")
     public String getBeaconId() {
         return beaconId;
     }
