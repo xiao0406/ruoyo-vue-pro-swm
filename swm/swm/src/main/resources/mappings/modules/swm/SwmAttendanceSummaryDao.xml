@@ -42,8 +42,31 @@
     
     <!-- 根据月份查询考勤统计记录 -->
     <select id="findByMonth" resultType="SwmAttendanceSummary">
-        SELECT ${sqlMap.column.toSql()}
-        FROM ${sqlMap.table.toSql()}
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.department AS "department",
+            a.work_process AS "workProcess",
+            a.team AS "team",
+            a.job_type AS "jobType",
+            a.work_shift AS "workShift",
+            a.month AS "month",
+            a.scheduled_days AS "scheduledDays",
+            a.actual_days AS "actualDays",
+            a.attendance_rate AS "attendanceRate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.attendance_achievement_rate AS "attendanceAchievementRate",
+            a.idle_hours AS "idleHours",
+            a.efficiency AS "efficiency",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_attendance_summary a
         <where>
             a.month = #{month}
         </where>
@@ -52,8 +75,31 @@
     
     <!-- 根据员工ID和月份查询考勤统计记录 -->
     <select id="findByEmployeeIdAndMonth" resultType="SwmAttendanceSummary">
-        SELECT ${sqlMap.column.toSql()}
-        FROM ${sqlMap.table.toSql()}
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.department AS "department",
+            a.work_process AS "workProcess",
+            a.team AS "team",
+            a.job_type AS "jobType",
+            a.work_shift AS "workShift",
+            a.month AS "month",
+            a.scheduled_days AS "scheduledDays",
+            a.actual_days AS "actualDays",
+            a.attendance_rate AS "attendanceRate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.attendance_achievement_rate AS "attendanceAchievementRate",
+            a.idle_hours AS "idleHours",
+            a.efficiency AS "efficiency",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_attendance_summary a
         <where>
             a.employee_id = #{param1}
             AND a.month = #{param2}
@@ -62,8 +108,31 @@
     
     <!-- 根据员工姓名和月份查询考勤统计记录 -->
     <select id="findByEmployeeAndMonth" resultType="SwmAttendanceSummary">
-        SELECT ${sqlMap.column.toSql()}
-        FROM ${sqlMap.table.toSql()}
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.department AS "department",
+            a.work_process AS "workProcess",
+            a.team AS "team",
+            a.job_type AS "jobType",
+            a.work_shift AS "workShift",
+            a.month AS "month",
+            a.scheduled_days AS "scheduledDays",
+            a.actual_days AS "actualDays",
+            a.attendance_rate AS "attendanceRate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.attendance_achievement_rate AS "attendanceAchievementRate",
+            a.idle_hours AS "idleHours",
+            a.efficiency AS "efficiency",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_attendance_summary a
         <where>
             a.employee_name = #{param1}
             AND a.month = #{param2}
@@ -72,13 +141,80 @@
     
     <!-- 根据部门和月份查询考勤统计记录 -->
     <select id="findByDepartmentAndMonth" resultType="SwmAttendanceSummary">
-        SELECT ${sqlMap.column.toSql()}
-        FROM ${sqlMap.table.toSql()}
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.department AS "department",
+            a.work_process AS "workProcess",
+            a.team AS "team",
+            a.job_type AS "jobType",
+            a.work_shift AS "workShift",
+            a.month AS "month",
+            a.scheduled_days AS "scheduledDays",
+            a.actual_days AS "actualDays",
+            a.attendance_rate AS "attendanceRate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.attendance_achievement_rate AS "attendanceAchievementRate",
+            a.idle_hours AS "idleHours",
+            a.efficiency AS "efficiency",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_attendance_summary a
         <where>
             a.department = #{param1}
             AND a.month = #{param2}
         </where>
         ORDER BY a.employee_name ASC
+    </select>
+    
+    <!-- 根据实体条件查询考勤统计记录 -->
+    <select id="getByEntity" resultType="SwmAttendanceSummary">
+        SELECT 
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.department AS "department",
+            a.work_process AS "workProcess",
+            a.team AS "team",
+            a.job_type AS "jobType",
+            a.work_shift AS "workShift",
+            a.month AS "month",
+            a.scheduled_days AS "scheduledDays",
+            a.actual_days AS "actualDays",
+            a.attendance_rate AS "attendanceRate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.attendance_achievement_rate AS "attendanceAchievementRate",
+            a.idle_hours AS "idleHours",
+            a.efficiency AS "efficiency",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_attendance_summary a
+        <where>
+            <if test="employeeId != null and employeeId != ''">
+                AND a.employee_id = #{employeeId}
+            </if>
+            <if test="employeeName != null and employeeName != ''">
+                AND a.employee_name = #{employeeName}
+            </if>
+            <if test="month != null and month != ''">
+                AND a.month = #{month}
+            </if>
+            <if test="department != null and department != ''">
+                AND a.department = #{department}
+            </if>
+        </where>
+        LIMIT 1
     </select>
     
 </mapper> 

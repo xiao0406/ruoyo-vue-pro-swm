@@ -182,6 +182,7 @@ public class AttendanceTask {
         SwmDailyAttendance query = new SwmDailyAttendance();
         query.setBeginAttendanceDate(startDate);
         query.setEndAttendanceDate(endDate);
+        // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
         List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService.findList(query);
 
         // 3. 按员工ID分组
@@ -238,10 +239,8 @@ public class AttendanceTask {
 
             // 6. 查询是否已存在当月记录
             String monthStr = DateUtil.format(startDate, "yyyy-MM");
-            SwmAttendanceSummary summaryQuery = new SwmAttendanceSummary();
-            summaryQuery.setEmployeeId(employeeId);
-            summaryQuery.setMonth(monthStr);
-            SwmAttendanceSummary existingSummary = swmAttendanceSummaryService.get(summaryQuery);
+            SwmAttendanceSummary existingSummary = swmAttendanceSummaryService.findByEmployeeIdAndMonth(employeeId,
+                    monthStr);
 
             // 7. 保存或更新记录
             SwmAttendanceSummary summary = existingSummary != null ? existingSummary : new SwmAttendanceSummary();
