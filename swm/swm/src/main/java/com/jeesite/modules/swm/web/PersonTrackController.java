@@ -283,7 +283,7 @@ public class PersonTrackController extends BaseController {
     @ResponseBody
     @ApiOperation("获取人员轨迹数据")
     public Map<String, Object> getPersonTrajectory(
-            @ApiParam(value = "人员ID") @RequestParam(required = false) Integer personId,
+            @ApiParam(value = "人员ID") @RequestParam(required = false) String personId,
             @ApiParam(value = "身份证号码", required = true) @RequestParam String idCard,
             @ApiParam(value = "开始日期") @RequestParam(required = false) String startDate,
             @ApiParam(value = "结束日期") @RequestParam(required = false) String endDate,
@@ -310,7 +310,7 @@ public class PersonTrackController extends BaseController {
 
             // 获取轨迹点（仅从时序数据库获取真实数据）
             List<Map<String, Object>> trajectoryPoints = getTrajectoryPoints(
-                    personId != null ? personId : (Integer) personInfo.get("id"),
+                    personId != null ? personId : (String) personInfo.get("id"),
                     personName,
                     workType,
                     organization,
@@ -373,7 +373,7 @@ public class PersonTrackController extends BaseController {
      * @author Shawn
      * @date 2025-01-14
      */
-    private List<Map<String, Object>> getTrajectoryPoints(Integer personId, String personName,
+    private List<Map<String, Object>> getTrajectoryPoints(String personId, String personName,
             String workType, String organization, String workShop, String teamGroup, String idCard,
             String startDate, String endDate, Integer startTime, Integer endTime) {
 
@@ -412,7 +412,7 @@ public class PersonTrackController extends BaseController {
                                     int y = (int) Math.round(Double.parseDouble(yObj.toString()));
 
                                     Map<String, Object> trajectoryPoint = createPersonPosition(
-                                            personId,
+                                            personId != null ? personId.toString() : "0",
                                             personName,
                                             x,
                                             y,
@@ -456,7 +456,7 @@ public class PersonTrackController extends BaseController {
     /**
      * 创建人员位置对象
      */
-    private Map<String, Object> createPersonPosition(Integer id, String name, int x, int y,
+    private Map<String, Object> createPersonPosition(String id, String name, int x, int y,
             String workType, String organization, String workShop,
             String teamGroup, String workHours, String attendanceStatus, String idCard) {
 

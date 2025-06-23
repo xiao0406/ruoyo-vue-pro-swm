@@ -101,14 +101,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                 if (identityCard == null)
                     identityCard = "未登记";
 
-                Integer personId = 0;
-                if (id != null) {
-                    try {
-                        personId = Integer.parseInt(id);
-                    } catch (NumberFormatException e) {
-                        personId = 0; // 默认值
-                    }
-                }
+                String personId = id; // 直接使用字符串ID，不转换为整数
 
                 // 检查是否在external_coordinate_data表中找到了坐标数据
                 if (identityCard != null && !identityCard.trim().isEmpty() && locationMap.containsKey(identityCard)) {
@@ -228,7 +221,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
      * @author Shawn
      * @date 2025-01-14
      */
-    private Map<String, Object> createPersonPosition(Integer id, String name, int x, int y, String workType,
+    private Map<String, Object> createPersonPosition(String id, String name, int x, int y, String workType,
             String organization, String workShop, String teamGroup,
             String workHours, String attendance, String identityCard, boolean hasRealLocation) {
         Map<String, Object> position = new HashMap<>();
@@ -265,7 +258,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
      * @author Shawn
      * @date 2025-01-14
      */
-    private Map<String, Object> createPersonPosition(Integer id, String name, int x, int y, String workType,
+    private Map<String, Object> createPersonPosition(String id, String name, int x, int y, String workType,
             String organization, String workShop, String teamGroup,
             String workHours, String attendance, String identityCard) {
         return createPersonPosition(id, name, x, y, workType, organization, workShop, teamGroup,
