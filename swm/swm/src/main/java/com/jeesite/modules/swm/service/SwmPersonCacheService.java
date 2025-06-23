@@ -43,6 +43,9 @@ public class SwmPersonCacheService {
     /**
      * 程序启动时初始化在职人员缓存
      * 延迟初始化，避免循环依赖问题
+     * 
+     * @author Shawn
+     * @date 2025/06/23 - 修改为使用自定义SQL获取完整信息
      */
     @PostConstruct
     public void initActivePersonCache() {
@@ -55,12 +58,10 @@ public class SwmPersonCacheService {
                 return;
             }
 
-            // 查询所有在职人员
-            SwmPerson queryCondition = new SwmPerson();
-            queryCondition.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
-            List<SwmPerson> activePersons = swmPersonDao.findList(queryCondition);
+            // 使用自定义SQL查询获取包含各表ID的完整人员信息
+            List<Map<String, Object>> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds();
 
-            if (activePersons == null || activePersons.isEmpty()) {
+            if (activePersonsWithIds == null || activePersonsWithIds.isEmpty()) {
                 log.warn("未查询到在职人员数据");
                 return;
             }
@@ -72,22 +73,25 @@ public class SwmPersonCacheService {
             Map<String, Object> personCacheMap = new HashMap<>();
             Map<String, Object> identityCardMap = new HashMap<>();
 
-            for (SwmPerson person : activePersons) {
-                // 构建缓存的人员信息（只包含指定字段）
-                Map<String, Object> personInfo = buildPersonCacheInfo(person);
+            for (Map<String, Object> personData : activePersonsWithIds) {
+                String personId = (String) personData.get("id");
+                String identityCard = (String) personData.get("identityCard");
+
+                // 构建缓存的人员信息（包含各表ID）
+                Map<String, Object> personInfo = buildPersonCacheInfoWithIds(personData);
 
                 // 使用人员ID作为Redis Hash的field
-                personCacheMap.put(person.getId(), personInfo);
+                personCacheMap.put(personId, personInfo);
 
                 // 建立身份证到人员ID的映射
-                if (person.getIdentityCard() != null && !person.getIdentityCard().trim().isEmpty()) {
+                if (identityCard != null && !identityCard.trim().isEmpty()) {
                     // 检查身份证是否已存在，如果存在则记录警告
-                    if (identityCardMap.containsKey(person.getIdentityCard())) {
-                        String existingPersonId = (String) identityCardMap.get(person.getIdentityCard());
+                    if (identityCardMap.containsKey(identityCard)) {
+                        String existingPersonId = (String) identityCardMap.get(identityCard);
                         log.warn("发现重复身份证号码：{}，人员ID：{}，已存在人员ID：{}，将使用最新的人员记录",
-                                person.getIdentityCard(), person.getId(), existingPersonId);
+                                identityCard, personId, existingPersonId);
                     }
-                    identityCardMap.put(person.getIdentityCard(), person.getId());
+                    identityCardMap.put(identityCard, personId);
                 }
             }
 
@@ -103,7 +107,7 @@ public class SwmPersonCacheService {
                 log.info("成功缓存{}条身份证映射信息", identityCardMap.size());
             }
 
-            log.info("在职人员缓存初始化完成，共{}条记录", activePersons.size());
+            log.info("在职人员缓存初始化完成，共{}条记录", activePersonsWithIds.size());
 
         } catch (Exception e) {
             log.error("初始化在职人员缓存失败", e);
@@ -125,6 +129,37 @@ public class SwmPersonCacheService {
         personInfo.put("team", person.getTeam()); // 所属班组
         personInfo.put("jobType", person.getJobType()); // 工种
         personInfo.put("identityCard", person.getIdentityCard()); // 身份证号码
+
+        return personInfo;
+    }
+
+    /**
+     * 构建缓存的人员信息（包含各表ID）
+     * 
+     * @param personData 包含各表ID的人员数据
+     * @return 缓存用的人员信息Map
+     * @author Shawn
+     * @date 2025/06/23
+     */
+    private Map<String, Object> buildPersonCacheInfoWithIds(Map<String, Object> personData) {
+        Map<String, Object> personInfo = new HashMap<>();
+
+        // 基本字段
+        personInfo.put("id", personData.get("id")); // 人员ID
+        personInfo.put("name", personData.get("name")); // 姓名
+        personInfo.put("company", personData.get("company")); // 所属单位
+        personInfo.put("department", personData.get("department")); // 所属车间
+        personInfo.put("prodLine", personData.get("prodLine")); // 产线
+        personInfo.put("team", personData.get("team")); // 所属班组
+        personInfo.put("jobType", personData.get("jobType")); // 工种
+        personInfo.put("identityCard", personData.get("identityCard")); // 身份证号码
+
+        // 关联表的ID字段 - 2025/06/23 Shawn 添加
+        personInfo.put("workerArchiveId", personData.get("workerArchiveId")); // 工人档案ID (fms_worker.id)
+        personInfo.put("officeCode", personData.get("officeCode")); // 组织编码 (js_sys_office.office_code)
+        personInfo.put("positionArchiveId", personData.get("positionArchiveId")); // 车间ID (fms_position_archive.id)
+        personInfo.put("workGroupId", personData.get("workGroupId")); // 班组ID (fms_work_group.id)
+        personInfo.put("prodLineId", personData.get("prodLineId")); // 产线ID (fms_prod_line.id)
 
         return personInfo;
     }

@@ -154,4 +154,43 @@
         </if>
         ORDER BY a.update_date DESC
     </select>
+    
+    <!-- 查询所有在职人员的详细信息（包含关联表ID）- 用于缓存初始化 -->
+    <select id="findActivePersonsWithIds" resultType="java.util.Map">
+        SELECT DISTINCT
+               a.id AS "id",
+               a.name AS "name",
+               a.person_type AS "personType",
+               a.gender AS "gender",
+               o.office_name AS "company",                -- 所属单位
+               p.position_name AS "department",           -- 所属车间
+               fpl.prod_line_name AS "prodLine",          -- 产线
+               wg.work_group_name AS "team",              -- 所属班组
+               f.work_type AS "jobType",                  -- 工种
+               a.safety_helmet_id AS "safetyHelmetId",
+               a.personnel_status AS "personnelStatus",
+               a.identity_card AS "identityCard",
+               a.phone_number AS "phoneNumber",
+               a.create_by AS "createBy",
+               a.create_date AS "createDate",
+               a.update_by AS "updateBy",
+               a.update_date AS "updateDate",
+               a.remarks AS "remarks",
+               a.status AS "status",
+               -- 关联表的ID字段 2025/06/23 Shawn 添加
+               f.id AS "workerArchiveId",                 -- 工人档案ID
+               o.office_code AS "officeCode",             -- 组织编码
+               p.id AS "positionArchiveId",               -- 车间ID
+               wg.id AS "workGroupId",                    -- 班组ID
+               fpl.id AS "prodLineId"                     -- 产线ID
+        FROM swm_person a
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
+        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
+        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
+        WHERE a.personnel_status = '1'  -- 只查询在职人员
+          AND a.status = '0'            -- 正常状态
+        ORDER BY a.update_date DESC
+    </select>
 </mapper>

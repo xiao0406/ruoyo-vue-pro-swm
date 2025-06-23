@@ -10,6 +10,7 @@ import com.jeesite.modules.swm.entity.SwmPerson;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -51,4 +52,14 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
      * @return 符合条件的在职人员列表
      */
     List<SwmPerson> searchPersonsByKeyword(@Param("keyword") String keyword);
+
+    /**
+     * 查询所有在职人员的详细信息（包含关联表ID）
+     * 用于缓存初始化
+     * 
+     * @return 包含所有关联表ID的在职人员信息
+     * @author Shawn
+     * @date 2025/06/23
+     */
+    List<Map<String, Object>> findActivePersonsWithIds();
 }
