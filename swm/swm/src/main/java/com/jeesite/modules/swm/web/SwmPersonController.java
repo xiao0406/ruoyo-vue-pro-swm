@@ -1424,7 +1424,9 @@ public class SwmPersonController extends BaseController {
             logger.error("根据部门条件查询人员异常: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
-    }    /**
+    }
+
+    /**
      * 搜索人员（支持姓名、身份证、电话搜索）
      *
      * @param keyword    搜索关键词
@@ -1507,5 +1509,73 @@ public class SwmPersonController extends BaseController {
         }
 
         return result;
+    }
+
+    /**
+     * 批量完成安全教育
+     * @param personIds 人员ID列表，以逗号分隔
+     * @return 处理结果
+     */
+    @PostMapping(value = "batchCompleteSafetyEducation")
+    @ResponseBody
+    public Map<String, Object> batchCompleteSafetyEducation(@RequestParam("personIds") String personIds) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            logger.info("批量完成安全教育，人员IDs: {}", personIds);
+
+            if (personIds == null || personIds.isEmpty()) {
+                result.put("result", "error");
+                result.put("message", "未提供人员ID列表");
+                return result;
+            }
+
+            // 解析人员ID列表
+            String[] idArray = personIds.split(",");
+            int successCount = 0;
+            int totalCount = idArray.length;
+            List<String> failedNames = new ArrayList<>();
+
+            for (String personId : idArray) {
+                try {
+                    SwmPerson person = swmPersonService.get(personId);
+                    if (person != null) {
+                        // 只更新安全教育状态为未开始的人员
+                        if (SwmPerson.SafetyEducationEnum.NOT_STARTED.equals(person.getSafetyEducation())) {
+                            person.setSafetyEducation(SwmPerson.SafetyEducationEnum.COMPLETED);
+                            swmPersonService.save(person);
+                            successCount++;
+                            logger.info("更新人员 [{}] 的安全教育状态为已完成", person.getName());
+                        } else {
+                            logger.info("人员 [{}] 的安全教育状态已为已完成，跳过更新", person.getName());
+                            // 已完成的也计入成功数
+                            successCount++;
+                        }
+                    } else {
+                        logger.warn("根据人员ID [{}] 未找到人员记录", personId);
+                        failedNames.add("ID:" + personId);
+                    }
+                } catch (Exception e) {
+                    logger.error("更新人员ID [{}] 的安全教育状态时出现异常: {}", personId, e.getMessage());
+                    failedNames.add("ID:" + personId);
+                }
+            }
+
+            result.put("result", "success");
+            result.put("message", String.format("批量完成安全教育成功，共处理 %d 条记录，成功 %d 条", totalCount, successCount));
+            result.put("successCount", successCount);
+            result.put("totalCount", totalCount);
+            
+            if (!failedNames.isEmpty()) {
+                result.put("failedCount", failedNames.size());
+                result.put("failedNames", String.join(", ", failedNames));
+            }
+            
+            return result;
+        } catch (Exception e) {
+            logger.error("批量完成安全教育出现异常", e);
+            result.put("result", "error");
+            result.put("message", "批量完成安全教育失败：" + e.getMessage());
+            return result;
+        }
     }
 }
