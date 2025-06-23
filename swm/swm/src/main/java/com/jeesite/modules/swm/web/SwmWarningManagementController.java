@@ -33,6 +33,13 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+// 添加需要的导入语句
+import com.jeesite.modules.sys.entity.User;
+import com.jeesite.modules.sys.utils.UserUtils;
+import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.service.SwmPersonService;
+import com.jeesite.common.utils.excel.ExcelExport;
+
 /**
  * 预警管理表Controller
  *
@@ -54,6 +61,9 @@ public class SwmWarningManagementController extends BaseController {
     
     @Autowired
     private SwmWarningManagementDao swmWarningManagementDao;
+
+    @Autowired
+    private SwmPersonService swmPersonService;
 
     /**
      * 获取数据
@@ -84,7 +94,15 @@ public class SwmWarningManagementController extends BaseController {
         // 创建分页对象
         Page<SwmWarningManagement> page = new Page<>(request, response);
 
-        logger.info("查询参数: personName={}, warningType={}, warningContent={}, handleStatus={}",
+        // 确保对象不为空
+        if (swmWarningManagement == null) {
+            swmWarningManagement = new SwmWarningManagement();
+        }
+        
+        // 添加排除一键SOS的条件
+        swmWarningManagement.setExcludeSOS(true);
+        
+        logger.info("查询参数: personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS=true",
             swmWarningManagement.getPersonName(),
             swmWarningManagement.getWarningType(),
             swmWarningManagement.getWarningContent(),
@@ -503,4 +521,40 @@ public class SwmWarningManagementController extends BaseController {
             return R.fail("告警确认失败");
         }
     }
+
+    /**
+     * 查询SOS报警列表数据
+     */
+    @RequestMapping(value = "sosListData")
+    @ResponseBody
+    @ApiOperation("查询SOS报警列表数据")
+    public Page<SwmWarningManagement> sosListData(SwmWarningManagement swmWarningManagement, HttpServletRequest request, HttpServletResponse response) {
+        // 创建分页对象
+        Page<SwmWarningManagement> page = new Page<>(request, response);
+
+        // 确保只筛选一键SOS的预警数据
+        if (swmWarningManagement == null) {
+            swmWarningManagement = new SwmWarningManagement();
+        }
+        
+        // 设置固定的warningContent为"一键SOS"
+        swmWarningManagement.setWarningContent("一键SOS");
+        
+        logger.info("查询SOS报警参数: personName={}, warningType={}, warningContent={}, handleStatus={}",
+            swmWarningManagement.getPersonName(),
+            swmWarningManagement.getWarningType(),
+            swmWarningManagement.getWarningContent(),
+            swmWarningManagement.getHandleStatus());
+
+        // 调用服务层方法，使用混合查询获取数据（时序数据库 + MySQL）
+        // 时区调整已在SQL查询中完成，无需再次调整
+        Page<SwmWarningManagement> resultPage = swmWarningManagementService.hybridFindPage(page, swmWarningManagement);
+        logger.info("SOS报警查询完成，返回数据总条数: {}", resultPage != null ? resultPage.getCount() : 0);
+
+        return resultPage;
+    }
+    
+
+    
+
 }

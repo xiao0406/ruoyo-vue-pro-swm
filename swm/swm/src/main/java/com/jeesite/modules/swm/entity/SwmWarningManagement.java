@@ -141,6 +141,9 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     // 用于显示的属性，不对应数据库字段
     private String warningTypeText; // 预警类型显示文本
     private String handleStatusText; // 处置状态显示文本
+    
+    // 查询条件，不对应数据库字段
+    private transient boolean excludeSOS; // 是否排除一键SOS预警
 
     // 临时数据，不会被持久化到数据库
     private transient Map<String, Object> extraData;
@@ -377,5 +380,14 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
             return null;
         }
         return extraData.get(key);
+    }
+
+    // 新增 excludeSOS 的 getter/setter
+    public boolean isExcludeSOS() {
+        return excludeSOS;
+    }
+
+    public void setExcludeSOS(boolean excludeSOS) {
+        this.excludeSOS = excludeSOS;
     }
 }

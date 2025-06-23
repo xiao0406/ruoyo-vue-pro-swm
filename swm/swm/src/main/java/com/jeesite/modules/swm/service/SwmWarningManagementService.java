@@ -93,6 +93,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         // 添加查询条件
         List<String> conditions = new ArrayList<>();
         
+        // 如果需要排除一键SOS
+        if (swmWarningManagement.isExcludeSOS()) {
+            conditions.add("warning_content != '一键SOS'");
+            logger.info("添加排除一键SOS的查询条件");
+        }
+        
         if (swmWarningManagement.getPersonName() != null && !swmWarningManagement.getPersonName().isEmpty()) {
             conditions.add("person_name LIKE '%" + swmWarningManagement.getPersonName() + "%'");
         }
@@ -137,6 +143,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         sqlBuilder.append(" ORDER BY warning_time DESC");
         sqlBuilder.append(" LIMIT ").append(page.getPageSize());
         sqlBuilder.append(" OFFSET ").append((page.getPageNo() - 1) * page.getPageSize());
+        
+        logger.info("执行SQL: {}", sqlBuilder.toString());
         
         // 执行查询
         R<JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
