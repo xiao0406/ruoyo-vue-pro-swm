@@ -151,4 +151,17 @@ public class SwmHelmetConfigService extends CrudService<SwmHelmetConfigDao, SwmH
 		return dao.getPersonTypeEnumData();
 	}
 
+	/**
+	 * 获取工种字典数据
+	 * 
+	 * @author Shawn
+	 * @date 2025/06/24
+	 * @description 获取字典类型为hr_employee_work_type的字典数据，
+	 *              用于"按工种展示"的颜色配置，title和id都使用dict_label
+	 * @return 工种字典数据列表
+	 */
+	public List<Map<String, Object>> getWorkTypeEnumData() {
+		return dao.getWorkTypeEnumData();
+	}
+
 }

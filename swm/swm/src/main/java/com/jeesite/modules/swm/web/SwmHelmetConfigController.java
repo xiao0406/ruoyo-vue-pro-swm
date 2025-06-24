@@ -257,4 +257,30 @@ public class SwmHelmetConfigController extends BaseController {
 		return result;
 	}
 
+	/**
+	 * 获取工种字典数据
+	 * 
+	 * @author Shawn
+	 * @date 2025/06/24
+	 * @description 获取字典类型为hr_employee_work_type的字典数据，
+	 *              用于"按工种展示"的颜色配置，title和id都使用dict_label
+	 */
+	@RequestMapping(value = "getWorkTypeEnumData")
+	@ResponseBody
+	public List<Map<String, Object>> getWorkTypeEnumData() {
+		List<Map<String, Object>> result = new ArrayList<>();
+
+		try {
+			// 调用Service层方法获取工种字典数据
+			List<Map<String, Object>> workTypeList = swmHelmetConfigService.getWorkTypeEnumData();
+			if (workTypeList != null && !workTypeList.isEmpty()) {
+				result = workTypeList;
+			}
+		} catch (Exception e) {
+			logger.error("获取工种字典数据失败", e);
+		}
+
+		return result;
+	}
+
 }
