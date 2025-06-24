@@ -296,7 +296,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         BigDecimal totalScheduledDays = BigDecimal.ZERO;
         BigDecimal totalActualDays = BigDecimal.ZERO;
         BigDecimal totalScheduledHours = BigDecimal.ZERO;
-        BigDecimal totalActualHours = BigDecimal.ZERO;
+        BigDecimal totalEffectiveWorkHours = BigDecimal.ZERO;
         BigDecimal totalIdleHours = BigDecimal.ZERO;
 
         for (SwmDailyAttendance record : dailyRecords) {
@@ -314,8 +314,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             }
 
             // 累计实际工作时间
-            if (record.getActualHours() != null) {
-                totalActualHours = totalActualHours.add(record.getActualHours());
+            if (record.getEffectiveWorkHours() != null) {
+                totalEffectiveWorkHours = totalEffectiveWorkHours.add(record.getEffectiveWorkHours());
             }
 
             // 累计怠工时长
@@ -328,7 +328,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         summary.setScheduledDays(totalScheduledDays);
         summary.setActualDays(totalActualDays);
         summary.setScheduledHours(totalScheduledHours);
-        summary.setActualHours(totalActualHours);
+        summary.setActualHours(totalEffectiveWorkHours);
         summary.setIdleHours(totalIdleHours);
 
         // 计算出勤率 = 实际出勤天数 / 应出勤天数
@@ -341,7 +341,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
         // 计算考勤达成率 = 实际工作时间 / 应考勤时间
         if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal attendanceAchievementRate = totalActualHours.divide(totalScheduledHours, 4,
+            BigDecimal attendanceAchievementRate = totalEffectiveWorkHours.divide(totalScheduledHours, 4,
                     RoundingMode.HALF_UP);
             summary.setAttendanceAchievementRate(attendanceAchievementRate);
         } else {
@@ -413,7 +413,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         BigDecimal totalScheduledDays = BigDecimal.ZERO;
         BigDecimal totalActualDays = BigDecimal.ZERO;
         BigDecimal totalScheduledHours = BigDecimal.ZERO;
-        BigDecimal totalActualHours = BigDecimal.ZERO;
+        BigDecimal totalEffectiveWorkHours = BigDecimal.ZERO;
         BigDecimal totalIdleHours = BigDecimal.ZERO;
 
         for (SwmDailyAttendance record : dailyRecords) {
@@ -431,8 +431,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             }
 
             // 累计实际工作时间
-            if (record.getActualHours() != null) {
-                totalActualHours = totalActualHours.add(record.getActualHours());
+            if (record.getEffectiveWorkHours() != null) {
+                totalEffectiveWorkHours = totalEffectiveWorkHours.add(record.getEffectiveWorkHours());
             }
 
             // 累计怠工时长
@@ -445,7 +445,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         summary.setScheduledDays(totalScheduledDays);
         summary.setActualDays(totalActualDays);
         summary.setScheduledHours(totalScheduledHours);
-        summary.setActualHours(totalActualHours);
+        summary.setActualHours(totalEffectiveWorkHours);
         summary.setIdleHours(totalIdleHours);
 
         // 计算出勤率 = 实际出勤天数 / 应出勤天数
@@ -458,7 +458,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
         // 计算考勤达成率 = 实际工作时间 / 应考勤时间
         if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal attendanceAchievementRate = totalActualHours.divide(totalScheduledHours, 4,
+            BigDecimal attendanceAchievementRate = totalEffectiveWorkHours.divide(totalScheduledHours, 4,
                     RoundingMode.HALF_UP);
             summary.setAttendanceAchievementRate(attendanceAchievementRate);
         } else {

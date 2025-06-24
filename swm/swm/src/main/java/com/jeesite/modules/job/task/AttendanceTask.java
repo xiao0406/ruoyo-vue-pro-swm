@@ -217,7 +217,7 @@ public class AttendanceTask {
         SwmDailyAttendance query = new SwmDailyAttendance();
         query.setBeginAttendanceDate(startDate);
         query.setEndAttendanceDate(endDate);
-        // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
+        query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
         List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService.findList(query);
 
         // 3. 按员工ID分组
@@ -252,6 +252,12 @@ public class AttendanceTask {
             // 计算总时长
             BigDecimal totalScheduledHours = employeeAttendance.stream()
                     .map(SwmDailyAttendance::getScheduledHours)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // 修改：实际工作时间改为累计实际工作时长（基于工作区域计算）
+            BigDecimal totalEffectiveWorkHours = employeeAttendance.stream()
+                    .map(SwmDailyAttendance::getEffectiveWorkHours)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -303,13 +309,14 @@ public class AttendanceTask {
             summary.setActualDays(BigDecimal.valueOf(actualDays));
             summary.setAttendanceRate(attendanceRate);
             summary.setScheduledHours(totalScheduledHours);
-            summary.setActualHours(totalActualHours);
+            summary.setActualHours(totalEffectiveWorkHours);
             summary.setIdleHours(totalIdleHours);
             summary.setEfficiency(avgEfficiency);
 
-            // 计算考勤达成率
+            // 计算考勤达成率（修改：使用实际工作时长计算）
             if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal achievementRate = totalActualHours.divide(totalScheduledHours, 4, RoundingMode.HALF_UP);
+                BigDecimal achievementRate = totalEffectiveWorkHours.divide(totalScheduledHours, 4,
+                        RoundingMode.HALF_UP);
                 summary.setAttendanceAchievementRate(achievementRate);
             } else {
                 summary.setAttendanceAchievementRate(BigDecimal.ZERO);

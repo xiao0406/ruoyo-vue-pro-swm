@@ -94,8 +94,7 @@ public class SwmDashboardController extends BaseController {
         Map<String, Long> warningMap = warnings.stream()
                 .collect(Collectors.groupingBy(
                         SwmWarningManagement::getWarningContent,
-                        Collectors.counting()
-                ));
+                        Collectors.counting()));
         result.put("warning", warningMap);
 
         // 3. 按日期和预警内容分组统计
@@ -105,8 +104,7 @@ public class SwmDashboardController extends BaseController {
                         Collectors.groupingBy(
                                 SwmWarningManagement::getWarningContent, // 按预警内容分组
                                 Collectors.counting() // 统计数量
-                        )
-                ));
+                        )));
 
         // 4. 确保7天都有数据，没有的日期补0
         Map<String, Map<String, Long>> fullWeekStats = ensureFullWeekData(dailyWarningStats);
@@ -167,7 +165,6 @@ public class SwmDashboardController extends BaseController {
         return days;
     }
 
-
     /**
      * 准备图表数据
      */
@@ -213,8 +210,7 @@ public class SwmDashboardController extends BaseController {
         Map<String, Long> warningMap = warnings.stream()
                 .collect(Collectors.groupingBy(
                         SwmWarningManagement::getWarningContent,
-                        Collectors.counting()
-                ));
+                        Collectors.counting()));
         map.put("warning", warningMap);
         return map;
     }
@@ -253,9 +249,12 @@ public class SwmDashboardController extends BaseController {
 
         // 1. 按状态统计数量
         Map<String, Integer> statusCounts = new HashMap<>();
-        statusCounts.put("WAIT", swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.WAIT, year, month));
-        statusCounts.put("IN_PROGRESS", swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.IN_PROGRESS, year, month));
-        statusCounts.put("COMPLETED", swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.COMPLETED, year, month));
+        statusCounts.put("WAIT",
+                swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.WAIT, year, month));
+        statusCounts.put("IN_PROGRESS", swmHazardSourceService
+                .countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.IN_PROGRESS, year, month));
+        statusCounts.put("COMPLETED", swmHazardSourceService
+                .countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.COMPLETED, year, month));
         result.put("statusCounts", statusCounts);
 
         // 2. 按危险源类别统计数量
@@ -346,8 +345,8 @@ public class SwmDashboardController extends BaseController {
      * 筛选考勤数据
      */
     private List<SwmDailyAttendance> filterAttendances(List<SwmDailyAttendance> attendances,
-                                                       Map<String, SwmPerson> personMap,
-                                                       SwmPerson queryParams) {
+            Map<String, SwmPerson> personMap,
+            SwmPerson queryParams) {
         return attendances.parallelStream()
                 .filter(a -> {
                     SwmPerson person = personMap.get(a.getEmployeeId());
@@ -360,7 +359,8 @@ public class SwmDashboardController extends BaseController {
      * 检查人员是否匹配查询条件
      */
     private boolean matchesQuery(SwmPerson person, SwmPerson queryParams) {
-        if (person == null) return false;
+        if (person == null)
+            return false;
 
         // 单位条件
         if (StringUtils.isNotBlank(queryParams.getCompany()) &&
@@ -399,7 +399,7 @@ public class SwmDashboardController extends BaseController {
      * 获取今日考勤统计
      */
     private Map<String, Object> getTodayAttendanceStats(List<SwmDailyAttendance> attendances,
-                                                        Map<String, SwmPerson> personMap) {
+            Map<String, SwmPerson> personMap) {
         Map<String, Object> result = new HashMap<>();
         String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
 
@@ -414,8 +414,10 @@ public class SwmDashboardController extends BaseController {
                         a -> personMap.get(a.getEmployeeId()).getPersonType()));
 
         // 计算统计
-        result.put("worker", calculateStats(byType.getOrDefault(SwmPerson.PersonTypeEnum.WORKER, Collections.emptyList())));
-        result.put("manager", calculateStats(byType.getOrDefault(SwmPerson.PersonTypeEnum.MANAGER, Collections.emptyList())));
+        result.put("worker",
+                calculateStats(byType.getOrDefault(SwmPerson.PersonTypeEnum.WORKER, Collections.emptyList())));
+        result.put("manager",
+                calculateStats(byType.getOrDefault(SwmPerson.PersonTypeEnum.MANAGER, Collections.emptyList())));
 
         return result;
     }
@@ -431,22 +433,23 @@ public class SwmDashboardController extends BaseController {
                 .filter(a -> a.getActualHours() != null && a.getActualHours().compareTo(BigDecimal.ZERO) > 0)
                 .count();
 
-        BigDecimal attendanceRate = totalCount == 0 ? BigDecimal.ZERO :
-                BigDecimal.valueOf(presentCount)
+        BigDecimal attendanceRate = totalCount == 0 ? BigDecimal.ZERO
+                : BigDecimal.valueOf(presentCount)
                         .divide(BigDecimal.valueOf(totalCount), 4, RoundingMode.HALF_UP);
 
         long workingCount = attendances.parallelStream()
                 .filter(a -> "0".equals(a.getCurrentPosition()))
                 .count();
 
-        stats.put("totalCount", totalCount);//应出人数
-        stats.put("presentCount", presentCount);//实出人数
-        stats.put("attendanceRate", attendanceRate);//出勤率
+        stats.put("totalCount", totalCount);// 应出人数
+        stats.put("presentCount", presentCount);// 实出人数
+        stats.put("attendanceRate", attendanceRate);// 出勤率
         stats.put("onSiteCount", totalCount); // 在场人数等于总人数
-        stats.put("workingCount", workingCount);//工作中人数
+        stats.put("workingCount", workingCount);// 工作中人数
 
         return stats;
     }
+
     // 2. 本月平均功效和考勤达成率
     private Map<String, Object> getMonthlyEfficiencyStats(List<SwmDailyAttendance> monthlyAttendances) {
         Map<String, Object> stats = new HashMap<>();
@@ -456,24 +459,24 @@ public class SwmDashboardController extends BaseController {
                 .filter(a -> a.getDailyEfficiency() != null)
                 .map(SwmDailyAttendance::getDailyEfficiency)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .divide(monthlyAttendances.isEmpty() ? BigDecimal.ONE :
-                        new BigDecimal(monthlyAttendances.size()), 2, RoundingMode.HALF_UP);
-        // 计算本月总实际出勤时间和总应出勤时间
+                .divide(monthlyAttendances.isEmpty() ? BigDecimal.ONE : new BigDecimal(monthlyAttendances.size()), 2,
+                        RoundingMode.HALF_UP);
+        // 计算本月总实际工作时间和总应出勤时间
         BigDecimal totalScheduledHours = monthlyAttendances.stream()
                 .map(a -> a.getScheduledHours() != null ? a.getScheduledHours() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // 注意：actualHours现在存储的是基于工作区域计算的实际工作时长
         BigDecimal totalActualHours = monthlyAttendances.stream()
                 .map(a -> a.getActualHours() != null ? a.getActualHours() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 计算考勤达成率(总实际/总应出勤)
+        // 计算考勤达成率(总实际工作时长/总应出勤时间)
         BigDecimal achievementRate = BigDecimal.ZERO;
         if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
             achievementRate = totalActualHours
                     .divide(totalScheduledHours, 4, RoundingMode.HALF_UP);
         }
-
 
         stats.put("avgEfficiency", avgEfficiency);
         stats.put("achievementRate", achievementRate);
@@ -481,7 +484,8 @@ public class SwmDashboardController extends BaseController {
     }
 
     // 3. 本月每日出勤统计(折线图数据)
-    private Map<String, Object> getMonthlyAttendanceChartData(List<SwmDailyAttendance> monthlyAttendances,String month) {
+    private Map<String, Object> getMonthlyAttendanceChartData(List<SwmDailyAttendance> monthlyAttendances,
+            String month) {
         Map<String, Object> chartData = new HashMap<>();
 
         // 获取本月所有天数
@@ -508,8 +512,8 @@ public class SwmDashboardController extends BaseController {
                     .filter(a -> a.getActualHours() != null && a.getActualHours().compareTo(BigDecimal.ZERO) > 0)
                     .count();
             // 出勤率
-            BigDecimal rate = scheduled == 0 ? BigDecimal.ZERO :
-                    BigDecimal.valueOf(actual).divide(BigDecimal.valueOf(scheduled), 4, RoundingMode.HALF_UP)
+            BigDecimal rate = scheduled == 0 ? BigDecimal.ZERO
+                    : BigDecimal.valueOf(actual).divide(BigDecimal.valueOf(scheduled), 4, RoundingMode.HALF_UP)
                             .multiply(BigDecimal.valueOf(100));
 
             scheduledList.add(scheduled);
@@ -524,7 +528,8 @@ public class SwmDashboardController extends BaseController {
     }
 
     // 4. 本月每日功效统计(折线图数据)
-    private Map<String, Object> getMonthlyEfficiencyChartData(List<SwmDailyAttendance> monthlyAttendances, String month) {
+    private Map<String, Object> getMonthlyEfficiencyChartData(List<SwmDailyAttendance> monthlyAttendances,
+            String month) {
         Map<String, Object> chartData = new HashMap<>();
 
         // 获取本月所有天数
@@ -549,14 +554,14 @@ public class SwmDashboardController extends BaseController {
                     .map(a -> a.getScheduledHours() != null ? a.getScheduledHours() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // 实际考勤时长总和
+            // 实际工作时长总和（基于工作区域计算）
             BigDecimal actualHours = dayAttendances.stream()
                     .map(a -> a.getActualHours() != null ? a.getActualHours() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // 考勤率
-            BigDecimal rate = scheduledHours.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO :
-                    actualHours.divide(scheduledHours, 4, RoundingMode.HALF_UP)
+            // 达成率（实际工作时长/应考勤时长）
+            BigDecimal rate = scheduledHours.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO
+                    : actualHours.divide(scheduledHours, 4, RoundingMode.HALF_UP)
                             .multiply(BigDecimal.valueOf(100));
 
             scheduledHoursList.add(scheduledHours);
@@ -574,9 +579,9 @@ public class SwmDashboardController extends BaseController {
      * 获取班组排名(今日或本月)
      */
     private List<Map<String, Object>> getTeamRanking(List<SwmDailyAttendance> attendances,
-                                                     Map<String, SwmPerson> personMap,
-                                                     boolean isToday,
-                                                     int limit) {
+            Map<String, SwmPerson> personMap,
+            boolean isToday,
+            int limit) {
         String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
 
         // 按班组分组统计
@@ -586,7 +591,8 @@ public class SwmDashboardController extends BaseController {
                 .filter(a -> !isToday || todayStr.equals(DateUtil.format(a.getAttendanceDate(), "yyyy-MM-dd")))
                 .forEach(a -> {
                     SwmPerson person = personMap.get(a.getEmployeeId());
-                    if (person == null || person.getTeam() == null) return;
+                    if (person == null || person.getTeam() == null)
+                        return;
 
                     TeamStats stats = teamStats.computeIfAbsent(person.getTeam(), k -> new TeamStats());
                     stats.totalCount++;
@@ -608,11 +614,14 @@ public class SwmDashboardController extends BaseController {
                     result.put("name", entry.getKey());
                     result.put("count", stats.totalCount);
                     result.put("presentCount", stats.presentCount);
-                    result.put("attendanceRate", stats.totalCount == 0 ? BigDecimal.ZERO :
-                            BigDecimal.valueOf(stats.presentCount)
-                                    .divide(BigDecimal.valueOf(stats.totalCount), 4, RoundingMode.HALF_UP));
-                    result.put("avgEfficiency", stats.totalCount == 0 ? BigDecimal.ZERO :
-                            stats.efficiencySum.divide(BigDecimal.valueOf(stats.totalCount), 2, RoundingMode.HALF_UP));
+                    result.put("attendanceRate",
+                            stats.totalCount == 0 ? BigDecimal.ZERO
+                                    : BigDecimal.valueOf(stats.presentCount)
+                                            .divide(BigDecimal.valueOf(stats.totalCount), 4, RoundingMode.HALF_UP));
+                    result.put("avgEfficiency",
+                            stats.totalCount == 0 ? BigDecimal.ZERO
+                                    : stats.efficiencySum.divide(BigDecimal.valueOf(stats.totalCount), 2,
+                                            RoundingMode.HALF_UP));
                     return result;
                 })
                 .sorted((a, b) -> ((BigDecimal) b.get("avgEfficiency")).compareTo((BigDecimal) a.get("avgEfficiency")))
@@ -622,11 +631,13 @@ public class SwmDashboardController extends BaseController {
 
     /**
      * 获取工种排名
+     * 
      * @param attendances
      * @param limit
      * @return
      */
-    private List<Map<String, Object>> getJobDistribution(List<SwmDailyAttendance> attendances,Map<String, SwmPerson> personMap, boolean isToday, int limit) {
+    private List<Map<String, Object>> getJobDistribution(List<SwmDailyAttendance> attendances,
+            Map<String, SwmPerson> personMap, boolean isToday, int limit) {
         // 按工种分组统计
         Map<String, Map<String, Object>> jobTypeStats = new HashMap<>();
         String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
@@ -637,7 +648,8 @@ public class SwmDashboardController extends BaseController {
 
         for (SwmDailyAttendance attendance : todayAttendances) {
             SwmPerson person = personMap.get(attendance.getEmployeeId());
-            if (person == null || person.getTeam() == null) continue;
+            if (person == null || person.getTeam() == null)
+                continue;
 
             String jobType = person.getJobType();
             Map<String, Object> stats = jobTypeStats.computeIfAbsent(jobType, k -> new HashMap<>());
@@ -670,10 +682,12 @@ public class SwmDashboardController extends BaseController {
                     result.put("name", entry.getKey());
                     result.put("count", count);
                     result.put("presentCount", presentCount);
-                    result.put("attendanceRate", count == 0 ? BigDecimal.ZERO :
-                            BigDecimal.valueOf(presentCount).divide(BigDecimal.valueOf(count), 4, RoundingMode.HALF_UP));
-                    result.put("avgEfficiency", count == 0 ? BigDecimal.ZERO :
-                            efficiencySum.divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_UP));
+                    result.put("attendanceRate",
+                            count == 0 ? BigDecimal.ZERO
+                                    : BigDecimal.valueOf(presentCount).divide(BigDecimal.valueOf(count), 4,
+                                            RoundingMode.HALF_UP));
+                    result.put("avgEfficiency", count == 0 ? BigDecimal.ZERO
+                            : efficiencySum.divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_UP));
                     return result;
                 })
                 .sorted((a, b) -> ((BigDecimal) b.get("avgEfficiency")).compareTo((BigDecimal) a.get("avgEfficiency")))
