@@ -45,6 +45,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * 人员登记表controller
@@ -945,57 +947,106 @@ public class SwmPersonController extends BaseController {
 
             // 从Redis内存中取出所有在职人员数据
             Map<Object, Object> allPersons = cacheService.getAllActivePersons();
+            if (allPersons == null || allPersons.isEmpty()) {
+                result.put("success", true);
+                result.put("data", new ArrayList<>());
+                result.put("total", 0);
+                result.put("message", "没有在职人员数据");
+                return result;
+            }
 
-            // 过滤出当天有坐标数据的人员，并添加设备编号信息
+            // 收集所有身份证号
+            List<String> allIdCards = new ArrayList<>();
+            for (Map.Entry<Object, Object> entry : allPersons.entrySet()) {
+                if (entry.getValue() instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> personData = (Map<String, Object>) entry.getValue();
+                    String idCard = (String) personData.get("identityCard");
+                    if (idCard != null && !idCard.trim().isEmpty()) {
+                        allIdCards.add(idCard);
+                    }
+                }
+            }
+
+            if (allIdCards.isEmpty()) {
+                result.put("success", true);
+                result.put("data", new ArrayList<>());
+                result.put("total", 0);
+                result.put("message", "没有有效的身份证号码");
+                return result;
+            }
+
+            // 1. 批量查询当天有坐标数据的身份证
+            Set<String> idCardsWithCoordinates = batchCheckCoordinateDataToday(allIdCards);
+            
+            if (idCardsWithCoordinates.isEmpty()) {
+                result.put("success", true);
+                result.put("data", new ArrayList<>());
+                result.put("total", 0);
+                result.put("message", "没有当天有坐标数据的人员");
+                return result;
+            }
+            
+            // 2. 批量查询设备ID映射
+            Map<String, String> idCardToDeviceMap = batchGetDeviceIdsByIdCards(idCardsWithCoordinates);
+            
+            // 3. 批量查询电量信息
+            Map<String, Integer> deviceToBatteryMap = batchGetBatteryLevels(new ArrayList<>(idCardToDeviceMap.values()));
+            
+            // 4. 批量查询位置信息
+            Map<String, String> idCardToLocationMap = batchGetLocations(idCardsWithCoordinates);
+            
+            // 5. 批量查询运动状态
+            Map<String, String> idCardToMotionStatusMap = batchGetMotionStatuses(idCardsWithCoordinates);
+
+            // 过滤并构建结果数据
             List<Map<String, Object>> personsWithCoordinates = new ArrayList<>();
-            if (allPersons != null) {
-                for (Map.Entry<Object, Object> entry : allPersons.entrySet()) {
-                    if (entry.getValue() instanceof Map) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> personData = (Map<String, Object>) entry.getValue();
-
-                        // 获取身份证信息
-                        String idCard = (String) personData.get("identityCard");
-                        logger.info("身份证号码是：" + idCard);
-
-                        // 检查当天是否有坐标数据（不管身份证是否为空都检查）
-                        if (hasCoordinateDataToday(idCard)) {
-                            // 获取设备编号
-                            String deviceId = getDeviceIdByIdCard(idCard);
-
-                            // 获取电量信息
-                            Integer batteryLevel = getBatteryLevelByDeviceId(deviceId);
-
-                            // 获取位置信息
-                            String location = getLocationByIdCard(idCard);
-
-                            // 如果没有查询到位置信息，使用默认位置
-                            if (location == null || location.trim().isEmpty()) {
-                                location = String.format("%s%s",
-                                        personData.get("company") != null ? personData.get("company") : "天津厂",
-                                        personData.get("department") != null ? personData.get("department") : "一车间");
-                            }
-
-                            // 获取运动状态
-                            String motionStatus = getMotionStatusByIdCard(idCard);
-
-                            // 如果没有查询到运动状态，默认为运动状态
-                            if (motionStatus == null || motionStatus.trim().isEmpty()) {
-                                motionStatus = "运动";
-                            }
-
-                            // 创建增强的人员信息，添加设备编号、电量、位置和运动状态信息
-                            Map<String, Object> enhancedPersonData = new HashMap<>(personData);
-                            enhancedPersonData.put("deviceId", deviceId);
-                            enhancedPersonData.put("safetyHelmetId", deviceId); // 兼容前端字段名
-                            enhancedPersonData.put("batteryLevel", batteryLevel); // 电量信息
-                            enhancedPersonData.put("location", location); // 位置信息
-                            enhancedPersonData.put("motionStatus", motionStatus); // 运动状态信息
-                            // 添加ID作为唯一标识
-                            enhancedPersonData.put("id", entry.getKey());
-
-                            personsWithCoordinates.add(enhancedPersonData);
+            
+            for (Map.Entry<Object, Object> entry : allPersons.entrySet()) {
+                if (entry.getValue() instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> personData = (Map<String, Object>) entry.getValue();
+                    
+                    // 获取身份证信息
+                    String idCard = (String) personData.get("identityCard");
+                    
+                    // 检查是否有坐标数据
+                    if (idCard != null && !idCard.isEmpty() && idCardsWithCoordinates.contains(idCard)) {
+                        // 获取设备编号
+                        String deviceId = idCardToDeviceMap.get(idCard);
+                        
+                        // 获取电量信息
+                        Integer batteryLevel = deviceId != null ? deviceToBatteryMap.get(deviceId) : null;
+                        
+                        // 获取位置信息
+                        String location = idCardToLocationMap.get(idCard);
+                        
+                        // 如果没有查询到位置信息，使用默认位置
+                        if (location == null || location.trim().isEmpty()) {
+                            location = String.format("%s%s",
+                                    personData.get("company") != null ? personData.get("company") : "天津厂",
+                                    personData.get("department") != null ? personData.get("department") : "一车间");
                         }
+                        
+                        // 获取运动状态
+                        String motionStatus = idCardToMotionStatusMap.get(idCard);
+                        
+                        // 如果没有查询到运动状态，默认为运动状态
+                        if (motionStatus == null || motionStatus.trim().isEmpty()) {
+                            motionStatus = "运动";
+                        }
+                        
+                        // 创建增强的人员信息，添加设备编号、电量、位置和运动状态信息
+                        Map<String, Object> enhancedPersonData = new HashMap<>(personData);
+                        enhancedPersonData.put("deviceId", deviceId);
+                        enhancedPersonData.put("safetyHelmetId", deviceId); // 兼容前端字段名
+                        enhancedPersonData.put("batteryLevel", batteryLevel); // 电量信息
+                        enhancedPersonData.put("location", location); // 位置信息
+                        enhancedPersonData.put("motionStatus", motionStatus); // 运动状态信息
+                        // 添加ID作为唯一标识
+                        enhancedPersonData.put("id", entry.getKey());
+                        
+                        personsWithCoordinates.add(enhancedPersonData);
                     }
                 }
             }
@@ -1013,238 +1064,287 @@ public class SwmPersonController extends BaseController {
 
         return result;
     }
-
+    
     /**
-     * 根据身份证号从Redis缓存中获取设备编号
+     * 批量检查身份证号列表当天是否有坐标数据
      * 
-     * @param idCard 身份证号
-     * @return 设备编号，未找到则返回null
-     * @author Shawn
-     * @date 2025-01-17
+     * @param idCards 身份证号列表
+     * @return 有坐标数据的身份证号集合
      */
-    private String getDeviceIdByIdCard(String idCard) {
-        if (idCard == null || idCard.trim().isEmpty()) {
-            return null;
+    private Set<String> batchCheckCoordinateDataToday(List<String> idCards) {
+        Set<String> result = new HashSet<>();
+        if (idCards == null || idCards.isEmpty()) {
+            return result;
         }
-
+        
         try {
-            return helmetCacheService.getAssignedDeviceFromCache(idCard, swmHelmetDeviceService);
-        } catch (Exception e) {
-            logger.warn("从缓存获取身份证 {} 对应的设备编号失败: {}", idCard, e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 根据设备编号查询最新电量信息
-     * 
-     * @param deviceId 设备编号
-     * @return 电量百分比，查询失败则返回null
-     * @author Shawn
-     * @date 2025-01-17
-     */
-    private Integer getBatteryLevelByDeviceId(String deviceId) {
-        if (deviceId == null || deviceId.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            // 构建查询最新电量的SQL，参考SwmHelmetDeviceService的实现
-            String sql = String.format(
-                    "SELECT time, bat_l FROM %s.helmet_runde_ca_report_location " +
-                            "WHERE device_id = '%s' " +
-                            "AND time <= NOW() " +
-                            "AND time >= NOW() - 5m " +
-                            "ORDER BY time DESC " +
-                            "LIMIT 1",
-                    tdengineDbName, deviceId);
-
-            logger.debug("查询设备 {} 电量的SQL: {}", deviceId, sql);
-
-            // 执行查询
-            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
-
-            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
-                cn.hutool.json.JSONObject data = queryResult.getData();
-                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-
-                if (rows != null && rows.size() > 0) {
-                    cn.hutool.json.JSONArray row = rows.getJSONArray(0);
-                    if (row != null && row.size() > 1) {
-                        int batteryLevel = row.getInt(1);
-                        logger.debug("设备 {} 当前电量: {}%", deviceId, batteryLevel);
-                        return batteryLevel;
-                    }
-                }
-            } else {
-                logger.debug("查询设备 {} 电量数据失败: {}", deviceId, queryResult.getMsg());
-            }
-
-        } catch (Exception e) {
-            logger.warn("查询设备 {} 电量异常: {}", deviceId, e.getMessage());
-        }
-
-        return null;
-    }
-
-    /**
-     * 根据身份证号查询最新位置信息
-     * 
-     * @param idCard 身份证号
-     * @return 区域名称，查询失败则返回null
-     * @author Shawn
-     * @date 2025-01-17
-     */
-    private String getLocationByIdCard(String idCard) {
-        if (idCard == null || idCard.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            // 构建查询最新位置的SQL，查询30分钟内最后一条记录
-            String sql = String.format(
-                    "SELECT time, area_name FROM %s.area_fence_data " +
-                            "WHERE id_card = '%s' " +
-                            "AND time <= NOW() " +
-                            "AND time >= NOW() - 30m " +
-                            "ORDER BY time DESC " +
-                            "LIMIT 1",
-                    tdengineDbName, idCard);
-
-            logger.debug("查询身份证 {} 位置的SQL: {}", idCard, sql);
-
-            // 执行查询
-            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
-
-            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
-                cn.hutool.json.JSONObject data = queryResult.getData();
-                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-
-                if (rows != null && rows.size() > 0) {
-                    cn.hutool.json.JSONArray row = rows.getJSONArray(0);
-                    if (row != null && row.size() > 1) {
-                        String areaName = String.valueOf(row.get(1));
-                        logger.debug("身份证 {} 当前位置: {}", idCard, areaName);
-                        return areaName;
-                    }
-                }
-            } else {
-                logger.debug("查询身份证 {} 位置数据失败: {}", idCard, queryResult.getMsg());
-            }
-
-        } catch (Exception e) {
-            logger.warn("查询身份证 {} 位置异常: {}", idCard, e.getMessage());
-        }
-
-        return null;
-    }
-
-    /**
-     * 根据身份证号查询运动状态
-     * 
-     * @param idCard 身份证号
-     * @return 运动状态：1-运动，0-静止，null-查询失败
-     * @author Shawn
-     * @date 2025-01-17
-     */
-    private String getMotionStatusByIdCard(String idCard) {
-        if (idCard == null || idCard.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            // 构建查询运动状态的SQL，查询5分钟内是否有type为1或6的记录
-            String sql = String.format(
-                    "SELECT COUNT(*) as count FROM %s.helmet_ca_sos " +
-                            "WHERE id_card = '%s' " +
-                            "AND time <= NOW() " +
-                            "AND time >= NOW() - 5m " +
-                            "AND (type = '1' OR type = '6')",
-                    tdengineDbName, idCard);
-
-            logger.debug("查询身份证 {} 运动状态的SQL: {}", idCard, sql);
-
-            // 执行查询
-            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
-
-            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
-                cn.hutool.json.JSONObject data = queryResult.getData();
-                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-
-                if (rows != null && rows.size() > 0) {
-                    cn.hutool.json.JSONArray row = rows.getJSONArray(0);
-                    if (row != null && row.size() > 0) {
-                        int count = Integer.parseInt(row.get(0).toString());
-                        String status = count > 0 ? "静止" : "运动";
-                        logger.debug("身份证 {} 运动状态: {} (5分钟内静默报警次数: {})", idCard, status, count);
-                        return status;
-                    }
-                }
-            } else {
-                logger.debug("查询身份证 {} 运动状态失败: {}", idCard, queryResult.getMsg());
-            }
-
-        } catch (Exception e) {
-            logger.warn("查询身份证 {} 运动状态异常: {}", idCard, e.getMessage());
-        }
-
-        return null;
-    }
-
-    /**
-     * 检查指定身份证号的人员当天是否有坐标数据
-     * 
-     * @param idCard 身份证号（可以为空）
-     * @return true-有坐标数据，false-无坐标数据
-     * @author Shawn
-     * @date 2025-01-17
-     */
-    private boolean hasCoordinateDataToday(String idCard) {
-        // 如果身份证为空，直接返回false
-        if (idCard == null || idCard.trim().isEmpty()) {
-            return false;
-        }
-
-        try {
-            // 获取当前日期的开始和结束时间，参考ExternalCoordinateDataServiceImpl的写法
+            // 获取当前日期的开始和结束时间
             String currentDate = cn.hutool.core.date.DateUtil.today();
             String startTime = currentDate + " 00:00:00";
             String endTime = currentDate + " 23:59:59";
-
-            // 构建查询当天坐标数据的SQL，使用具体时间范围而不是TODAY()函数
-            String sql = String.format(
-                    "SELECT COUNT(*) FROM %s.external_coordinate_data " +
-                            "WHERE id_card = '%s' " +
-                            "AND time >= '%s' AND time <= '%s' " +
-                            "LIMIT 1",
-                    tdengineDbName, idCard, startTime, endTime);
-
-            logger.info("检查身份证 {} 当天坐标数据的SQL: {}", idCard, sql);
-
+            
+            // 构建批量查询SQL，使用IN子句
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT DISTINCT id_card FROM ").append(tdengineDbName)
+                    .append(".external_coordinate_data WHERE id_card IN (");
+            
+            // 添加身份证号列表
+            for (int i = 0; i < idCards.size(); i++) {
+                if (i > 0) {
+                    sqlBuilder.append(",");
+                }
+                sqlBuilder.append("'").append(idCards.get(i)).append("'");
+            }
+            
+            sqlBuilder.append(") AND time >= '").append(startTime)
+                    .append("' AND time <= '").append(endTime).append("'");
+            
+            logger.debug("批量检查坐标数据SQL: {}", sqlBuilder.toString());
+            
             // 执行查询
-            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
-
+            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+            
             if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
                 cn.hutool.json.JSONObject data = queryResult.getData();
                 cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-
-                if (rows != null && rows.size() > 0) {
-                    cn.hutool.json.JSONArray row = rows.getJSONArray(0);
-                    if (row != null && row.size() > 0) {
-                        int count = Integer.parseInt(row.get(0).toString());
-                        logger.info("身份证 {} 当天坐标数据条数: {}", idCard, count);
-                        return count > 0;
+                
+                if (rows != null) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        cn.hutool.json.JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() > 0) {
+                            String idCard = row.getStr(0);
+                            if (idCard != null && !idCard.isEmpty()) {
+                                result.add(idCard);
+                            }
+                        }
                     }
                 }
-            } else {
-                logger.warn("查询身份证 {} 当天坐标数据失败: {}", idCard, queryResult.getMsg());
             }
-
         } catch (Exception e) {
-            logger.warn("检查身份证 {} 当天坐标数据异常: {}", idCard, e.getMessage());
+            logger.error("批量检查坐标数据异常", e);
         }
-
-        return false;
+        
+        return result;
+    }
+    
+    /**
+     * 批量获取身份证号对应的设备ID
+     * 
+     * @param idCards 身份证号集合
+     * @return 身份证号到设备ID的映射
+     */
+    private Map<String, String> batchGetDeviceIdsByIdCards(Set<String> idCards) {
+        Map<String, String> result = new HashMap<>();
+        if (idCards == null || idCards.isEmpty()) {
+            return result;
+        }
+        
+        try {
+            // 使用缓存批量获取设备ID
+            for (String idCard : idCards) {
+                String deviceId = helmetCacheService.getAssignedDeviceFromCache(idCard, swmHelmetDeviceService);
+                if (deviceId != null && !deviceId.isEmpty()) {
+                    result.put(idCard, deviceId);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("批量获取设备ID异常", e);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 批量获取设备电量信息
+     * 
+     * @param deviceIds 设备ID列表
+     * @return 设备ID到电量的映射
+     */
+    private Map<String, Integer> batchGetBatteryLevels(List<String> deviceIds) {
+        Map<String, Integer> result = new HashMap<>();
+        if (deviceIds == null || deviceIds.isEmpty()) {
+            return result;
+        }
+        
+        try {
+            // 构建批量查询SQL
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT device_id, bat_l FROM ").append(tdengineDbName)
+                    .append(".helmet_runde_ca_report_location WHERE device_id IN (");
+            
+            // 添加设备ID列表
+            for (int i = 0; i < deviceIds.size(); i++) {
+                if (i > 0) {
+                    sqlBuilder.append(",");
+                }
+                sqlBuilder.append("'").append(deviceIds.get(i)).append("'");
+            }
+            
+            sqlBuilder.append(") AND time <= NOW() AND time >= NOW() - 5m ORDER BY device_id, time DESC");
+            
+            logger.debug("批量查询电量SQL: {}", sqlBuilder.toString());
+            
+            // 执行查询
+            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+            
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                cn.hutool.json.JSONObject data = queryResult.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+                
+                // 记录已处理的设备ID，避免重复
+                Set<String> processedDevices = new HashSet<>();
+                
+                if (rows != null) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        cn.hutool.json.JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() > 1) {
+                            String deviceId = row.getStr(0);
+                            
+                            // 只处理每个设备的第一条记录（最新的）
+                            if (!processedDevices.contains(deviceId)) {
+                                Integer batteryLevel = row.getInt(1);
+                                result.put(deviceId, batteryLevel);
+                                processedDevices.add(deviceId);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("批量获取电量信息异常", e);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 批量获取身份证号对应的位置信息
+     * 
+     * @param idCards 身份证号集合
+     * @return 身份证号到位置信息的映射
+     */
+    private Map<String, String> batchGetLocations(Set<String> idCards) {
+        Map<String, String> result = new HashMap<>();
+        if (idCards == null || idCards.isEmpty()) {
+            return result;
+        }
+        
+        try {
+            // 构建批量查询SQL
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT id_card, area_name FROM ").append(tdengineDbName)
+                    .append(".area_fence_data WHERE id_card IN (");
+            
+            // 添加身份证号列表
+            int i = 0;
+            for (String idCard : idCards) {
+                if (i > 0) {
+                    sqlBuilder.append(",");
+                }
+                sqlBuilder.append("'").append(idCard).append("'");
+                i++;
+            }
+            
+            sqlBuilder.append(") AND time <= NOW() AND time >= NOW() - 30m ORDER BY id_card, time DESC");
+            
+            logger.debug("批量查询位置SQL: {}", sqlBuilder.toString());
+            
+            // 执行查询
+            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+            
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                cn.hutool.json.JSONObject data = queryResult.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+                
+                // 记录已处理的身份证号，避免重复
+                Set<String> processedIdCards = new HashSet<>();
+                
+                if (rows != null) {
+                    for (int j = 0; j < rows.size(); j++) {
+                        cn.hutool.json.JSONArray row = rows.getJSONArray(j);
+                        if (row != null && row.size() > 1) {
+                            String idCard = row.getStr(0);
+                            
+                            // 只处理每个身份证的第一条记录（最新的）
+                            if (!processedIdCards.contains(idCard)) {
+                                String areaName = row.getStr(1);
+                                result.put(idCard, areaName);
+                                processedIdCards.add(idCard);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("批量获取位置信息异常", e);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 批量获取身份证号对应的运动状态
+     * 
+     * @param idCards 身份证号集合
+     * @return 身份证号到运动状态的映射
+     */
+    private Map<String, String> batchGetMotionStatuses(Set<String> idCards) {
+        Map<String, String> result = new HashMap<>();
+        if (idCards == null || idCards.isEmpty()) {
+            return result;
+        }
+        
+        try {
+            // 构建批量查询SQL
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT id_card, COUNT(*) FROM ").append(tdengineDbName)
+                    .append(".helmet_ca_sos WHERE id_card IN (");
+            
+            // 添加身份证号列表
+            int i = 0;
+            for (String idCard : idCards) {
+                if (i > 0) {
+                    sqlBuilder.append(",");
+                }
+                sqlBuilder.append("'").append(idCard).append("'");
+                i++;
+            }
+            
+            sqlBuilder.append(") AND time <= NOW() AND time >= NOW() - 5m AND (type = '1' OR type = '6') GROUP BY id_card");
+            
+            logger.debug("批量查询运动状态SQL: {}", sqlBuilder.toString());
+            
+            // 执行查询
+            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+            
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                cn.hutool.json.JSONObject data = queryResult.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+                
+                if (rows != null) {
+                    for (int j = 0; j < rows.size(); j++) {
+                        cn.hutool.json.JSONArray row = rows.getJSONArray(j);
+                        if (row != null && row.size() > 1) {
+                            String idCard = row.getStr(0);
+                            int count = Integer.parseInt(row.get(1).toString());
+                            // 有静默报警记录的为静止状态，否则为运动状态
+                            result.put(idCard, count > 0 ? "静止" : "运动");
+                        }
+                    }
+                }
+                
+                // 对于没有查询到结果的身份证，默认为运动状态
+                for (String idCard : idCards) {
+                    if (!result.containsKey(idCard)) {
+                        result.put(idCard, "运动");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("批量获取运动状态异常", e);
+        }
+        
+        return result;
     }
 
     /**
