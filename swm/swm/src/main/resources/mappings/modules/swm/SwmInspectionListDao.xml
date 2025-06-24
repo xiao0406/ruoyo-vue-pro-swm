@@ -28,6 +28,6 @@
     <select id="getLastTaskByPlanId" resultType="com.jeesite.modules.swm.entity.SwmInspectionList">
         select
         <include refid="swmInspectionListColumns"/>
-        from swm_inspection_list where plan_id = #{planId} order by start_time desc limit 1
+        from swm_inspection_list a where a.plan_id = #{planId} order by a.start_time desc limit 1
     </select>
 </mapper>
