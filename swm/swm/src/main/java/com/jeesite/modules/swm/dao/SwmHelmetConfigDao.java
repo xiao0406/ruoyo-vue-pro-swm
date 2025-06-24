@@ -38,4 +38,15 @@ public interface SwmHelmetConfigDao extends CrudDao<SwmHelmetConfig> {
      */
     List<Map<String, Object>> getWorkshopLineGroupData();
 
+    /**
+     * 获取人员类型字典数据
+     * 
+     * @author Shawn
+     * @date 2025/06/24
+     * @description 获取字典类型为person_type_enum的字典数据，
+     *              用于"按人员类型展示"的颜色配置
+     * @return 人员类型字典数据列表
+     */
+    List<Map<String, Object>> getPersonTypeEnumData();
+
 }

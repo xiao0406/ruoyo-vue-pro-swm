@@ -231,4 +231,30 @@ public class SwmHelmetConfigController extends BaseController {
 		return result;
 	}
 
+	/**
+	 * 获取人员类型字典数据
+	 * 
+	 * @author Shawn
+	 * @date 2025/06/24
+	 * @description 获取字典类型为person_type_enum的字典数据，
+	 *              用于"按人员类型展示"的颜色配置
+	 */
+	@RequestMapping(value = "getPersonTypeEnumData")
+	@ResponseBody
+	public List<Map<String, Object>> getPersonTypeEnumData() {
+		List<Map<String, Object>> result = new ArrayList<>();
+
+		try {
+			// 调用Service层方法获取人员类型字典数据
+			List<Map<String, Object>> personTypeList = swmHelmetConfigService.getPersonTypeEnumData();
+			if (personTypeList != null && !personTypeList.isEmpty()) {
+				result = personTypeList;
+			}
+		} catch (Exception e) {
+			logger.error("获取人员类型字典数据失败", e);
+		}
+
+		return result;
+	}
+
 }

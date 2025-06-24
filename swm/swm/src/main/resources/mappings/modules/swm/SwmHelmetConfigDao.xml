@@ -55,4 +55,17 @@
 		    AND pa.status = '0'
 	</select>
 	
+	<!-- 获取人员类型字典数据 -->
+	<!-- author: Shawn -->
+	<!-- date: 2025/06/24 -->
+	<!-- description: 获取字典类型为person_type_enum的字典数据，用于"按人员类型展示"的颜色配置 -->
+	<select id="getPersonTypeEnumData" resultType="java.util.Map">
+		SELECT 
+		    dict_value AS id,
+		    dict_label AS title
+		FROM js_sys_dict_data 
+		WHERE dict_type = 'person_type_enum' 
+		  AND status = '0'
+	</select>
+	
 </mapper> 
