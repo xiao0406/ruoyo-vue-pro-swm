@@ -34,6 +34,7 @@ import com.jeesite.modules.swm.service.SwmHelmetSubitemService;
  * 
  * @author zwf
  * @version 2025-05-20
+ * @update 2025/06/24 by Shawn - 添加获取车间数据接口
  */
 @Controller
 @RequestMapping(value = "${adminPath}/swmHelmetConfig")
@@ -41,10 +42,10 @@ public class SwmHelmetConfigController extends BaseController {
 
 	@Autowired
 	private SwmHelmetConfigService swmHelmetConfigService;
-	
+
 	@Autowired
 	private SwmHelmetSubitemService swmHelmetSubitemService;
-	
+
 	/**
 	 * 获取数据
 	 */
@@ -52,7 +53,7 @@ public class SwmHelmetConfigController extends BaseController {
 	public SwmHelmetConfig get(String id, boolean isNewRecord) {
 		return swmHelmetConfigService.get(id, isNewRecord);
 	}
-	
+
 	/**
 	 * 查询列表
 	 */
@@ -61,13 +62,14 @@ public class SwmHelmetConfigController extends BaseController {
 		model.addAttribute("swmHelmetConfig", swmHelmetConfig);
 		return "modules/swm/swmHelmetConfigList";
 	}
-	
+
 	/**
 	 * 查询列表数据
 	 */
 	@RequestMapping(value = "listData")
 	@ResponseBody
-	public Page<SwmHelmetConfig> listData(SwmHelmetConfig swmHelmetConfig, HttpServletRequest request, HttpServletResponse response) {
+	public Page<SwmHelmetConfig> listData(SwmHelmetConfig swmHelmetConfig, HttpServletRequest request,
+			HttpServletResponse response) {
 		swmHelmetConfig.setPage(new Page<>(request, response));
 		Page<SwmHelmetConfig> page = swmHelmetConfigService.findPage(swmHelmetConfig);
 		return page;
@@ -91,22 +93,20 @@ public class SwmHelmetConfigController extends BaseController {
 		swmHelmetConfigService.save(swmHelmetConfig);
 		return renderResult(Global.TRUE, text("保存安全帽主配置表成功！"));
 	}
-	
+
 	/**
 	 * 删除安全帽主配置表
 	 */
 	@DeleteMapping(value = "delete")
 	@ResponseBody
-	public String delete(@RequestParam(required = false) String id, SwmHelmetConfig swmHelmetConfig, HttpServletRequest request) {
+	public String delete(@RequestParam(required = false) String id, SwmHelmetConfig swmHelmetConfig,
+			HttpServletRequest request) {
 
-		
-
-		
 		// 确保获取到ID参数
 		if ((id == null || id.isEmpty()) && request != null) {
 			id = request.getParameter("id");
 		}
-		
+
 		if (id != null && !id.isEmpty()) {
 			swmHelmetConfig = new SwmHelmetConfig(id);
 		} else if (swmHelmetConfig != null && swmHelmetConfig.getId() != null && !swmHelmetConfig.getId().isEmpty()) {
@@ -126,18 +126,18 @@ public class SwmHelmetConfigController extends BaseController {
 				}
 			}
 		}
-		
+
 		// 确保对象不为空且id不为空
 		if (swmHelmetConfig == null || swmHelmetConfig.getId() == null || swmHelmetConfig.getId().isEmpty()) {
 			System.out.println("删除失败: ID为空");
 			return renderResult(Global.FALSE, text("删除失败：ID不能为空！"));
 		}
-		
+
 		System.out.println("即将删除的ID: " + swmHelmetConfig.getId());
 		swmHelmetConfigService.delete(swmHelmetConfig);
 		return renderResult(Global.TRUE, text("删除安全帽主配置表成功！"));
 	}
-	
+
 	/**
 	 * 批量删除安全帽主配置表
 	 */
@@ -153,7 +153,7 @@ public class SwmHelmetConfigController extends BaseController {
 		}
 		return renderResult(Global.TRUE, text("批量删除安全帽主配置表成功！"));
 	}
-	
+
 	/**
 	 * 获取安全帽配置列表（用于下拉选择）
 	 */
@@ -161,21 +161,47 @@ public class SwmHelmetConfigController extends BaseController {
 	@ResponseBody
 	public List<Map<String, Object>> getConfigList() {
 		List<Map<String, Object>> result = new ArrayList<>();
-		
+
 		List<SwmHelmetConfig> configList = swmHelmetConfigService.findList(new SwmHelmetConfig());
 		for (SwmHelmetConfig config : configList) {
 			Map<String, Object> map = new HashMap<>();
 			map.put("id", config.getId());
 			map.put("name", config.getName());
 			map.put("subitemCount", config.getSubitemCount());
-			
+
 			result.add(map);
 		}
-		
+
 		return result;
 	}
 
+	/**
+	 * 获取车间数据
+	 * 
+	 * @author Shawn
+	 * @date 2025/06/24
+	 * @description 根据用户要求的SQL查询车间数据：
+	 *              SELECT id, '0001A110000000002ZWA' AS parent_id, position_name AS
+	 *              title
+	 *              FROM fms_position_archive WHERE type = 'CJ' AND region =
+	 *              '0001A110000000002ZWA' AND status = '0'
+	 */
+	@RequestMapping(value = "getWorkshopData")
+	@ResponseBody
+	public List<Map<String, Object>> getWorkshopData() {
+		List<Map<String, Object>> result = new ArrayList<>();
 
+		try {
+			// 调用Service层方法获取车间数据
+			List<Map<String, Object>> workshopList = swmHelmetConfigService.getWorkshopData();
+			if (workshopList != null && !workshopList.isEmpty()) {
+				result = workshopList;
+			}
+		} catch (Exception e) {
+			logger.error("获取车间数据失败", e);
+		}
 
-	
-} 
+		return result;
+	}
+
+}

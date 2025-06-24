@@ -12,4 +12,19 @@
 		ORDER BY ${sqlMap.order.toSql()}
 	</select>
 	
+	<!-- 获取车间数据 -->
+	<!-- author: Shawn -->
+	<!-- date: 2025/06/24 -->
+	<!-- description: 查询fms_position_archive表中type='CJ'的车间数据 -->
+	<select id="getWorkshopData" resultType="java.util.Map">
+		SELECT 
+			id, 
+			'0001A110000000002ZWA' AS parent_id, 
+			position_name AS title 
+		FROM fms_position_archive 
+		WHERE type = 'CJ' 
+		  AND region = '0001A110000000002ZWA' 
+		  AND status = '0'
+	</select>
+	
 </mapper> 
