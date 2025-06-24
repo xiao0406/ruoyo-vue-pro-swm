@@ -124,4 +124,18 @@ public class SwmHelmetConfigService extends CrudService<SwmHelmetConfigDao, SwmH
 		return dao.getWorkshopData();
 	}
 
+	/**
+	 * 获取车间-产线-班组数据
+	 * 
+	 * @author Shawn
+	 * @date 2025/06/24
+	 * @description 根据用户要求的SQL查询车间-产线-班组数据，
+	 *              将workshop_name、line_name、work_group_name拼接作为名称，
+	 *              将id保存到key字段中用于颜色配置
+	 * @return 车间-产线-班组数据列表
+	 */
+	public List<Map<String, Object>> getWorkshopLineGroupData() {
+		return dao.getWorkshopLineGroupData();
+	}
+
 }
