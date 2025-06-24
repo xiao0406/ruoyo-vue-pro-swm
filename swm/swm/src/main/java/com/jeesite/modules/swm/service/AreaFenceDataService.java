@@ -922,4 +922,272 @@ public class AreaFenceDataService {
             return false;
         }
     }
+
+    /**
+     * 获取工作区域的配置列表（从Redis缓存swm:area:all中获取area_type为"0"的区域）
+     * 
+     * @return 工作区域ID列表
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    @SuppressWarnings("unchecked")
+    private List<DictData> getWorkAreaFenceDataDictList() {
+        try {
+            List<DictData> dictList = new ArrayList<>();
+
+            logger.info("开始从Redis缓存swm:area:all获取工作区域数据...");
+
+            // 使用StringRedisTemplate来获取原始字符串数据，避免序列化问题
+            try {
+                String rawData = stringRedisTemplate.opsForValue().get("swm:area:all");
+                if (rawData != null && !rawData.isEmpty()) {
+                    logger.debug("从Redis获取到原始数据长度: {}", rawData.length());
+
+                    // 解析Jackson序列化格式: ["java.util.ArrayList", [实际数据数组]]
+                    JSONArray outerArray = new JSONArray(rawData);
+
+                    if (outerArray.size() >= 2) {
+                        // 第一个元素是类型标识符，第二个元素是实际数据
+                        Object dataElement = outerArray.get(1);
+
+                        if (dataElement instanceof JSONArray) {
+                            JSONArray dataArray = (JSONArray) dataElement;
+                            logger.debug("解析到区域数据数组，数量: {}", dataArray.size());
+
+                            for (int i = 0; i < dataArray.size(); i++) {
+                                try {
+                                    Object item = dataArray.get(i);
+
+                                    // 每个区域项也是一个数组: ["类型", {实际数据对象}]
+                                    if (item instanceof JSONArray) {
+                                        JSONArray itemArray = (JSONArray) item;
+                                        if (itemArray.size() >= 2) {
+                                            Object areaDataObj = itemArray.get(1);
+
+                                            if (areaDataObj instanceof JSONObject) {
+                                                JSONObject areaJson = (JSONObject) areaDataObj;
+                                                String areaType = areaJson.getStr("areaType");
+
+                                                if ("0".equals(areaType)) {
+                                                    String areaId = areaJson.getStr("id");
+                                                    String areaName = areaJson.getStr("areaName");
+
+                                                    // 创建DictData对象，保持与原有逻辑的兼容性
+                                                    DictData dictData = new DictData();
+                                                    dictData.setDictValue(areaId); // 区域ID作为字典值
+                                                    dictData.setDictLabel(areaName); // 区域名称作为字典标签
+                                                    dictData.setDictLabelRaw(areaId); // 原始标签也使用区域ID，用于SQL查询
+                                                    dictList.add(dictData);
+
+                                                    logger.debug("找到工作区域: ID={}, 名称={}", areaId, areaName);
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    logger.warn("解析第{}个区域数据时出错，跳过: {}", i, e.getMessage());
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+
+                    logger.info("从Redis缓存swm:area:all中获取到工作区域数量: {}", dictList.size());
+                } else {
+                    logger.warn("Redis缓存swm:area:all为空或不存在");
+                }
+            } catch (Exception e) {
+                logger.warn("从Redis缓存swm:area:all解析数据失败: {}", e.getMessage());
+
+                // 尝试使用RedisTemplate的方式
+                try {
+                    logger.info("尝试使用RedisTemplate方式获取数据...");
+                    Object cachedData = redisTemplate.opsForValue().get("swm:area:all");
+
+                    if (cachedData instanceof List) {
+                        List<?> areaList = (List<?>) cachedData;
+                        logger.debug("获取到区域列表，数量: {}", areaList.size());
+
+                        for (Object item : areaList) {
+                            try {
+                                if (item instanceof Map) {
+                                    Map<String, Object> areaData = (Map<String, Object>) item;
+                                    String areaType = (String) areaData.get("areaType");
+
+                                    if ("0".equals(areaType)) {
+                                        String areaId = (String) areaData.get("id");
+                                        String areaName = (String) areaData.get("areaName");
+
+                                        DictData dictData = new DictData();
+                                        dictData.setDictValue(areaId);
+                                        dictData.setDictLabel(areaName);
+                                        dictData.setDictLabelRaw(areaId);
+                                        dictList.add(dictData);
+
+                                        logger.debug("找到工作区域: ID={}, 名称={}", areaId, areaName);
+                                    }
+                                }
+                            } catch (Exception itemException) {
+                                logger.warn("处理区域项时出错，跳过: {}", itemException.getMessage());
+                                continue;
+                            }
+                        }
+                    }
+                } catch (Exception redisTemplateException) {
+                    logger.warn("使用RedisTemplate方式也失败: {}", redisTemplateException.getMessage());
+                }
+            }
+
+            return dictList;
+
+        } catch (Exception e) {
+            logger.error("从Redis缓存获取工作区域数据失败", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 根据身份证号计算实际工作时长
+     * 
+     * @param idCard        身份证号
+     * @param date          日期 (yyyy-MM-dd格式)
+     * @param workTimeRange 工作时间范围，格式如"07:00-18:00"或"18:00-03:00"
+     * @return 实际工作时长(小时)
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    public double calculateEffectiveWorkHoursByIdCard(String idCard, String date, String workTimeRange) {
+        try {
+            logger.info("开始计算身份证号为 {} 在 {} 工作时间范围 {} 的实际工作时长", idCard, date, workTimeRange);
+
+            // 1. 获取工作区域配置 - 查找所有工作区域配置
+            List<DictData> workAreaList = getWorkAreaFenceDataDictList();
+            if (workAreaList.isEmpty()) {
+                logger.warn("未找到工作区域配置");
+                return 0.0;
+            }
+
+            // 2. 查询工作区域心跳数据
+            List<Map<String, Object>> workHeartbeatData = queryAreaFenceDataByIdCardAndAreas(idCard, workAreaList, date,
+                    workTimeRange);
+            if (workHeartbeatData.isEmpty()) {
+                logger.warn("身份证号 {} 在 {} 工作时间范围 {} 未找到工作区域心跳数据", idCard, date, workTimeRange);
+                return 0.0;
+            }
+
+            // 3. 计算实际工作时长
+            double effectiveWorkHours = calculateEffectiveWorkHoursFromData(workHeartbeatData);
+            logger.info("身份证号 {} 在 {} 工作时间范围 {} 的实际工作时长为: {} 小时", idCard, date, workTimeRange, effectiveWorkHours);
+
+            return effectiveWorkHours;
+
+        } catch (Exception e) {
+            logger.error("计算实际工作时长失败，身份证号: {}, 日期: {}, 工作时间范围: {}", idCard, date, workTimeRange, e);
+            return 0.0;
+        }
+    }
+
+    /**
+     * 根据身份证号计算实际工作时长（兼容原方法）
+     * 
+     * @param idCard 身份证号
+     * @param date   日期 (yyyy-MM-dd格式)
+     * @return 实际工作时长(小时)
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    public double calculateEffectiveWorkHoursByIdCard(String idCard, String date) {
+        // 兼容原方法，使用默认时间范围
+        return calculateEffectiveWorkHoursByIdCard(idCard, date, "08:00-17:00");
+    }
+
+    /**
+     * 从工作区域心跳数据计算实际工作时长
+     * 算法说明：
+     * 1. 查询到的数据都是员工在工作区域的心跳数据
+     * 2. 将数据按时间排序
+     * 3. 找出连续的心跳数据段（相邻两个数据点时间间隔小于等于10分钟认为是连续的）
+     * 4. 计算每个连续段的时长（从段开始时间到段结束时间）
+     * 5. 实际工作时长 = 所有连续工作段的总时长
+     * 
+     * @param dataList 工作区域心跳数据列表，必须按时间排序
+     * @return 实际工作时长（小时）
+     */
+    private double calculateEffectiveWorkHoursFromData(List<Map<String, Object>> dataList) {
+        if (dataList == null || dataList.isEmpty()) {
+            return 0.0;
+        }
+
+        // 确保数据按时间排序
+        dataList.sort(Comparator.comparing(data -> (Date) data.get("time")));
+
+        // 心跳间隔阈值：10分钟，如果超过这个时间则认为不连续
+        final long HEARTBEAT_THRESHOLD_MS = 10 * 60 * 1000;
+
+        long totalWorkMinutes = 0;
+        Date lastTime = null;
+        Date segmentStartTime = null;
+
+        logger.debug("开始分析工作区域心跳数据，总数据条数: {}", dataList.size());
+
+        for (int i = 0; i < dataList.size(); i++) {
+            Map<String, Object> current = dataList.get(i);
+            Date currentTime = (Date) current.get("time");
+
+            if (currentTime == null) {
+                continue;
+            }
+
+            if (lastTime == null) {
+                // 第一条数据，开始新的连续工作段
+                segmentStartTime = currentTime;
+                logger.debug("开始新的连续工作段: {}", DATETIME_FORMAT.format(currentTime));
+            } else {
+                long timeDiff = currentTime.getTime() - lastTime.getTime();
+
+                if (timeDiff <= HEARTBEAT_THRESHOLD_MS) {
+                    // 连续的心跳数据，继续当前工作段
+                    logger.debug("连续工作心跳: {} -> {}, 间隔: {}ms",
+                            DATETIME_FORMAT.format(lastTime), DATETIME_FORMAT.format(currentTime), timeDiff);
+                } else {
+                    // 超过阈值，结束当前连续工作段，计算时长
+                    if (segmentStartTime != null) {
+                        long segmentDurationMs = lastTime.getTime() - segmentStartTime.getTime();
+                        long segmentMinutes = segmentDurationMs / (60 * 1000);
+                        totalWorkMinutes += segmentMinutes;
+
+                        logger.debug("连续工作段结束: {} -> {}, 持续时长: {} 分钟",
+                                DATETIME_FORMAT.format(segmentStartTime),
+                                DATETIME_FORMAT.format(lastTime),
+                                segmentMinutes);
+                    }
+
+                    // 开始新的连续工作段
+                    segmentStartTime = currentTime;
+                    logger.debug("开始新的连续工作段: {} (间隔过大: {}ms)",
+                            DATETIME_FORMAT.format(currentTime), timeDiff);
+                }
+            }
+
+            lastTime = currentTime;
+        }
+
+        // 处理最后一个连续工作段
+        if (segmentStartTime != null && lastTime != null) {
+            long segmentDurationMs = lastTime.getTime() - segmentStartTime.getTime();
+            long segmentMinutes = segmentDurationMs / (60 * 1000);
+            totalWorkMinutes += segmentMinutes;
+
+            logger.debug("最后连续工作段: {} -> {}, 持续时长: {} 分钟",
+                    DATETIME_FORMAT.format(segmentStartTime),
+                    DATETIME_FORMAT.format(lastTime),
+                    segmentMinutes);
+        }
+
+        double workHours = Math.round(totalWorkMinutes / 60.0 * 10.0) / 10.0;
+
+        logger.info("实际工作时长计算完成 - 总实际工作时长: {} 分钟 ({} 小时)", totalWorkMinutes, workHours);
+
+        return workHours;
+    }
 }

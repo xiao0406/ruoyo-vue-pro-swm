@@ -41,7 +41,7 @@ public class AttendanceTask {
     private SwmScheduleTimeService swmScheduleTimeService;
 
     /**
-     * 计算怠工时长定时任务
+     * 计算怠工时长定时任务，工作时长定时任务
      * 
      * @author: Shawn
      * @date: 2025/6/20
@@ -114,6 +114,19 @@ public class AttendanceTask {
 
                         // 更新怠工时长字段
                         record.setIdleHours(BigDecimal.valueOf(calculatedIdleHours).setScale(2, RoundingMode.HALF_UP));
+
+                        // 计算实际工作时长（基于工作区域）
+                        double calculatedEffectiveWorkHours = swmDailyAttendanceService
+                                .calculateEffectiveWorkHoursByIdCard(idCard,
+                                        dateStr, workTimeRange);
+
+                        // 更新实际工作时长字段
+                        record.setEffectiveWorkHours(
+                                BigDecimal.valueOf(calculatedEffectiveWorkHours).setScale(2, RoundingMode.HALF_UP));
+
+                        XxlJobHelper.log("员工[{}]{}的实际工作时长计算完成: {} 小时 (工作时间: {})",
+                                record.getEmployeeId(), record.getEmployeeName(), calculatedEffectiveWorkHours,
+                                workTimeRange);
 
                         // 计算实际考勤时长
                         // 修改逻辑: 1. 如果没有上下班打卡时间，实际考勤为0

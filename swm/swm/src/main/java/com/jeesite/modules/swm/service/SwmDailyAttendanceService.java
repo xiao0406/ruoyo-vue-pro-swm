@@ -651,4 +651,31 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             return null;
         }
     }
+
+    /**
+     * 根据身份证号计算实际工作时长
+     * 
+     * @param idCard        身份证号
+     * @param date          日期
+     * @param workTimeRange 工作时间范围
+     * @return 实际工作时长
+     * @author Shawn
+     * @date 2025-01-27
+     */
+    public double calculateEffectiveWorkHoursByIdCard(String idCard, String date, String workTimeRange) {
+        return areaFenceDataService.calculateEffectiveWorkHoursByIdCard(idCard, date, workTimeRange);
+    }
+
+    /**
+     * 根据身份证号计算实际工作时长
+     * 
+     * @param idCard 身份证号
+     * @param date   日期
+     * @return 实际工作时长
+     * @author Shawn
+     * @date 2025-01-27
+     */
+    public double calculateEffectiveWorkHoursByIdCard(String idCard, String date) {
+        return areaFenceDataService.calculateEffectiveWorkHoursByIdCard(idCard, date);
+    }
 }
