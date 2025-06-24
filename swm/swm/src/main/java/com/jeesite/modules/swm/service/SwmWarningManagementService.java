@@ -873,6 +873,195 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     }
 
     /**
+     * 为预警记录列表填充班组信息
+     * 通过身份证号从fms_worker和fms_work_group表中获取班组名称
+     * 
+     * @param warningList 预警记录列表
+     */
+    public void fillWorkGroupInfo(List<SwmWarningManagement> warningList) {
+        if (warningList == null || warningList.isEmpty()) {
+            return;
+        }
+        
+        // 收集所有不为空的身份证号
+        List<String> idCards = warningList.stream()
+                .filter(w -> w.getIdCard() != null && !w.getIdCard().isEmpty())
+                .map(SwmWarningManagement::getIdCard)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        if (idCards.isEmpty()) {
+            return;
+        }
+        
+        try {
+            // 批量查询身份证号对应的班组信息
+            Map<String, String> idCardToWorkGroupMap = new HashMap<>();
+            List<Map<String, String>> workGroupInfoList = dao.findWorkGroupNamesByIdCards(idCards);
+            
+            // 将查询结果转换为idCard -> workGroupName的映射
+            for (Map<String, String> map : workGroupInfoList) {
+                if (map.containsKey("idCard") && map.containsKey("value")) {
+                    idCardToWorkGroupMap.put(map.get("idCard"), map.get("value"));
+                }
+            }
+            
+            // 将班组信息填充到预警记录中
+            for (SwmWarningManagement warning : warningList) {
+                if (warning.getIdCard() != null && idCardToWorkGroupMap.containsKey(warning.getIdCard())) {
+                    warning.setWorkGroupName(idCardToWorkGroupMap.get(warning.getIdCard()));
+                }
+            }
+        } catch (Exception e) {
+            logger.error("填充班组信息失败", e);
+        }
+    }
+    
+    /**
+     * 为预警记录列表填充位置信息
+     * 从TDengine的area_fence_data表中查询位置信息
+     * 
+     * @param warningList 预警记录列表
+     */
+    public void fillLocationInfo(List<SwmWarningManagement> warningList) {
+        if (warningList == null || warningList.isEmpty()) {
+            return;
+        }
+        
+        try {
+            // 收集所有有效的设备ID和身份证号
+            List<Map<String, Object>> queryParams = new ArrayList<>();
+            for (SwmWarningManagement warning : warningList) {
+                String deviceId = warning.getDeviceId();
+                String idCard = warning.getIdCard();
+                Date warningTime = warning.getWarningTime();
+                
+                if (deviceId != null && !deviceId.isEmpty() && warningTime != null) {
+                    Map<String, Object> param = new HashMap<>();
+                    param.put("deviceId", deviceId);
+                    param.put("idCard", idCard);
+                    param.put("warningTime", warningTime);
+                    param.put("tenMinutesBefore", warningTime.getTime() - 10 * 60 * 1000);
+                    param.put("tenMinutesAfter", warningTime.getTime() + 10 * 60 * 1000);
+                    queryParams.add(param);
+                }
+            }
+            
+            if (queryParams.isEmpty()) {
+                return;
+            }
+            
+            // 构建批量查询SQL
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT device_id, id_card, area_name, time FROM ")
+                     .append(dbname).append(".area_fence_data")
+                     .append(" WHERE (");
+            
+            // 添加每个设备ID和时间范围的条件
+            for (int i = 0; i < queryParams.size(); i++) {
+                Map<String, Object> param = queryParams.get(i);
+                String deviceId = (String) param.get("deviceId");
+                String idCard = (String) param.get("idCard");
+                long tenMinutesBefore = (long) param.get("tenMinutesBefore");
+                long tenMinutesAfter = (long) param.get("tenMinutesAfter");
+                
+                if (i > 0) {
+                    sqlBuilder.append(" OR ");
+                }
+                
+                sqlBuilder.append("(device_id = '").append(deviceId).append("'");
+                
+                // 如果有身份证号，也加入条件
+                if (idCard != null && !idCard.isEmpty()) {
+                    sqlBuilder.append(" AND id_card = '").append(idCard).append("'");
+                }
+                
+                sqlBuilder.append(" AND time >= ").append(tenMinutesBefore)
+                         .append(" AND time <= ").append(tenMinutesAfter).append(")");
+            }
+            
+            sqlBuilder.append(") ORDER BY device_id, id_card, time DESC");
+            
+            // 执行批量查询
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+            
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+                JSONObject data = result.getData();
+                JSONArray rows = data.getJSONArray("data");
+                JSONArray columnMeta = data.getJSONArray("column_meta");
+                
+                if (rows != null && rows.size() > 0) {
+                    // 提取列索引
+                    int deviceIdIdx = -1;
+                    int idCardIdx = -1;
+                    int areaNameIdx = -1;
+                    int timeIdx = -1;
+                    
+                    for (int i = 0; i < columnMeta.size(); i++) {
+                        JSONArray column = columnMeta.getJSONArray(i);
+                        if (column != null && column.size() > 0) {
+                            String columnName = column.getStr(0);
+                            if ("device_id".equals(columnName)) {
+                                deviceIdIdx = i;
+                            } else if ("id_card".equals(columnName)) {
+                                idCardIdx = i;
+                            } else if ("area_name".equals(columnName)) {
+                                areaNameIdx = i;
+                            } else if ("time".equals(columnName)) {
+                                timeIdx = i;
+                            }
+                        }
+                    }
+                    
+                    // 创建设备ID和身份证号到位置信息的映射
+                    Map<String, Map<String, String>> deviceLocationMap = new HashMap<>();
+                    
+                    // 处理查询结果
+                    for (int i = 0; i < rows.size(); i++) {
+                        JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() > 0 && deviceIdIdx >= 0 && areaNameIdx >= 0) {
+                            String deviceId = row.getStr(deviceIdIdx);
+                            String idCard = idCardIdx >= 0 ? row.getStr(idCardIdx) : null;
+                            String areaName = row.getStr(areaNameIdx);
+                            
+                            if (deviceId != null && areaName != null) {
+                                String key = deviceId + ":" + (idCard != null ? idCard : "");
+                                
+                                // 只保存每个设备ID和身份证号组合的第一条记录（最新的）
+                                if (!deviceLocationMap.containsKey(key)) {
+                                    Map<String, String> locationInfo = new HashMap<>();
+                                    locationInfo.put("areaName", areaName);
+                                    deviceLocationMap.put(key, locationInfo);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 填充位置信息到预警记录
+                    for (SwmWarningManagement warning : warningList) {
+                        String deviceId = warning.getDeviceId();
+                        String idCard = warning.getIdCard();
+                        
+                        if (deviceId != null) {
+                            String key = deviceId + ":" + (idCard != null ? idCard : "");
+                            Map<String, String> locationInfo = deviceLocationMap.get(key);
+                            
+                            if (locationInfo != null) {
+                                String areaName = locationInfo.get("areaName");
+                                if (areaName != null && !areaName.isEmpty()) {
+                                    warning.setAreaName(areaName);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("填充位置信息失败", e);
+        }
+    }
+
+    /**
      * 获取今日最新的20条预警数据，使用混合查询逻辑（TDengine + MySQL）
      * @return 今日最新的20条预警数据
      */

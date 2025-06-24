@@ -232,4 +232,20 @@
         AND status = '0'
     </select>
 
+    <!-- 根据身份证号列表批量查询班组名称 -->
+    <select id="findWorkGroupNamesByIdCards" resultType="java.util.Map">
+        SELECT 
+            w.identity_code AS idCard,
+            wg.work_group_name AS value
+        FROM 
+            fms_worker w
+        LEFT JOIN 
+            fms_work_group wg ON w.work_group_id = wg.id
+        WHERE 
+            w.identity_code IN
+            <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
+                #{idCard}
+            </foreach>
+    </select>
+
 </mapper>

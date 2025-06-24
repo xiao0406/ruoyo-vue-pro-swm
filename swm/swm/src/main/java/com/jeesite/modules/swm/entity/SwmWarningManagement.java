@@ -6,6 +6,7 @@ import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -137,26 +138,27 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private String idCard; // 身份证号
     private String frontAlarm; // 前端弹框提示
     private String type; // 告警类型，与alarm_config表的alarm_key匹配
-
+    
     // 用于显示的属性，不对应数据库字段
+    private String workGroupName; // 班组名称
     private String warningTypeText; // 预警类型显示文本
     private String handleStatusText; // 处置状态显示文本
+    private String areaName; // 位置信息
     
     // 查询条件，不对应数据库字段
     private transient boolean excludeSOS; // 是否排除一键SOS预警
 
-    // 临时数据，不会被持久化到数据库
-    private transient Map<String, Object> extraData;
+    // 用于存储额外数据的Map
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private Map<String, Object> extraData = new HashMap<>();
 
     public SwmWarningManagement() {
         this(null);
         this.handleStatus = HandleStatusEnum.UNHANDLED; // 默认未处置
-        this.extraData = new HashMap<>();
     }
 
     public SwmWarningManagement(String id) {
         super(id);
-        this.extraData = new HashMap<>();
     }
 
     @Length(min = 0, max = 100, message = "人员名称不能超过100个字符")
@@ -330,6 +332,15 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
         this.type = type;
     }
 
+    @Length(min = 0, max = 100, message = "班组名称不能超过100个字符")
+    public String getWorkGroupName() {
+        return workGroupName;
+    }
+
+    public void setWorkGroupName(String workGroupName) {
+        this.workGroupName = workGroupName;
+    }
+
     // 添加预警时间不为空的查询条件
     public Boolean getWarningTime_isNotNull() {
         return sqlMap.getWhere().getValue("warning_time", QueryType.IS_NOT_NULL);
@@ -356,9 +367,6 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
      * 获取临时数据
      */
     public Map<String, Object> getExtraData() {
-        if (extraData == null) {
-            extraData = new HashMap<>();
-        }
         return extraData;
     }
 
@@ -366,9 +374,6 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
      * 设置临时数据
      */
     public void setExtraData(String key, Object value) {
-        if (extraData == null) {
-            extraData = new HashMap<>();
-        }
         extraData.put(key, value);
     }
 
@@ -376,9 +381,6 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
      * 获取指定键的临时数据
      */
     public Object getExtraDataValue(String key) {
-        if (extraData == null) {
-            return null;
-        }
         return extraData.get(key);
     }
 
@@ -389,5 +391,13 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setExcludeSOS(boolean excludeSOS) {
         this.excludeSOS = excludeSOS;
+    }
+
+    public String getAreaName() {
+        return areaName;
+    }
+
+    public void setAreaName(String areaName) {
+        this.areaName = areaName;
     }
 }
