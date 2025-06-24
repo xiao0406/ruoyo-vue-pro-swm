@@ -88,7 +88,7 @@ public class SwmDashboardController extends BaseController {
     /**
      * 近七日预警报警统计
      */
-   @GetMapping(value = "warningStatisticsForPast7Days")
+    @GetMapping(value = "warningStatisticsForPast7Days")
     @ResponseBody
     @ApiOperation("近七日预警报警统计")
     public Map<String, Object> warningStatisticsForPast7Days() {
@@ -229,7 +229,7 @@ public class SwmDashboardController extends BaseController {
     @ApiOperation("今日预警统计")
     public Map<String, Object> warningStatisticsForToday() {
         Map<String, Object> map = new HashMap<>();
-  
+        
         // 获取统计数据
         try {
             // 使用TDengine直接查询统计数据
@@ -390,6 +390,13 @@ public class SwmDashboardController extends BaseController {
         
         // 使用混合查询方法获取最新的20条记录
         List<SwmWarningManagement> latestWarnings = swmWarningManagementService.findTodayWarningWithHybrid();
+        
+        // 填充班组信息
+        swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
+        
+        // 填充位置信息
+        swmWarningManagementService.fillLocationInfo(latestWarnings);
+        
         map.put("record", latestWarnings);
         
         return map;
@@ -547,8 +554,8 @@ public class SwmDashboardController extends BaseController {
      * 筛选考勤数据
      */
     private List<SwmDailyAttendance> filterAttendances(List<SwmDailyAttendance> attendances,
-            Map<String, SwmPerson> personMap,
-            SwmPerson queryParams) {
+                                                       Map<String, SwmPerson> personMap,
+                                                       SwmPerson queryParams) {
         return attendances.parallelStream()
                 .filter(a -> {
                     SwmPerson person = personMap.get(a.getEmployeeId());
@@ -601,7 +608,7 @@ public class SwmDashboardController extends BaseController {
      * 获取今日考勤统计
      */
     private Map<String, Object> getTodayAttendanceStats(List<SwmDailyAttendance> attendances,
-            Map<String, SwmPerson> personMap) {
+                                                        Map<String, SwmPerson> personMap) {
         Map<String, Object> result = new HashMap<>();
         String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
 
@@ -781,9 +788,9 @@ public class SwmDashboardController extends BaseController {
      * 获取班组排名(今日或本月)
      */
     private List<Map<String, Object>> getTeamRanking(List<SwmDailyAttendance> attendances,
-            Map<String, SwmPerson> personMap,
-            boolean isToday,
-            int limit) {
+                                                     Map<String, SwmPerson> personMap,
+                                                     boolean isToday,
+                                                     int limit) {
         String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
 
         // 按班组分组统计
@@ -819,7 +826,7 @@ public class SwmDashboardController extends BaseController {
                     result.put("attendanceRate",
                             stats.totalCount == 0 ? BigDecimal.ZERO
                                     : BigDecimal.valueOf(stats.presentCount)
-                                            .divide(BigDecimal.valueOf(stats.totalCount), 4, RoundingMode.HALF_UP));
+                                    .divide(BigDecimal.valueOf(stats.totalCount), 4, RoundingMode.HALF_UP));
                     result.put("avgEfficiency",
                             stats.totalCount == 0 ? BigDecimal.ZERO
                                     : stats.efficiencySum.divide(BigDecimal.valueOf(stats.totalCount), 2,

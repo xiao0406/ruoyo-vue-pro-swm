@@ -5,6 +5,7 @@ import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
 
 import java.util.List;
+import java.util.Map;
 import org.apache.ibatis.annotations.Param;
 
 /**
@@ -87,4 +88,12 @@ public interface SwmWarningManagementDao extends CrudDao<SwmWarningManagement> {
      * 获取当月已处理的预警记录
      */
     List<SwmWarningManagement> listCurrentMonthHandledWarning();
+
+    /**
+     * 根据身份证号列表批量查询班组名称
+     * 
+     * @param idCards 身份证号列表
+     * @return 身份证号与班组名称的映射列表
+     */
+    List<Map<String, String>> findWorkGroupNamesByIdCards(@Param("idCards") List<String> idCards);
 }
