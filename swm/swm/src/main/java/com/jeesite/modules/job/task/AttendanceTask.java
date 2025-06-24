@@ -115,17 +115,6 @@ public class AttendanceTask {
                         // 更新怠工时长字段
                         record.setIdleHours(BigDecimal.valueOf(calculatedIdleHours).setScale(2, RoundingMode.HALF_UP));
 
-                        // 计算日考勤功效
-                        // 功效 = 1 - 怠工时长/应该工作时长
-                        // @author: Shawn
-                        // @date: 2025/06/23
-                        BigDecimal dailyEfficiency = calculateDailyEfficiency(record.getIdleHours(),
-                                record.getScheduledHours());
-                        record.setDailyEfficiency(dailyEfficiency);
-                        XxlJobHelper.log("员工[{}]{}日考勤功效计算: 1 - {}小时/{}小时 = {}",
-                                record.getEmployeeId(), record.getEmployeeName(),
-                                record.getIdleHours(), record.getScheduledHours(), dailyEfficiency);
-
                         // 计算实际考勤时长
                         // 修改逻辑: 1. 如果没有上下班打卡时间，实际考勤为0
                         // 2. 如果有上下班打卡时间，实际考勤 = 下班打卡时间 - 上班打卡时间 - 怠工时长
@@ -154,6 +143,17 @@ public class AttendanceTask {
                                     record.getEmployeeId(), record.getEmployeeName(),
                                     clockWorkHours, record.getIdleHours(), actualHours);
                         }
+
+                        // 计算日考勤功效
+                        // 功效 = 1 - 怠工时长/实际考勤时长
+                        // @author: Shawn
+                        // @date: 2025/06/23
+                        BigDecimal dailyEfficiency = calculateDailyEfficiency(record.getIdleHours(),
+                                record.getActualHours());
+                        record.setDailyEfficiency(dailyEfficiency);
+                        XxlJobHelper.log("员工[{}]{}日考勤功效计算: 1 - {}小时/{}小时 = {}",
+                                record.getEmployeeId(), record.getEmployeeName(),
+                                record.getIdleHours(), record.getActualHours(), dailyEfficiency);
 
                         // 计算日达成率
                         // 达成率 = (实际考勤时长 - 怠工时长) / 应考勤时长
@@ -505,17 +505,17 @@ public class AttendanceTask {
 
     /**
      * 计算日考勤功效
-     * 功效 = 1 - 怠工时长/应该工作时长
+     * 功效 = 1 - 怠工时长/实际考勤时长
      * 
-     * @param idleHours      怠工时长
-     * @param scheduledHours 应该工作时长
+     * @param idleHours   怠工时长
+     * @param actualHours 实际考勤时长
      * @return 日考勤功效
      * @author: Shawn
      * @date: 2025/06/23
      */
-    private BigDecimal calculateDailyEfficiency(BigDecimal idleHours, BigDecimal scheduledHours) {
-        if (scheduledHours == null || scheduledHours.compareTo(BigDecimal.ZERO) <= 0) {
-            // 应该工作时长为0或负数，功效为0
+    private BigDecimal calculateDailyEfficiency(BigDecimal idleHours, BigDecimal actualHours) {
+        if (actualHours == null || actualHours.compareTo(BigDecimal.ZERO) <= 0) {
+            // 实际考勤时长为0或负数，功效为0
             return BigDecimal.ZERO;
         }
 
@@ -524,8 +524,8 @@ public class AttendanceTask {
         }
 
         try {
-            // 功效 = 1 - 怠工时长/应该工作时长
-            BigDecimal idleRate = idleHours.divide(scheduledHours, 4, RoundingMode.HALF_UP);
+            // 功效 = 1 - 怠工时长/实际考勤时长
+            BigDecimal idleRate = idleHours.divide(actualHours, 4, RoundingMode.HALF_UP);
             BigDecimal efficiency = BigDecimal.ONE.subtract(idleRate);
 
             // 确保功效在0到1之间
@@ -537,7 +537,7 @@ public class AttendanceTask {
 
             return efficiency.setScale(4, RoundingMode.HALF_UP);
         } catch (Exception e) {
-            log.error("计算日考勤功效时发生异常，idleHours: {}, scheduledHours: {}", idleHours, scheduledHours, e);
+            log.error("计算日考勤功效时发生异常，idleHours: {}, actualHours: {}", idleHours, actualHours, e);
             return BigDecimal.ZERO;
         }
     }
