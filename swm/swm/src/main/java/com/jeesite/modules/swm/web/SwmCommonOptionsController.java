@@ -61,4 +61,13 @@ public class SwmCommonOptionsController extends BaseController {
     public List<Map<String, Object>> getWorkGroupOptions() {
         return swmCommonOptionsService.getWorkGroupOptions();
     }
+
+    /**
+     * 获取工种选项
+     */
+    @GetMapping("/workTypes")
+    @ApiOperation("获取工种选项")
+    public List<Map<String, Object>> getWorkTypeOptions() {
+        return swmCommonOptionsService.getWorkTypeOptions();
+    }
 } 

@@ -84,7 +84,7 @@
     <!-- 批量获取班组名称 -->
     <select id="batchGetWorkGroupNameByIdCards" resultType="java.util.Map">
         SELECT 
-            w.identity_code AS "key",
+              w.identity_code AS "key",
             wg.work_group_name AS "value"
         FROM fms_worker w
         LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id
@@ -92,6 +92,16 @@
         <foreach collection="list" item="idCard" open="(" separator="," close=")">
             #{idCard}
         </foreach>
+    </select>
+    
+    <!-- 根据年份和月份获取不重复身份证的排班人数 -->
+    <select id="countDistinctPersonByYearAndMonth" resultType="int">
+        SELECT 
+            COUNT(DISTINCT id_card)
+        FROM 
+            swm_person_schedule
+        WHERE 
+            month = #{yearMonth}
     </select>
     
 </mapper> 

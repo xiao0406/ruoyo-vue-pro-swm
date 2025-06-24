@@ -195,4 +195,41 @@
         AND status = '0'
     </select>
 
+    <!-- 获取当月的预警，在SQL中添加8小时时区调整 -->
+    <select id="listCurrentMonthWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
+        SELECT
+            id, create_by AS createBy, create_date AS createDate,
+            update_by AS updateBy, update_date AS updateDate,
+            remarks, status, person_name AS personName,
+            warning_type AS warningType, warning_content AS warningContent,
+            DATE_ADD(warning_time, INTERVAL 8 HOUR) AS warningTime, alarm_record AS alarmRecord,
+            DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
+            handler, handle_time AS handleTime,
+            handle_process AS handleProcess, handle_status AS handleStatus,
+            attachment, device_id AS deviceId, id_card AS idCard
+        FROM swm_warning_management
+        WHERE warning_time &gt;= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+        AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
+        AND status = '0'
+    </select>
+    
+    <!-- 获取当月已处理的预警，在SQL中添加8小时时区调整 -->
+    <select id="listCurrentMonthHandledWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
+        SELECT
+            id, create_by AS createBy, create_date AS createDate,
+            update_by AS updateBy, update_date AS updateDate,
+            remarks, status, person_name AS personName,
+            warning_type AS warningType, warning_content AS warningContent,
+            DATE_ADD(warning_time, INTERVAL 8 HOUR) AS warningTime, alarm_record AS alarmRecord,
+            DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
+            handler, handle_time AS handleTime,
+            handle_process AS handleProcess, handle_status AS handleStatus,
+            attachment, device_id AS deviceId, id_card AS idCard
+        FROM swm_warning_management
+        WHERE warning_time &gt;= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+        AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
+        AND handle_status = '1'
+        AND status = '0'
+    </select>
+
 </mapper>

@@ -48,4 +48,11 @@ public class SwmCommonOptionsService {
     public List<Map<String, Object>> getWorkGroupOptions() {
         return swmCommonOptionsDao.getWorkGroupOptions();
     }
+    
+    /**
+     * 获取工种选项
+     */
+    public List<Map<String, Object>> getWorkTypeOptions() {
+        return swmCommonOptionsDao.getWorkTypeOptions();
+    }
 } 

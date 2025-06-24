@@ -947,7 +947,7 @@ public class SwmPersonController extends BaseController {
             Map<Object, Object> allPersons = cacheService.getAllActivePersons();
 
             // 过滤出当天有坐标数据的人员，并添加设备编号信息
-            Map<Object, Object> personsWithCoordinates = new HashMap<>();
+            List<Map<String, Object>> personsWithCoordinates = new ArrayList<>();
             if (allPersons != null) {
                 for (Map.Entry<Object, Object> entry : allPersons.entrySet()) {
                     if (entry.getValue() instanceof Map) {
@@ -991,8 +991,10 @@ public class SwmPersonController extends BaseController {
                             enhancedPersonData.put("batteryLevel", batteryLevel); // 电量信息
                             enhancedPersonData.put("location", location); // 位置信息
                             enhancedPersonData.put("motionStatus", motionStatus); // 运动状态信息
+                            // 添加ID作为唯一标识
+                            enhancedPersonData.put("id", entry.getKey());
 
-                            personsWithCoordinates.put(entry.getKey(), enhancedPersonData);
+                            personsWithCoordinates.add(enhancedPersonData);
                         }
                     }
                 }

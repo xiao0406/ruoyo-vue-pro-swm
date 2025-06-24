@@ -34,4 +34,9 @@ public interface SwmCommonOptionsDao {
      * 获取班组选项
      */
     List<Map<String, Object>> getWorkGroupOptions();
+    
+    /**
+     * 获取工种选项
+     */
+    List<Map<String, Object>> getWorkTypeOptions();
 } 

@@ -9,25 +9,33 @@
         WHERE zip_code IS NOT NULL 
     </select>
     
-    <!-- 获取车间选项 -->
+    <!-- 获取车间选项，按名称去重 -->
     <select id="getDepartmentOptions" resultType="java.util.Map">
-        SELECT id as value, position_name as label 
+        SELECT MIN(id) as value, position_name as label 
         FROM fms_position_archive 
         WHERE type = 'CJ' 
+        GROUP BY position_name
     </select>
     
-    <!-- 获取产线选项 -->
+    <!-- 获取产线选项，按名称去重 -->
     <select id="getProdLineOptions" resultType="java.util.Map">
-        SELECT id as value, prod_line_name as label 
-        FROM fms_prod_line 
-        
+        SELECT MIN(id) as value, prod_line_name as label 
+        FROM fms_prod_line
+        GROUP BY prod_line_name
     </select>
     
-    <!-- 获取班组选项 -->
+    <!-- 获取班组选项，按名称去重 -->
     <select id="getWorkGroupOptions" resultType="java.util.Map">
-        SELECT id as value, work_group_name as label 
-        FROM fms_work_group 
-        
+        SELECT MIN(id) as value, work_group_name as label 
+        FROM fms_work_group
+        GROUP BY work_group_name
+    </select>
+    
+    <!-- 获取工种选项 -->
+    <select id="getWorkTypeOptions" resultType="java.util.Map">
+        SELECT DISTINCT work_type as value, work_type as label 
+        FROM fms_worker 
+        WHERE work_type IS NOT NULL AND work_type != ''
     </select>
     
 </mapper> 
