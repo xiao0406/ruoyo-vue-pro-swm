@@ -19,6 +19,7 @@
 			a.parent_id AS "parentId",
 			a.subitem_name AS "subitemName",
 			a.color AS "color",
+			a.key AS "key",
 			a.create_by AS "createBy",
 			a.create_date AS "createDate",
 			a.update_by AS "updateBy",

@@ -38,10 +38,10 @@ public class SwmHelmetSubitemController extends BaseController {
 
 	@Autowired
 	private SwmHelmetSubitemService swmHelmetSubitemService;
-	
+
 	@Autowired
 	private SwmHelmetConfigService swmHelmetConfigService;
-	
+
 	/**
 	 * 获取数据
 	 */
@@ -49,7 +49,7 @@ public class SwmHelmetSubitemController extends BaseController {
 	public SwmHelmetSubitem get(String id, boolean isNewRecord) {
 		return swmHelmetSubitemService.get(id, isNewRecord);
 	}
-	
+
 	/**
 	 * 查询列表
 	 */
@@ -58,13 +58,14 @@ public class SwmHelmetSubitemController extends BaseController {
 		model.addAttribute("swmHelmetSubitem", swmHelmetSubitem);
 		return "modules/swm/swmHelmetSubitemList";
 	}
-	
+
 	/**
 	 * 查询列表数据
 	 */
 	@RequestMapping(value = "listData")
 	@ResponseBody
-	public Page<SwmHelmetSubitem> listData(SwmHelmetSubitem swmHelmetSubitem, HttpServletRequest request, HttpServletResponse response) {
+	public Page<SwmHelmetSubitem> listData(SwmHelmetSubitem swmHelmetSubitem, HttpServletRequest request,
+			HttpServletResponse response) {
 		swmHelmetSubitem.setPage(new Page<>(request, response));
 		Page<SwmHelmetSubitem> page = swmHelmetSubitemService.findPage(swmHelmetSubitem);
 		return page;
@@ -95,7 +96,7 @@ public class SwmHelmetSubitemController extends BaseController {
 		swmHelmetSubitemService.save(swmHelmetSubitem);
 		return renderResult(Global.TRUE, text("保存安全帽子项颜色表成功！"));
 	}
-	
+
 	/**
 	 * 删除安全帽子项颜色表
 	 */
@@ -105,7 +106,7 @@ public class SwmHelmetSubitemController extends BaseController {
 		swmHelmetSubitemService.delete(swmHelmetSubitem);
 		return renderResult(Global.TRUE, text("删除安全帽子项颜色表成功！"));
 	}
-	
+
 	/**
 	 * 批量删除安全帽子项颜色表
 	 */
@@ -121,7 +122,7 @@ public class SwmHelmetSubitemController extends BaseController {
 		}
 		return renderResult(Global.TRUE, text("批量删除安全帽子项颜色表成功！"));
 	}
-	
+
 	/**
 	 * 根据父ID查询子项列表
 	 */
@@ -129,7 +130,7 @@ public class SwmHelmetSubitemController extends BaseController {
 	@ResponseBody
 	public List<Map<String, Object>> findByParentId(@RequestParam("parentId") String parentId) {
 		List<Map<String, Object>> result = new ArrayList<>();
-		
+
 		List<SwmHelmetSubitem> subitemList = swmHelmetSubitemService.findByParentId(parentId);
 		for (SwmHelmetSubitem subitem : subitemList) {
 			Map<String, Object> map = new HashMap<>();
@@ -137,10 +138,11 @@ public class SwmHelmetSubitemController extends BaseController {
 			map.put("parentId", subitem.getParentId());
 			map.put("subitemName", subitem.getSubitemName());
 			map.put("color", subitem.getColor());
-			
+			map.put("key", subitem.getKey());
+
 			result.add(map);
 		}
-		
+
 		return result;
 	}
 }
