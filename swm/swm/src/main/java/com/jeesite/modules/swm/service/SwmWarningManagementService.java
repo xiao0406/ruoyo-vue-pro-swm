@@ -2,6 +2,8 @@ package com.jeesite.modules.swm.service;
 
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.common.lang.DateUtils;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.swm.dao.SwmAlarmConfigDao;
 import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.swm.entity.SwmAlarmConfig;
@@ -23,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 /**
  * 预警管理Service
@@ -804,11 +807,111 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     }
 
     /**
-     * 获取今日预警数据
-     * @return
+     * 获取近七天预警数据（分页）
+     * @param swmWarningManagement 查询条件
+     * @param page 分页参数
+     * @return 分页结果
+     */
+    public Page<SwmWarningManagement> findPast7DaysWarningPage(SwmWarningManagement swmWarningManagement, Page<SwmWarningManagement> page) {
+        // 设置基础查询条件
+        if (swmWarningManagement == null) {
+            swmWarningManagement = new SwmWarningManagement();
+        }
+        
+        // 设置查询近7天的条件
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, -6); // 7天前（包含今天）
+        Date startDate = calendar.getTime();
+        
+        calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1); // 明天
+        Date endDate = calendar.getTime();
+        
+        // 使用sqlMap设置日期范围
+        swmWarningManagement.getSqlMap().getWhere()
+            .and("warning_time", QueryType.GTE, startDate)
+            .and("warning_time", QueryType.LT, endDate);
+        
+        swmWarningManagement.setStatus("0"); // 状态为0的记录
+        
+        // 调用混合分页查询方法
+        return hybridFindPage(page, swmWarningManagement);
+    }
+
+    /**
+     * 获取今日的预警记录
      */
     public List<SwmWarningManagement> listTodayWarning() {
         return dao.listTodayWarning();
+    }
+    
+    /**
+     * 获取今日已处置的预警记录
+     */
+    public List<SwmWarningManagement> listTodayHandledWarning() {
+        // 查询所有今日预警
+        List<SwmWarningManagement> allTodayWarnings = listTodayWarning();
+        
+        // 过滤已处置的预警（handleStatus为1表示已处置）
+        return allTodayWarnings.stream()
+                .filter(warning -> "1".equals(warning.getHandleStatus()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取当月的预警记录
+     */
+    public List<SwmWarningManagement> listCurrentMonthWarning() {
+        return dao.listCurrentMonthWarning();
+    }
+    
+    /**
+     * 获取当月已处置的预警记录
+     */
+    public List<SwmWarningManagement> listCurrentMonthHandledWarning() {
+        return dao.listCurrentMonthHandledWarning();
+    }
+
+    /**
+     * 获取今日最新的20条预警数据，使用混合查询逻辑（TDengine + MySQL）
+     * @return 今日最新的20条预警数据
+     */
+    public List<SwmWarningManagement> findTodayWarningWithHybrid() {
+        logger.info("开始混合查询今日最新20条预警数据...");
+        
+        // 创建一个简单的分页对象，设置为第1页，每页20条
+        Page<SwmWarningManagement> page = new Page<>(1, 20);
+        
+        // 创建查询条件，设置为今天的日期范围
+        SwmWarningManagement swmWarningManagement = new SwmWarningManagement();
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        Date startDate = calendar.getTime();
+        
+        calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        Date endDate = calendar.getTime();
+        
+        // 设置查询今日的条件
+        swmWarningManagement.getSqlMap().getWhere()
+            .and("warning_time", QueryType.GTE, startDate)
+            .and("warning_time", QueryType.LT, endDate);
+        
+        swmWarningManagement.setStatus("0"); // 状态为0的记录
+        
+        // 调用混合查询方法
+        Page<SwmWarningManagement> resultPage = hybridFindPage(page, swmWarningManagement);
+        
+        // 返回结果列表
+        List<SwmWarningManagement> resultList = resultPage.getList();
+        logger.info("混合查询今日预警数据完成，返回 {} 条记录", resultList.size());
+        
+        return resultList;
     }
 
     /**

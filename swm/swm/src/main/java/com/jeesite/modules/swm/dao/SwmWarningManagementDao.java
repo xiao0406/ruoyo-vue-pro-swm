@@ -77,4 +77,14 @@ public interface SwmWarningManagementDao extends CrudDao<SwmWarningManagement> {
      * 获取今日的预警记录
      */
     List<SwmWarningManagement> listTodayWarning();
+    
+    /**
+     * 获取当月的预警记录
+     */
+    List<SwmWarningManagement> listCurrentMonthWarning();
+    
+    /**
+     * 获取当月已处理的预警记录
+     */
+    List<SwmWarningManagement> listCurrentMonthHandledWarning();
 }

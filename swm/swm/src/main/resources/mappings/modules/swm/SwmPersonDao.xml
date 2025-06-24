@@ -193,4 +193,26 @@
           AND a.status = '0'            -- 正常状态
         ORDER BY a.update_date DESC
     </select>
+
+    
+    <!-- 根据身份证号列表查询人员 -->
+    <select id="findByIdCards" resultType="SwmPerson">
+        SELECT
+            id, name, identity_card, person_type, phone_number, status, personnel_status, 
+            team, department, prod_line, job_type, safety_helmet_id, company, 
+            create_by, create_date, update_by, update_date, remarks
+        FROM swm_person
+        WHERE status = '0' 
+          AND identity_card IN
+        <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
+            #{idCard}
+        </foreach>
+    </select>
+    
+    <!-- 统计不重复身份证的人员数量 -->
+    <select id="countDistinctByIdentityCard" resultType="int">
+        SELECT COUNT(DISTINCT identity_card) 
+        FROM swm_person 
+        WHERE status = '0'
+    </select>
 </mapper>

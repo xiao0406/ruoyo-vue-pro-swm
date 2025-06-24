@@ -201,4 +201,26 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         }
         return dao.searchPersonsByKeyword(keyword.trim());
     }
+
+    /**
+     * 根据身份证号列表查询人员
+     * 
+     * @param idCards 身份证号列表
+     * @return 人员列表
+     */
+    public List<SwmPerson> findByIdCards(List<String> idCards) {
+        if (idCards == null || idCards.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return dao.findByIdCards(idCards);
+    }
+
+    /**
+     * 统计不重复身份证的人员数量
+     * 
+     * @return 不重复身份证的人员数量
+     */
+    public int countDistinctByIdentityCard() {
+        return dao.countDistinctByIdentityCard();
+    }
 }

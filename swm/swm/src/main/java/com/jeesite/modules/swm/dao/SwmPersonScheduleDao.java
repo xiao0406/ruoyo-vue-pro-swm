@@ -56,4 +56,12 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
      * @return 包含身份证号和班组名称的对象列表
      */
     List<Map<String, Object>> batchGetWorkGroupNameByIdCards(List<String> idCards);
+    
+    /**
+     * 根据年份和月份获取不重复身份证的排班人数
+     * 
+     * @param yearMonth 年月格式，例如："2025-06"
+     * @return 排班人数
+     */
+    int countDistinctPersonByYearAndMonth(@Param("yearMonth") String yearMonth);
 } 

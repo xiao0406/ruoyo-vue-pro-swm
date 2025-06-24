@@ -170,4 +170,14 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
         }
         return dao.batchGetWorkGroupNameByIdCards(idCards);
     }
+
+    /**
+     * 根据年份和月份获取不重复身份证的排班人数
+     * 
+     * @param yearMonth 年月格式，例如："2025-06"
+     * @return 排班人数
+     */
+    public int countDistinctPersonByYearAndMonth(String yearMonth) {
+        return dao.countDistinctPersonByYearAndMonth(yearMonth);
+    }
 }

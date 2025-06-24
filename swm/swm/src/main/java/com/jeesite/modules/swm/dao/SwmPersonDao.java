@@ -62,4 +62,19 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
      * @date 2025/06/23
      */
     List<Map<String, Object>> findActivePersonsWithIds();
+
+    /**
+     * 根据身份证号列表查询人员
+     * 
+     * @param idCards 身份证号列表
+     * @return 人员列表
+     */
+    List<SwmPerson> findByIdCards(List<String> idCards);
+
+    /**
+     * 统计不重复身份证的人员数量
+     * 
+     * @return 不重复身份证的人员数量
+     */
+    int countDistinctByIdentityCard();
 }
