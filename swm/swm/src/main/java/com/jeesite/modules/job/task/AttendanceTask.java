@@ -83,7 +83,7 @@ public class AttendanceTask {
             // 查询指定日期的所有考勤记录
             SwmDailyAttendance query = new SwmDailyAttendance();
             query.setAttendanceDate(targetDate);
-             query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
+            query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
 
             if (attendanceList.isEmpty()) {
@@ -154,6 +154,18 @@ public class AttendanceTask {
                                     record.getEmployeeId(), record.getEmployeeName(),
                                     clockWorkHours, record.getIdleHours(), actualHours);
                         }
+
+                        // 计算日达成率
+                        // 达成率 = (实际考勤时长 - 怠工时长) / 应考勤时长
+                        // @author: Shawn
+                        // @date: 2025/06/23
+                        BigDecimal dailyAchievementRate = calculateDailyAchievementRate(record.getActualHours(),
+                                record.getIdleHours(), record.getScheduledHours());
+                        record.setDailyAchievementRate(dailyAchievementRate);
+                        XxlJobHelper.log("员工[{}]{}日达成率计算: ({}小时 - {}小时) / {}小时 = {}",
+                                record.getEmployeeId(), record.getEmployeeName(),
+                                record.getActualHours(), record.getIdleHours(), record.getScheduledHours(),
+                                dailyAchievementRate);
 
                         swmDailyAttendanceService.update(record);
 
@@ -526,6 +538,55 @@ public class AttendanceTask {
             return efficiency.setScale(4, RoundingMode.HALF_UP);
         } catch (Exception e) {
             log.error("计算日考勤功效时发生异常，idleHours: {}, scheduledHours: {}", idleHours, scheduledHours, e);
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * 计算日达成率
+     * 达成率 = (实际考勤时长 - 怠工时长) / 应考勤时长
+     * 
+     * @param actualHours    实际考勤时长
+     * @param idleHours      怠工时长
+     * @param scheduledHours 应考勤时长
+     * @return 日达成率
+     * @author: Shawn
+     * @date: 2025/06/23
+     */
+    private BigDecimal calculateDailyAchievementRate(BigDecimal actualHours, BigDecimal idleHours,
+            BigDecimal scheduledHours) {
+        if (scheduledHours == null || scheduledHours.compareTo(BigDecimal.ZERO) <= 0) {
+            // 应考勤时长为0或负数，达成率为0
+            return BigDecimal.ZERO;
+        }
+
+        if (actualHours == null) {
+            actualHours = BigDecimal.ZERO;
+        }
+        if (idleHours == null) {
+            idleHours = BigDecimal.ZERO;
+        }
+
+        try {
+            // 达成率 = (实际考勤时长 - 怠工时长) / 应考勤时长
+            BigDecimal effectiveHours = actualHours.subtract(idleHours);
+
+            // 确保有效工作时长不为负数
+            if (effectiveHours.compareTo(BigDecimal.ZERO) < 0) {
+                effectiveHours = BigDecimal.ZERO;
+            }
+
+            BigDecimal achievementRate = effectiveHours.divide(scheduledHours, 4, RoundingMode.HALF_UP);
+
+            // 达成率可能超过1（超额完成），不设置上限
+            if (achievementRate.compareTo(BigDecimal.ZERO) < 0) {
+                achievementRate = BigDecimal.ZERO;
+            }
+
+            return achievementRate.setScale(4, RoundingMode.HALF_UP);
+        } catch (Exception e) {
+            log.error("计算日达成率时发生异常，actualHours: {}, idleHours: {}, scheduledHours: {}",
+                    actualHours, idleHours, scheduledHours, e);
             return BigDecimal.ZERO;
         }
     }
