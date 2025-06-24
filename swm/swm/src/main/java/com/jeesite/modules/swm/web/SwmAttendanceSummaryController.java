@@ -243,6 +243,7 @@ public class SwmAttendanceSummaryController extends BaseController {
         result.put("scheduledHours", attendance.getScheduledHours());
         result.put("actualHours", attendance.getActualHours());
         result.put("idleHours", attendance.getIdleHours());
+        result.put("effectiveWorkHours", attendance.getEffectiveWorkHours());
         result.put("dailyEfficiency", attendance.getDailyEfficiency());
         result.put("dailyAchievementRate", attendance.getDailyAchievementRate());
         result.put("attendanceNormal", attendance.getAttendanceNormal());

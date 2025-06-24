@@ -13,6 +13,7 @@ import java.util.Date;
 
 /**
  * 日考勤统计表实体类
+ * 
  * @author zwf
  * @version 2025-05-20
  */
@@ -27,6 +28,7 @@ import java.util.Date;
         @Column(name = "scheduled_hours", attrName = "scheduledHours", label = "应考勤时长(h)"),
         @Column(name = "actual_hours", attrName = "actualHours", label = "实际考勤时长(h)"),
         @Column(name = "idle_hours", attrName = "idleHours", label = "怠工时长(h)"),
+        @Column(name = "effective_work_hours", attrName = "effectiveWorkHours", label = "实际工作时长(h)"),
         @Column(name = "daily_efficiency", attrName = "dailyEfficiency", label = "今日功效"),
         @Column(name = "daily_achievement_rate", attrName = "dailyAchievementRate", label = "今日达成率"),
         @Column(name = "attendance_normal", attrName = "attendanceNormal", label = "考勤是否正常(0正常 1异常)"),
@@ -37,23 +39,24 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     private static final long serialVersionUID = 1L;
 
-    private String employeeId;              // 员工ID
-    private String employeeName;           // 员工姓名
-    private Date attendanceDate;           // 考勤日期
-    private String workTimeRange;          // 应考勤时间范围(如08:00-17:00)
-    private Date clockInTime;              // 上班打卡时间
-    private Date clockOutTime;             // 下班打卡时间
-    private BigDecimal scheduledHours;     // 应考勤时长(h)
-    private BigDecimal actualHours;        // 实际考勤时长(h)
-    private BigDecimal idleHours;          // 怠工时长(h)
-    private BigDecimal dailyEfficiency;    // 今日功效
+    private String employeeId; // 员工ID
+    private String employeeName; // 员工姓名
+    private Date attendanceDate; // 考勤日期
+    private String workTimeRange; // 应考勤时间范围(如08:00-17:00)
+    private Date clockInTime; // 上班打卡时间
+    private Date clockOutTime; // 下班打卡时间
+    private BigDecimal scheduledHours; // 应考勤时长(h)
+    private BigDecimal actualHours; // 实际考勤时长(h)
+    private BigDecimal idleHours; // 怠工时长(h)
+    private BigDecimal effectiveWorkHours; // 实际工作时长(h)
+    private BigDecimal dailyEfficiency; // 今日功效
     private BigDecimal dailyAchievementRate; // 今日达成率
     private String attendanceNormal; // 考勤是否正常(0正常 1异常)
-    private String currentPosition; //当前位置(0工作区 1休息区)
+    private String currentPosition; // 当前位置(0工作区 1休息区)
 
     // 查询条件字段
-    private Date beginAttendanceDate;      // 查询开始考勤日期
-    private Date endAttendanceDate;        // 查询结束考勤日期
+    private Date beginAttendanceDate; // 查询开始考勤日期
+    private Date endAttendanceDate; // 查询结束考勤日期
 
     public SwmDailyAttendance() {
         this(null);
@@ -138,6 +141,14 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     public void setIdleHours(BigDecimal idleHours) {
         this.idleHours = idleHours;
+    }
+
+    public BigDecimal getEffectiveWorkHours() {
+        return effectiveWorkHours;
+    }
+
+    public void setEffectiveWorkHours(BigDecimal effectiveWorkHours) {
+        this.effectiveWorkHours = effectiveWorkHours;
     }
 
     public BigDecimal getDailyEfficiency() {
