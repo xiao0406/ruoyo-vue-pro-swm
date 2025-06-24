@@ -83,7 +83,7 @@ public class AttendanceTask {
             // 查询指定日期的所有考勤记录
             SwmDailyAttendance query = new SwmDailyAttendance();
             query.setAttendanceDate(targetDate);
-            // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
+//            query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
 
             if (attendanceList.isEmpty()) {
@@ -348,7 +348,7 @@ public class AttendanceTask {
             SwmPerson query = new SwmPerson();
             query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 在职状态
             query.setStatus("0");// 正常状态
-            // query.setIdentityCard("430312122334343333"); // todo为了测试身份证先写死
+//             query.setIdentityCard("412825197709304513"); // todo为了测试身份证先写死
             List<SwmPerson> activePersons = swmPersonService.findList(query);
 
             if (activePersons.isEmpty()) {
@@ -453,7 +453,7 @@ public class AttendanceTask {
     /**
      * 计算应考勤时长
      * 
-     * @param workTimeRange 工作时间范围，格式如"08:00-17:00"
+     * @param workTimeRange 工作时间范围，格式如"08:00-17:00"或"20:30-03:00"
      * @return 应考勤时长(小时)
      */
     private BigDecimal calculateScheduledHours(String workTimeRange) {
@@ -463,10 +463,15 @@ public class AttendanceTask {
 
         try {
             String[] times = workTimeRange.split("-");
-            String startTimeStr = times[0];
-            String endTimeStr = times[1];
+            if (times.length != 2) {
+                log.error("工作时间范围格式错误: {}", workTimeRange);
+                return BigDecimal.ZERO;
+            }
 
-            // 解析时间
+            String startTimeStr = times[0].trim();
+            String endTimeStr = times[1].trim();
+
+            // 解析时间 - 使用当天的日期作为基准
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
             Date startTime = sdf.parse(startTimeStr);
             Date endTime = sdf.parse(endTimeStr);
@@ -477,9 +482,19 @@ public class AttendanceTask {
             // 转换为小时
             double hours = diffMillis / (1000.0 * 60 * 60);
 
-            // 考虑跨日班次的情况(如夜班)
+            // 处理跨日班次的情况(如夜班20:30-03:00)
             if (hours < 0) {
                 hours += 24;
+                log.debug("检测到跨日班次: {}，计算后的工作时长: {} 小时", workTimeRange, hours);
+            } else if (hours > 24) {
+                // 超过24小时的班次不合理，可能是配置错误
+                log.warn("工作时间范围 {} 计算出的时长超过24小时: {} 小时，可能存在配置错误", workTimeRange, hours);
+                return BigDecimal.ZERO;
+            }
+
+            // 验证时长的合理性（一般工作时长应该在1-16小时之间）
+            if (hours < 1 || hours > 16) {
+                log.warn("工作时间范围 {} 计算出的时长 {} 小时可能不合理", workTimeRange, hours);
             }
 
             return BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
@@ -507,13 +522,44 @@ public class AttendanceTask {
             // 计算时间差(毫秒)
             long diffMillis = clockOutTime.getTime() - clockInTime.getTime();
 
-            // 如果下班时间小于上班时间，说明是跨日班次
-            if (diffMillis < 0) {
-                diffMillis += 24 * 60 * 60 * 1000; // 加上24小时的毫秒数
+            // 修复跨夜逻辑：正确处理跨日班次
+            // 不能简单地通过时间差为负数来判断跨日，因为可能存在数据异常
+            // 应该通过实际的日期来判断是否跨日
+            Calendar clockInCal = Calendar.getInstance();
+            clockInCal.setTime(clockInTime);
+
+            Calendar clockOutCal = Calendar.getInstance();
+            clockOutCal.setTime(clockOutTime);
+
+            // 获取上班和下班的日期部分（忽略时间）
+            int clockInDay = clockInCal.get(Calendar.DAY_OF_YEAR);
+            int clockInYear = clockInCal.get(Calendar.YEAR);
+            int clockOutDay = clockOutCal.get(Calendar.DAY_OF_YEAR);
+            int clockOutYear = clockOutCal.get(Calendar.YEAR);
+
+            // 如果时间差为负数，但实际上是跨日班次（下班日期 > 上班日期）
+            if (diffMillis < 0 && (clockOutYear > clockInYear ||
+                    (clockOutYear == clockInYear && clockOutDay > clockInDay))) {
+                // 这种情况不应该发生，可能是数据错误
+                log.warn("发现异常的打卡时间：上班时间 {} 晚于下班时间 {}，但日期显示确实是跨日",
+                        clockInTime, clockOutTime);
+                // 使用绝对时间差
+                diffMillis = Math.abs(diffMillis);
+            } else if (diffMillis < 0) {
+                // 时间差为负数且下班日期 <= 上班日期，这是数据错误
+                log.warn("发现错误的打卡时间：下班时间 {} 早于上班时间 {}，返回0小时",
+                        clockOutTime, clockInTime);
+                return BigDecimal.ZERO;
             }
 
-            // 转换为小时
+            // 检查工作时长是否合理（超过48小时可能是数据异常）
             double hours = diffMillis / (1000.0 * 60 * 60);
+            if (hours > 48) {
+                log.warn("工作时长超过48小时（{}小时），可能存在数据异常。上班时间：{}，下班时间：{}",
+                        hours, clockInTime, clockOutTime);
+                // 可以选择返回0或者设置一个最大值
+                return BigDecimal.ZERO;
+            }
 
             return BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
         } catch (Exception e) {
