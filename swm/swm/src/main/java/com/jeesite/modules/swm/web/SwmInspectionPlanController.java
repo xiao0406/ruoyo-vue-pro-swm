@@ -7,6 +7,7 @@ import com.jeesite.modules.swm.entity.SwmInspectionPlan;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.service.SwmInspectionPlanService;
 import com.jeesite.modules.swm.service.SwmPersonService;
+import com.jeesite.modules.job.task.InspectionPlanTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,10 +36,14 @@ import java.util.Map;
 @RequestMapping(value = "${adminPath}/swmInspectionPlan")
 public class SwmInspectionPlanController extends BaseController {
 
+    private static final Logger logger = LoggerFactory.getLogger(SwmInspectionPlanController.class);
+
     @Autowired
     private SwmInspectionPlanService swmInspectionPlanService;
     @Autowired
     private SwmPersonService swmPersonService;
+    @Autowired
+    private InspectionPlanTask inspectionPlanTask;
 
     /**
      * 获取数据
@@ -66,6 +73,7 @@ public class SwmInspectionPlanController extends BaseController {
         Page<SwmInspectionPlan> page = swmInspectionPlanService.findPage(swmInspectionPlan);
         return page;
     }
+
     /**
      * 查询列表数据
      */
@@ -86,23 +94,23 @@ public class SwmInspectionPlanController extends BaseController {
         if (keyword != null && !keyword.isEmpty()) {
             query.setPlanName(keyword);
         }
-        
+
         List<SwmInspectionPlan> planList = swmInspectionPlanService.findList(query);
         List<Map<String, Object>> result = new ArrayList<>();
-        
+
         // 转换为前端需要的格式
         for (SwmInspectionPlan plan : planList) {
             Map<String, Object> item = new HashMap<>();
-            item.put("value", plan.getId());  // 值为ID
-            item.put("label", plan.getPlanName());  // 显示为计划名称
-            
+            item.put("value", plan.getId()); // 值为ID
+            item.put("label", plan.getPlanName()); // 显示为计划名称
+
             // 可以添加更多需要的信息
             item.put("inspectionType", plan.getInspectionType());
             item.put("responsiblePerson", plan.getResponsiblePerson());
-            
+
             result.add(item);
         }
-        
+
         return result;
     }
 
@@ -122,9 +130,9 @@ public class SwmInspectionPlanController extends BaseController {
     @ResponseBody
     public String save(@Validated SwmInspectionPlan swmInspectionPlan) {
         SwmPerson swmPerson = swmPersonService.get(swmInspectionPlan.getResponsiblePersonId());
-        if(swmPerson == null){
+        if (swmPerson == null) {
             return renderResult(Global.FALSE, text("巡检负责人不存在！"));
-        }else{
+        } else {
             swmInspectionPlan.setResponsiblePerson(swmPerson.getName());
         }
         swmInspectionPlanService.save(swmInspectionPlan);
@@ -139,6 +147,24 @@ public class SwmInspectionPlanController extends BaseController {
     public String delete(SwmInspectionPlan swmInspectionPlan) {
         swmInspectionPlanService.delete(swmInspectionPlan);
         return renderResult(Global.TRUE, text("删除巡检计划成功！"));
+    }
+
+    /**
+     * 测试接口：手动触发巡检任务生成
+     * 
+     * @author Shawn
+     * @date 2025/01/22
+     */
+    @RequestMapping(value = "testCreateTask")
+    @ResponseBody
+    public String testCreateTask() {
+        try {
+            inspectionPlanTask.createInspectTask();
+            return renderResult(Global.TRUE, text("巡检任务生成成功"));
+        } catch (Exception e) {
+            logger.error("手动触发巡检任务生成失败", e);
+            return renderResult(Global.FALSE, "巡检任务生成失败：" + e.getMessage());
+        }
     }
 
 }
