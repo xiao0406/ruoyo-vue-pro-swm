@@ -3,6 +3,7 @@ package com.jeesite.modules.job.task;
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
+import com.jeesite.modules.utils.R;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,8 @@ public class AttendanceTask {
     private SwmPersonScheduleService swmPersonScheduleService;
     @Autowired
     private SwmScheduleTimeService swmScheduleTimeService;
+    @Autowired
+    private HelmetRundeCaReportLocationTdEnginService helmetTdengineService;
 
     /**
      * 计算怠工时长定时任务，工作时长定时任务
@@ -83,7 +86,7 @@ public class AttendanceTask {
             // 查询指定日期的所有考勤记录
             SwmDailyAttendance query = new SwmDailyAttendance();
             query.setAttendanceDate(targetDate);
-//            query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
+            // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
 
             if (attendanceList.isEmpty()) {
@@ -128,20 +131,68 @@ public class AttendanceTask {
                                 record.getEmployeeId(), record.getEmployeeName(), calculatedEffectiveWorkHours,
                                 workTimeRange);
 
-                        // 计算实际考勤时长
-                        // 修改逻辑: 1. 如果没有上下班打卡时间，实际考勤为0
-                        // 2. 如果有上下班打卡时间，实际考勤 = 下班打卡时间 - 上班打卡时间 - 怠工时长
+                        // 获取用于计算的打卡时间（不修改原始记录，只用于计算）
                         // @author: Shawn
-                        // @date: 2025/06/23
-                        if (record.getClockInTime() == null || record.getClockOutTime() == null) {
-                            // 没有打卡时间，实际考勤时长为0
+                        // @date: 2025/01/27
+                        Date clockInTime = record.getClockInTime();
+                        Date clockOutTime = record.getClockOutTime();
+                        boolean usedTdengineData = false;
+
+                        // 如果打卡时间为空，从TDengine表中获取用于计算的时间
+                        if (clockInTime == null || clockOutTime == null) {
+                            try {
+                                // 使用考勤记录中的实际考勤日期查询TDengine
+                                String recordDateStr = dateFormat.format(record.getAttendanceDate());
+                                R<Map<String, Object>> tdengineResult = helmetTdengineService
+                                        .getFirstAndLastTimeByIdCardAndDate(idCard, recordDateStr, workTimeRange);
+
+                                if (tdengineResult.getCode() == R.SUCCESS) {
+                                    Map<String, Object> timeData = tdengineResult.getData();
+                                    Object firstTimeObj = timeData.get("firstTime");
+                                    Object lastTimeObj = timeData.get("lastTime");
+
+                                    // 如果上班打卡时间为空，临时使用TDengine的第一条记录时间进行计算
+                                    if (clockInTime == null && firstTimeObj != null) {
+                                        clockInTime = parseTimeObject(firstTimeObj);
+                                        if (clockInTime != null) {
+                                            usedTdengineData = true;
+                                            log.info("员工[{}]{}上班打卡时间为空，临时使用TDengine第一条记录时间进行计算: {}",
+                                                    record.getEmployeeId(), record.getEmployeeName(), clockInTime);
+                                        }
+                                    }
+
+                                    // 如果下班打卡时间为空，临时使用TDengine的最后一条记录时间进行计算
+                                    if (clockOutTime == null && lastTimeObj != null) {
+                                        clockOutTime = parseTimeObject(lastTimeObj);
+                                        if (clockOutTime != null) {
+                                            usedTdengineData = true;
+                                            log.info("员工[{}]{}下班打卡时间为空，临时使用TDengine最后一条记录时间进行计算: {}",
+                                                    record.getEmployeeId(), record.getEmployeeName(), clockOutTime);
+                                        }
+                                    }
+                                } else {
+                                    XxlJobHelper.log("员工[{}]{}从TDengine查询时间记录失败: {}",
+                                            record.getEmployeeId(), record.getEmployeeName(), tdengineResult.getMsg());
+                                }
+                            } catch (Exception e) {
+                                XxlJobHelper.log("员工[{}]{}从TDengine获取时间用于计算时异常: {}",
+                                        record.getEmployeeId(), record.getEmployeeName(), e.getMessage());
+                            }
+                        }
+
+                        // 计算实际考勤时长
+                        // 修改逻辑: 1. 如果没有上下班打卡时间且TDengine也没有数据，实际考勤为0
+                        // 2. 如果有上下班打卡时间（包括从TDengine获取的），实际考勤 = 下班打卡时间 - 上班打卡时间 - 怠工时长
+                        // @author: Shawn
+                        // @date: 2025/01/27
+                        if (clockInTime == null || clockOutTime == null) {
+                            // 没有打卡时间且TDengine也没有可用数据，实际考勤时长为0
                             record.setActualHours(BigDecimal.ZERO);
-                            XxlJobHelper.log("员工[{}]{}没有完整的上下班打卡记录，实际考勤时长为0",
+                            XxlJobHelper.log("员工[{}]{}没有完整的打卡记录且TDengine也无可用数据，实际考勤时长为0",
                                     record.getEmployeeId(), record.getEmployeeName());
                         } else {
-                            // 有完整打卡时间，计算实际工作时长
-                            BigDecimal clockWorkHours = calculateWorkHoursBetweenTimes(
-                                    record.getClockInTime(), record.getClockOutTime());
+                            // 有完整打卡时间（可能来自TDengine），计算实际工作时长
+                            BigDecimal clockWorkHours = calculateWorkHoursBetweenTimes(clockInTime, clockOutTime);
 
                             // 实际考勤时长 = 打卡工作时长 - 怠工时长
                             BigDecimal actualHours = clockWorkHours.subtract(record.getIdleHours());
@@ -152,8 +203,9 @@ public class AttendanceTask {
                             }
 
                             record.setActualHours(actualHours.setScale(2, RoundingMode.HALF_UP));
-                            XxlJobHelper.log("员工[{}]{}实际考勤时长计算: 打卡工作{}小时 - 怠工{}小时 = 实际{}小时",
-                                    record.getEmployeeId(), record.getEmployeeName(),
+                            String dataSource = usedTdengineData ? "(包含TDengine数据)" : "";
+                            XxlJobHelper.log("员工[{}]{}实际考勤时长计算{}: 打卡工作{}小时 - 怠工{}小时 = 实际{}小时",
+                                    record.getEmployeeId(), record.getEmployeeName(), dataSource,
                                     clockWorkHours, record.getIdleHours(), actualHours);
                         }
 
@@ -348,7 +400,7 @@ public class AttendanceTask {
             SwmPerson query = new SwmPerson();
             query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 在职状态
             query.setStatus("0");// 正常状态
-//             query.setIdentityCard("412825197709304513"); // todo为了测试身份证先写死
+            // query.setIdentityCard("412825197709304513"); // todo为了测试身份证先写死
             List<SwmPerson> activePersons = swmPersonService.findList(query);
 
             if (activePersons.isEmpty()) {
@@ -642,5 +694,90 @@ public class AttendanceTask {
                     effectiveWorkHours, scheduledHours, e);
             return BigDecimal.ZERO;
         }
+    }
+
+    /**
+     * 解析时间对象，支持多种格式
+     * 支持ISO 8601格式：2025-06-24T16:00:14.128Z
+     * 
+     * @param timeObj 时间对象
+     * @return Date对象，解析失败返回null
+     * @author: Shawn
+     * @date: 2025/01/27
+     */
+    private Date parseTimeObject(Object timeObj) {
+        if (timeObj == null) {
+            return null;
+        }
+
+        try {
+            if (timeObj instanceof Date) {
+                return (Date) timeObj;
+            } else if (timeObj instanceof Long) {
+                return new Date((Long) timeObj);
+            } else if (timeObj instanceof String) {
+                String timeStr = (String) timeObj;
+
+                // 尝试解析ISO 8601格式：2025-06-24T16:00:14.128Z (UTC时间)
+                if (timeStr.contains("T") && timeStr.endsWith("Z")) {
+                    // 使用ISO 8601格式解析UTC时间
+                    SimpleDateFormat utcFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                    utcFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+
+                    // 如果没有毫秒，添加毫秒部分
+                    String isoTimeStr = timeStr;
+                    if (!timeStr.contains(".")) {
+                        isoTimeStr = timeStr.replace("Z", ".000Z");
+                    }
+
+                    try {
+                        Date utcDate = utcFormat.parse(isoTimeStr);
+                        log.debug("解析UTC时间: {} -> {}", timeStr, utcDate);
+                        return utcDate;
+                    } catch (Exception e) {
+                        // 如果解析失败，尝试不带毫秒的格式
+                        SimpleDateFormat utcFormatNoMillis = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                        utcFormatNoMillis.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+                        try {
+                            String noMillisStr = timeStr.contains(".")
+                                    ? timeStr.substring(0, timeStr.lastIndexOf(".")) + "Z"
+                                    : timeStr;
+                            Date utcDate = utcFormatNoMillis.parse(noMillisStr);
+                            log.debug("解析UTC时间(无毫秒): {} -> {}", noMillisStr, utcDate);
+                            return utcDate;
+                        } catch (Exception e2) {
+                            log.warn("ISO 8601时间解析失败: {}", timeStr, e2);
+                        }
+                    }
+                }
+
+                // 尝试解析普通格式：yyyy-MM-dd HH:mm:ss
+                if (timeStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+                    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(timeStr);
+                }
+
+                // 尝试解析其他常见格式
+                String[] patterns = {
+                        "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                        "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                        "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                        "yyyy-MM-dd'T'HH:mm:ss",
+                        "yyyy-MM-dd HH:mm:ss.SSS",
+                        "yyyy/MM/dd HH:mm:ss"
+                };
+
+                for (String pattern : patterns) {
+                    try {
+                        return new SimpleDateFormat(pattern).parse(timeStr);
+                    } catch (Exception ignored) {
+                        // 继续尝试下一个格式
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("解析时间对象失败: {}", timeObj, e);
+        }
+
+        return null;
     }
 }

@@ -16,7 +16,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Calendar;
 
 /**
  * 安全帽设备数据服务实现类
@@ -1209,8 +1211,6 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
             String startTime = currentDate + " 00:00:00";
             String endTime = currentDate + " 23:59:59";
 
-
-
             // 查询当天该身份证的所有坐标数据，按时间排序
             String sql = String.format(
                     "select id_card, x, y, time from %s.%s " +
@@ -1251,6 +1251,261 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
         } catch (Exception e) {
             log.error("根据身份证号获取当天轨迹坐标失败, idCard: {}", idCard, e);
             return R.fail("查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取指定身份证号在指定日期的第一条和最后一条时间记录
+     * 
+     * @param idCard  身份证号
+     * @param dateStr 日期字符串，格式：yyyy-MM-dd
+     * @return Map包含firstTime和lastTime
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    @Override
+    public R<Map<String, Object>> getFirstAndLastTimeByIdCardAndDate(String idCard, String dateStr) {
+        log.info("获取指定身份证号在指定日期的第一条和最后一条时间记录, 身份证: {}, 日期: {}", idCard, dateStr);
+
+        if (StringUtils.isBlank(idCard)) {
+            return R.fail("身份证号不能为空");
+        }
+
+        if (StringUtils.isBlank(dateStr)) {
+            return R.fail("日期不能为空");
+        }
+
+        try {
+            // 构建开始和结束时间
+            String startTime = dateStr + " 00:00:00";
+            String endTime = dateStr + " 23:59:59";
+
+            // 查询第一条时间记录
+            String firstSql = String.format(
+                    "select time from %s.%s " +
+                            "where id_card='%s' and time >= '%s' and time <= '%s' " +
+                            "order by time asc limit 1",
+                    dbname, HELMET_SUPER_TABLE_NAME,
+                    idCard, startTime, endTime);
+
+            // 查询最后一条时间记录
+            String lastSql = String.format(
+                    "select time from %s.%s " +
+                            "where id_card='%s' and time >= '%s' and time <= '%s' " +
+                            "order by time desc limit 1",
+                    dbname, HELMET_SUPER_TABLE_NAME,
+                    idCard, startTime, endTime);
+
+            log.info("查询第一条时间SQL: {}", firstSql);
+            log.info("查询最后一条时间SQL: {}", lastSql);
+
+            R<JSONObject> firstResult = tdengineService.executeTDengineSQL(firstSql);
+            R<JSONObject> lastResult = tdengineService.executeTDengineSQL(lastSql);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("idCard", idCard);
+            result.put("date", dateStr);
+
+            if (firstResult.getCode() == R.SUCCESS) {
+                List<Map<String, Object>> firstRows = processQueryResult(firstResult.getData());
+                if (!firstRows.isEmpty()) {
+                    Object firstTime = firstRows.get(0).get("time");
+                    result.put("firstTime", firstTime);
+                    log.info("找到第一条时间记录: {}", firstTime);
+                } else {
+                    result.put("firstTime", null);
+                    log.info("未找到第一条时间记录");
+                }
+            } else {
+                result.put("firstTime", null);
+                log.error("查询第一条时间记录失败: {}", firstResult.getMsg());
+            }
+
+            if (lastResult.getCode() == R.SUCCESS) {
+                List<Map<String, Object>> lastRows = processQueryResult(lastResult.getData());
+                if (!lastRows.isEmpty()) {
+                    Object lastTime = lastRows.get(0).get("time");
+                    result.put("lastTime", lastTime);
+                    log.info("找到最后一条时间记录: {}", lastTime);
+                } else {
+                    result.put("lastTime", null);
+                    log.info("未找到最后一条时间记录");
+                }
+            } else {
+                result.put("lastTime", null);
+                log.error("查询最后一条时间记录失败: {}", lastResult.getMsg());
+            }
+
+            return R.ok(result);
+        } catch (Exception e) {
+            log.error("获取第一条和最后一条时间记录失败, 身份证: {}, 日期: {}", idCard, dateStr, e);
+            return R.fail("查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取指定身份证号在指定日期和工作时间范围内的第一条和最后一条时间记录
+     * 
+     * @param idCard        身份证号
+     * @param dateStr       日期字符串，格式：yyyy-MM-dd
+     * @param workTimeRange 工作时间范围，格式：HH:mm-HH:mm（如18:00-03:30）
+     * @return Map包含firstTime和lastTime
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    @Override
+    public R<Map<String, Object>> getFirstAndLastTimeByIdCardAndDate(String idCard, String dateStr,
+            String workTimeRange) {
+        log.info("获取指定身份证号在工作时间范围内的第一条和最后一条时间记录, 身份证: {}, 日期: {}, 工作时间: {}",
+                idCard, dateStr, workTimeRange);
+
+        if (StringUtils.isBlank(idCard)) {
+            return R.fail("身份证号不能为空");
+        }
+
+        if (StringUtils.isBlank(dateStr)) {
+            return R.fail("日期不能为空");
+        }
+
+        if (StringUtils.isBlank(workTimeRange)) {
+            return R.fail("工作时间范围不能为空");
+        }
+
+        try {
+            // 解析工作时间范围
+            String[] timeRange = parseWorkTimeRange(dateStr, workTimeRange);
+            if (timeRange == null) {
+                return R.fail("工作时间范围格式错误: " + workTimeRange);
+            }
+
+            String startTime = timeRange[0];
+            String endTime = timeRange[1];
+
+            // 查询第一条时间记录
+            String firstSql = String.format(
+                    "select time from %s.%s " +
+                            "where id_card='%s' and time >= '%s' and time <= '%s' " +
+                            "order by time asc limit 1",
+                    dbname, HELMET_SUPER_TABLE_NAME,
+                    idCard, startTime, endTime);
+
+            // 查询最后一条时间记录
+            String lastSql = String.format(
+                    "select time from %s.%s " +
+                            "where id_card='%s' and time >= '%s' and time <= '%s' " +
+                            "order by time desc limit 1",
+                    dbname, HELMET_SUPER_TABLE_NAME,
+                    idCard, startTime, endTime);
+
+            log.info("查询第一条时间SQL: {}", firstSql);
+            log.info("查询最后一条时间SQL: {}", lastSql);
+
+            R<JSONObject> firstResult = tdengineService.executeTDengineSQL(firstSql);
+            R<JSONObject> lastResult = tdengineService.executeTDengineSQL(lastSql);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("idCard", idCard);
+            result.put("date", dateStr);
+            result.put("workTimeRange", workTimeRange);
+            result.put("queryStartTime", startTime);
+            result.put("queryEndTime", endTime);
+
+            if (firstResult.getCode() == R.SUCCESS) {
+                List<Map<String, Object>> firstRows = processQueryResult(firstResult.getData());
+                if (!firstRows.isEmpty()) {
+                    Object firstTime = firstRows.get(0).get("time");
+                    result.put("firstTime", firstTime);
+                    log.info("找到第一条时间记录: {}", firstTime);
+                } else {
+                    result.put("firstTime", null);
+                    log.info("在工作时间范围内未找到第一条时间记录");
+                }
+            } else {
+                result.put("firstTime", null);
+                log.error("查询第一条时间记录失败: {}", firstResult.getMsg());
+            }
+
+            if (lastResult.getCode() == R.SUCCESS) {
+                List<Map<String, Object>> lastRows = processQueryResult(lastResult.getData());
+                if (!lastRows.isEmpty()) {
+                    Object lastTime = lastRows.get(0).get("time");
+                    result.put("lastTime", lastTime);
+                    log.info("找到最后一条时间记录: {}", lastTime);
+                } else {
+                    result.put("lastTime", null);
+                    log.info("在工作时间范围内未找到最后一条时间记录");
+                }
+            } else {
+                result.put("lastTime", null);
+                log.error("查询最后一条时间记录失败: {}", lastResult.getMsg());
+            }
+
+            return R.ok(result);
+        } catch (Exception e) {
+            log.error("获取工作时间范围内的第一条和最后一条时间记录失败, 身份证: {}, 日期: {}, 工作时间: {}",
+                    idCard, dateStr, workTimeRange, e);
+            return R.fail("查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 解析工作时间范围，处理跨夜班次
+     * 
+     * @param dateStr       基准日期
+     * @param workTimeRange 工作时间范围，格式：HH:mm-HH:mm
+     * @return [开始时间, 结束时间] 数组，格式：yyyy-MM-dd HH:mm:ss
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    private String[] parseWorkTimeRange(String dateStr, String workTimeRange) {
+        try {
+            if (!workTimeRange.contains("-")) {
+                return null;
+            }
+
+            String[] times = workTimeRange.split("-");
+            if (times.length != 2) {
+                return null;
+            }
+
+            String startTimeStr = times[0].trim();
+            String endTimeStr = times[1].trim();
+
+            // 验证时间格式
+            if (!startTimeStr.matches("\\d{2}:\\d{2}") || !endTimeStr.matches("\\d{2}:\\d{2}")) {
+                return null;
+            }
+
+            String startDateTime = dateStr + " " + startTimeStr + ":00";
+            String endDateTime;
+
+            // 判断是否跨夜
+            if (endTimeStr.compareTo(startTimeStr) <= 0) {
+                // 跨夜班次，结束时间是第二天
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                    Date baseDate = sdf.parse(dateStr);
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(baseDate);
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                    String nextDay = sdf.format(cal.getTime());
+                    endDateTime = nextDay + " " + endTimeStr + ":00";
+
+                    log.info("检测到跨夜班次: {}，开始时间: {}，结束时间: {}",
+                            workTimeRange, startDateTime, endDateTime);
+                } catch (Exception e) {
+                    log.error("解析跨夜班次日期失败: {}", dateStr, e);
+                    return null;
+                }
+            } else {
+                // 当日班次
+                endDateTime = dateStr + " " + endTimeStr + ":00";
+            }
+
+            return new String[] { startDateTime, endDateTime };
+        } catch (Exception e) {
+            log.error("解析工作时间范围失败: {}", workTimeRange, e);
+            return null;
         }
     }
 }

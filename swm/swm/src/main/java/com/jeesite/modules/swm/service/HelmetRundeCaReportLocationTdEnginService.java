@@ -128,4 +128,27 @@ public interface HelmetRundeCaReportLocationTdEnginService {
      * @date 2025-01-31
      */
     R<List<Map<String, Object>>> getTodayTrajectoryByIdCard(String idCard);
+
+    /**
+     * 获取指定身份证号在指定日期的第一条和最后一条时间记录
+     * 
+     * @param idCard  身份证号
+     * @param dateStr 日期字符串，格式：yyyy-MM-dd
+     * @return Map包含firstTime和lastTime
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    R<Map<String, Object>> getFirstAndLastTimeByIdCardAndDate(String idCard, String dateStr);
+
+    /**
+     * 获取指定身份证号在指定日期和工作时间范围内的第一条和最后一条时间记录
+     * 
+     * @param idCard        身份证号
+     * @param dateStr       日期字符串，格式：yyyy-MM-dd
+     * @param workTimeRange 工作时间范围，格式：HH:mm-HH:mm（如18:00-03:30）
+     * @return Map包含firstTime和lastTime
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    R<Map<String, Object>> getFirstAndLastTimeByIdCardAndDate(String idCard, String dateStr, String workTimeRange);
 }
