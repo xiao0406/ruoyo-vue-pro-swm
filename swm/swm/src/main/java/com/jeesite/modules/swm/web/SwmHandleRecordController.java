@@ -396,7 +396,7 @@ public class SwmHandleRecordController extends BaseController {
     public Map<String, Object> getUnhandledWarnings(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "1") int pageNum,
-            @RequestParam(required = false, defaultValue = "10") int pageSize) {
+            @RequestParam(required = false, defaultValue = "50") int pageSize) {
         Map<String, Object> result = new HashMap<>();
 
         try {
