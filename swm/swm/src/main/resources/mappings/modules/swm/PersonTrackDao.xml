@@ -28,7 +28,13 @@
             a.update_by AS updateBy,
             a.update_date AS updateDate,
             a.remarks AS remarks,
-            a.status AS status
+            a.status AS status,
+            -- 关联表的ID字段 2025/06/24 Shawn 添加
+            f.id AS workerArchiveId,                    -- 工人档案ID
+            o.office_code AS officeCode,                -- 组织编码
+            p.id AS positionArchiveId,                  -- 车间ID
+            wg.id AS workGroupId,                       -- 班组ID
+            fpl.id AS prodLineId                        -- 产线ID
         FROM swm_person a 
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci 
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL 
@@ -63,7 +69,13 @@
             fpl.prod_line_name AS prodLine,
             wg.work_group_name AS teamGroup,
             f.work_type AS workType,
-            a.identity_card AS identityCard
+            a.identity_card AS identityCard,
+            -- 关联表的ID字段 2025/06/24 Shawn 添加
+            f.id AS workerArchiveId,                    -- 工人档案ID
+            o.office_code AS officeCode,                -- 组织编码
+            p.id AS positionArchiveId,                  -- 车间ID
+            wg.id AS workGroupId,                       -- 班组ID
+            fpl.id AS prodLineId                        -- 产线ID
         FROM swm_person a 
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci 
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL 
@@ -72,6 +84,27 @@
         LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
         WHERE a.identity_card = #{identityCard} AND a.personnel_status = '1' 
         LIMIT 1
+    </select>
+
+    <!-- 根据key值查询颜色信息 -->
+    <select id="getColorByKey" resultType="java.lang.String">
+        SELECT color 
+        FROM swm_helmet_subitem 
+        WHERE `key` = #{key} AND status = '0'
+        ORDER BY create_date DESC 
+        LIMIT 1
+    </select>
+
+    <!-- 批量查询颜色信息 -->
+    <select id="getColorsByKeys" resultType="java.util.Map">
+        SELECT `key`, color 
+        FROM swm_helmet_subitem 
+        WHERE `key` IN 
+        <foreach collection="keys" item="key" open="(" separator="," close=")">
+            #{key}
+        </foreach>
+        AND status = '0'
+        ORDER BY create_date DESC
     </select>
     
 </mapper> 

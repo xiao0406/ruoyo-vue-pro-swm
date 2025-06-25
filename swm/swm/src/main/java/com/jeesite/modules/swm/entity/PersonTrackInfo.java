@@ -34,6 +34,16 @@ public class PersonTrackInfo extends DataEntity<PersonTrackInfo> {
     private String departureReason; // 离职原因
     private Date departureDate; // 离职时间
 
+    // 关联表的ID字段 2025/06/24 Shawn 添加
+    private String workerArchiveId; // 工人档案ID
+    private String officeCode; // 组织编码
+    private String positionArchiveId; // 车间ID
+    private String workGroupId; // 班组ID
+    private String prodLineId; // 产线ID
+
+    // 颜色相关字段 2025/06/24 Shawn 添加
+    private String personTypeColor; // 人员类型颜色
+
     public PersonTrackInfo() {
         this(null);
     }
@@ -176,5 +186,54 @@ public class PersonTrackInfo extends DataEntity<PersonTrackInfo> {
 
     public void setDepartureDate(Date departureDate) {
         this.departureDate = departureDate;
+    }
+
+    // 关联表ID字段的getter和setter 2025/06/24 Shawn 添加
+    public String getWorkerArchiveId() {
+        return workerArchiveId;
+    }
+
+    public void setWorkerArchiveId(String workerArchiveId) {
+        this.workerArchiveId = workerArchiveId;
+    }
+
+    public String getOfficeCode() {
+        return officeCode;
+    }
+
+    public void setOfficeCode(String officeCode) {
+        this.officeCode = officeCode;
+    }
+
+    public String getPositionArchiveId() {
+        return positionArchiveId;
+    }
+
+    public void setPositionArchiveId(String positionArchiveId) {
+        this.positionArchiveId = positionArchiveId;
+    }
+
+    public String getWorkGroupId() {
+        return workGroupId;
+    }
+
+    public void setWorkGroupId(String workGroupId) {
+        this.workGroupId = workGroupId;
+    }
+
+    public String getProdLineId() {
+        return prodLineId;
+    }
+
+    public void setProdLineId(String prodLineId) {
+        this.prodLineId = prodLineId;
+    }
+
+    public String getPersonTypeColor() {
+        return personTypeColor;
+    }
+
+    public void setPersonTypeColor(String personTypeColor) {
+        this.personTypeColor = personTypeColor;
     }
 }

@@ -55,10 +55,54 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
             // 收集所有身份证号，用于批量查询坐标
             List<String> idCardList = new ArrayList<>();
+            // 收集所有需要查询颜色的key值 2025/06/24 Shawn 添加
+            Set<String> colorKeys = new HashSet<>();
+
             for (PersonTrackInfo person : dbResults) {
                 String identityCard = person.getIdentityCard();
                 if (identityCard != null && !identityCard.trim().isEmpty()) {
                     idCardList.add(identityCard);
+                }
+
+                // 收集颜色查询的key值
+                if (person.getPersonType() != null && !person.getPersonType().trim().isEmpty()) {
+                    colorKeys.add(person.getPersonType());
+                }
+                if (person.getWorkType() != null && !person.getWorkType().trim().isEmpty()) {
+                    colorKeys.add(person.getWorkType());
+                }
+                if (person.getWorkerArchiveId() != null && !person.getWorkerArchiveId().trim().isEmpty()) {
+                    colorKeys.add(person.getWorkerArchiveId());
+                }
+                if (person.getOfficeCode() != null && !person.getOfficeCode().trim().isEmpty()) {
+                    colorKeys.add(person.getOfficeCode());
+                }
+                if (person.getPositionArchiveId() != null && !person.getPositionArchiveId().trim().isEmpty()) {
+                    colorKeys.add(person.getPositionArchiveId());
+                }
+                if (person.getWorkGroupId() != null && !person.getWorkGroupId().trim().isEmpty()) {
+                    colorKeys.add(person.getWorkGroupId());
+                }
+                if (person.getProdLineId() != null && !person.getProdLineId().trim().isEmpty()) {
+                    colorKeys.add(person.getProdLineId());
+                }
+            }
+
+            // 批量查询颜色信息 2025/06/24 Shawn 添加
+            Map<String, String> colorMap = new HashMap<>();
+            if (!colorKeys.isEmpty()) {
+                try {
+                    List<Map<String, Object>> colorResults = personTrackDao.getColorsByKeys(new ArrayList<>(colorKeys));
+                    for (Map<String, Object> colorResult : colorResults) {
+                        String key = (String) colorResult.get("key");
+                        String color = (String) colorResult.get("color");
+                        if (key != null && color != null) {
+                            colorMap.put(key, color);
+                        }
+                    }
+                    logger.info("从swm_helmet_subitem查询到 {} 个颜色配置", colorMap.size());
+                } catch (Exception e) {
+                    logger.error("查询颜色配置异常", e);
                 }
             }
 
@@ -115,7 +159,8 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                             int x = (int) Math.round(Double.parseDouble(xObj.toString()));
                             int y = (int) Math.round(Double.parseDouble(yObj.toString()));
 
-                            Map<String, Object> position = createPersonPosition(
+                            // 创建人员位置信息，包含颜色信息 2025/06/24 Shawn 修改
+                            Map<String, Object> position = createPersonPositionWithColors(
                                     personId,
                                     name,
                                     x,
@@ -127,7 +172,9 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                                     "8小时", // 工作时长默认值
                                     "正常考勤", // 考勤状态默认值
                                     identityCard,
-                                    true); // 标记为真实位置
+                                    true, // 标记为真实位置
+                                    person, // 传入完整的person对象
+                                    colorMap); // 传入颜色映射
 
                             positions.add(position);
                             logger.info("添加身份证 {} ({}) 的真实坐标: x={}, y={}", identityCard, name, x, y);
@@ -263,5 +310,54 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
             String workHours, String attendance, String identityCard) {
         return createPersonPosition(id, name, x, y, workType, organization, workShop, teamGroup,
                 workHours, attendance, identityCard, false);
+    }
+
+    /**
+     * 创建人员位置信息对象，包含颜色信息
+     * 
+     * @param id              人员ID
+     * @param name            姓名
+     * @param x               X坐标
+     * @param y               Y坐标
+     * @param workType        工种
+     * @param organization    单位
+     * @param workShop        车间
+     * @param teamGroup       班组
+     * @param workHours       工作时长
+     * @param attendance      考勤状态
+     * @param identityCard    身份证号
+     * @param hasRealLocation 是否为真实位置
+     * @param person          完整的person对象
+     * @param colorMap        颜色映射
+     * @return 人员位置信息Map
+     * @author Shawn
+     * @date 2025/06/24
+     */
+    private Map<String, Object> createPersonPositionWithColors(String id, String name, int x, int y, String workType,
+            String organization, String workShop, String teamGroup,
+            String workHours, String attendance, String identityCard, boolean hasRealLocation,
+            PersonTrackInfo person, Map<String, String> colorMap) {
+
+        // 创建基础的人员位置信息
+        Map<String, Object> position = createPersonPosition(id, name, x, y, workType, organization, workShop, teamGroup,
+                workHours, attendance, identityCard, hasRealLocation);
+
+        // 添加颜色信息 2025/06/24 Shawn 添加
+        position.put("personTypeColor", colorMap.get(person.getPersonType()));
+        position.put("workTypeColor", colorMap.get(person.getWorkType()));
+        position.put("workerArchiveColor", colorMap.get(person.getWorkerArchiveId()));
+        position.put("officeCodeColor", colorMap.get(person.getOfficeCode()));
+        position.put("positionArchiveColor", colorMap.get(person.getPositionArchiveId()));
+        position.put("workGroupColor", colorMap.get(person.getWorkGroupId()));
+        position.put("prodLineColor", colorMap.get(person.getProdLineId()));
+
+        // 添加ID字段，便于前端使用
+        position.put("workerArchiveId", person.getWorkerArchiveId());
+        position.put("officeCode", person.getOfficeCode());
+        position.put("positionArchiveId", person.getPositionArchiveId());
+        position.put("workGroupId", person.getWorkGroupId());
+        position.put("prodLineId", person.getProdLineId());
+
+        return position;
     }
 }
