@@ -9,6 +9,7 @@ import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmHazardSource;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
+import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
@@ -53,8 +54,10 @@ public class SwmDashboardController extends BaseController {
     private SwmHazardSourceService swmHazardSourceService;
     @Autowired
     private SwmDailyAttendanceService swmDailyAttendanceService;
-  @Autowired
+    @Autowired
     private TDengineService tdengineService;
+    @Autowired
+    private SwmBeaconStationService swmBeaconStationService;
 
     /**
      * 获取启用状态的地图路径
@@ -84,6 +87,35 @@ public class SwmDashboardController extends BaseController {
 
         return result;
     }
+
+    /**
+     * 获取危险源信标的分布密度数据（用于热力图展示）
+     */
+    @GetMapping(value = "hazardBeaconHeatmap")
+    @ResponseBody
+    @ApiOperation("获取危险源信标的分布密度数据（用于热力图展示）")
+    public Map<String, Object> hazardBeaconHeatmap() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 调用Service层方法获取热力图数据
+            List<Map<String, Object>> heatmapData = swmDashboardService.getHazardBeaconHeatmapData();
+            
+            // 封装返回结果
+            result.put("success", true);
+            result.put("data", heatmapData);
+            result.put("total", heatmapData.size());
+            result.put("message", "获取危险源信标分布密度数据成功");
+            
+        } catch (Exception e) {
+            logger.error("获取危险源信标分布密度数据失败", e);
+            result.put("success", false);
+            result.put("message", "获取危险源信标分布密度数据失败: " + e.getMessage());
+        }
+
+        return result;
+    }
+    
 
     /**
      * 近七日预警报警统计

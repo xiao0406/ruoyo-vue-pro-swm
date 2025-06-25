@@ -10,6 +10,7 @@ import com.jeesite.common.lang.DateUtils;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
+import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.utils.R;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,6 +39,9 @@ public class SwmDashboardService {
     
     @Autowired
     private SwmWarningManagementService swmWarningManagementService;
+    
+    @Autowired
+    private SwmBeaconStationService swmBeaconStationService;
     
     /**
      * 获取启用状态的地图路径
@@ -355,5 +359,49 @@ public class SwmDashboardService {
         }
         
         return lowBatteryCount;
+    }
+
+    /**
+     * 获取危险源信标的分布密度数据（用于热力图展示）
+     * 
+     * @return 包含热力图数据的列表
+     */
+    public List<Map<String, Object>> getHazardBeaconHeatmapData() {
+        // 创建查询对象，筛选危险源信标（beacon_type=3）
+        SwmBeaconStation query = new SwmBeaconStation();
+        query.setBeaconType(SwmBeaconStation.BeaconTypeEnum.DANGEROUS_SOURCE);
+        
+        // 只查询已部署的信标 (先这样写，后面再改)
+        query.setDeployStatus("已部署");
+        
+        // 执行查询
+        List<SwmBeaconStation> beaconList = swmBeaconStationService.findList(query);
+        
+        // 转换为热力图所需格式
+        List<Map<String, Object>> heatmapData = new ArrayList<>();
+        
+        if (beaconList != null && !beaconList.isEmpty()) {
+            for (SwmBeaconStation beacon : beaconList) {
+                // 确保坐标不为空
+                if (beacon.getPixelX() != null && beacon.getPixelY() != null) {
+                    Map<String, Object> point = new HashMap<>();
+                    point.put("x", beacon.getPixelX());
+                    point.put("y", beacon.getPixelY());
+                    // 默认权重为1，表示每个点的热度相同
+                    point.put("value", 1);
+                    
+                    // 添加额外信息，用于展示详情
+                    point.put("id", beacon.getId());
+                    point.put("beaconId", beacon.getBeaconId());
+                    point.put("deviceName", beacon.getDeviceName());
+                    point.put("location", beacon.getLocation());
+                    point.put("area", beacon.getArea());
+                    
+                    heatmapData.add(point);
+                }
+            }
+        }
+        
+        return heatmapData;
     }
 } 

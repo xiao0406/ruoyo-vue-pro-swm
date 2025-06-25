@@ -123,7 +123,6 @@ public class SwmPersonCacheService {
         // 只缓存需要的字段
         personInfo.put("id", person.getId()); // 人员ID
         personInfo.put("name", person.getName()); // 姓名
-        personInfo.put("personType", person.getPersonType()); // 人员类型 - 2025/06/24 Shawn 添加
         personInfo.put("company", person.getCompany()); // 所属单位
         personInfo.put("department", person.getDepartment()); // 所属车间
         personInfo.put("prodLine", person.getProdLine()); // 产线
@@ -148,7 +147,6 @@ public class SwmPersonCacheService {
         // 基本字段
         personInfo.put("id", personData.get("id")); // 人员ID
         personInfo.put("name", personData.get("name")); // 姓名
-        personInfo.put("personType", personData.get("personType")); // 人员类型 - 2025/06/24 Shawn 添加
         personInfo.put("company", personData.get("company")); // 所属单位
         personInfo.put("department", personData.get("department")); // 所属车间
         personInfo.put("prodLine", personData.get("prodLine")); // 产线

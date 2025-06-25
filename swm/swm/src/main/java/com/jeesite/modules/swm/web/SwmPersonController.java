@@ -926,7 +926,7 @@ public class SwmPersonController extends BaseController {
     }
 
     /**
-     * 获取当天有坐标数据的所有在职人员缓存信息
+     * 从缓存中获取当天有坐标数据的在职人员信息，附带身份证号
      * 
      * @return 人员信息映射
      * @author Shawn
@@ -934,7 +934,8 @@ public class SwmPersonController extends BaseController {
      */
     @GetMapping(value = "getAllActivePersonsWithIdCardFromCache")
     @ResponseBody
-    public Map<String, Object> getAllActivePersonsWithIdCardFromCache() {
+    public Map<String, Object> getAllActivePersonsWithIdCardFromCache(
+            @RequestParam(value = "keyword", required = false) String keyword) {
         Map<String, Object> result = new HashMap<>();
 
         try {
@@ -955,13 +956,79 @@ public class SwmPersonController extends BaseController {
                 return result;
             }
 
-            // 收集所有身份证号
+            // 收集所有身份证号，同时应用关键词过滤
             List<String> allIdCards = new ArrayList<>();
+            boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+            String lowerKeyword = hasKeyword ? keyword.toLowerCase() : "";
+
             for (Map.Entry<Object, Object> entry : allPersons.entrySet()) {
                 if (entry.getValue() instanceof Map) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> personData = (Map<String, Object>) entry.getValue();
                     String idCard = (String) personData.get("identityCard");
+                    
+                    // 如果有关键词，判断是否匹配
+                    if (hasKeyword) {
+                        boolean matched = false;
+                        
+                        // 匹配姓名
+                        String name = (String) personData.get("name");
+                        if (name != null && name.toLowerCase().contains(lowerKeyword)) {
+                            matched = true;
+                        }
+                        
+                        // 匹配身份证号
+                        if (!matched && idCard != null && idCard.toLowerCase().contains(lowerKeyword)) {
+                            matched = true;
+                        }
+                        
+                        // 匹配所属单位
+                        if (!matched) {
+                            String company = (String) personData.get("company");
+                            if (company != null && company.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 匹配所属车间
+                        if (!matched) {
+                            String department = (String) personData.get("department");
+                            if (department != null && department.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 匹配产线
+                        if (!matched) {
+                            String prodLine = (String) personData.get("prodLine");
+                            if (prodLine != null && prodLine.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 匹配所属班组
+                        if (!matched) {
+                            String team = (String) personData.get("team");
+                            if (team != null && team.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 匹配工种
+                        if (!matched) {
+                            String jobType = (String) personData.get("jobType");
+                            if (jobType != null && jobType.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 如果不匹配，跳过此人员
+                        if (!matched) {
+                            continue;
+                        }
+                    }
+                    
+                    // 添加有效的身份证号
                     if (idCard != null && !idCard.trim().isEmpty()) {
                         allIdCards.add(idCard);
                     }
@@ -972,7 +1039,7 @@ public class SwmPersonController extends BaseController {
                 result.put("success", true);
                 result.put("data", new ArrayList<>());
                 result.put("total", 0);
-                result.put("message", "没有有效的身份证号码");
+                result.put("message", hasKeyword ? "没有匹配关键词的人员" : "没有有效的身份证号码");
                 return result;
             }
 
@@ -1009,6 +1076,67 @@ public class SwmPersonController extends BaseController {
                     
                     // 获取身份证信息
                     String idCard = (String) personData.get("identityCard");
+                    
+                    // 如果有关键词，判断是否匹配
+                    if (hasKeyword) {
+                        boolean matched = false;
+                        
+                        // 匹配姓名
+                        String name = (String) personData.get("name");
+                        if (name != null && name.toLowerCase().contains(lowerKeyword)) {
+                            matched = true;
+                        }
+                        
+                        // 匹配身份证号
+                        if (!matched && idCard != null && idCard.toLowerCase().contains(lowerKeyword)) {
+                            matched = true;
+                        }
+                        
+                        // 匹配所属单位
+                        if (!matched) {
+                            String company = (String) personData.get("company");
+                            if (company != null && company.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 匹配所属车间
+                        if (!matched) {
+                            String department = (String) personData.get("department");
+                            if (department != null && department.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 匹配产线
+                        if (!matched) {
+                            String prodLine = (String) personData.get("prodLine");
+                            if (prodLine != null && prodLine.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 匹配所属班组
+                        if (!matched) {
+                            String team = (String) personData.get("team");
+                            if (team != null && team.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 匹配工种
+                        if (!matched) {
+                            String jobType = (String) personData.get("jobType");
+                            if (jobType != null && jobType.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+                        
+                        // 如果不匹配，跳过此人员
+                        if (!matched) {
+                            continue;
+                        }
+                    }
                     
                     // 检查是否有坐标数据
                     if (idCard != null && !idCard.isEmpty() && idCardsWithCoordinates.contains(idCard)) {
