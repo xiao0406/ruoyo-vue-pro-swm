@@ -95,7 +95,7 @@ public class AttendanceTask {
             // 查询指定日期的所有考勤记录
             SwmDailyAttendance query = new SwmDailyAttendance();
             query.setAttendanceDate(targetDate);
-            query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
+            // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
 
             if (attendanceList.isEmpty()) {
