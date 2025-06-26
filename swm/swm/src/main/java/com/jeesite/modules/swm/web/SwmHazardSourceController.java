@@ -78,13 +78,13 @@ public class SwmHazardSourceController extends BaseController {
         for (SwmHazardSource item : page.getList()) {
             // 危险源类别
             if ("0".equals(item.getHazardCategory())) {
-                item.setHazardCategoryText("火灾风险");
+                item.setHazardCategoryText("气站");
             } else if ("1".equals(item.getHazardCategory())) {
-                item.setHazardCategoryText("高处坠落风险");
+                item.setHazardCategoryText("吊钩");
             } else if ("2".equals(item.getHazardCategory())) {
-                item.setHazardCategoryText("物体打击风险");
+                item.setHazardCategoryText("油漆库");
             } else if ("3".equals(item.getHazardCategory())) {
-                item.setHazardCategoryText("触电风险");
+                item.setHazardCategoryText("空压机房");
             } else if ("4".equals(item.getHazardCategory())) {
                 item.setHazardCategoryText("机械伤害风险");
             } else if ("5".equals(item.getHazardCategory())) {

@@ -116,6 +116,40 @@ public class SwmDashboardController extends BaseController {
         return result;
     }
     
+    /**
+     * 获取违规热力图数据（靠近危险源信标的报警汇总，用于密度分布展示）
+     */
+    @GetMapping(value = "violationHeatmap")
+    @ResponseBody
+    @ApiOperation("获取违规热力图数据（靠近危险源信标的报警汇总，用于密度分布展示）")
+    public Map<String, Object> violationHeatmap(
+            @RequestParam(value = "month", required = false) String month) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 如果未指定月份，则使用当前月份
+            if (StringUtils.isBlank(month)) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+                month = sdf.format(new Date());
+            }
+            
+            // 调用Service层方法获取热力图数据
+            List<Map<String, Object>> heatmapData = swmDashboardService.getViolationHeatmapData(month);
+            
+            // 封装返回结果
+            result.put("success", true);
+            result.put("data", heatmapData);
+            result.put("total", heatmapData.size());
+            result.put("message", "获取违规热力图数据成功");
+            
+        } catch (Exception e) {
+            logger.error("获取违规热力图数据失败", e);
+            result.put("success", false);
+            result.put("message", "获取违规热力图数据失败: " + e.getMessage());
+        }
+
+        return result;
+    }
 
     /**
      * 近七日预警报警统计

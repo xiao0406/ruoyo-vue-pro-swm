@@ -238,6 +238,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                 result.put("teamGroup", person.getTeamGroup() != null ? person.getTeamGroup() : "未知班组");
                 result.put("workType", person.getWorkType() != null ? person.getWorkType() : "待分配");
                 result.put("identityCard", person.getIdentityCard());
+                result.put("phoneNumber", person.getPhoneNumber());
 
                 return result;
             }
@@ -357,6 +358,9 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         position.put("positionArchiveId", person.getPositionArchiveId());
         position.put("workGroupId", person.getWorkGroupId());
         position.put("prodLineId", person.getProdLineId());
+        
+        // 添加手机号字段
+        position.put("phoneNumber", person.getPhoneNumber());
 
         return position;
     }
