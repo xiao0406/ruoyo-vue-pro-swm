@@ -42,6 +42,8 @@ public class AttendanceTask {
     private SwmScheduleTimeService swmScheduleTimeService;
     @Autowired
     private HelmetRundeCaReportLocationTdEnginService helmetTdengineService;
+    @Autowired
+    private SwmJobLogService swmJobLogService;
 
     /**
      * 计算怠工时长定时任务，工作时长定时任务
@@ -51,11 +53,18 @@ public class AttendanceTask {
      */
     @XxlJob("calculateIdleHours")
     public void calculateIdleHours() {
+        SwmJobLog jobLog = new SwmJobLog();
+        jobLog.setJobName("calculateIdleHours");
+        jobLog.setStartTime(new Date());
+        jobLog.setExecuteStatus("1"); // 默认失败
         try {
             XxlJobHelper.log("开始执行怠工时长计算任务...");
 
             // 获取传入的日期参数，如果没有传入则使用当天
             String jobParam = XxlJobHelper.getJobParam();
+            jobLog.setJobParam(jobParam);
+            swmJobLogService.save(jobLog);
+            jobLog.setIsNewRecord(false);
             Date targetDate;
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -249,8 +258,14 @@ public class AttendanceTask {
             }
 
             XxlJobHelper.log("怠工时长计算任务完成。成功: {}条，失败: {}条", successCount, failCount);
+            jobLog.setExecuteStatus("0"); // 成功
         } catch (Exception e) {
             XxlJobHelper.log("怠工时长计算任务执行异常", e);
+            jobLog.setExceptionInfo(e.getMessage());
+        } finally {
+            jobLog.setEndTime(new Date());
+            jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
+            swmJobLogService.save(jobLog);
         }
     }
 
