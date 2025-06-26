@@ -405,7 +405,16 @@ public class AttendanceTask {
      */
     @XxlJob("createDailyAttendance")
     public void createDailyAttendance() {
+        SwmJobLog jobLog = new SwmJobLog();
+        jobLog.setJobName("createDailyAttendance");
+        jobLog.setStartTime(new Date());
+        jobLog.setExecuteStatus("1"); // 默认失败
         try {
+            String jobParam = XxlJobHelper.getJobParam();
+            jobLog.setJobParam(jobParam);
+            swmJobLogService.save(jobLog);
+            jobLog.setIsNewRecord(false);
+
             XxlJobHelper.log("开始执行每日考勤数据创建任务...");
 
             // 1. 获取当前日期
@@ -420,6 +429,7 @@ public class AttendanceTask {
 
             if (activePersons.isEmpty()) {
                 XxlJobHelper.log("没有在职人员，无需创建考勤记录");
+                jobLog.setExecuteStatus("0"); // 成功
                 return;
             }
 
@@ -472,8 +482,14 @@ public class AttendanceTask {
             }
 
             XxlJobHelper.log("每日考勤数据创建任务完成。共创建{}条记录，更新{}条记录", createdCount, updatedCount);
+            jobLog.setExecuteStatus("0");
         } catch (Exception e) {
             XxlJobHelper.log("创建每日考勤数据时发生异常", e);
+            jobLog.setExceptionInfo(e.getMessage());
+        } finally {
+            jobLog.setEndTime(new Date());
+            jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
+            swmJobLogService.save(jobLog);
         }
     }
 
