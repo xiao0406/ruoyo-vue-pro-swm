@@ -379,78 +379,101 @@ public class PersonTrackController extends BaseController {
 
         List<Map<String, Object>> trajectoryPoints = new ArrayList<>();
 
-        // 从external_coordinate_data表获取真实轨迹数据
-        if (idCard != null && !idCard.trim().isEmpty()) {
+        try {
+            // 获取手机号
+            String phoneNumber = null;
             try {
-                R<List<Map<String, Object>>> trajectoryResult;
-
-                // 如果指定了时间范围参数，使用时间范围查询；否则使用当天查询
-                if (startDate != null || endDate != null || startTime != null || endTime != null) {
-                    trajectoryResult = externalCoordinateDataService
-                            .getTrajectoryByIdCardAndTimeRange(idCard, startDate, endDate, startTime, endTime);
-                } else {
-                    trajectoryResult = externalCoordinateDataService
-                            .getTodayTrajectoryByIdCard(idCard);
+                Map<String, Object> personInfo = getPersonByIdCard(idCard);
+                if (personInfo != null && personInfo.containsKey("phoneNumber")) {
+                    phoneNumber = (String) personInfo.get("phoneNumber");
                 }
-                if (trajectoryResult.getCode() == R.SUCCESS && trajectoryResult.getData() != null) {
-                    List<Map<String, Object>> realTrajectory = trajectoryResult.getData();
+            } catch (Exception e) {
+                logger.warn("获取身份证 {} ({}) 的手机号失败", idCard, personName);
+            }
 
-                    if (!realTrajectory.isEmpty()) {
-                        logger.info("身份证 {} ({}) 从external_coordinate_data获取到 {} 个真实轨迹点", idCard, personName,
-                                realTrajectory.size());
+            // 尝试从外部坐标数据服务获取位置数据
+            try {
+                // 从external_coordinate_data表获取真实轨迹数据
+                if (idCard != null && !idCard.trim().isEmpty()) {
+                    try {
+                        R<List<Map<String, Object>>> trajectoryResult;
 
-                        // 将external_coordinate_data数据转换为前端需要的格式
-                        for (Map<String, Object> point : realTrajectory) {
-                            Object xObj = point.get("x");
-                            Object yObj = point.get("y");
-                            Object timeObj = point.get("time");
+                        // 如果指定了时间范围参数，使用时间范围查询；否则使用当天查询
+                        if (startDate != null || endDate != null || startTime != null || endTime != null) {
+                            trajectoryResult = externalCoordinateDataService
+                                    .getTrajectoryByIdCardAndTimeRange(idCard, startDate, endDate, startTime, endTime);
+                        } else {
+                            trajectoryResult = externalCoordinateDataService
+                                    .getTodayTrajectoryByIdCard(idCard);
+                        }
+                        if (trajectoryResult.getCode() == R.SUCCESS && trajectoryResult.getData() != null) {
+                            List<Map<String, Object>> realTrajectory = trajectoryResult.getData();
 
-                            if (xObj != null && yObj != null) {
-                                try {
-                                    // 转换坐标为整数
-                                    int x = (int) Math.round(Double.parseDouble(xObj.toString()));
-                                    int y = (int) Math.round(Double.parseDouble(yObj.toString()));
+                            if (!realTrajectory.isEmpty()) {
+                                logger.info("身份证 {} ({}) 从external_coordinate_data获取到 {} 个真实轨迹点", idCard, personName,
+                                        realTrajectory.size());
 
-                                    Map<String, Object> trajectoryPoint = createPersonPosition(
-                                            personId != null ? personId.toString() : "0",
-                                            personName,
-                                            x,
-                                            y,
-                                            workType != null ? workType : "待分配",
-                                            organization != null ? organization : "未知单位",
-                                            workShop != null ? workShop : "未知车间",
-                                            teamGroup != null ? teamGroup : "未知班组",
-                                            "8小时",
-                                            "正常考勤",
-                                            idCard);
+                                // 将external_coordinate_data数据转换为前端需要的格式
+                                for (Map<String, Object> point : realTrajectory) {
+                                    Object xObj = point.get("x");
+                                    Object yObj = point.get("y");
+                                    Object timeObj = point.get("time");
 
-                                    // 添加时间信息
-                                    trajectoryPoint.put("time", timeObj);
-                                    trajectoryPoint.put("hasRealLocation", true);
+                                    if (xObj != null && yObj != null) {
+                                        try {
+                                            // 转换坐标为整数
+                                            int x = (int) Math.round(Double.parseDouble(xObj.toString()));
+                                            int y = (int) Math.round(Double.parseDouble(yObj.toString()));
 
-                                    trajectoryPoints.add(trajectoryPoint);
-                                } catch (NumberFormatException e) {
-                                    logger.warn("身份证 {} 坐标数据格式错误，跳过该点: x={}, y={}", idCard, xObj, yObj);
+                                            Map<String, Object> trajectoryPoint = createPersonPosition(
+                                                    personId != null ? personId.toString() : "0",
+                                                    personName,
+                                                    x,
+                                                    y,
+                                                    workType != null ? workType : "待分配",
+                                                    organization != null ? organization : "未知单位",
+                                                    workShop != null ? workShop : "未知车间",
+                                                    teamGroup != null ? teamGroup : "未知班组",
+                                                    "8小时",
+                                                    "正常考勤",
+                                                    idCard,
+                                                    phoneNumber);
+
+                                            // 添加时间信息
+                                            trajectoryPoint.put("time", timeObj);
+                                            trajectoryPoint.put("hasRealLocation", true);
+
+                                            trajectoryPoints.add(trajectoryPoint);
+                                        } catch (NumberFormatException e) {
+                                            logger.warn("身份证 {} 坐标数据格式错误，跳过该点: x={}, y={}", idCard, xObj, yObj);
+                                        }
+                                    }
+                                }
+
+                                if (!trajectoryPoints.isEmpty()) {
+                                    logger.info("身份证 {} ({}) 成功转换 {} 个轨迹点", idCard, personName, trajectoryPoints.size());
+                                    return trajectoryPoints;
                                 }
                             }
                         }
 
-                        if (!trajectoryPoints.isEmpty()) {
-                            logger.info("身份证 {} ({}) 成功转换 {} 个轨迹点", idCard, personName, trajectoryPoints.size());
-                            return trajectoryPoints;
-                        }
+                        logger.info("身份证 {} ({}) 从external_coordinate_data未找到轨迹数据", idCard, personName);
+                    } catch (Exception e) {
+                        logger.error("从external_coordinate_data获取身份证 {} ({}) 轨迹数据异常", idCard, personName, e);
                     }
                 }
 
-                logger.info("身份证 {} ({}) 从external_coordinate_data未找到轨迹数据", idCard, personName);
+                // 如果没有获取到真实数据，返回空列表
+                logger.info("身份证 {} ({}) 无轨迹数据", idCard, personName);
+                return trajectoryPoints;
             } catch (Exception e) {
-                logger.error("从external_coordinate_data获取身份证 {} ({}) 轨迹数据异常", idCard, personName, e);
+                logger.error("获取轨迹点失败", e);
+                return trajectoryPoints;
             }
+        } catch (Exception e) {
+            logger.error("获取轨迹点失败", e);
+            return trajectoryPoints;
         }
-
-        // 如果没有获取到真实数据，返回空列表
-        logger.info("身份证 {} ({}) 无轨迹数据", idCard, personName);
-        return trajectoryPoints;
     }
 
     /**
@@ -458,7 +481,7 @@ public class PersonTrackController extends BaseController {
      */
     private Map<String, Object> createPersonPosition(String id, String name, int x, int y,
             String workType, String organization, String workShop,
-            String teamGroup, String workHours, String attendanceStatus, String idCard) {
+            String teamGroup, String workHours, String attendanceStatus, String idCard, String phoneNumber) {
 
         Map<String, Object> position = new HashMap<>();
         position.put("x", x);
@@ -472,8 +495,20 @@ public class PersonTrackController extends BaseController {
         position.put("workHours", workHours);
         position.put("attendanceStatus", attendanceStatus);
         position.put("idCard", idCard);
+        position.put("phoneNumber", phoneNumber);
 
         return position;
+    }
+
+    /**
+     * 创建人员位置信息对象（兼容旧版本）
+     */
+    private Map<String, Object> createPersonPosition(String id, String name, int x, int y,
+            String workType, String organization, String workShop,
+            String teamGroup, String workHours, String attendanceStatus, String idCard) {
+        
+        return createPersonPosition(id, name, x, y, workType, organization, workShop, 
+            teamGroup, workHours, attendanceStatus, idCard, null);
     }
 
     /**

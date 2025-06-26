@@ -14,6 +14,10 @@ import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.utils.R;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 /**
  * 大屏数据看板Service
@@ -24,6 +28,9 @@ import java.util.stream.Collectors;
 @Service
 @Transactional(readOnly = true)
 public class SwmDashboardService {
+    
+    // 添加 logger 实例
+    private static final Logger logger = LoggerFactory.getLogger(SwmDashboardService.class);
 
     @Autowired
     private SwmSiteMapManagementService swmSiteMapManagementService;
@@ -372,36 +379,662 @@ public class SwmDashboardService {
         query.setBeaconType(SwmBeaconStation.BeaconTypeEnum.DANGEROUS_SOURCE);
         
         // 只查询已部署的信标 (先这样写，后面再改)
-        query.setDeployStatus("已部署");
+        query.setDeployStatus(SwmBeaconStation.DeployStatusEnum.DEPLOYED);
         
         // 执行查询
         List<SwmBeaconStation> beaconList = swmBeaconStationService.findList(query);
         
-        // 转换为热力图所需格式
-        List<Map<String, Object>> heatmapData = new ArrayList<>();
+        // 使用Map来合并相同坐标点的数据
+        Map<String, Map<String, Object>> pointMap = new HashMap<>();
         
         if (beaconList != null && !beaconList.isEmpty()) {
             for (SwmBeaconStation beacon : beaconList) {
                 // 确保坐标不为空
                 if (beacon.getPixelX() != null && beacon.getPixelY() != null) {
-                    Map<String, Object> point = new HashMap<>();
-                    point.put("x", beacon.getPixelX());
-                    point.put("y", beacon.getPixelY());
-                    // 默认权重为1，表示每个点的热度相同
-                    point.put("value", 1);
+                    // 使用x,y组合作为Map的键
+                    String key = beacon.getPixelX() + "," + beacon.getPixelY();
                     
-                    // 添加额外信息，用于展示详情
-                    point.put("id", beacon.getId());
-                    point.put("beaconId", beacon.getBeaconId());
-                    point.put("deviceName", beacon.getDeviceName());
-                    point.put("location", beacon.getLocation());
-                    point.put("area", beacon.getArea());
-                    
-                    heatmapData.add(point);
+                    // 如果坐标点已存在，增加权重值并添加信标信息
+                    if (pointMap.containsKey(key)) {
+                        Map<String, Object> point = pointMap.get(key);
+                        int value = (int) point.get("value");
+                        point.put("value", value + 1);
+                        
+                        // 更新该点的信标列表
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> beacons = (List<Map<String, Object>>) point.get("beacons");
+                        Map<String, Object> beaconInfo = new HashMap<>();
+                        beaconInfo.put("id", beacon.getId());
+                        beaconInfo.put("beaconId", beacon.getBeaconId());
+                        beaconInfo.put("deviceName", beacon.getDeviceName());
+                        beaconInfo.put("location", beacon.getLocation());
+                        beaconInfo.put("area", beacon.getArea());
+                        beacons.add(beaconInfo);
+                    } else {
+                        // 新建坐标点
+                        Map<String, Object> point = new HashMap<>();
+                        point.put("x", beacon.getPixelX());
+                        point.put("y", beacon.getPixelY());
+                        point.put("value", 1);
+                        
+                        // 添加信标信息列表
+                        List<Map<String, Object>> beacons = new ArrayList<>();
+                        Map<String, Object> beaconInfo = new HashMap<>();
+                        beaconInfo.put("id", beacon.getId());
+                        beaconInfo.put("beaconId", beacon.getBeaconId());
+                        beaconInfo.put("deviceName", beacon.getDeviceName());
+                        beaconInfo.put("location", beacon.getLocation());
+                        beaconInfo.put("area", beacon.getArea());
+                        beacons.add(beaconInfo);
+                        point.put("beacons", beacons);
+                        
+                        pointMap.put(key, point);
+                    }
                 }
             }
         }
         
+        // 将Map转换为列表
+        List<Map<String, Object>> heatmapData = new ArrayList<>(pointMap.values());
+        
+        // 输出统计信息
+        logger.info("查询到 {} 个危险源信标，合并后生成 {} 个热力点", 
+                beaconList != null ? beaconList.size() : 0, heatmapData.size());
+        
         return heatmapData;
+    }
+    
+    /**
+     * 获取违规热力图数据（靠近危险源信标的报警汇总，用于密度分布展示）
+     * 
+     * @param month 查询月份，格式 yyyy-MM
+     * @return 包含热力图数据的列表
+     */
+    public List<Map<String, Object>> getViolationHeatmapData(String month) {
+        List<Map<String, Object>> heatmapData = new ArrayList<>();
+        
+        try {
+            // 计算月份的起止时间戳
+            Calendar calendar = Calendar.getInstance();
+            
+            // 解析传入的月份
+            String[] parts = month.split("-");
+            int year = Integer.parseInt(parts[0]);
+            int monthOfYear = Integer.parseInt(parts[1]);
+            
+            // 设置为当月1号
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, monthOfYear - 1); // 月份从0开始
+            calendar.set(Calendar.DAY_OF_MONTH, 1);
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            
+            long startTime = calendar.getTimeInMillis();
+            
+            // 设置为下月1号
+            calendar.add(Calendar.MONTH, 1);
+            long endTime = calendar.getTimeInMillis();
+            
+            // TDengine数据库名
+            String dbname = "plb"; // 根据实际数据库名调整
+            
+            // 构建SQL查询语句 - 第一步：获取危险源报警记录
+            // 危险源报警类型为type=8
+            StringBuilder warningSQL = new StringBuilder();
+            warningSQL.append("SELECT device_id, id_card, warning_time FROM ")
+                    .append(dbname).append(".swm_warning_management")
+                    .append(" WHERE warning_time >= ").append(startTime)
+                    .append(" AND warning_time < ").append(endTime)
+                    .append(" AND type = 8")
+                    .append(" AND status = '0'");
+            
+            logger.debug("危险源报警查询SQL: {}", warningSQL.toString());
+            R<cn.hutool.json.JSONObject> warningResult = tdengineService.executeTDengineSQL(warningSQL.toString());
+            
+            // 处理警告查询结果
+            if (warningResult.getCode() != R.SUCCESS || warningResult.getData() == null) {
+                logger.warn("未查询到危险源报警记录，SQL: {}", warningSQL.toString());
+                return heatmapData;
+            }
+            
+            cn.hutool.json.JSONObject warningData = warningResult.getData();
+            cn.hutool.json.JSONArray warningRows = warningData.getJSONArray("data");
+            
+            if (warningRows == null || warningRows.size() == 0) {
+                logger.warn("危险源报警记录为空");
+                return heatmapData;
+            }
+            
+            logger.info("查询到{}条危险源报警记录", warningRows.size());
+            
+            // 预先创建日期格式化对象，避免重复创建
+            final java.text.SimpleDateFormat sdfUTC = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+            sdfUTC.setTimeZone(TimeZone.getTimeZone("UTC"));
+            
+            final java.text.SimpleDateFormat sdfLocal = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+            
+            // 使用并行流处理数据，提高性能
+            List<Map<String, Object>> violationList = Collections.synchronizedList(new ArrayList<>());
+            
+            // 并行处理所有行数据
+            IntStream.range(0, warningRows.size()).parallel().forEach(i -> {
+                cn.hutool.json.JSONArray row = warningRows.getJSONArray(i);
+                if (row != null && row.size() >= 3) {
+                    try {
+                        String deviceId = row.getStr(0);
+                        String idCard = row.getStr(1);
+                        
+                        // 添加更多日志，但减少日志输出频率以提高性能
+                        if (i % 100 == 0) {
+                            logger.debug("处理报警记录: deviceId={}, idCard={}, row={}", deviceId, idCard, row);
+                        }
+                        
+                        // 安全地获取warningTime值，先获取原始值
+                        Object warningTimeObj = row.get(2);
+                        Long warningTime = null;
+                        
+                        if (warningTimeObj != null) {
+                            // 根据实际类型进行转换
+                            if (warningTimeObj instanceof Long) {
+                                warningTime = (Long) warningTimeObj;
+                            } else if (warningTimeObj instanceof String) {
+                                try {
+                                    // 尝试解析ISO日期格式字符串
+                                    String timeStr = (String) warningTimeObj;
+                                    
+                                    // 使用预先创建的SimpleDateFormat对象，避免重复创建
+                                    synchronized (sdfUTC) {  // 同步访问，SimpleDateFormat不是线程安全的
+                                        if (timeStr.endsWith("Z")) {
+                                            // 处理ISO UTC格式，例如：2025-06-25T10:31:09.404Z
+                                            timeStr = timeStr.replace("T", " ")
+                                                            .replace("Z", "");
+                                            warningTime = sdfUTC.parse(timeStr).getTime();
+                                        } else {
+                                            // 处理普通日期时间格式
+                                            warningTime = sdfLocal.parse(timeStr).getTime();
+                                        }
+                                    }
+                                    
+                                    // 减少日志输出频率以提高性能
+                                    if (i % 100 == 0) {
+                                        logger.debug("解析日期字符串: {}, 转换后的warningTime: {}", timeStr, warningTime);
+                                    }
+                                } catch (Exception e) {
+                                    logger.warn("解析警告时间字符串失败: {}", warningTimeObj, e);
+                                }
+                            } else if (warningTimeObj instanceof Number) {
+                                warningTime = ((Number) warningTimeObj).longValue();
+                            }
+                        }
+                        
+                        // 只有当成功获取到时间才继续处理
+                        if (warningTime == null) {
+                            logger.warn("警告记录的时间为空或无法解析: deviceId={}, idCard={}, warningTimeObj={}", 
+                                    deviceId, idCard, warningTimeObj);
+                            return; // 在并行流中使用return而不是continue
+                        }
+                        
+                        // 获取设备ID后8位
+                        String deviceIdSuffix = "";
+                        if (deviceId != null && deviceId.length() >= 8) {
+                            deviceIdSuffix = deviceId.substring(deviceId.length() - 8);
+                        }
+                        
+                        if (!deviceIdSuffix.isEmpty() && idCard != null && !idCard.isEmpty()) {
+                            Map<String, Object> violation = new HashMap<>();
+                            violation.put("deviceIdSuffix", deviceIdSuffix);
+                            violation.put("idCard", idCard);
+                            violation.put("warningTime", warningTime);
+                            synchronized (violationList) {
+                                violationList.add(violation);
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.error("处理报警记录出错: row={}", row, e);
+                    }
+                }
+            });
+            
+            if (violationList.isEmpty()) {
+                logger.warn("有效的危险源报警记录为空");
+                return heatmapData;
+            }
+            
+            logger.info("处理后得到{}条有效报警记录", violationList.size());
+            
+            // 随机取几条记录进行日志输出，便于调试
+            if (!violationList.isEmpty()) {
+                int sampleSize = Math.min(5, violationList.size());
+                for (int i = 0; i < sampleSize; i++) {
+                    Map<String, Object> sample = violationList.get(i);
+                    logger.info("报警记录样本 #{}: deviceIdSuffix={}, idCard={}, warningTime={}", 
+                            i+1, sample.get("deviceIdSuffix"), sample.get("idCard"), 
+                            new Date((Long)sample.get("warningTime")));
+                }
+            }
+            
+            // 修改策略：不再使用一个大的批量查询，而是拆分为多个小查询，并使用更灵活的条件
+            List<Map<String, Object>> coordinateDataList = new ArrayList<>();
+            int batchSize = 5000; // 每批处理的记录数，从50改为200，提高效率
+            
+            // 统计信息
+            int totalBatches = (violationList.size() + batchSize - 1) / batchSize;
+            int successfulBatches = 0;
+            int totalCoordinatesFound = 0;
+            int targetCoordinatesCount = violationList.size(); // 目标坐标数据数量应等于报警记录数量
+            
+            for (int batchStart = 0; batchStart < violationList.size(); batchStart += batchSize) {
+                // 如果已经获取到足够的坐标数据，可以提前结束查询
+                if (totalCoordinatesFound >= targetCoordinatesCount) {
+                    logger.info("已获取到足够的坐标数据（{}），停止查询", totalCoordinatesFound);
+                    break;
+                }
+                
+                int batchEnd = Math.min(batchStart + batchSize, violationList.size());
+                List<Map<String, Object>> batch = violationList.subList(batchStart, batchEnd);
+                
+                int batchNumber = (batchStart / batchSize) + 1;
+                logger.info("处理报警记录批次 {}/{}, 大小: {}", 
+                        batchNumber, totalBatches, batch.size());
+                
+                // 查询这一批次的坐标数据
+                List<Map<String, Object>> batchResults = getCoordinateDataForBatch(batch, dbname);
+                if (batchResults != null && !batchResults.isEmpty()) {
+                    coordinateDataList.addAll(batchResults);
+                    totalCoordinatesFound += batchResults.size();
+                    successfulBatches++;
+                    logger.info("批次查询成功, 获取到{}条坐标数据, 累计: {}", 
+                            batchResults.size(), totalCoordinatesFound);
+                }
+            }
+            
+            logger.info("所有批次处理完成，{}/{}个批次成功，总共获取到{}条坐标数据", 
+                    successfulBatches, totalBatches, totalCoordinatesFound);
+            
+            // 如果没有找到足够的坐标数据，可以尝试使用更宽松的查询条件
+            if (totalCoordinatesFound < targetCoordinatesCount) {
+                logger.warn("坐标数据数量不足（{}），需要{}条，尝试使用更宽松的查询条件...", 
+                       totalCoordinatesFound, targetCoordinatesCount);
+                List<Map<String, Object>> relaxedResults = getCoordinateDataWithRelaxedConditions(violationList, dbname);
+                
+                if (relaxedResults != null && !relaxedResults.isEmpty()) {
+                    int additionalResults = relaxedResults.size();
+                    
+                    // 如果放宽条件后获取的记录数量超过了需要的数量，截断到目标数量
+                    int neededMore = targetCoordinatesCount - totalCoordinatesFound;
+                    if (additionalResults > neededMore) {
+                        relaxedResults = relaxedResults.subList(0, neededMore);
+                        additionalResults = neededMore;
+                    }
+                    
+                    coordinateDataList.addAll(relaxedResults);
+                    totalCoordinatesFound += additionalResults;
+                    logger.info("使用宽松条件额外获取到{}条坐标数据，累计: {}", 
+                            additionalResults, totalCoordinatesFound);
+                }
+            }
+            
+            if (coordinateDataList.isEmpty()) {
+                logger.warn("未找到任何坐标数据");
+                
+                // 输出最终统计
+                logger.info("======= 统计信息 =======");
+                logger.info("有效危险源报警记录总数: {}", violationList.size());
+                logger.info("成功获取坐标的记录数: 0");
+                logger.info("生成热力点数量: 0");
+                logger.info("=========================");
+                
+                return heatmapData;
+            }
+            
+            // 重置总坐标记录数，确保它反映的是实际处理的记录数
+            totalCoordinatesFound = 0;
+            
+            // 使用Map来合并相同坐标点的数据，统计每个坐标点上的违规次数
+            Map<String, Map<String, Object>> pointMap = new HashMap<>();
+            int totalValueSum = 0; // 用于验证value总和
+            int validCoordinateCount = 0; // 有效坐标记录数
+            
+            for (Map<String, Object> coordData : coordinateDataList) {
+                String elderId = (String) coordData.get("elderId");
+                String idCard = (String) coordData.get("idCard");
+                
+                // 修复类型转换问题，兼容Integer和Double两种类型
+                int x, y;
+                Object xObj = coordData.get("x");
+                Object yObj = coordData.get("y");
+                
+                if (xObj instanceof Integer) {
+                    x = (Integer) xObj;
+                } else if (xObj instanceof Double) {
+                    x = ((Double) xObj).intValue(); // 直接截断小数点后的数字，不进行四舍五入
+                } else {
+                    logger.warn("无效的x坐标类型: {}", xObj != null ? xObj.getClass().getName() : "null");
+                    continue;
+                }
+                
+                if (yObj instanceof Integer) {
+                    y = (Integer) yObj;
+                } else if (yObj instanceof Double) {
+                    y = ((Double) yObj).intValue(); // 直接截断小数点后的数字，不进行四舍五入
+                } else {
+                    logger.warn("无效的y坐标类型: {}", yObj != null ? yObj.getClass().getName() : "null");
+                    continue;
+                }
+                
+                validCoordinateCount++; // 增加有效坐标计数
+                
+                // 使用x,y组合作为Map的键
+                String key = x + "," + y;
+                
+                // 如果坐标点已存在，增加权重值
+                if (pointMap.containsKey(key)) {
+                    Map<String, Object> point = pointMap.get(key);
+                    int value = (int) point.get("value");
+                    point.put("value", value + 1);
+                    totalValueSum++; // 增加计数
+                    
+                    // 更新该点的违规记录列表
+                    @SuppressWarnings("unchecked")
+                    List<String> violations = (List<String>) point.get("violations");
+                    String violationInfo = "身份证: " + idCard + ", 设备号: " + elderId;
+                    if (!violations.contains(violationInfo)) {
+                        violations.add(violationInfo);
+                    }
+                } else {
+                    // 新建坐标点
+                    Map<String, Object> point = new HashMap<>();
+                    point.put("x", x); // 使用整数坐标
+                    point.put("y", y); // 使用整数坐标
+                    point.put("value", 1);
+                    totalValueSum++; // 增加计数
+                    
+                    // 添加违规记录信息
+                    List<String> violations = new ArrayList<>();
+                    violations.add("idCard: " + idCard + ", deviceId: " + elderId);
+                    point.put("violations", violations);
+                    
+                    pointMap.put(key, point);
+                }
+            }
+            
+            // 更新实际处理的坐标记录数
+            totalCoordinatesFound = validCoordinateCount;
+            
+            // 将Map转换为列表
+            heatmapData = new ArrayList<>(pointMap.values());
+            
+            // 输出最终统计
+            logger.info("======= 统计信息 =======");
+            logger.info("有效危险源报警记录总数: {}", violationList.size());
+            logger.info("成功获取坐标的记录数: {}", totalCoordinatesFound);
+            logger.info("生成热力点数量: {}", heatmapData.size());
+            logger.info("生成热力点value总和: {}", totalValueSum);
+            
+            // 验证value总和与记录数的一致性
+            if (totalValueSum != totalCoordinatesFound) {
+                logger.warn("热力点value总和({})与成功获取坐标的记录数({})不一致！", 
+                           totalValueSum, totalCoordinatesFound);
+            }
+            
+            // 验证坐标记录数与警告记录数的一致性
+            if (totalCoordinatesFound != violationList.size()) {
+                logger.warn("成功获取坐标的记录数({})与有效危险源报警记录总数({})不一致！", 
+                           totalCoordinatesFound, violationList.size());
+            }
+            
+            logger.info("=========================");
+            
+        } catch (Exception e) {
+            logger.error("获取违规热力图数据异常", e);
+            throw e;
+        }
+        
+        return heatmapData;
+    }
+    
+    /**
+     * 为一批报警记录查询对应的坐标数据
+     * 
+     * @param batch 报警记录批次
+     * @param dbname 数据库名
+     * @return 坐标数据列表
+     */
+    private List<Map<String, Object>> getCoordinateDataForBatch(List<Map<String, Object>> batch, String dbname) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        if (batch == null || batch.isEmpty()) {
+            return results;
+        }
+        
+        try {
+            StringBuilder coordinateSQL = new StringBuilder();
+            coordinateSQL.append("SELECT elder_id, id_card, time, x, y FROM ")
+                    .append(dbname).append(".external_coordinate_data")
+                    .append(" WHERE (");
+            
+            // 构建查询条件
+            boolean hasValidCondition = false;
+            for (int i = 0; i < batch.size(); i++) {
+                try {
+                    Map<String, Object> violation = batch.get(i);
+                    String deviceIdSuffix = (String) violation.get("deviceIdSuffix");
+                    String idCard = (String) violation.get("idCard");
+                    Long warningTime = (Long) violation.get("warningTime");
+                    
+                    // 添加五分钟时间范围（扩大时间窗口）
+                    long timeStart = warningTime - 300000; // 前5分钟
+                    long timeEnd = warningTime + 300000;   // 后5分钟
+                    
+                    if (i > 0 && hasValidCondition) {
+                        coordinateSQL.append(" OR ");
+                    }
+                    
+                    // 使用更宽松的条件: elder_id包含设备ID后缀 AND id_card匹配 AND 时间范围匹配
+                    coordinateSQL.append("(elder_id LIKE '%").append(deviceIdSuffix).append("'")
+                                .append(" AND id_card = '").append(idCard).append("'")
+                                .append(" AND time >= ").append(timeStart)
+                                .append(" AND time <= ").append(timeEnd).append(")");
+                    
+                    hasValidCondition = true;
+                } catch (Exception e) {
+                    logger.error("构建坐标查询条件出错", e);
+                }
+            }
+            
+            coordinateSQL.append(")");
+            
+            if (!hasValidCondition) {
+                logger.warn("没有有效的查询条件，跳过此批次");
+                return results;
+            }
+            
+            // 输出部分SQL语句用于调试
+            String sqlForLog = coordinateSQL.toString();
+            if (sqlForLog.length() > 500) {
+                sqlForLog = sqlForLog.substring(0, 500) + "... [截断]";
+            }
+            logger.debug("坐标数据查询SQL: {}", sqlForLog);
+            
+            R<cn.hutool.json.JSONObject> coordinateResult = tdengineService.executeTDengineSQL(coordinateSQL.toString());
+            
+            // 处理坐标查询结果
+            if (coordinateResult.getCode() != R.SUCCESS || coordinateResult.getData() == null) {
+                logger.warn("未查询到坐标数据");
+                return results;
+            }
+            
+            cn.hutool.json.JSONObject coordinateData = coordinateResult.getData();
+            cn.hutool.json.JSONArray coordinateRows = coordinateData.getJSONArray("data");
+            
+            if (coordinateRows == null || coordinateRows.size() == 0) {
+                logger.warn("坐标数据为空");
+                return results;
+            }
+            
+            logger.info("查询到{}条坐标数据", coordinateRows.size());
+            
+            for (int i = 0; i < coordinateRows.size(); i++) {
+                try {
+                    cn.hutool.json.JSONArray row = coordinateRows.getJSONArray(i);
+                    if (row != null && row.size() >= 5) {
+                        String elderId = row.getStr(0);
+                        String idCard = row.getStr(1);
+                        Double x = row.getDouble(3);
+                        Double y = row.getDouble(4);
+                        
+                        if (x != null && y != null) {
+                            Map<String, Object> coordData = new HashMap<>();
+                            coordData.put("elderId", elderId);
+                            coordData.put("idCard", idCard);
+                            // 将坐标转换为整数
+                            coordData.put("x", (int)Math.round(x));
+                            coordData.put("y", (int)Math.round(y));
+                            results.add(coordData);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.error("处理坐标数据行出错: 索引={}", i, e);
+                }
+            }
+            
+            // 随机取几条记录进行日志输出，便于调试
+            if (!results.isEmpty()) {
+                int sampleSize = Math.min(3, results.size());
+                for (int i = 0; i < sampleSize; i++) {
+                    Map<String, Object> sample = results.get(i);
+                    logger.info("坐标数据样本 #{}: elderId={}, idCard={}, x={}, y={}", 
+                            i+1, sample.get("elderId"), sample.get("idCard"), 
+                            sample.get("x"), sample.get("y"));
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("查询批次坐标数据异常", e);
+        }
+        
+        return results;
+    }
+    
+    /**
+     * 使用更宽松的条件查询坐标数据
+     * 
+     * @param violationList 报警记录列表
+     * @param dbname 数据库名
+     * @return 坐标数据列表
+     */
+    private List<Map<String, Object>> getCoordinateDataWithRelaxedConditions(List<Map<String, Object>> violationList, String dbname) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        
+        // 收集所有不同的身份证号
+        Set<String> allIdCards = new HashSet<>();
+        for (Map<String, Object> violation : violationList) {
+            String idCard = (String) violation.get("idCard");
+            if (idCard != null && !idCard.isEmpty()) {
+                allIdCards.add(idCard);
+            }
+        }
+        
+        if (allIdCards.isEmpty()) {
+            logger.warn("没有有效的身份证号，无法查询");
+            return results;
+        }
+        
+        // 随机选择最多10个身份证号，避免查询条件过大
+        List<String> sampleIdCards;
+        if (allIdCards.size() <= 10) {
+            sampleIdCards = new ArrayList<>(allIdCards);
+        } else {
+            sampleIdCards = new ArrayList<>(allIdCards);
+            java.util.Collections.shuffle(sampleIdCards);
+            sampleIdCards = sampleIdCards.subList(0, 10);
+        }
+        
+        logger.info("使用宽松条件查询，选择了{}个身份证号", sampleIdCards.size());
+        
+        try {
+            // 找出当月最早和最晚的报警时间，作为查询时间范围
+            long minTime = Long.MAX_VALUE;
+            long maxTime = Long.MIN_VALUE;
+            
+            for (Map<String, Object> violation : violationList) {
+                Long warningTime = (Long) violation.get("warningTime");
+                if (warningTime != null) {
+                    minTime = Math.min(minTime, warningTime);
+                    maxTime = Math.max(maxTime, warningTime);
+                }
+            }
+            
+            // 给时间范围增加一天的缓冲
+            minTime -= 86400000; // 减少1天
+            maxTime += 86400000; // 增加1天
+            
+            StringBuilder relaxedSQL = new StringBuilder();
+            relaxedSQL.append("SELECT elder_id, id_card, time, x, y FROM ")
+                    .append(dbname).append(".external_coordinate_data")
+                    .append(" WHERE id_card IN (");
+            
+            // 添加身份证号条件
+            for (int i = 0; i < sampleIdCards.size(); i++) {
+                if (i > 0) {
+                    relaxedSQL.append(",");
+                }
+                relaxedSQL.append("'").append(sampleIdCards.get(i)).append("'");
+            }
+            
+            relaxedSQL.append(") AND time >= ").append(minTime)
+                    .append(" AND time <= ").append(maxTime)
+                    .append(" LIMIT 5000"); // 增加记录限制数量，以匹配更多报警记录
+            
+            logger.debug("宽松条件查询SQL: {}", relaxedSQL.toString());
+            
+            R<cn.hutool.json.JSONObject> relaxedResult = tdengineService.executeTDengineSQL(relaxedSQL.toString());
+            
+            // 处理查询结果
+            if (relaxedResult.getCode() != R.SUCCESS || relaxedResult.getData() == null) {
+                logger.warn("宽松条件未查询到坐标数据");
+                return results;
+            }
+            
+            cn.hutool.json.JSONObject relaxedData = relaxedResult.getData();
+            cn.hutool.json.JSONArray relaxedRows = relaxedData.getJSONArray("data");
+            
+            if (relaxedRows == null || relaxedRows.size() == 0) {
+                logger.warn("宽松条件坐标数据为空");
+                return results;
+            }
+            
+            logger.info("宽松条件查询到{}条坐标数据", relaxedRows.size());
+            
+            for (int i = 0; i < relaxedRows.size(); i++) {
+                try {
+                    cn.hutool.json.JSONArray row = relaxedRows.getJSONArray(i);
+                    if (row != null && row.size() >= 5) {
+                        String elderId = row.getStr(0);
+                        String idCard = row.getStr(1);
+                        Double x = row.getDouble(3);
+                        Double y = row.getDouble(4);
+                        
+                        if (x != null && y != null) {
+                            Map<String, Object> coordData = new HashMap<>();
+                            coordData.put("elderId", elderId);
+                            coordData.put("idCard", idCard);
+                            // 将坐标转换为整数
+                            coordData.put("x", (int)Math.round(x));
+                            coordData.put("y", (int)Math.round(y));
+                            results.add(coordData);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.error("处理宽松条件坐标数据行出错: 索引={}", i, e);
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("宽松条件查询坐标数据异常", e);
+        }
+        
+        return results;
     }
 } 
