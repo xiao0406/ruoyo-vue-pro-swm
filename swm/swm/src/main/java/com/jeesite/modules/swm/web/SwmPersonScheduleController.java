@@ -33,7 +33,7 @@ import java.util.Map;
  * @version 2025-05-15
  */
 @Controller
-    @RequestMapping(value = "${adminPath}/personSchedule")
+@RequestMapping(value = "${adminPath}/personSchedule")
 @Api(value = "人员排班管理接口", tags = "人员排班管理接口")
 public class SwmPersonScheduleController extends BaseController {
 
@@ -41,10 +41,10 @@ public class SwmPersonScheduleController extends BaseController {
 
     @Autowired
     private SwmPersonScheduleService swmPersonScheduleService;
-    
+
     @Autowired
     private SwmScheduleTimeService swmScheduleTimeService;
-    
+
     /**
      * 获取数据
      */
@@ -52,33 +52,35 @@ public class SwmPersonScheduleController extends BaseController {
     public SwmPersonSchedule get(String id, boolean isNewRecord) {
         return swmPersonScheduleService.get(id, isNewRecord);
     }
-    
+
     /**
      * 查询列表
      */
-    @RequestMapping(value = {"list", ""})
+    @RequestMapping(value = { "list", "" })
     @ApiOperation("查询列表")
     public String list(SwmPersonSchedule swmPersonSchedule, Model model) {
         model.addAttribute("swmPersonSchedule", swmPersonSchedule);
         return "modules/swm/personScheduleList";
     }
-    
+
     /**
      * 查询列表数据
      */
     @RequestMapping(value = "listData")
     @ResponseBody
     @ApiOperation("查询列表数据")
-    public Map<String, Object> listData(SwmPersonSchedule swmPersonSchedule, HttpServletRequest request, HttpServletResponse response) {
-        Page<SwmPersonSchedule> page = swmPersonScheduleService.findPage(new Page<>(request, response), swmPersonSchedule);
-        
+    public Map<String, Object> listData(SwmPersonSchedule swmPersonSchedule, HttpServletRequest request,
+            HttpServletResponse response) {
+        Page<SwmPersonSchedule> page = swmPersonScheduleService.findPage(new Page<>(request, response),
+                swmPersonSchedule);
+
         // 构建包含额外字段的响应数据
         Map<String, Object> result = new HashMap<>();
         List<Map<String, Object>> enhancedList = new ArrayList<>();
-        
+
         // 获取前端传递的班组筛选参数
         String workGroupNameFilter = request.getParameter("workGroupName");
-        
+
         // 收集所有需要查询班组的身份证号
         List<String> idCards = new ArrayList<>();
         for (SwmPersonSchedule schedule : page.getList()) {
@@ -86,7 +88,7 @@ public class SwmPersonScheduleController extends BaseController {
                 idCards.add(schedule.getIdCard());
             }
         }
-        
+
         // 批量查询班组信息
         Map<String, String> workGroupMap = new HashMap<>();
         if (!idCards.isEmpty()) {
@@ -99,11 +101,11 @@ public class SwmPersonScheduleController extends BaseController {
                 }
             }
         }
-        
+
         // 处理每个对象，添加枚举的文本显示
         for (SwmPersonSchedule schedule : page.getList()) {
             Map<String, Object> scheduleMap = new HashMap<>();
-            
+
             // 复制基本属性
             scheduleMap.put("id", schedule.getId());
             scheduleMap.put("createBy", schedule.getCreateBy());
@@ -112,17 +114,18 @@ public class SwmPersonScheduleController extends BaseController {
             scheduleMap.put("updateDate", schedule.getUpdateDate());
             scheduleMap.put("remarks", schedule.getRemarks());
             scheduleMap.put("status", schedule.getStatus());
-            
+
             // 复制业务属性
             scheduleMap.put("personName", schedule.getPersonName());
             scheduleMap.put("month", schedule.getMonth());
             scheduleMap.put("classes", schedule.getClasses());
             scheduleMap.put("idCard", schedule.getIdCard());
+            scheduleMap.put("employeeId", schedule.getEmployeeId());
             scheduleMap.put("isNewRecord", schedule.getIsNewRecord());
-            
+
             // 添加枚举文本显示值
             scheduleMap.put("classesText", schedule.getClassesText());
-            
+
             // 添加班组名称 - 从批量查询结果获取
             String workGroupName = "";
             if (schedule.getIdCard() != null && !schedule.getIdCard().isEmpty()) {
@@ -131,7 +134,7 @@ public class SwmPersonScheduleController extends BaseController {
             } else {
                 scheduleMap.put("workGroupName", "");
             }
-            
+
             // 如果有班组筛选条件，检查当前记录是否符合条件
             if (workGroupNameFilter != null && !workGroupNameFilter.isEmpty()) {
                 if (workGroupName == null || !workGroupName.contains(workGroupNameFilter)) {
@@ -139,20 +142,20 @@ public class SwmPersonScheduleController extends BaseController {
                     continue;
                 }
             }
-            
+
             // 添加到列表
             enhancedList.add(scheduleMap);
         }
-        
+
         // 构建分页结果
         result.put("list", enhancedList);
         result.put("count", page.getCount());
         result.put("pageNo", page.getPageNo());
         result.put("pageSize", page.getPageSize());
-        
+
         return result;
     }
-    
+
     /**
      * 查看编辑表单
      */
@@ -163,39 +166,41 @@ public class SwmPersonScheduleController extends BaseController {
         Map<String, Object> result = new HashMap<>();
         if (swmPersonSchedule != null) {
             Map<String, Object> scheduleData = new HashMap<>();
-            
+
             // 复制基本属性
             scheduleData.put("id", swmPersonSchedule.getId());
             scheduleData.put("personName", swmPersonSchedule.getPersonName());
             scheduleData.put("month", swmPersonSchedule.getMonth());
             scheduleData.put("classes", swmPersonSchedule.getClasses());
             scheduleData.put("idCard", swmPersonSchedule.getIdCard());
+            scheduleData.put("employeeId", swmPersonSchedule.getEmployeeId());
             scheduleData.put("remarks", swmPersonSchedule.getRemarks());
-            
+
             // 处理枚举值
             scheduleData.put("classesText", swmPersonSchedule.getClassesText());
-            
+
             // 添加班组名称 - 使用批量查询方法
             if (swmPersonSchedule.getIdCard() != null && !swmPersonSchedule.getIdCard().isEmpty()) {
                 List<String> idCards = Collections.singletonList(swmPersonSchedule.getIdCard());
-                List<Map<String, Object>> workGroupList = swmPersonScheduleService.batchGetWorkGroupNameByIdCards(idCards);
-                
+                List<Map<String, Object>> workGroupList = swmPersonScheduleService
+                        .batchGetWorkGroupNameByIdCards(idCards);
+
                 String workGroupName = "";
                 if (!workGroupList.isEmpty()) {
                     Map<String, Object> item = workGroupList.get(0);
                     workGroupName = (String) item.get("value");
                 }
-                
+
                 scheduleData.put("workGroupName", workGroupName != null ? workGroupName : "");
             } else {
                 scheduleData.put("workGroupName", "");
             }
-            
+
             result.putAll(scheduleData);
         }
         return result;
     }
-    
+
     /**
      * 保存数据
      */
@@ -206,7 +211,7 @@ public class SwmPersonScheduleController extends BaseController {
         swmPersonScheduleService.save(swmPersonSchedule);
         return renderResult(Global.TRUE, text("保存人员排班成功！"));
     }
-    
+
     /**
      * 批量保存数据
      */
@@ -223,11 +228,11 @@ public class SwmPersonScheduleController extends BaseController {
                         schedule.getClasses(), schedule.getIdCard());
             }
         }
-        
+
         swmPersonScheduleService.batchSave(scheduleList);
         return renderResult(Global.TRUE, text("批量保存人员排班成功！"));
     }
-    
+
     /**
      * 删除数据
      */
@@ -238,7 +243,7 @@ public class SwmPersonScheduleController extends BaseController {
         swmPersonScheduleService.delete(swmPersonSchedule);
         return renderResult(Global.TRUE, text("删除人员排班成功！"));
     }
-    
+
     /**
      * 批量删除数据
      */
@@ -255,7 +260,7 @@ public class SwmPersonScheduleController extends BaseController {
         }
         return renderResult(Global.TRUE, text("批量删除人员排班成功！"));
     }
-    
+
     /**
      * 获取班次类型选项
      */
@@ -264,11 +269,11 @@ public class SwmPersonScheduleController extends BaseController {
     @ApiOperation("获取班次类型选项")
     public Map<String, Object> getShiftOptions() {
         Map<String, Object> result = new HashMap<>();
-        
+
         // 查询所有班次时间设置
         SwmScheduleTime query = new SwmScheduleTime();
         List<SwmScheduleTime> scheduleTimeList = swmScheduleTimeService.findList(query);
-        
+
         // 转换为选项格式
         Map<String, Map<String, String>> shiftOptions = new HashMap<>();
         for (SwmScheduleTime scheduleTime : scheduleTimeList) {
@@ -276,12 +281,12 @@ public class SwmPersonScheduleController extends BaseController {
             option.put("startTime", scheduleTime.getStartTime());
             option.put("endTime", scheduleTime.getEndTime());
             option.put("text", scheduleTime.getShiftTypeText());
-            
+
             shiftOptions.put(scheduleTime.getShiftType(), option);
         }
-        
+
         result.put("shiftOptions", shiftOptions);
-        
+
         return result;
     }
 
@@ -293,47 +298,48 @@ public class SwmPersonScheduleController extends BaseController {
     @ApiOperation("根据身份证号查询排班记录")
     public Map<String, Object> findByIdCard(@RequestParam("idCard") String idCard) {
         Map<String, Object> result = new HashMap<>();
-        
+
         if (idCard == null || idCard.isEmpty()) {
             result.put("success", false);
             result.put("message", "身份证号不能为空");
             return result;
         }
-        
+
         List<SwmPersonSchedule> scheduleList = swmPersonScheduleService.findByIdCard(idCard);
         List<Map<String, Object>> enhancedList = new ArrayList<>();
-        
+
         // 获取班组名称
         String workGroupName = swmPersonScheduleService.getWorkGroupNameByIdCard(idCard);
-        
+
         // 处理每个对象，添加枚举的文本显示
         for (SwmPersonSchedule schedule : scheduleList) {
             Map<String, Object> scheduleMap = new HashMap<>();
-            
+
             // 复制基本属性
             scheduleMap.put("id", schedule.getId());
             scheduleMap.put("personName", schedule.getPersonName());
             scheduleMap.put("month", schedule.getMonth());
             scheduleMap.put("classes", schedule.getClasses());
             scheduleMap.put("idCard", schedule.getIdCard());
+            scheduleMap.put("employeeId", schedule.getEmployeeId());
             scheduleMap.put("createDate", schedule.getCreateDate());
             scheduleMap.put("updateDate", schedule.getUpdateDate());
             scheduleMap.put("remarks", schedule.getRemarks());
-            
+
             // 添加枚举文本显示值
             scheduleMap.put("classesText", schedule.getClassesText());
-            
+
             // 添加班组名称
             scheduleMap.put("workGroupName", workGroupName);
-            
+
             // 添加到列表
             enhancedList.add(scheduleMap);
         }
-        
+
         result.put("success", true);
         result.put("list", enhancedList);
         result.put("count", enhancedList.size());
-        
+
         return result;
     }
 
@@ -347,7 +353,7 @@ public class SwmPersonScheduleController extends BaseController {
         try {
             List<Map<String, Object>> workGroups = swmPersonScheduleService.findWorkGroupList();
             List<Map<String, Object>> result = new ArrayList<>();
-            
+
             // 转换为前端需要的格式
             for (Map<String, Object> item : workGroups) {
                 Map<String, Object> workGroup = new HashMap<>();
@@ -355,11 +361,11 @@ public class SwmPersonScheduleController extends BaseController {
                 workGroup.put("value", item.get("name"));
                 result.add(workGroup);
             }
-            
+
             return result;
         } catch (Exception e) {
             logger.error("获取班组列表失败", e);
             return Collections.emptyList();
         }
     }
-} 
+}

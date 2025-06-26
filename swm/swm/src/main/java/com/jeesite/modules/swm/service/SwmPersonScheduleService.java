@@ -27,6 +27,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 获取单条数据
+     * 
      * @param swmPersonSchedule
      * @return
      */
@@ -37,6 +38,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 查询分页数据
+     * 
      * @param swmPersonSchedule
      * @return
      */
@@ -46,7 +48,8 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 查询分页数据（带页面参数）
-     * @param page 分页对象
+     * 
+     * @param page              分页对象
      * @param swmPersonSchedule
      * @return
      */
@@ -59,6 +62,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 查询所有数据
+     * 
      * @param swmPersonSchedule
      * @return
      */
@@ -68,6 +72,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 保存数据（插入或更新）
+     * 
      * @param swmPersonSchedule
      */
     @Override
@@ -78,6 +83,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 批量保存数据
+     * 
      * @param scheduleList 排班列表
      */
     @Transactional(readOnly = false)
@@ -87,13 +93,26 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
                 // 如果传入了身份证号，可以使用它进行相关处理
                 if (schedule.getIdCard() != null && !schedule.getIdCard().isEmpty()) {
                     // 检查该人员在当月是否已有排班
-                    List<SwmPersonSchedule> existingSchedules = dao.findByIdCardAndMonth(schedule.getIdCard(), schedule.getMonth());
+                    List<SwmPersonSchedule> existingSchedules = dao.findByIdCardAndMonth(schedule.getIdCard(),
+                            schedule.getMonth());
 
                     // 如果已有排班，且当前不是修改操作（没有ID），则跳过
                     if (!existingSchedules.isEmpty() && (schedule.getId() == null || schedule.getId().isEmpty())) {
                         logger.info("人员 {} (身份证: {}) 在 {} 月已有排班，跳过添加新排班",
                                 schedule.getPersonName(), schedule.getIdCard(), schedule.getMonth());
                         continue;
+                    }
+
+                    // 使用前端传入的personId设置到employeeId字段
+                    // Author: Shawn
+                    // Date: 2025/01/27
+                    if (schedule.getEmployeeId() == null || schedule.getEmployeeId().isEmpty()) {
+                        String personId = schedule.getPersonId();
+                        if (personId != null && !personId.isEmpty()) {
+                            schedule.setEmployeeId(personId);
+                            logger.debug("为排班记录设置employeeId: 身份证号={}, personId={}",
+                                    schedule.getIdCard(), personId);
+                        }
                     }
                 }
 
@@ -104,6 +123,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 删除数据
+     * 
      * @param swmPersonSchedule
      */
     @Override
@@ -114,6 +134,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 根据身份证号查询排班记录
+     * 
      * @param idCard 身份证号码
      * @return 排班记录列表
      */
@@ -123,8 +144,9 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 根据身份证号和月份查询排班记录
+     * 
      * @param idCard 身份证号码
-     * @param month 月份
+     * @param month  月份
      * @return 排班记录列表
      */
     public List<SwmPersonSchedule> findByIdCardAndMonth(String idCard, String month) {
@@ -133,6 +155,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 根据身份证号获取班组名称
+     * 
      * @param idCard 身份证号码
      * @return 班组名称
      */
@@ -142,6 +165,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     /**
      * 根据实体对象查询数据
+     * 
      * @param entity
      * @return
      */
