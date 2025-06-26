@@ -21,20 +21,23 @@ import javax.validation.constraints.Pattern;
         @Column(name = "month", attrName = "month", label = "排班月份"),
         @Column(name = "classes", attrName = "classes", label = "班次"),
         @Column(name = "id_card", attrName = "idCard", label = "身份证号码", queryType = QueryType.LIKE),
+        @Column(name = "employee_id", attrName = "employeeId", label = "员工ID"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
 
     private static final long serialVersionUID = 1L;
 
-    private String personName;  // 人员姓名
-    private String month;       // 排班月份
-    private String classes;     // 班次
-    private String idCard;      // 身份证号码
+    private String personName; // 人员姓名
+    private String month; // 排班月份
+    private String classes; // 班次
+    private String idCard; // 身份证号码
+    private String employeeId; // 员工ID
 
     // 用于显示的文本属性，不对应数据库字段
     private String classesText; // 班次显示文本
     private String workGroupName; // 班组名称（非数据库字段）
+    private String personId; // 前端传入的personId（非数据库字段，用于设置employeeId）
 
     public SwmPersonSchedule() {
         this(null);
@@ -74,7 +77,7 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
     public void setClasses(String classes) {
         this.classes = classes;
     }
-    
+
     @Length(min = 0, max = 18, message = "身份证号码不能超过18个字符")
     public String getIdCard() {
         return idCard;
@@ -82,6 +85,15 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
 
     public void setIdCard(String idCard) {
         this.idCard = idCard;
+    }
+
+    @Length(min = 0, max = 64, message = "员工ID不能超过64个字符")
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
     }
 
     /**
@@ -97,7 +109,7 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
     public void setClassesText(String classesText) {
         this.classesText = classesText;
     }
-    
+
     /**
      * 获取班组名称
      */
@@ -108,4 +120,15 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
     public void setWorkGroupName(String workGroupName) {
         this.workGroupName = workGroupName;
     }
-} 
+
+    /**
+     * 获取personId (前端传入)
+     */
+    public String getPersonId() {
+        return personId;
+    }
+
+    public void setPersonId(String personId) {
+        this.personId = personId;
+    }
+}

@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @MyBatisDao
 public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
-    
+
     /**
      * 根据身份证号查询排班记录
      * 
@@ -24,16 +24,16 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
      * @return 排班记录列表
      */
     List<SwmPersonSchedule> findByIdCard(String idCard);
-    
+
     /**
      * 根据身份证号和月份查询排班记录
      * 
      * @param idCard 身份证号码
-     * @param month 月份
+     * @param month  月份
      * @return 排班记录列表
      */
     List<SwmPersonSchedule> findByIdCardAndMonth(@Param("idCard") String idCard, @Param("month") String month);
-    
+
     /**
      * 根据身份证号获取班组信息
      * 
@@ -56,7 +56,7 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
      * @return 包含身份证号和班组名称的对象列表
      */
     List<Map<String, Object>> batchGetWorkGroupNameByIdCards(List<String> idCards);
-    
+
     /**
      * 根据年份和月份获取不重复身份证的排班人数
      * 
@@ -64,4 +64,4 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
      * @return 排班人数
      */
     int countDistinctPersonByYearAndMonth(@Param("yearMonth") String yearMonth);
-} 
+}
