@@ -410,6 +410,7 @@ public class SwmWarningManagementController extends BaseController {
                 map.put("id", item.getId());
                 map.put("personName", item.getPersonName());
                 map.put("warningType", item.getWarningType());
+                map.put("triggerReason", item.getTriggerReason());
                 
                 // 确保warningTypeText正确显示
                 String warningTypeText;
@@ -452,6 +453,7 @@ public class SwmWarningManagementController extends BaseController {
                 map.put("id", item.getId());
                 map.put("personName", item.getPersonName());
                 map.put("warningType", item.getWarningType());
+                map.put("triggerReason", item.getTriggerReason());
                 
                 // 确保warningTypeText正确显示
                 String warningTypeText;
