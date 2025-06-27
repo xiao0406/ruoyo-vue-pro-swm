@@ -251,6 +251,34 @@ public class AttendanceTask {
                                 record.getEmployeeId(), record.getEmployeeName(),
                                 record.getEffectiveWorkHours(), record.getScheduledHours(), dailyAchievementRate);
 
+                        // 更新考勤状态逻辑
+                        // @author: Shawn
+                        // @date: 2024/07/31 (Re-described logic)
+                        String workTimeRangeForStatus = record.getWorkTimeRange();
+                        BigDecimal effectiveWorkHoursForStatus = record.getEffectiveWorkHours();
+
+                        // 1. 如果在目前时间范围在work_time_range时间范围内，内实际工作时长>0，那考勤状态是正常的。
+                        if (isCurrentTimeInWorkRange(workTimeRangeForStatus) &&
+                                effectiveWorkHoursForStatus != null &&
+                                effectiveWorkHoursForStatus.compareTo(BigDecimal.ZERO) > 0) {
+                            record.setAttendanceNormal("0"); // 正常
+                            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [正常] (当前时间在班次内且实际工作时长>0)",
+                                    record.getEmployeeId(), record.getEmployeeName());
+                        }
+                        // 2. 如果有上班打卡时间或下班打卡时间，实际工作时长<=0，就是异常。
+                        else if ((clockInTime != null || clockOutTime != null) &&
+                                (effectiveWorkHoursForStatus == null
+                                        || effectiveWorkHoursForStatus.compareTo(BigDecimal.ZERO) <= 0)) {
+                            record.setAttendanceNormal("1"); // 异常
+                            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [异常] (有打卡记录但实际工作时长<=0)",
+                                    record.getEmployeeId(), record.getEmployeeName());
+                        }
+                        // 3. 其他情况不用处理，原来是怎么样就怎么样。
+                        else {
+                            XxlJobHelper.log("员工[{}]{} 考勤状态未做更改，保留原状态: {}",
+                                    record.getEmployeeId(), record.getEmployeeName(), record.getAttendanceNormal());
+                        }
+
                         swmDailyAttendanceService.update(record);
 
                         successCount++;
@@ -847,5 +875,48 @@ public class AttendanceTask {
         }
 
         return null;
+    }
+
+    /**
+     * 判断当前时间是否在给定的工作时间范围内
+     *
+     * @param workTimeRange 工作时间范围字符串，如 "08:00-17:00" 或 "18:00-03:00"
+     * @return 如果当前时间在范围内，返回true，否则返回false
+     */
+    private boolean isCurrentTimeInWorkRange(String workTimeRange) {
+        if (workTimeRange == null || workTimeRange.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            String[] times = workTimeRange.split("-");
+            if (times.length != 2) {
+                log.warn("无效的工作时间范围格式: {}", workTimeRange);
+                return false;
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+            Date startTime = sdf.parse(times[0].trim());
+            Date endTime = sdf.parse(times[1].trim());
+
+            // 获取当前时间的 HH:mm 部分，用于比较
+            Date nowTime = sdf.parse(sdf.format(new Date()));
+
+            // 如果结束时间早于开始时间，说明是跨天班次 (如 18:00-03:00)
+            if (endTime.before(startTime)) {
+                // 对于跨天班次，如果当前时间晚于开始时间(在第一天) 或 早于结束时间(在第二天)，则在范围内
+                // 例如：班次18:00-03:00。
+                // 当前时间19:00 -> 19:00 > 18:00 (true) -> 在范围内
+                // 当前时间02:00 -> 02:00 < 03:00 (true) -> 在范围内
+                // 当前时间04:00 -> 04:00 > 18:00(false) && 04:00 < 03:00(false) -> 不在范围内
+                return nowTime.after(startTime) || nowTime.before(endTime);
+            } else {
+                // 对于普通当天班次 (如 08:00-17:00)，当前时间必须在两者之间
+                return nowTime.after(startTime) && nowTime.before(endTime);
+            }
+        } catch (Exception e) {
+            log.error("解析或比较工作时间范围时出错: {}", workTimeRange, e);
+            return false;
+        }
     }
 }
