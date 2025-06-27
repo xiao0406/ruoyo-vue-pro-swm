@@ -33,7 +33,8 @@
             a.`handle_time` AS "handleTime",
             a.`handle_process` AS "handleProcess",
             a.`handle_status` AS "handleStatus",
-            a.`attachment` AS "attachment"
+            a.`attachment` AS "attachment",
+            a.`disposal_duration` AS "disposalDuration"
         FROM
             `swm_warning_management` a
         ORDER BY
@@ -46,12 +47,12 @@
             id, create_by, create_date, update_by, update_date, remarks, status,
             person_name, warning_type, warning_content, warning_time, alarm_record,
             alarm_time, trigger_reason, handler, handle_time, handle_process,
-            handle_status, attachment, device_id, id_card
+            handle_status, attachment, device_id, id_card, disposal_duration
         ) VALUES (
             #{id}, #{createBy}, #{createDate}, #{updateBy}, #{updateDate}, #{remarks}, #{status},
             #{personName}, #{warningType}, #{warningContent}, #{warningTime}, #{alarmRecord},
             #{alarmTime}, #{triggerReason}, #{handler}, #{handleTime}, #{handleProcess},
-            #{handleStatus}, #{attachment}, #{deviceId}, #{idCard}
+            #{handleStatus}, #{attachment}, #{deviceId}, #{idCard}, #{disposalDuration}
         )
     </insert>
 
@@ -66,7 +67,8 @@
             DATE_ADD(a.alarm_time, INTERVAL 8 HOUR) AS alarmTime, a.trigger_reason AS triggerReason,
             a.handler, a.handle_time AS handleTime,
             a.handle_process AS handleProcess, a.handle_status AS handleStatus,
-            a.attachment, a.device_id AS deviceId, a.id_card AS idCard
+            a.attachment, a.device_id AS deviceId, a.id_card AS idCard,
+            a.disposal_duration AS disposalDuration, a.x AS x, a.y AS y
         FROM
             swm_warning_management a
         WHERE
@@ -87,7 +89,8 @@
             DATE_ADD(a.alarm_time, INTERVAL 8 HOUR) AS alarmTime, a.trigger_reason AS triggerReason,
             a.handler, a.handle_time AS handleTime,
             a.handle_process AS handleProcess, a.handle_status AS handleStatus,
-            a.attachment, a.device_id AS deviceId, a.id_card AS idCard
+            a.attachment, a.device_id AS deviceId, a.id_card AS idCard,
+            a.disposal_duration AS disposalDuration, a.x AS x, a.y AS y
         FROM
             swm_warning_management a
         WHERE
@@ -109,7 +112,8 @@
             DATE_ADD(a.alarm_time, INTERVAL 8 HOUR) AS alarmTime, a.trigger_reason AS triggerReason,
             a.handler, a.handle_time AS handleTime,
             a.handle_process AS handleProcess, a.handle_status AS handleStatus,
-            a.attachment, a.device_id AS deviceId, a.id_card AS idCard
+            a.attachment, a.device_id AS deviceId, a.id_card AS idCard,
+            a.disposal_duration AS disposalDuration, a.x AS x, a.y AS y
         FROM
             swm_warning_management a
         WHERE
@@ -152,7 +156,8 @@
             DATE_ADD(a.alarm_time, INTERVAL 8 HOUR) AS alarmTime, a.trigger_reason AS triggerReason,
             a.handler, a.handle_time AS handleTime,
             a.handle_process AS handleProcess, a.handle_status AS handleStatus,
-            a.attachment, a.device_id AS deviceId, a.id_card AS idCard
+            a.attachment, a.device_id AS deviceId, a.id_card AS idCard,
+            a.disposal_duration AS disposalDuration, a.x AS x, a.y AS y
         FROM
             swm_warning_management a
         WHERE
@@ -170,7 +175,8 @@
             DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
             handler, handle_time AS handleTime,
             handle_process AS handleProcess, handle_status AS handleStatus,
-            attachment, device_id AS deviceId, id_card AS idCard
+            attachment, device_id AS deviceId, id_card AS idCard,
+            disposal_duration AS disposalDuration, x AS x, y AS y
         FROM swm_warning_management
         WHERE warning_time &gt;= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
@@ -188,7 +194,8 @@
             DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
             handler, handle_time AS handleTime,
             handle_process AS handleProcess, handle_status AS handleStatus,
-            attachment, device_id AS deviceId, id_card AS idCard
+            attachment, device_id AS deviceId, id_card AS idCard,
+            disposal_duration AS disposalDuration, x AS x, y AS y
         FROM swm_warning_management
         WHERE warning_time &gt;= CURDATE()
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
@@ -206,7 +213,8 @@
             DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
             handler, handle_time AS handleTime,
             handle_process AS handleProcess, handle_status AS handleStatus,
-            attachment, device_id AS deviceId, id_card AS idCard
+            attachment, device_id AS deviceId, id_card AS idCard,
+            disposal_duration AS disposalDuration, x AS x, y AS y
         FROM swm_warning_management
         WHERE warning_time &gt;= DATE_FORMAT(CURDATE(), '%Y-%m-01')
         AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
@@ -224,7 +232,8 @@
             DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
             handler, handle_time AS handleTime,
             handle_process AS handleProcess, handle_status AS handleStatus,
-            attachment, device_id AS deviceId, id_card AS idCard
+            attachment, device_id AS deviceId, id_card AS idCard,
+            disposal_duration AS disposalDuration, x AS x, y AS y
         FROM swm_warning_management
         WHERE warning_time &gt;= DATE_FORMAT(CURDATE(), '%Y-%m-01')
         AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)

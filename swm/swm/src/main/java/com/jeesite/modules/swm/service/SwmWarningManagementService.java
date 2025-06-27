@@ -50,17 +50,30 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     public SwmWarningManagement get(SwmWarningManagement swmWarningManagement) {
         // 使用TDengine查询单条数据
         if (swmWarningManagement != null && swmWarningManagement.getId() != null) {
-            String sql = String.format("SELECT * FROM %s.swm_warning_management WHERE id='%s' LIMIT 1", 
+            // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
+            String sql = String.format("SELECT id, person_name, warning_type, warning_content, " +
+                    "CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, " +
+                    "alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, " +
+                    "trigger_reason, handler, handle_time, handle_process, handle_status, attachment, " +
+                    "create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, " +
+                    "front_alarm, type, x, y, hazard_category " +
+                    "FROM %s.swm_warning_management WHERE id='%s' LIMIT 1", 
                 dbname, swmWarningManagement.getId());
             
             try {
+                logger.info("执行单条查询SQL: {}", sql);
                 R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
                 if (result.getCode() == R.SUCCESS && result.getData() != null) {
                     JSONObject data = result.getData();
                     JSONArray rows = data.getJSONArray("data");
                     
                     if (rows != null && rows.size() > 0) {
-                        return convertToEntity(rows.getJSONArray(0), data.getJSONArray("column_meta"));
+                        SwmWarningManagement entity = convertToEntity(rows.getJSONArray(0), data.getJSONArray("column_meta"));
+                        logger.info("从时序数据库查询到警告记录，ID: {}, 警告时间: {}, 报警时间: {}",
+                            entity.getId(),
+                            entity.getWarningTime() != null ? DateUtils.formatDate(entity.getWarningTime(), "yyyy-MM-dd HH:mm:ss") : "null",
+                            entity.getAlarmTime() != null ? DateUtils.formatDate(entity.getAlarmTime(), "yyyy-MM-dd HH:mm:ss") : "null");
+                        return entity;
                     }
                 }
             } catch (Exception e) {
@@ -91,7 +104,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
                .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
-               .append("front_alarm, type, x, y ")
+               .append("front_alarm, type, x, y, hazard_category ")
                .append("FROM ").append(dbname).append(".swm_warning_management");
         
         // 添加查询条件
@@ -236,9 +249,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "warning_time":
                         try {
-                            // 保持原始时间，不做时区调整，统一由Controller处理
+                            // 时间已在SQL中+8小时，可以直接使用
                             Date warningTime = new Date(row.getLong(i));
                             entity.setWarningTime(warningTime);
+                            logger.debug("设置预警时间: {} (已在SQL中添加8小时时区调整)", DateUtils.formatDate(warningTime, "yyyy-MM-dd HH:mm:ss"));
                         } catch (Exception e) {
                             // 如果转换失败，尝试作为字符串解析
                             try {
@@ -258,9 +272,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "alarm_time":
                         try {
-                            // 保持原始时间，不做时区调整，统一由Controller处理
+                            // 时间已在SQL中+8小时，可以直接使用
                             Date alarmTime = new Date(row.getLong(i));
                             entity.setAlarmTime(alarmTime);
+                            logger.debug("设置报警时间: {} (已在SQL中添加8小时时区调整)", DateUtils.formatDate(alarmTime, "yyyy-MM-dd HH:mm:ss"));
                         } catch (Exception e) {
                             // 如果转换失败，尝试作为字符串解析
                             try {
@@ -383,6 +398,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "y":
                         entity.setY(row.getStr(i));
+                        break;
+                    case "hazard_category":
+                        entity.setHazardCategory(row.getStr(i));
+                        logger.debug("设置危险源类别: {}", row.getStr(i));
                         break;
                 }
             }
@@ -682,6 +701,23 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         mysqlWarning.setHandleStatus(handleStatus);
         mysqlWarning.setAttachment(attachment);
         
+        // 计算处置时长（处置时间减去报警时间，单位：分钟）
+        if (handleStatus != null && handleStatus.equals("1") && handleTime != null && mysqlWarning.getAlarmTime() != null) {
+            // 报警时间需要加上8小时再计算，因为存储的是UTC时间
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(mysqlWarning.getAlarmTime());
+            calendar.add(Calendar.HOUR_OF_DAY, 8); // 直接加上8小时
+            Date adjustedAlarmTime = calendar.getTime();
+            
+            long durationMillis = handleTime.getTime() - adjustedAlarmTime.getTime();
+            long durationMinutes = durationMillis / (60 * 1000);
+            mysqlWarning.setDisposalDuration(durationMinutes > 0 ? durationMinutes : 0);
+            logger.info("计算处置时长：报警时间 {} + 8小时调整为 {}，处置时间 {}，处置时长 {} 分钟", 
+                mysqlWarning.getAlarmTime(), adjustedAlarmTime, handleTime, durationMinutes);
+        } else {
+            mysqlWarning.setDisposalDuration(0L);
+        }
+        
             // 使用自定义方法直接向MySQL插入数据
             dao.insertToMySql(mysqlWarning);
             logger.info("成功向MySQL数据库插入预警处置记录，ID：{}", id);
@@ -695,6 +731,23 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 existingRecord.setHandleProcess(handleProcess);
                 existingRecord.setHandleStatus(handleStatus);
                 existingRecord.setUpdateDate(new Date()); // 更新时间
+                
+                // 计算处置时长（处置时间减去报警时间，单位：分钟）
+                if (handleStatus != null && handleStatus.equals("1") && handleTime != null && existingRecord.getAlarmTime() != null) {
+                    // 报警时间需要加上8小时再计算，因为存储的是UTC时间
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(existingRecord.getAlarmTime());
+                    calendar.add(Calendar.HOUR_OF_DAY, 8); // 直接加上8小时
+                    Date adjustedAlarmTime = calendar.getTime();
+                    
+                    long durationMillis = handleTime.getTime() - adjustedAlarmTime.getTime();
+                    long durationMinutes = durationMillis / (60 * 1000);
+                    existingRecord.setDisposalDuration(durationMinutes > 0 ? durationMinutes : 0);
+                    logger.info("计算处置时长：报警时间 {} + 8小时调整为 {}，处置时间 {}，处置时长 {} 分钟", 
+                        existingRecord.getAlarmTime(), adjustedAlarmTime, handleTime, durationMinutes);
+                } else {
+                    existingRecord.setDisposalDuration(0L);
+                }
                 
                 // 更新坐标信息
                 if (swmWarningManagement.getX() != null) {
@@ -1397,7 +1450,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
                .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
-               .append("front_alarm, type, x, y ")
+               .append("front_alarm, type, x, y, hazard_category ")
                .append("FROM ").append(dbname).append(".swm_warning_management");
         
         // 添加排序条件
