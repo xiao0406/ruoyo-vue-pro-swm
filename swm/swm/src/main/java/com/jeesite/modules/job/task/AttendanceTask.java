@@ -425,6 +425,20 @@ public class AttendanceTask {
             query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 在职状态
             query.setStatus("0");// 正常状态
             // query.setIdentityCard("412825197709304513"); // todo为了测试身份证先写死
+
+            // 测试使用，生产上要删除 begin
+            // 您可以像下面这样，直接操作SQL MAP来添加IN条件，而无需修改任何其他模块的代码。
+            // 1. 创建一个包含身份证号的列表
+            // java.util.List<String> ids = new java.util.ArrayList<>();
+            // ids.add("1935182658540556288");
+            // ids.add("1935182658850934784");
+            // // 2. 将列表添加到查询条件中
+            // if (ids != null && !ids.isEmpty()) {
+            // query.getSqlMap().getWhere().and("id",
+            // com.jeesite.common.mybatis.mapper.query.QueryType.IN, ids);
+            // }
+            // 测试使用，生产上要删除 end
+
             List<SwmPerson> activePersons = swmPersonService.findList(query);
 
             if (activePersons.isEmpty()) {
