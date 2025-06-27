@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * 巡检列表Service
  *
@@ -94,5 +96,14 @@ public class SwmInspectionListService extends CrudService<SwmInspectionListDao, 
      */
     public SwmInspectionList getLastTaskByPlanId(String planId) {
         return dao.getLastTaskByPlanId(planId);
+    }
+
+    /**
+     * 获取最新的巡检记录
+     * @param limit 查询条数
+     * @return
+     */
+    public List<SwmInspectionList> latestInspectionRecord(int limit) {
+       return dao.latestInspectionRecord(limit);
     }
 }

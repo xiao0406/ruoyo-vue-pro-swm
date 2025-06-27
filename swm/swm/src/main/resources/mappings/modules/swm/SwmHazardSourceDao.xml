@@ -49,6 +49,7 @@
         WHERE hazard_status = #{status}
           AND YEAR(registration_time) = #{year}
           AND MONTH(registration_time) = #{month}
+          AND status = '0';
     </select>
 
     <!-- 按危险源类别统计数量 -->
@@ -59,6 +60,7 @@
         FROM swm_hazard_source
         WHERE YEAR(registration_time) = #{year}
           AND MONTH(registration_time) = #{month}
+          AND status = '0'
         GROUP BY hazard_category
     </select>
 
@@ -70,8 +72,98 @@
         FROM swm_hazard_source
         WHERE YEAR(registration_time) = #{year}
           AND MONTH(registration_time) = #{month}
+          AND status = '0'
         GROUP BY hazard_category
         ORDER BY count DESC
         LIMIT 10
+    </select>
+
+    <select id="countByYearAndMonth" resultType="int">
+        SELECT COUNT(*)
+        FROM swm_hazard_source
+        WHERE  YEAR(registration_time) = #{year}
+          AND MONTH(registration_time) = #{month}
+          AND status = '0'
+    </select>
+
+    <select id="findTopCategories" resultType="map">
+        SELECT
+        hazard_category AS category,
+        COUNT(*) AS count
+        FROM swm_hazard_source
+        WHERE status = '0'
+        <if test="beginDate != null and beginDate != ''">
+            AND DATE(registration_time) <![CDATA[>=]]> #{beginDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(registration_time) <![CDATA[<=]]> #{endDate}
+        </if>
+        GROUP BY hazard_category
+        ORDER BY count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 按日期范围分组统计 -->
+    <select id="countByDateRangeGroupByDay" resultType="map">
+        SELECT
+            DATE_FORMAT(registration_time, '%Y-%m-%d') as date,
+            COUNT(*) as count
+        FROM swm_hazard_source
+        WHERE DATE(registration_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+        GROUP BY DATE(registration_time)
+        ORDER BY date
+    </select>
+
+    <!-- 按类别和日期范围分组统计 -->
+    <select id="countCategoryTrendByDateRange" resultType="map">
+        SELECT
+        hazard_category as category,
+        DATE_FORMAT(registration_time, '%Y-%m-%d') as date,
+        COUNT(*) as count
+        FROM swm_hazard_source
+        WHERE DATE(registration_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+        AND status = '0'
+        GROUP BY hazard_category, DATE(registration_time)
+        ORDER BY date, category
+    </select>
+
+    <select id="findCategoryDistribution" resultType="map">
+        SELECT
+        hazard_category AS category,
+        COUNT(*) AS count
+        FROM swm_hazard_source
+        WHERE status = '0'
+        <if test="beginDate != null and beginDate != ''">
+            AND DATE(registration_time) <![CDATA[>=]]> #{beginDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(registration_time) <![CDATA[<=]]> #{endDate}
+        </if>
+        GROUP BY hazard_category
+        ORDER BY count DESC
+    </select>
+
+    <!-- 按日期范围和状态统计 -->
+    <select id="countByDateRange" resultType="int">
+        SELECT COUNT(*)
+        FROM swm_hazard_source
+        WHERE registration_time BETWEEN #{beginDate} AND #{endDate}
+        AND status = '0'
+        <if test="statusList != null and !statusList.isEmpty()">
+            AND hazard_status IN
+            <foreach item="status" collection="statusList" open="(" separator="," close=")">
+                #{status}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 统计未制定巡检计划的数量 -->
+    <select id="countNoInspectionPlan" resultType="int">
+        SELECT COUNT(*)
+        FROM swm_hazard_source
+        WHERE registration_time BETWEEN #{beginDate} AND #{endDate}
+        AND status = '0'
+          AND (is_patrol_included = '0' OR is_patrol_included IS NULL)
     </select>
 </mapper>

@@ -1,19 +1,18 @@
 package com.jeesite.modules.swm.web;
 
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
+import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmHazardSource;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.*;
-import com.jeesite.modules.utils.R;
+import com.jeesite.modules.sys.entity.DictData;
+import com.jeesite.modules.sys.utils.DictUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -30,8 +29,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import com.jeesite.common.lang.DateUtils;
-import com.jeesite.common.entity.Page;
 
 /**
  * 大屏数据看板Controller
@@ -39,6 +36,7 @@ import com.jeesite.common.entity.Page;
  * @author zwf
  * @version 2025-06-03
  */
+@Slf4j
 @Controller
 @RequestMapping(value = "${adminPath}/dashboard")
 @Api(value = "大屏数据看板接口", tags = "大屏数据看板接口")
@@ -100,13 +98,13 @@ public class SwmDashboardController extends BaseController {
         try {
             // 调用Service层方法获取热力图数据
             List<Map<String, Object>> heatmapData = swmDashboardService.getHazardBeaconHeatmapData();
-            
+
             // 封装返回结果
             result.put("success", true);
             result.put("data", heatmapData);
             result.put("total", heatmapData.size());
             result.put("message", "获取危险源信标分布密度数据成功");
-            
+
         } catch (Exception e) {
             logger.error("获取危险源信标分布密度数据失败", e);
             result.put("success", false);
@@ -115,7 +113,7 @@ public class SwmDashboardController extends BaseController {
 
         return result;
     }
-    
+
     /**
      * 获取违规热力图数据（靠近危险源信标的报警汇总，用于密度分布展示）
      */
@@ -132,16 +130,16 @@ public class SwmDashboardController extends BaseController {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
                 month = sdf.format(new Date());
             }
-            
+
             // 调用Service层方法获取热力图数据
             List<Map<String, Object>> heatmapData = swmDashboardService.getViolationHeatmapData(month);
-            
+
             // 封装返回结果
             result.put("success", true);
             result.put("data", heatmapData);
             result.put("total", heatmapData.size());
             result.put("message", "获取违规热力图数据成功");
-            
+
         } catch (Exception e) {
             logger.error("获取违规热力图数据失败", e);
             result.put("success", false);
@@ -162,7 +160,7 @@ public class SwmDashboardController extends BaseController {
 
         // 1. 获取近7天的预警数据
         List<SwmWarningManagement> warnings = swmWarningManagementService.listPast7DaysWarning();
-        
+
         // 2. 统计每种预警内容的总数
         Map<String, Long> warningMap = warnings.stream()
                 .collect(Collectors.groupingBy(
@@ -203,7 +201,7 @@ public class SwmDashboardController extends BaseController {
     public Page<SwmWarningManagement> warningRecordsForPast7Days(SwmWarningManagement swmWarningManagement, Page<SwmWarningManagement> page) {
         // 获取近7天的预警数据（分页）
         return swmWarningManagementService.findPast7DaysWarningPage(swmWarningManagement, page);
-    
+
     }
 
     /**
@@ -295,22 +293,22 @@ public class SwmDashboardController extends BaseController {
     @ApiOperation("今日预警统计")
     public Map<String, Object> warningStatisticsForToday() {
         Map<String, Object> map = new HashMap<>();
-        
+
         // 获取统计数据
         try {
             // 使用TDengine直接查询统计数据
             String dbname = "plb"; // TDengine数据库名称
-            
+
             // 获取今天开始和结束的时间戳
             Calendar calendar = Calendar.getInstance();
             calendar.set(Calendar.HOUR_OF_DAY, 0);
             calendar.set(Calendar.MINUTE, 0);
             calendar.set(Calendar.SECOND, 0);
             long todayStartTime = calendar.getTimeInMillis();
-            
+
             calendar.add(Calendar.DAY_OF_YEAR, 1);
             long tomorrowStartTime = calendar.getTimeInMillis();
-            
+
             // TDengine特有语法：1. 不能使用COUNT(*)  2. 不能使用别名
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT warning_content,COUNT(1) FROM ")
@@ -319,21 +317,21 @@ public class SwmDashboardController extends BaseController {
                     .append(" AND warning_time < ").append(tomorrowStartTime)
                     .append(" AND status = '0'")
                     .append(" GROUP BY warning_content");
-            
+
             logger.info("执行今日预警统计SQL: {}", sqlBuilder.toString());
-            
+
             // 执行查询并解析结果
             Map<String, Object> warningMap = new HashMap<>();
             Map<String, Long> totalCountMap = new HashMap<>(); // 存储每种类型的总数
-            
+
             try {
                 // 使用tdengineService执行SQL查询
                 com.jeesite.modules.utils.R<cn.hutool.json.JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
-                
+
                 if (result.getCode() == com.jeesite.modules.utils.R.SUCCESS && result.getData() != null) {
                     cn.hutool.json.JSONObject data = result.getData();
                     cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-                    
+
                     if (rows != null) {
                         for (int i = 0; i < rows.size(); i++) {
                             cn.hutool.json.JSONArray row = rows.getJSONArray(i);
@@ -364,7 +362,7 @@ public class SwmDashboardController extends BaseController {
                                 Collectors.counting()
                         ));
             }
-            
+
             // 查询已处置的预警统计
             Map<String, Long> handledCountMap = new HashMap<>();
             try {
@@ -379,53 +377,53 @@ public class SwmDashboardController extends BaseController {
                 logger.error("查询已处置预警异常: {}", e.getMessage());
                 // 如果查询异常，将已处置数量都设为0
             }
-            
+
             // 处理危险源报警和安全预警（它们是同一个概念）
             Long hazardTotalCount = 0L;
             if (totalCountMap.containsKey("危险源报警")) {
                 hazardTotalCount = totalCountMap.get("危险源报警");
                 totalCountMap.remove("危险源报警");
             }
-            
+
             Long hazardHandledCount = 0L;
             if (handledCountMap.containsKey("危险源报警")) {
                 hazardHandledCount = handledCountMap.get("危险源报警");
                 handledCountMap.remove("危险源报警");
             }
-            
+
             // 设置安全预警（即危险源报警）- 不用"已处置/总数"格式
             warningMap.put("安全预警", hazardTotalCount);
-            
+
             // 计算跌落报警的总数和已处置数
             Long fallTotalCount = totalCountMap.getOrDefault("跌落报警", 0L);
             Long fallHandledCount = handledCountMap.getOrDefault("跌落报警", 0L);
             warningMap.put("跌落报警", fallHandledCount + "/" + fallTotalCount);
-            
+
             // 计算静默报警的总数和已处置数
             Long silentTotalCount = totalCountMap.getOrDefault("静默报警", 0L);
             Long silentHandledCount = handledCountMap.getOrDefault("静默报警", 0L);
             warningMap.put("静默报警", silentHandledCount + "/" + silentTotalCount);
-            
+
             // 计算主动报警（除安全预警外所有报警的总和）
             Long activeTotalCount = 0L;
             Long activeHandledCount = 0L;
-            
+
             // 遍历所有报警类型，计算除安全预警和危险源报警之外的总数和已处置数
             for (String warningType : totalCountMap.keySet()) {
                 if (!"安全预警".equals(warningType) && !"危险源报警".equals(warningType)) {
                     activeTotalCount += totalCountMap.getOrDefault(warningType, 0L);
                 }
             }
-            
+
             for (String warningType : handledCountMap.keySet()) {
                 if (!"安全预警".equals(warningType) && !"危险源报警".equals(warningType)) {
                     activeHandledCount += handledCountMap.getOrDefault(warningType, 0L);
                 }
             }
-            
+
             // 设置主动报警总数，格式为"已处置/总数"
             warningMap.put("主动报警", activeHandledCount + "/" + activeTotalCount);
-            
+
             map.put("warning", warningMap);
         } catch (Exception e) {
             logger.error("获取今日预警统计数据异常", e);
@@ -436,12 +434,12 @@ public class SwmDashboardController extends BaseController {
                         SwmWarningManagement::getWarningContent,
                         Collectors.counting()
                 ));
-            
+
             Map<String, Object> warningMap = new HashMap<>();
             warningMap.put("安全预警", totalCountMap.getOrDefault("危险源报警", 0L));
             warningMap.put("跌落报警", "0/" + totalCountMap.getOrDefault("跌落报警", 0L));
             warningMap.put("静默报警", "0/" + totalCountMap.getOrDefault("静默报警", 0L));
-            
+
             // 计算主动报警（除安全预警外所有报警的总和）
             Long activeTotalCount = 0L;
             for (Map.Entry<String, Long> entry : totalCountMap.entrySet()) {
@@ -450,21 +448,21 @@ public class SwmDashboardController extends BaseController {
                 }
             }
             warningMap.put("主动报警", "0/" + activeTotalCount);
-            
+
         map.put("warning", warningMap);
         }
-        
+
         // 使用混合查询方法获取最新的20条记录
         List<SwmWarningManagement> latestWarnings = swmWarningManagementService.findTodayWarningWithHybrid();
-        
+
         // 填充班组信息
         swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
-        
+
         // 填充位置信息
         swmWarningManagementService.fillLocationInfo(latestWarnings);
-        
+
         map.put("record", latestWarnings);
-        
+
         return map;
     }
 
@@ -528,17 +526,55 @@ public class SwmDashboardController extends BaseController {
                 swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.WAIT, year, month));
         statusCounts.put("IN_PROGRESS", swmHazardSourceService
                 .countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.IN_PROGRESS, year, month));
-        statusCounts.put("COMPLETED", swmHazardSourceService
-                .countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.COMPLETED, year, month));
+
+        //已完成的统计（已关闭和已忽略的）
+        int COMPLETED = swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.COMPLETED, year, month);
+        int CANCELLED = swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.CANCELLED, year, month);
+        statusCounts.put("COMPLETED", COMPLETED + CANCELLED);
+        //已发现(总数)
+        statusCounts.put("ALL",swmHazardSourceService.countByYearAndMonth(year, month));
         result.put("statusCounts", statusCounts);
 
         // 2. 按危险源类别统计数量
+        List<DictData> hazardCategoryList = DictUtils.getDictList("hazard_category_enum");
         List<Map<String, Object>> categoryCounts = swmHazardSourceService.countByCategoryAndMonth(year, month);
-        result.put("categoryCounts", categoryCounts);
-
-        // 3. 危险源类别排名前10
         List<Map<String, Object>> top10Categories = swmHazardSourceService.getTop10Categories(year, month);
-        result.put("top10Categories", top10Categories);
+
+        // 创建字典值(dictValue)到标签(dictLabelRaw)的映射
+        Map<String, String> valueToLabelMap = hazardCategoryList.stream()
+                .collect(Collectors.toMap(
+                        DictData::getDictValue,
+                        DictData::getDictLabelRaw,
+                        (existing, replacement) -> existing)); // 如果有重复键，保留已存在的
+
+        // 转换categoryCounts中的category值
+        List<Map<String, Object>> transformedCategoryCounts = categoryCounts.stream()
+                .map(originalMap -> {
+                    Map<String, Object> newMap = new HashMap<>(originalMap);
+                    if (originalMap.containsKey("category")) {
+                        String dictValue = (String) originalMap.get("category");
+                        String dictLabel = valueToLabelMap.getOrDefault(dictValue, dictValue);
+                        newMap.put("category", dictLabel);
+                    }
+                    return newMap;
+                })
+                .collect(Collectors.toList());
+
+        // 转换top10Categories中的category值
+        List<Map<String, Object>> transformedTop10Categories = top10Categories.stream()
+                .map(originalMap -> {
+                    Map<String, Object> newMap = new HashMap<>(originalMap);
+                    if (originalMap.containsKey("category")) {
+                        String dictValue = (String) originalMap.get("category");
+                        String dictLabel = valueToLabelMap.getOrDefault(dictValue, dictValue);
+                        newMap.put("category", dictLabel);
+                    }
+                    return newMap;
+                })
+                .collect(Collectors.toList());
+
+        result.put("categoryCounts", transformedCategoryCounts);
+        result.put("top10Categories", transformedTop10Categories);
         return result;
     }
 
@@ -622,12 +658,35 @@ public class SwmDashboardController extends BaseController {
     private List<SwmDailyAttendance> filterAttendances(List<SwmDailyAttendance> attendances,
                                                        Map<String, SwmPerson> personMap,
                                                        SwmPerson queryParams) {
-        return attendances.parallelStream()
+        // 收集不满足条件的记录用于日志记录
+        List<SwmDailyAttendance> unmatchedRecords = new ArrayList<>();
+
+        List<SwmDailyAttendance> result = attendances.parallelStream()
                 .filter(a -> {
                     SwmPerson person = personMap.get(a.getEmployeeId());
-                    return matchesQuery(person, queryParams);
+                    boolean matched = matchesQuery(person, queryParams);
+                    if (!matched) {
+                        synchronized (unmatchedRecords) {
+                            unmatchedRecords.add(a);
+                        }
+                    }
+                    return matched;
                 })
                 .collect(Collectors.toList());
+
+        // 打印不满足条件的记录
+        if (!unmatchedRecords.isEmpty()) {
+            log.warn("以下考勤记录不满足查询条件:");
+            unmatchedRecords.forEach(record ->
+                    log.warn("员工ID: {}, 姓名: {}, 考勤日期: {}",
+                            record.getEmployeeId(),
+                            record.getEmployeeName(),
+                            DateUtil.format(record.getAttendanceDate(), "yyyy-MM-dd"))
+            );
+            log.warn("共 {} 条记录被过滤", unmatchedRecords.size());
+        }
+
+        return result;
     }
 
     /**
@@ -906,7 +965,7 @@ public class SwmDashboardController extends BaseController {
 
     /**
      * 获取工种排名
-     * 
+     *
      * @param attendances
      * @param limit
      * @return

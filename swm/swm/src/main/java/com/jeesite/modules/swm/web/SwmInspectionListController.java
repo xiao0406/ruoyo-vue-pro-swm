@@ -1,26 +1,23 @@
 package com.jeesite.modules.swm.web;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmInspectionList;
 import com.jeesite.modules.swm.service.SwmInspectionListService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * 巡检列表Controller
- * 
+ *
  * @author Shawn
  * @version 2024-06-22
  */
@@ -87,6 +84,15 @@ public class SwmInspectionListController extends BaseController {
     public String delete(SwmInspectionList swmInspectionList) {
         swmInspectionListService.delete(swmInspectionList);
         return renderResult(Global.TRUE, text("删除巡检列表成功！"));
+    }
+
+    /**
+     * 热力图-最新巡检记录
+     */
+    @RequestMapping(value = "latestInspectionRecord")
+    @ResponseBody
+    public List<SwmInspectionList> latestInspectionRecord() {
+        return swmInspectionListService.latestInspectionRecord(10);
     }
 
 }

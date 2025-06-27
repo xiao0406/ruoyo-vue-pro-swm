@@ -1,5 +1,6 @@
 /**
  * 危险源信息Service
+ *
  * @author Shawn
  * @version 2025-05-21
  */
@@ -12,6 +13,7 @@ import com.jeesite.modules.swm.entity.SwmHazardSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -107,5 +109,58 @@ public class SwmHazardSourceService extends CrudService<SwmHazardSourceDao, SwmH
         return dao.getTop10Categories(year, month);
     }
 
+    /**
+     * 获取危险源数量
+     * @param year
+     * @param month
+     * @return
+     */
+    public int countByYearAndMonth(String year, String month) {
+        return dao.countByYearAndMonth(year, month);
+    }
 
+    /**
+     * 查询TOP N危险源类别
+     */
+    public List<Map<String, Object>> findTopCategories(String beginDate, String endDate, int limit) {
+        return dao.findTopCategories(beginDate, endDate, limit);
+    }
+
+    /**
+     * 查询危险源类别分布
+     */
+    public List<Map<String, Object>> findCategoryDistribution(String beginDate, String endDate) {
+        return dao.findCategoryDistribution(beginDate, endDate);
+    }
+
+    /**
+     * 按日期范围分组统计
+     */
+    public List<Map<String, Object>> countByDateRangeGroupByDay(Date beginDate, Date endDate) {
+        return dao.countByDateRangeGroupByDay(beginDate, endDate);
+    }
+
+    /**
+     * 按类别和日期范围分组统计
+     */
+    public List<Map<String, Object>> countCategoryTrendByDateRange(Date beginDate, Date endDate) {
+        return dao.countCategoryTrendByDateRange(beginDate, endDate);
+    }
+
+    /**
+     * 按日期范围和状态统计数量
+     * @param beginDate 开始日期
+     * @param endDate 结束日期
+     * @param statusList 状态列表（null表示不限制状态）
+     */
+    public int countByDateRange(Date beginDate, Date endDate, List<String> statusList){
+        return dao.countByDateRange(beginDate, endDate, statusList);
+    }
+
+    /**
+     * 统计未制定巡检计划的数量
+     */
+    public int countNoInspectionPlan(Date beginDate, Date endDate){
+        return dao.countNoInspectionPlan(beginDate, endDate);
+    }
 }
