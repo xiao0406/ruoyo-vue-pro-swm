@@ -457,14 +457,15 @@ public class AttendanceTask {
                         .findByEmployeeIdAndDate(person.getId(), today);
 
                 // 3.2 获取员工的排班信息
-                String workTimeRange = getWorkTimeRangeForPerson(person, today);
-                if (workTimeRange == null) {
+                SwmScheduleTime scheduleTime = getScheduleTimeForPerson(person, today);
+                if (scheduleTime == null) {
                     XxlJobHelper.log("员工[{}]{}没有排班信息，跳过创建考勤记录", person.getId(), person.getName());
                     continue;
                 }
+                String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
 
                 // 3.3 计算应考勤时长
-                BigDecimal scheduledHours = calculateScheduledHours(workTimeRange);
+                BigDecimal scheduledHours = calculateScheduledHours(scheduleTime);
 
                 // 3.4 创建或更新考勤记录
                 if (existingAttendance == null) {
@@ -512,13 +513,13 @@ public class AttendanceTask {
     }
 
     /**
-     * 获取员工的应考勤时间范围
+     * 获取员工的排班信息
      * 
      * @param person 员工信息
      * @param date   考勤日期
-     * @return 应考勤时间范围字符串，格式如"08:00-17:00"
+     * @return SwmScheduleTime 排班时间信息
      */
-    private String getWorkTimeRangeForPerson(SwmPerson person, Date date) {
+    private SwmScheduleTime getScheduleTimeForPerson(SwmPerson person, Date date) {
         // 1. 获取当前月份
         String month = DateUtil.format(date, "yyyy-MM");
 
@@ -541,26 +542,21 @@ public class AttendanceTask {
         if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
             return null;
         }
-        SwmScheduleTime scheduleTime = scheduleTimeList.get(0);
-
-        if (scheduleTime == null) {
-            return null;
-        }
-
-        // 4. 组合时间范围字符串
-        return scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
+        return scheduleTimeList.get(0);
     }
 
     /**
      * 计算应考勤时长
      * 
-     * @param workTimeRange 工作时间范围，格式如"08:00-17:00"或"20:30-03:00"
+     * @param scheduleTime 排班时间信息
      * @return 应考勤时长(小时)
      */
-    private BigDecimal calculateScheduledHours(String workTimeRange) {
-        if (workTimeRange == null || !workTimeRange.contains("-")) {
+    private BigDecimal calculateScheduledHours(SwmScheduleTime scheduleTime) {
+        if (scheduleTime == null || scheduleTime.getStartTime() == null || scheduleTime.getEndTime() == null) {
             return BigDecimal.ZERO;
         }
+
+        String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
 
         try {
             String[] times = workTimeRange.split("-");
@@ -593,9 +589,21 @@ public class AttendanceTask {
                 return BigDecimal.ZERO;
             }
 
-            // 验证时长的合理性（一般工作时长应该在1-16小时之间）
+            // 验证总时长的合理性（一般工作时长应该在1-16小时之间）
             if (hours < 1 || hours > 16) {
-                log.warn("工作时间范围 {} 计算出的时长 {} 小时可能不合理", workTimeRange, hours);
+                log.warn("班次总时长 {} 计算出的时长 {} 小时可能不合理", workTimeRange, hours);
+            }
+
+            // 减去休息时长
+            Double restTime = scheduleTime.getRestTime();
+            if (restTime != null && restTime > 0) {
+                hours -= restTime;
+            }
+
+            // 确保最终应考勤时长不为负数
+            if (hours < 0) {
+                log.warn("班次 {} 减去休息时长后，应考勤时长为负数: {} 小时", workTimeRange, hours);
+                hours = 0;
             }
 
             return BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
