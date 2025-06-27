@@ -95,7 +95,18 @@ public class AttendanceTask {
             // 查询指定日期的所有考勤记录
             SwmDailyAttendance query = new SwmDailyAttendance();
             query.setAttendanceDate(targetDate);
-            // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
+
+            // 测试使用，生产上要删除 begin
+            // java.util.List<String> employeeIds = new java.util.ArrayList<>();
+            // employeeIds.add("1935182658540556288");
+            // employeeIds.add("1935182658850934784");
+            // if (employeeIds != null && !employeeIds.isEmpty()) {
+            // query.getSqlMap().getWhere().and("employee_id",
+            // com.jeesite.common.mybatis.mapper.query.QueryType.IN,
+            // employeeIds);
+            // }
+            // 测试使用，生产上要删除 end
+
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
 
             if (attendanceList.isEmpty()) {
