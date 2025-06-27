@@ -1356,93 +1356,43 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
     @Override
     public R<Map<String, Object>> getFirstAndLastTimeByIdCardAndDate(String idCard, String dateStr,
             String workTimeRange) {
-        log.info("获取指定身份证号在工作时间范围内的第一条和最后一条时间记录, 身份证: {}, 日期: {}, 工作时间: {}",
-                idCard, dateStr, workTimeRange);
-
-        if (StringUtils.isBlank(idCard)) {
-            return R.fail("身份证号不能为空");
-        }
-
-        if (StringUtils.isBlank(dateStr)) {
-            return R.fail("日期不能为空");
-        }
-
-        if (StringUtils.isBlank(workTimeRange)) {
-            return R.fail("工作时间范围不能为空");
+        log.info("获取员工[身份证:{}]在[{}]的最早和最晚打卡时间(班次:{})", idCard, dateStr, workTimeRange);
+        if (StringUtils.isBlank(idCard) || StringUtils.isBlank(dateStr)) {
+            return R.fail("身份证号和日期不能为空");
         }
 
         try {
-            // 解析工作时间范围
-            String[] timeRange = parseWorkTimeRange(dateStr, workTimeRange);
-            if (timeRange == null) {
-                return R.fail("工作时间范围格式错误: " + workTimeRange);
-            }
+            // 解析工作时间范围，获取TDengine查询的起止时间
+            String[] timeBounds = parseWorkTimeRange(dateStr, workTimeRange);
+            String startTime = timeBounds[0];
+            String endTime = timeBounds[1];
 
-            String startTime = timeRange[0];
-            String endTime = timeRange[1];
+            // 构建SQL查询
+            // @author: Shawn
+            // @date: 2024/07/31
+            // 根据用户要求，从 helmet_runde_ca_report_location 修改为 external_coordinate_data
+            String sql = String.format(
+                    "select FIRST(time) as firsttime, LAST(time) as lasttime from %s.%s where id_card='%s' and time >= '%s' and time <= '%s'",
+                    dbname, "external_coordinate_data", idCard, startTime, endTime);
 
-            // 查询第一条时间记录
-            String firstSql = String.format(
-                    "select time from %s.%s " +
-                            "where id_card='%s' and time >= '%s' and time <= '%s' " +
-                            "order by time asc limit 1",
-                    dbname, HELMET_SUPER_TABLE_NAME,
-                    idCard, startTime, endTime);
+            log.info("查询最早最晚时间SQL: {}", sql);
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
 
-            // 查询最后一条时间记录
-            String lastSql = String.format(
-                    "select time from %s.%s " +
-                            "where id_card='%s' and time >= '%s' and time <= '%s' " +
-                            "order by time desc limit 1",
-                    dbname, HELMET_SUPER_TABLE_NAME,
-                    idCard, startTime, endTime);
-
-            log.info("查询第一条时间SQL: {}", firstSql);
-            log.info("查询最后一条时间SQL: {}", lastSql);
-
-            R<JSONObject> firstResult = tdengineService.executeTDengineSQL(firstSql);
-            R<JSONObject> lastResult = tdengineService.executeTDengineSQL(lastSql);
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("idCard", idCard);
-            result.put("date", dateStr);
-            result.put("workTimeRange", workTimeRange);
-            result.put("queryStartTime", startTime);
-            result.put("queryEndTime", endTime);
-
-            if (firstResult.getCode() == R.SUCCESS) {
-                List<Map<String, Object>> firstRows = processQueryResult(firstResult.getData());
-                if (!firstRows.isEmpty()) {
-                    Object firstTime = firstRows.get(0).get("time");
-                    result.put("firstTime", firstTime);
-                    log.info("找到第一条时间记录: {}", firstTime);
-                } else {
-                    result.put("firstTime", null);
-                    log.info("在工作时间范围内未找到第一条时间记录");
+            if (result.getCode() == R.SUCCESS) {
+                List<Map<String, Object>> rows = processQueryResult(result.getData());
+                if (!rows.isEmpty()) {
+                    Map<String, Object> timeInfo = rows.get(0);
+                    // 创建一个新的Map来存放结果
+                    Map<String, Object> resultMap = new HashMap<>();
+                    resultMap.put("firstTime", timeInfo.get("firsttime"));
+                    resultMap.put("lastTime", timeInfo.get("lasttime"));
+                    return R.ok(resultMap);
                 }
-            } else {
-                result.put("firstTime", null);
-                log.error("查询第一条时间记录失败: {}", firstResult.getMsg());
             }
 
-            if (lastResult.getCode() == R.SUCCESS) {
-                List<Map<String, Object>> lastRows = processQueryResult(lastResult.getData());
-                if (!lastRows.isEmpty()) {
-                    Object lastTime = lastRows.get(0).get("time");
-                    result.put("lastTime", lastTime);
-                    log.info("找到最后一条时间记录: {}", lastTime);
-                } else {
-                    result.put("lastTime", null);
-                    log.info("在工作时间范围内未找到最后一条时间记录");
-                }
-            } else {
-                result.put("lastTime", null);
-                log.error("查询最后一条时间记录失败: {}", lastResult.getMsg());
-            }
-
-            return R.ok(result);
+            return R.fail("查询失败或无数据: " + result.getMsg());
         } catch (Exception e) {
-            log.error("获取工作时间范围内的第一条和最后一条时间记录失败, 身份证: {}, 日期: {}, 工作时间: {}",
+            log.error("获取第一条和最后一条时间记录失败, 身份证: {}, 日期: {}, 工作时间: {}",
                     idCard, dateStr, workTimeRange, e);
             return R.fail("查询失败: " + e.getMessage());
         }
