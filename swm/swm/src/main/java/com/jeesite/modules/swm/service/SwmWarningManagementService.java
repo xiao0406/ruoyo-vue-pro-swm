@@ -90,7 +90,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
                .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
-               .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card ")
+               .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+               .append("front_alarm, type, x, y ")
                .append("FROM ").append(dbname).append(".swm_warning_management");
         
         // 添加查询条件
@@ -374,6 +375,15 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     case "type":
                         entity.setType(row.getStr(i));
                         break;
+                    case "front_alarm":
+                        entity.setFrontAlarm(row.getStr(i));
+                        break;
+                    case "x":
+                        entity.setX(row.getStr(i));
+                        break;
+                    case "y":
+                        entity.setY(row.getStr(i));
+                        break;
                 }
             }
             
@@ -445,6 +455,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             addField(columns, values, "handle_process", swmWarningManagement.getHandleProcess(), true);
             addField(columns, values, "handle_status", swmWarningManagement.getHandleStatus(), true);
             addField(columns, values, "attachment", swmWarningManagement.getAttachment(), true);
+            addField(columns, values, "device_id", swmWarningManagement.getDeviceId(), true);
+            addField(columns, values, "id_card", swmWarningManagement.getIdCard(), true);
+            addField(columns, values, "front_alarm", swmWarningManagement.getFrontAlarm(), true);
+            addField(columns, values, "type", swmWarningManagement.getType(), true);
+            addField(columns, values, "x", swmWarningManagement.getX(), true);
+            addField(columns, values, "y", swmWarningManagement.getY(), true);
             
             // 构建SQL语句
             sql.append(String.join(",", columns))
@@ -527,6 +543,30 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             
             if (swmWarningManagement.getAttachment() != null) {
                 updates.add("attachment = '" + swmWarningManagement.getAttachment() + "'");
+            }
+            
+            if (swmWarningManagement.getDeviceId() != null) {
+                updates.add("device_id = '" + swmWarningManagement.getDeviceId() + "'");
+            }
+            
+            if (swmWarningManagement.getIdCard() != null) {
+                updates.add("id_card = '" + swmWarningManagement.getIdCard() + "'");
+            }
+            
+            if (swmWarningManagement.getFrontAlarm() != null) {
+                updates.add("front_alarm = '" + swmWarningManagement.getFrontAlarm() + "'");
+            }
+            
+            if (swmWarningManagement.getType() != null) {
+                updates.add("type = '" + swmWarningManagement.getType() + "'");
+            }
+            
+            if (swmWarningManagement.getX() != null) {
+                updates.add("x = '" + swmWarningManagement.getX() + "'");
+            }
+            
+            if (swmWarningManagement.getY() != null) {
+                updates.add("y = '" + swmWarningManagement.getY() + "'");
             }
             
             // 完成SQL语句
@@ -630,6 +670,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         mysqlWarning.setTriggerReason(swmWarningManagement.getTriggerReason());
         mysqlWarning.setDeviceId(swmWarningManagement.getDeviceId());
         mysqlWarning.setIdCard(swmWarningManagement.getIdCard());
+        mysqlWarning.setFrontAlarm(swmWarningManagement.getFrontAlarm());
+        mysqlWarning.setType(swmWarningManagement.getType());
+        mysqlWarning.setX(swmWarningManagement.getX());
+        mysqlWarning.setY(swmWarningManagement.getY());
         
         // 设置前端传入的处置信息
         mysqlWarning.setHandler(handler);
@@ -651,6 +695,14 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 existingRecord.setHandleProcess(handleProcess);
                 existingRecord.setHandleStatus(handleStatus);
                 existingRecord.setUpdateDate(new Date()); // 更新时间
+                
+                // 更新坐标信息
+                if (swmWarningManagement.getX() != null) {
+                    existingRecord.setX(swmWarningManagement.getX());
+                }
+                if (swmWarningManagement.getY() != null) {
+                    existingRecord.setY(swmWarningManagement.getY());
+                }
                 
                 // 如果附件不为空，则更新
                 if (attachment != null && !attachment.isEmpty()) {
@@ -1309,8 +1361,11 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             } else {
                 // MySQL中已存在，更新front_alarm字段
                 mysqlEntity.setFrontAlarm("0");
+                // 更新x和y坐标字段
+                mysqlEntity.setX(entity.getX());
+                mysqlEntity.setY(entity.getY());
                 super.save(mysqlEntity);
-                logger.info("告警确认：更新MySQL记录front_alarm=0, ID: {}", id);
+                logger.info("告警确认：更新MySQL记录front_alarm=0, x={}, y={}, ID: {}", entity.getX(), entity.getY(), id);
             }
             
             return true;
@@ -1341,7 +1396,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
                .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
-               .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card ")
+               .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+               .append("front_alarm, type, x, y ")
                .append("FROM ").append(dbname).append(".swm_warning_management");
         
         // 添加排序条件
