@@ -480,7 +480,9 @@ public class AttendanceTask {
                     newAttendance.setIdleHours(BigDecimal.ZERO); // 默认怠工时长为0
                     newAttendance.setDailyEfficiency(BigDecimal.ZERO); // 默认功效为0
                     newAttendance.setDailyAchievementRate(BigDecimal.ZERO); // 默认达成率为0
-                    newAttendance.setAttendanceNormal("0"); // 默认考勤正常
+                    newAttendance.setAttendanceNormal("3"); // 默认未考勤
+                    // 设置默认的当前位置为"未知"
+                    newAttendance.setCurrentPosition("3"); // 默认未知
 
                     swmDailyAttendanceService.save(newAttendance);
                     createdCount++;
