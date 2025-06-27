@@ -458,6 +458,7 @@ public class AttendanceTask {
                     SwmDailyAttendance newAttendance = new SwmDailyAttendance();
                     newAttendance.setEmployeeId(person.getId());
                     newAttendance.setEmployeeName(person.getName());
+                    newAttendance.setPersonType(person.getPersonType());
                     newAttendance.setAttendanceDate(today);
                     newAttendance.setWorkTimeRange(workTimeRange);
                     newAttendance.setScheduledHours(scheduledHours);
@@ -473,6 +474,7 @@ public class AttendanceTask {
                     // 更新现有记录
                     existingAttendance.setWorkTimeRange(workTimeRange);
                     existingAttendance.setScheduledHours(scheduledHours);
+                    existingAttendance.setPersonType(person.getPersonType());
                     // todo 调用接口获取怠工时长、考勤是否正常等
 
                     // 保留原有的实际考勤数据
