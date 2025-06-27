@@ -32,12 +32,14 @@ import java.util.Map;
         @Column(name = "handle_process", attrName = "handleProcess", label = "处置过程"),
         @Column(name = "handle_status", attrName = "handleStatus", label = "处置状态"),
         @Column(name = "attachment", attrName = "attachment", label = "附件路径", comment = "附件路径"),
+        @Column(name = "disposal_duration", attrName = "disposalDuration", label = "处置时长", comment = "处置时长(min)"),
         @Column(name = "device_id", attrName = "deviceId", label = "设备ID"),
         @Column(name = "id_card", attrName = "idCard", label = "身份证号"),
         @Column(name = "front_alarm", attrName = "frontAlarm", label = "前端弹框提示", comment = "前端全局弹框提示（0不弹框，1弹框）"),
         @Column(name = "type", attrName = "type", label = "告警类型", comment = "与alarm_config表的alarm_key匹配"),
         @Column(name = "x", attrName = "x", label = "x坐标", comment = "x坐标"),
         @Column(name = "y", attrName = "y", label = "y坐标", comment = "y坐标"),
+        @Column(name = "hazard_category", attrName = "hazardCategory", label = "危险源类别"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.warning_time DESC")
 public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
@@ -136,12 +138,14 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private String handleProcess; // 处置过程
     private String handleStatus; // 处置状态
     private String attachment; // 附件路径
+    private Long disposalDuration; // 处置时长
     private String deviceId; // 设备ID
     private String idCard; // 身份证号
     private String frontAlarm; // 前端弹框提示
     private String type; // 告警类型，与alarm_config表的alarm_key匹配
     private String x; // x坐标
     private String y; // y坐标
+    private String hazardCategory; // 危险源类别
     
     // 用于显示的属性，不对应数据库字段
     private String workGroupName; // 班组名称
@@ -421,5 +425,22 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setAreaName(String areaName) {
         this.areaName = areaName;
+    }
+
+    @Length(min = 0, max = 50, message = "处置时长不能超过50个字符")
+    public Long getDisposalDuration() {
+        return disposalDuration;
+    }
+
+    public void setDisposalDuration(Long disposalDuration) {
+        this.disposalDuration = disposalDuration;
+    }
+
+    public String getHazardCategory() {
+        return hazardCategory;
+    }
+
+    public void setHazardCategory(String hazardCategory) {
+        this.hazardCategory = hazardCategory;
     }
 }
