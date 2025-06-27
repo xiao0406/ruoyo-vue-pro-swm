@@ -16,8 +16,11 @@ import com.jeesite.modules.swm.service.SwmHazardSourceService;
 import com.jeesite.modules.swm.service.SwmInspectionPlanService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmVoiceTemplateService;
+import com.jeesite.modules.sys.entity.DictData;
+import com.jeesite.modules.sys.utils.DictUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,8 +29,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 危险源信息Controller
@@ -255,4 +260,279 @@ public class SwmHazardSourceController extends BaseController {
         return swmHazardSourceService.findList(hazardSource).isEmpty() ? null
                 : swmHazardSourceService.findList(hazardSource).get(0);
     }
+
+    /**
+     * 热力图-危险源总数趋势
+     * @param beginDate 开始时间
+     * @param endDate 结束时间
+     * @return
+     */
+    @GetMapping("hazardSourceStatistics")
+    @ResponseBody
+    @ApiOperation(value = "热力图-危险源总数趋势")
+    public Map<String, Object> hazardSourceStatistics(@RequestParam(required = false) String beginDate, @RequestParam(required = false) String endDate) {
+
+        Map<String, Object> result = new HashMap<>();
+        List<DictData> hazardCategoryList = DictUtils.getDictList("hazard_category_enum");
+        // 创建字典值(dictValue)到标签(dictLabelRaw)的映射
+        Map<String, String> valueToLabelMap = hazardCategoryList.stream()
+                .collect(Collectors.toMap(
+                        DictData::getDictValue,
+                        DictData::getDictLabelRaw,
+                        (existing, replacement) -> existing)); // 如果有重复键，保留已存在的
+
+
+        // 1. 危险源总数趋势折线图
+        result.put("totalTrend", getHazardSourceTotalTrend(beginDate, endDate));
+
+        // 2. 危险源类别TOP 10 柱状图
+        result.put("categoryTop10", getHazardSourceCategoryTop10(beginDate, endDate,valueToLabelMap));
+
+        // 3. 危险源类别分布饼图
+        result.put("categoryDistribution",getHazardSourceCategoryDistribution(beginDate, endDate, valueToLabelMap));
+
+        // 4. 危险源类别趋势折线图
+        result.put("categoryTrend", getHazardSourceCategoryTrend(beginDate, endDate,valueToLabelMap));
+
+        return result;
+    }
+
+    @GetMapping("hazardSourceCounts")
+    @ResponseBody
+    @ApiOperation(value = "热力图-危险源数量统计-(中间4个数量)")
+    public Map<String, Object> getHazardSourceCounts(
+            @RequestParam(required = false) String beginDate,
+            @RequestParam(required = false) String endDate) {
+
+        // 处理日期范围（默认近30天）
+        DateRange dateRange = parseDateRange(beginDate, endDate);
+
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 危险源总数
+        int totalCount = swmHazardSourceService.countByDateRange(
+                dateRange.getBeginDate(),
+                dateRange.getEndDate(),
+                null); // 不限制状态
+
+        // 2. 未关闭危险源数量（待处理+处理中）
+        int unclosedCount = swmHazardSourceService.countByDateRange(
+                dateRange.getBeginDate(),
+                dateRange.getEndDate(),
+                Arrays.asList(SwmHazardSource.HazardSourceStatusEnum.WAIT, SwmHazardSource.HazardSourceStatusEnum.IN_PROGRESS));
+
+        // 3. 已关闭危险源数量（总数 - 未关闭的）
+        int closedCount = totalCount - unclosedCount;
+
+        // 4. 危险源整改率（保留2位小数）
+        double rectificationRate = totalCount > 0 ?
+                Math.round(closedCount * 10000.0 / totalCount) / 100.0 : 0;
+
+        // 5. 未制定巡检计划的数量
+        int noInspectionPlanCount = swmHazardSourceService.countNoInspectionPlan(
+                dateRange.getBeginDate(),
+                dateRange.getEndDate());
+
+        // 返回结果
+        result.put("totalCount", totalCount);
+        result.put("unclosedCount", unclosedCount);
+        result.put("closedCount", closedCount);
+        result.put("rectificationRate", rectificationRate);
+        result.put("noInspectionPlanCount", noInspectionPlanCount);
+
+        return result;
+    }
+
+    /**
+     * 获取危险源总数趋势数据
+     */
+    private List<Map<String, Object>> getHazardSourceTotalTrend(String beginDateStr, String endDateStr) {
+        // 解析日期参数
+        DateRange dateRange = parseDateRange(beginDateStr, endDateStr);
+
+        // 获取日期列表
+        List<String> dateList = getDateList(dateRange.getBeginDate(), dateRange.getEndDate());
+
+        // 一次性查询所有数据
+        List<Map<String, Object>> dbResults = swmHazardSourceService.countByDateRangeGroupByDay(
+                dateRange.getBeginDate(),
+                dateRange.getEndDate()
+        );
+
+        // 转换为按日期索引的Map
+        Map<String, Integer> countMap = dbResults.stream()
+                .collect(Collectors.toMap(
+                        item -> (String) item.get("date"),
+                        item -> ((Number) item.get("count")).intValue()
+                ));
+
+        // 构建返回结果 - 使用显式类型声明
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (String date : dateList) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("date", date);
+            item.put("count", countMap.getOrDefault(date, 0));
+            result.add(item);
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取危险源类别TOP 10数据
+     */
+    private List<Map<String, Object>> getHazardSourceCategoryTop10(String beginDate,String endDate,Map<String, String> valueToLabelMap) {
+        List<Map<String, Object>> topCategories = swmHazardSourceService.findTopCategories(beginDate, endDate, 10);
+        return transformedCategoryDict(valueToLabelMap, topCategories);
+    }
+
+    /**
+     * 获取字典值转换后的数据
+     * @param valueToLabelMap 字典值转换
+     * @param categoryCounts 类别数量
+     * @return
+     */
+    private static List<Map<String, Object>> transformedCategoryDict(Map<String, String> valueToLabelMap, List<Map<String, Object>> categoryCounts) {
+        // 转换categoryCounts中的category值
+        List<Map<String, Object>> transformedCategoryCounts = categoryCounts.stream()
+                .map(originalMap -> {
+                    Map<String, Object> newMap = new HashMap<>(originalMap);
+                    if (originalMap.containsKey("category")) {
+                        String dictValue = (String) originalMap.get("category");
+                        String dictLabel = valueToLabelMap.getOrDefault(dictValue, dictValue);
+                        newMap.put("category", dictLabel);
+                    }
+                    return newMap;
+                })
+                .collect(Collectors.toList());
+        return transformedCategoryCounts;
+    }
+
+    /**
+     * 获取危险源类别分布数据
+     */
+    private List<Map<String, Object>> getHazardSourceCategoryDistribution(String beginDate,String endDate,Map<String, String> valueToLabelMap) {
+        List<Map<String, Object>> categoryDistribution = swmHazardSourceService.findCategoryDistribution(beginDate, endDate);
+        return transformedCategoryDict(valueToLabelMap, categoryDistribution);
+    }
+
+    /**
+     * 获取危险源类别趋势数据
+     */
+    private Map<String, List<Map<String, Object>>> getHazardSourceCategoryTrend(String beginDateStr, String endDateStr,Map<String, String> valueToLabelMap) {
+        // 解析日期参数
+        DateRange dateRange = parseDateRange(beginDateStr, endDateStr);
+
+        // 一次性查询所有类别的趋势数据
+        List<Map<String, Object>> allData = transformedCategoryDict(valueToLabelMap, swmHazardSourceService.countCategoryTrendByDateRange(dateRange.getBeginDate(),dateRange.getEndDate()));
+
+        // 按类别分组（使用传统方式创建Map）
+        Map<String, List<Map<String, Object>>> groupedData = allData.stream()
+                .collect(Collectors.groupingBy(
+                        item -> (String) item.get("category"),
+                        Collectors.mapping(
+                                item -> {
+                                    Map<String, Object> map = new HashMap<>();
+                                    map.put("date", item.get("date"));
+                                    map.put("count", item.get("count"));
+                                    return map;
+                                },
+                                Collectors.toList()
+                        )
+                ));
+
+        // 生成完整日期列表
+        List<String> dateList = getDateList(dateRange.getBeginDate(), dateRange.getEndDate());
+
+        // 补全缺失日期数据（使用传统方式创建Map）
+        groupedData.forEach((category, data) -> {
+            Map<String, Integer> dateCountMap = data.stream()
+                    .collect(Collectors.toMap(
+                            item -> (String) item.get("date"),
+                            item -> ((Number) item.get("count")).intValue()
+                    ));
+
+            List<Map<String, Object>> completeData = dateList.stream()
+                    .map(date -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("date", date);
+                        map.put("count", dateCountMap.getOrDefault(date, 0));
+                        return map;
+                    })
+                    .collect(Collectors.toList());
+
+            groupedData.put(category, completeData);
+        });
+
+        return groupedData;
+    }
+    /**
+     * 解析日期范围
+     */
+    private DateRange parseDateRange(String beginDateStr, String endDateStr) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date beginDate = null;
+        Date endDate = null;
+
+        try {
+            if (StringUtils.isNotBlank(beginDateStr)) {
+                beginDate = sdf.parse(beginDateStr);
+            }
+            if (StringUtils.isNotBlank(endDateStr)) {
+                endDate = sdf.parse(endDateStr);
+            }
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("日期格式不正确，请使用yyyy-MM-dd格式");
+        }
+
+        // 默认近30天
+        if (beginDate == null || endDate == null) {
+            Calendar cal = Calendar.getInstance();
+            endDate = cal.getTime();
+            cal.add(Calendar.DAY_OF_MONTH, -30);
+            beginDate = cal.getTime();
+        }
+
+        return new DateRange(beginDate, endDate);
+    }
+
+    /**
+     * 生成日期列表
+     */
+    private List<String> getDateList(Date beginDate, Date endDate) {
+        List<String> dateList = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(beginDate);
+
+        while (!cal.getTime().after(endDate)) {
+            dateList.add(sdf.format(cal.getTime()));
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+        return dateList;
+    }
+
+    /**
+     * 日期范围内部类
+     */
+    private static class DateRange {
+        private final Date beginDate;
+        private final Date endDate;
+
+        public DateRange(Date beginDate, Date endDate) {
+            this.beginDate = beginDate;
+            this.endDate = endDate;
+        }
+
+        public Date getBeginDate() {
+            return beginDate;
+        }
+
+        public Date getEndDate() {
+            return endDate;
+        }
+    }
+
 }

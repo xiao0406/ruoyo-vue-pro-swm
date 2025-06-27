@@ -30,4 +30,27 @@
         <include refid="swmInspectionListColumns"/>
         from swm_inspection_list a where a.plan_id = #{planId} order by a.start_time desc limit 1
     </select>
+
+    <select id="latestInspectionRecord" resultType="com.jeesite.modules.swm.entity.SwmInspectionList">
+        select a.id                     AS "id",
+               a.plan_id                AS "planId",
+               a.plan_name              AS "planName",
+               a.inspection_type        AS "inspectionType",
+               a.inspector_id           AS "inspectorId",
+               a.start_time             AS "startTime",
+               a.end_time               AS "endTime",
+               a.attachment_path        AS "attachmentPath",
+               a.inspection_list_status AS "inspectionListStatus",
+               a.create_by              AS "createBy",
+               a.create_date            AS "createDate",
+               a.update_by              AS "updateBy",
+               a.update_date            AS "updateDate",
+               a.remarks                AS "remarks",
+               a.status                 AS "status",
+               b.name                   AS "inspector"
+        from swm_inspection_list a
+                 left join swm_person b on a.inspector_id = b.id
+        where a.status = '0'
+        order by a.start_time desc limit #{limit}
+    </select>
 </mapper>
