@@ -16,7 +16,6 @@ import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +26,11 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.*;
+import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
+import com.jeesite.modules.swm.service.SwmPersonService;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -119,6 +120,20 @@ public class SwmWarningManagementController extends BaseController {
                 } else {
                     tdEngineCount++;
                 }
+
+                // 确保处置时长字段即使为0也返回
+                if (item.getDisposalDuration() == null) {
+                    item.setDisposalDuration(0L);
+                    logger.debug("ID: {}, 处置时长为空，设置为0", item.getId());
+                } else {
+                    logger.debug("ID: {}, 处置时长: {}", item.getId(), item.getDisposalDuration());
+                }
+
+                // 记录坐标信息，确保即使为空也在日志中显示
+                logger.debug("ID: {}, x坐标: {}, y坐标: {}",
+                    item.getId(),
+                    item.getX() != null ? item.getX() : "null",
+                    item.getY() != null ? item.getY() : "null");
             }
 
             logger.info("返回数据中，来自MySQL的记录: {}条，来自时序数据库的记录: {}条", mysqlCount, tdEngineCount);
@@ -186,6 +201,23 @@ public class SwmWarningManagementController extends BaseController {
                 warningData.put("handleProcess", mysqlRecord.getHandleProcess());
                 warningData.put("deviceId", mysqlRecord.getDeviceId());
                 warningData.put("idCard", mysqlRecord.getIdCard());
+
+                // 确保返回x和y坐标信息
+                warningData.put("x", mysqlRecord.getX());
+                warningData.put("y", mysqlRecord.getY());
+
+                // 确保返回危险源类别信息
+                warningData.put("hazardCategory", mysqlRecord.getHazardCategory());
+                logger.debug("表单查询 ID: {}, 危险源类别: {}", mysqlRecord.getId(), mysqlRecord.getHazardCategory());
+
+                // 确保处置时长(disposal_duration)即使为0也返回
+                if (mysqlRecord.getDisposalDuration() == null) {
+                    warningData.put("disposalDuration", 0L);
+                    logger.debug("表单查询 ID: {}, 处置时长为空，设置为0", mysqlRecord.getId());
+                } else {
+                    warningData.put("disposalDuration", mysqlRecord.getDisposalDuration());
+                    logger.debug("表单查询 ID: {}, 处置时长: {}", mysqlRecord.getId(), mysqlRecord.getDisposalDuration());
+                }
 
                 // 保存原始值，用于调试
                 String origHandleStatus = mysqlRecord.getHandleStatus();
@@ -526,24 +558,41 @@ public class SwmWarningManagementController extends BaseController {
         // 创建分页对象
         Page<SwmWarningManagement> page = new Page<>(request, response);
 
-        // 确保只筛选一键SOS的预警数据
+        // 确保对象不为空
         if (swmWarningManagement == null) {
             swmWarningManagement = new SwmWarningManagement();
         }
 
-        // 设置固定的warningContent为"一键SOS"
+        // 添加SOS条件
         swmWarningManagement.setWarningContent("一键SOS");
 
-        logger.info("查询SOS报警参数: personName={}, warningType={}, warningContent={}, handleStatus={}",
+        logger.info("SOS查询参数: personName={}, warningType={}, warningContent={}, handleStatus={}",
             swmWarningManagement.getPersonName(),
             swmWarningManagement.getWarningType(),
             swmWarningManagement.getWarningContent(),
             swmWarningManagement.getHandleStatus());
 
         // 调用服务层方法，使用混合查询获取数据（时序数据库 + MySQL）
-        // 时区调整已在SQL查询中完成，无需再次调整
         Page<SwmWarningManagement> resultPage = swmWarningManagementService.hybridFindPage(page, swmWarningManagement);
-        logger.info("SOS报警查询完成，返回数据总条数: {}", resultPage != null ? resultPage.getCount() : 0);
+
+        // 确保处置时长即使为0也返回，并记录坐标信息
+        if (resultPage != null && resultPage.getList() != null && !resultPage.getList().isEmpty()) {
+            for (SwmWarningManagement item : resultPage.getList()) {
+                // 确保处置时长字段即使为0也返回
+                if (item.getDisposalDuration() == null) {
+                    item.setDisposalDuration(0L);
+                    logger.debug("SOS ID: {}, 处置时长为空，设置为0", item.getId());
+                } else {
+                    logger.debug("SOS ID: {}, 处置时长: {}", item.getId(), item.getDisposalDuration());
+                }
+
+                // 记录坐标信息，确保即使为空也在日志中显示
+                logger.debug("SOS ID: {}, x坐标: {}, y坐标: {}",
+                    item.getId(),
+                    item.getX() != null ? item.getX() : "null",
+                    item.getY() != null ? item.getY() : "null");
+            }
+        }
 
         return resultPage;
     }

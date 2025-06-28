@@ -107,14 +107,11 @@ public class SwmDailyAttendanceController extends BaseController {
             String json = objectMapper.writeValueAsString(object);
             Map<String, Object> result = objectMapper.readValue(json, Map.class);
 
-            // 如果是SwmDailyAttendance对象，检查是否在休息区并设置currentPosition
+            // 如果是SwmDailyAttendance对象，获取实时位置并设置currentPosition
             if (object instanceof SwmDailyAttendance) {
                 SwmDailyAttendance attendance = (SwmDailyAttendance) object;
-                boolean inRestArea = checkIfInRestArea(attendance.getEmployeeId());
-                // 如果在休息区，设置currentPosition为1
-                if (inRestArea) {
-                    result.put("currentPosition", 1);
-                }
+                String currentPosition = getRealTimePosition(attendance.getEmployeeId());
+                result.put("currentPosition", currentPosition);
             }
 
             return result;
@@ -125,36 +122,27 @@ public class SwmDailyAttendanceController extends BaseController {
     }
 
     /**
-     * 检查员工当前是否在休息区域
-     * 基于10分钟内TDengine数据判断
-     * 
+     * 获取员工的实时位置
+     *
      * @param employeeId 员工ID
-     * @return true-在休息区，false-不在休息区
+     * @return "0"-工作区, "1"-休息区, "3"-未知
      */
-    private boolean checkIfInRestArea(String employeeId) {
+    private String getRealTimePosition(String employeeId) {
+        if (StringUtils.isBlank(employeeId)) {
+            return "3";
+        }
         try {
             // 1. 获取员工身份证号
             String idCard = swmDailyAttendanceService.getIdCardByEmployeeId(employeeId);
             if (idCard == null) {
-                return false;
+                logger.warn("无法根据员工ID {} 找到身份证号", employeeId);
+                return "3";
             }
-
-            // 2. 获取当前时间的前10分钟作为查询范围
-            Date now = new Date();
-            Date tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000); // 10分钟前
-            SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String startTime = dateTimeFormat.format(tenMinutesAgo);
-            String endTime = dateTimeFormat.format(now);
-
-            // 3. 调用AreaFenceDataService查询休息区域数据
-            // 使用类似calculateIdleTimeByIdCard的逻辑，但只查询最近10分钟
-            boolean hasRestAreaData = areaFenceDataService.checkInRestAreaRecently(idCard, startTime, endTime);
-
-            return hasRestAreaData;
-
+            // 2. 调用服务查询实时位置
+            return areaFenceDataService.getCurrentLocationByIdCard(idCard);
         } catch (Exception e) {
-            logger.error("检查员工{}是否在休息区失败", employeeId, e);
-            return false;
+            logger.error("获取员工 {} 实时位置失败", employeeId, e);
+            return "3";
         }
     }
 

@@ -21,6 +21,7 @@ public class SwmScheduleTimeService extends CrudService<SwmScheduleTimeDao, SwmS
 
     /**
      * 获取单条数据
+     * 
      * @param swmScheduleTime
      * @return
      */
@@ -31,6 +32,7 @@ public class SwmScheduleTimeService extends CrudService<SwmScheduleTimeDao, SwmS
 
     /**
      * 查询分页数据
+     * 
      * @param swmScheduleTime
      * @return
      */
@@ -40,7 +42,8 @@ public class SwmScheduleTimeService extends CrudService<SwmScheduleTimeDao, SwmS
 
     /**
      * 查询分页数据（带页面参数）
-     * @param page 分页对象
+     * 
+     * @param page            分页对象
      * @param swmScheduleTime
      * @return
      */
@@ -53,6 +56,7 @@ public class SwmScheduleTimeService extends CrudService<SwmScheduleTimeDao, SwmS
 
     /**
      * 查询所有数据
+     * 
      * @param swmScheduleTime
      * @return
      */
@@ -62,6 +66,7 @@ public class SwmScheduleTimeService extends CrudService<SwmScheduleTimeDao, SwmS
 
     /**
      * 保存数据（插入或更新）
+     * 
      * @param swmScheduleTime
      */
     @Override
@@ -71,7 +76,24 @@ public class SwmScheduleTimeService extends CrudService<SwmScheduleTimeDao, SwmS
     }
 
     /**
+     * 保存所有数据
+     * 
+     * @param scheduleTimes
+     */
+    @Transactional(readOnly = false)
+    public void saveAll(List<SwmScheduleTime> scheduleTimes) {
+        for (SwmScheduleTime swmScheduleTime : scheduleTimes) {
+            // 只保存有时间设置的项
+            if (swmScheduleTime.getStartTime() != null && !swmScheduleTime.getStartTime().isEmpty() &&
+                    swmScheduleTime.getEndTime() != null && !swmScheduleTime.getEndTime().isEmpty()) {
+                super.save(swmScheduleTime);
+            }
+        }
+    }
+
+    /**
      * 删除数据
+     * 
      * @param swmScheduleTime
      */
     @Override
@@ -79,4 +101,4 @@ public class SwmScheduleTimeService extends CrudService<SwmScheduleTimeDao, SwmS
     public void delete(SwmScheduleTime swmScheduleTime) {
         super.delete(swmScheduleTime);
     }
-} 
+}

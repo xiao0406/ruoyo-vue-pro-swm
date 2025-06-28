@@ -20,6 +20,7 @@ import javax.validation.constraints.Pattern;
         @Column(name = "shift_type", attrName = "shiftType", label = "班次类型", queryType = QueryType.LIKE),
         @Column(name = "start_time", attrName = "startTime", label = "开始时间"),
         @Column(name = "end_time", attrName = "endTime", label = "结束时间"),
+        @Column(name = "rest_time", attrName = "restTime", label = "休息时长"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmScheduleTime extends DataEntity<SwmScheduleTime> {
@@ -52,10 +53,11 @@ public class SwmScheduleTime extends DataEntity<SwmScheduleTime> {
         }
     }
 
-    private String shiftType;    // 班次类型
-    private String startTime;    // 开始时间
-    private String endTime;      // 结束时间
-    
+    private String shiftType; // 班次类型
+    private String startTime; // 开始时间
+    private String endTime; // 结束时间
+    private Double restTime; // 休息时长
+
     // 用于显示的文本属性，不对应数据库字段
     private String shiftTypeText; // 班次类型显示文本
 
@@ -112,4 +114,12 @@ public class SwmScheduleTime extends DataEntity<SwmScheduleTime> {
     public void setEndTime(String endTime) {
         this.endTime = endTime;
     }
-} 
+
+    public Double getRestTime() {
+        return restTime;
+    }
+
+    public void setRestTime(Double restTime) {
+        this.restTime = restTime;
+    }
+}

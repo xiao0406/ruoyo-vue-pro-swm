@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Comparator;
+import java.util.stream.Collectors;
 
 /**
  * 区域围栏数据服务类
@@ -1189,5 +1190,94 @@ public class AreaFenceDataService {
         logger.info("实际工作时长计算完成 - 总实际工作时长: {} 分钟 ({} 小时)", totalWorkMinutes, workHours);
 
         return workHours;
+    }
+
+    /**
+     * 获取指定身份证号的实时位置
+     *
+     * @param idCard 身份证号
+     * @return "0"-工作区, "1"-休息区, "3"-未知
+     * @author Shawn
+     * @date 2025/06/25
+     */
+    public String getCurrentLocationByIdCard(String idCard) {
+        if (StringUtils.isBlank(idCard)) {
+            return "3";
+        }
+
+        try {
+            logger.debug("获取身份证 {} 的实时位置", idCard);
+
+            // 1. 获取工作区和休息区列表
+            List<DictData> workAreaList = getWorkAreaFenceDataDictList();
+            List<DictData> restAreaList = getAreaFenceDataDictList();
+
+            List<String> workAreaIds = workAreaList.stream().map(DictData::getDictLabelRaw)
+                    .collect(Collectors.toList());
+            List<String> restAreaIds = restAreaList.stream().map(DictData::getDictLabelRaw)
+                    .collect(Collectors.toList());
+
+            List<String> allAreaIds = new ArrayList<>();
+            allAreaIds.addAll(workAreaIds);
+            allAreaIds.addAll(restAreaIds);
+
+            if (allAreaIds.isEmpty()) {
+                logger.warn("工作区和休息区均未在字典中配置");
+                return "3";
+            }
+
+            // 2. 查询最近10分钟内最新的位置记录
+            Date now = new Date();
+            Date tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+            SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String startTime = dateTimeFormat.format(tenMinutesAgo);
+            String endTime = dateTimeFormat.format(now);
+
+            StringBuilder areaIdCondition = new StringBuilder();
+            areaIdCondition.append("area_id IN (");
+            for (int i = 0; i < allAreaIds.size(); i++) {
+                if (i > 0)
+                    areaIdCondition.append(",");
+                areaIdCondition.append("'").append(allAreaIds.get(i)).append("'");
+            }
+            areaIdCondition.append(")");
+
+            String sql = String.format(
+                    "SELECT area_id FROM %s.area_fence_data " +
+                            "WHERE id_card = '%s' AND time >= '%s' AND time <= '%s' AND %s " +
+                            "ORDER BY time DESC LIMIT 1",
+                    dbname, idCard, startTime, endTime, areaIdCondition.toString());
+
+            logger.debug("获取实时位置SQL: {}", sql);
+
+            R<JSONObject> response = tdengineService.executeTDengineSQL(sql);
+            if (response.getCode() == R.SUCCESS && response.getData() != null) {
+                JSONArray rows = response.getData().getJSONArray("data");
+                if (rows != null && !rows.isEmpty()) {
+                    JSONArray row = rows.getJSONArray(0);
+                    if (row != null && !row.isEmpty()) {
+                        String lastAreaId = row.getStr(0);
+                        if (workAreaIds.contains(lastAreaId)) {
+                            logger.debug("身份证 {} 在工作区 (Area ID: {})", idCard, lastAreaId);
+                            return "0";
+                        }
+                        if (restAreaIds.contains(lastAreaId)) {
+                            logger.debug("身份证 {} 在休息区 (Area ID: {})", idCard, lastAreaId);
+                            return "1";
+                        }
+                    }
+                }
+            } else {
+                logger.warn("查询TDengine实时位置失败: {}", response.getMsg());
+            }
+
+            // TDengine中查不到数据，返回未知
+            logger.debug("身份证 {} 在TDengine中未查询到最近10分钟内的位置信息", idCard);
+            return "3";
+
+        } catch (Exception e) {
+            logger.error("获取实时位置异常, 身份证号: {}", idCard, e);
+            return "3";
+        }
     }
 }

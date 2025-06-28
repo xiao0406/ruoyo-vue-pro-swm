@@ -21,6 +21,7 @@ import java.util.Date;
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "employee_id", attrName = "employeeId", label = "员工ID"),
         @Column(name = "employee_name", attrName = "employeeName", label = "员工姓名", queryType = QueryType.LIKE),
+        @Column(name = "person_type", attrName = "personType", label = "人员类型"),
         @Column(name = "attendance_date", attrName = "attendanceDate", label = "考勤日期"),
         @Column(name = "work_time_range", attrName = "workTimeRange", label = "应考勤时间范围", queryType = QueryType.LIKE),
         @Column(name = "clock_in_time", attrName = "clockInTime", label = "上班打卡时间"),
@@ -41,6 +42,7 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     private String employeeId; // 员工ID
     private String employeeName; // 员工姓名
+    private String personType; // 人员类型
     private Date attendanceDate; // 考勤日期
     private String workTimeRange; // 应考勤时间范围(如08:00-17:00)
     private Date clockInTime; // 上班打卡时间
@@ -83,6 +85,15 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     public void setEmployeeName(String employeeName) {
         this.employeeName = employeeName;
+    }
+
+    @Length(min = 0, max = 100, message = "人员类型不能超过100个字符")
+    public String getPersonType() {
+        return personType;
+    }
+
+    public void setPersonType(String personType) {
+        this.personType = personType;
     }
 
     @NotNull(message = "考勤日期不能为空")

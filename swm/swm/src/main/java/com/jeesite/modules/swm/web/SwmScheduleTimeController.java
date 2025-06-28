@@ -33,7 +33,7 @@ public class SwmScheduleTimeController extends BaseController {
 
     @Autowired
     private SwmScheduleTimeService swmScheduleTimeService;
-    
+
     /**
      * 获取数据
      */
@@ -41,34 +41,35 @@ public class SwmScheduleTimeController extends BaseController {
     public SwmScheduleTime get(String id, boolean isNewRecord) {
         return swmScheduleTimeService.get(id, isNewRecord);
     }
-    
+
     /**
      * 查询列表
      */
-    @RequestMapping(value = {"list", ""})
+    @RequestMapping(value = { "list", "" })
     @ApiOperation("查询列表")
     public String list(SwmScheduleTime swmScheduleTime, Model model) {
         model.addAttribute("swmScheduleTime", swmScheduleTime);
         return "modules/swm/scheduleTimeList";
     }
-    
+
     /**
      * 查询列表数据
      */
     @RequestMapping(value = "listData")
     @ResponseBody
     @ApiOperation("查询列表数据")
-    public Map<String, Object> listData(SwmScheduleTime swmScheduleTime, HttpServletRequest request, HttpServletResponse response) {
+    public Map<String, Object> listData(SwmScheduleTime swmScheduleTime, HttpServletRequest request,
+            HttpServletResponse response) {
         Page<SwmScheduleTime> page = swmScheduleTimeService.findPage(new Page<>(request, response), swmScheduleTime);
-        
+
         // 构建包含额外字段的响应数据
         Map<String, Object> result = new HashMap<>();
         List<Map<String, Object>> enhancedList = new ArrayList<>();
-        
+
         // 处理每个对象，添加枚举的文本显示
         for (SwmScheduleTime schedule : page.getList()) {
             Map<String, Object> scheduleMap = new HashMap<>();
-            
+
             // 复制基本属性
             scheduleMap.put("id", schedule.getId());
             scheduleMap.put("createBy", schedule.getCreateBy());
@@ -77,29 +78,30 @@ public class SwmScheduleTimeController extends BaseController {
             scheduleMap.put("updateDate", schedule.getUpdateDate());
             scheduleMap.put("remarks", schedule.getRemarks());
             scheduleMap.put("status", schedule.getStatus());
-            
+
             // 复制业务属性
             scheduleMap.put("shiftType", schedule.getShiftType());
             scheduleMap.put("startTime", schedule.getStartTime());
             scheduleMap.put("endTime", schedule.getEndTime());
+            scheduleMap.put("restTime", schedule.getRestTime());
             scheduleMap.put("isNewRecord", schedule.getIsNewRecord());
-            
+
             // 添加枚举文本显示值
             scheduleMap.put("shiftTypeText", schedule.getShiftTypeText());
-            
+
             // 添加到列表
             enhancedList.add(scheduleMap);
         }
-        
+
         // 构建分页结果
         result.put("list", enhancedList);
         result.put("count", page.getCount());
         result.put("pageNo", page.getPageNo());
         result.put("pageSize", page.getPageSize());
-        
+
         return result;
     }
-    
+
     /**
      * 查看编辑表单
      */
@@ -110,22 +112,23 @@ public class SwmScheduleTimeController extends BaseController {
         Map<String, Object> result = new HashMap<>();
         if (swmScheduleTime != null) {
             Map<String, Object> scheduleData = new HashMap<>();
-            
+
             // 复制基本属性
             scheduleData.put("id", swmScheduleTime.getId());
             scheduleData.put("shiftType", swmScheduleTime.getShiftType());
             scheduleData.put("startTime", swmScheduleTime.getStartTime());
             scheduleData.put("endTime", swmScheduleTime.getEndTime());
+            scheduleData.put("restTime", swmScheduleTime.getRestTime());
             scheduleData.put("remarks", swmScheduleTime.getRemarks());
-            
+
             // 处理枚举值
             scheduleData.put("shiftTypeText", swmScheduleTime.getShiftTypeText());
-            
+
             result.putAll(scheduleData);
         }
         return result;
     }
-    
+
     /**
      * 保存数据
      */
@@ -136,7 +139,7 @@ public class SwmScheduleTimeController extends BaseController {
         swmScheduleTimeService.save(swmScheduleTime);
         return renderResult(Global.TRUE, text("保存排班时间成功！"));
     }
-    
+
     /**
      * 删除数据
      */
@@ -147,7 +150,7 @@ public class SwmScheduleTimeController extends BaseController {
         swmScheduleTimeService.delete(swmScheduleTime);
         return renderResult(Global.TRUE, text("删除排班时间成功！"));
     }
-    
+
     /**
      * 批量删除数据
      */
@@ -164,7 +167,18 @@ public class SwmScheduleTimeController extends BaseController {
         }
         return renderResult(Global.TRUE, text("批量删除排班时间成功！"));
     }
-    
+
+    /**
+     * 保存所有排班时间数据
+     */
+    @PostMapping(value = "saveAll")
+    @ResponseBody
+    @ApiOperation("保存所有排班时间数据")
+    public String saveAll(@RequestBody List<SwmScheduleTime> scheduleTimes) {
+        swmScheduleTimeService.saveAll(scheduleTimes);
+        return renderResult(Global.TRUE, text("保存排班时间成功！"));
+    }
+
     /**
      * 获取班次类型选项
      */
@@ -173,14 +187,14 @@ public class SwmScheduleTimeController extends BaseController {
     @ApiOperation("获取班次类型选项")
     public Map<String, Object> getEnumOptions() {
         Map<String, Object> result = new HashMap<>();
-        
+
         // 班次类型选项
         Map<String, String> shiftTypeOptions = new HashMap<>();
         shiftTypeOptions.put(SwmScheduleTime.ShiftTypeEnum.MORNING, "早班");
         shiftTypeOptions.put(SwmScheduleTime.ShiftTypeEnum.MIDDLE, "中班");
         shiftTypeOptions.put(SwmScheduleTime.ShiftTypeEnum.NIGHT, "晚班");
         result.put("shiftTypeOptions", shiftTypeOptions);
-        
+
         return result;
     }
-} 
+}

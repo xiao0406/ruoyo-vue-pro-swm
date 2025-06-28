@@ -95,7 +95,18 @@ public class AttendanceTask {
             // 查询指定日期的所有考勤记录
             SwmDailyAttendance query = new SwmDailyAttendance();
             query.setAttendanceDate(targetDate);
-            // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
+
+            // 测试使用，生产上要删除 begin
+            // java.util.List<String> employeeIds = new java.util.ArrayList<>();
+            // employeeIds.add("1935182658540556288");
+            // employeeIds.add("1935182658850934784");
+            // if (employeeIds != null && !employeeIds.isEmpty()) {
+            // query.getSqlMap().getWhere().and("employee_id",
+            // com.jeesite.common.mybatis.mapper.query.QueryType.IN,
+            // employeeIds);
+            // }
+            // 测试使用，生产上要删除 end
+
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
 
             if (attendanceList.isEmpty()) {
@@ -239,6 +250,34 @@ public class AttendanceTask {
                         XxlJobHelper.log("员工[{}]{}日达成率计算: {}小时 / {}小时 = {}",
                                 record.getEmployeeId(), record.getEmployeeName(),
                                 record.getEffectiveWorkHours(), record.getScheduledHours(), dailyAchievementRate);
+
+                        // 更新考勤状态逻辑
+                        // @author: Shawn
+                        // @date: 2024/07/31 (Re-described logic)
+                        String workTimeRangeForStatus = record.getWorkTimeRange();
+                        BigDecimal effectiveWorkHoursForStatus = record.getEffectiveWorkHours();
+
+                        // 1. 如果在目前时间范围在work_time_range时间范围内，内实际工作时长>0，那考勤状态是正常的。
+                        if (isCurrentTimeInWorkRange(workTimeRangeForStatus) &&
+                                effectiveWorkHoursForStatus != null &&
+                                effectiveWorkHoursForStatus.compareTo(BigDecimal.ZERO) > 0) {
+                            record.setAttendanceNormal("0"); // 正常
+                            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [正常] (当前时间在班次内且实际工作时长>0)",
+                                    record.getEmployeeId(), record.getEmployeeName());
+                        }
+                        // 2. 如果有上班打卡时间或下班打卡时间，实际工作时长<=0，就是异常。
+                        else if ((clockInTime != null || clockOutTime != null) &&
+                                (effectiveWorkHoursForStatus == null
+                                        || effectiveWorkHoursForStatus.compareTo(BigDecimal.ZERO) <= 0)) {
+                            record.setAttendanceNormal("1"); // 异常
+                            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [异常] (有打卡记录但实际工作时长<=0)",
+                                    record.getEmployeeId(), record.getEmployeeName());
+                        }
+                        // 3. 其他情况不用处理，原来是怎么样就怎么样。
+                        else {
+                            XxlJobHelper.log("员工[{}]{} 考勤状态未做更改，保留原状态: {}",
+                                    record.getEmployeeId(), record.getEmployeeName(), record.getAttendanceNormal());
+                        }
 
                         swmDailyAttendanceService.update(record);
 
@@ -425,6 +464,20 @@ public class AttendanceTask {
             query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // 在职状态
             query.setStatus("0");// 正常状态
             // query.setIdentityCard("412825197709304513"); // todo为了测试身份证先写死
+
+            // 测试使用，生产上要删除 begin
+            // 您可以像下面这样，直接操作SQL MAP来添加IN条件，而无需修改任何其他模块的代码。
+            // 1. 创建一个包含身份证号的列表
+            // java.util.List<String> ids = new java.util.ArrayList<>();
+            // ids.add("1935182658540556288");
+            // ids.add("1935182658850934784");
+            // // 2. 将列表添加到查询条件中
+            // if (ids != null && !ids.isEmpty()) {
+            // query.getSqlMap().getWhere().and("id",
+            // com.jeesite.common.mybatis.mapper.query.QueryType.IN, ids);
+            // }
+            // 测试使用，生产上要删除 end
+
             List<SwmPerson> activePersons = swmPersonService.findList(query);
 
             if (activePersons.isEmpty()) {
@@ -443,14 +496,15 @@ public class AttendanceTask {
                         .findByEmployeeIdAndDate(person.getId(), today);
 
                 // 3.2 获取员工的排班信息
-                String workTimeRange = getWorkTimeRangeForPerson(person, today);
-                if (workTimeRange == null) {
+                SwmScheduleTime scheduleTime = getScheduleTimeForPerson(person, today);
+                if (scheduleTime == null) {
                     XxlJobHelper.log("员工[{}]{}没有排班信息，跳过创建考勤记录", person.getId(), person.getName());
                     continue;
                 }
+                String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
 
                 // 3.3 计算应考勤时长
-                BigDecimal scheduledHours = calculateScheduledHours(workTimeRange);
+                BigDecimal scheduledHours = calculateScheduledHours(scheduleTime);
 
                 // 3.4 创建或更新考勤记录
                 if (existingAttendance == null) {
@@ -458,6 +512,7 @@ public class AttendanceTask {
                     SwmDailyAttendance newAttendance = new SwmDailyAttendance();
                     newAttendance.setEmployeeId(person.getId());
                     newAttendance.setEmployeeName(person.getName());
+                    newAttendance.setPersonType(person.getPersonType());
                     newAttendance.setAttendanceDate(today);
                     newAttendance.setWorkTimeRange(workTimeRange);
                     newAttendance.setScheduledHours(scheduledHours);
@@ -465,7 +520,9 @@ public class AttendanceTask {
                     newAttendance.setIdleHours(BigDecimal.ZERO); // 默认怠工时长为0
                     newAttendance.setDailyEfficiency(BigDecimal.ZERO); // 默认功效为0
                     newAttendance.setDailyAchievementRate(BigDecimal.ZERO); // 默认达成率为0
-                    newAttendance.setAttendanceNormal("0"); // 默认考勤正常
+                    newAttendance.setAttendanceNormal("3"); // 默认未考勤
+                    // 设置默认的当前位置为"未知"
+                    newAttendance.setCurrentPosition("3"); // 默认未知
 
                     swmDailyAttendanceService.save(newAttendance);
                     createdCount++;
@@ -473,6 +530,7 @@ public class AttendanceTask {
                     // 更新现有记录
                     existingAttendance.setWorkTimeRange(workTimeRange);
                     existingAttendance.setScheduledHours(scheduledHours);
+                    existingAttendance.setPersonType(person.getPersonType());
                     // todo 调用接口获取怠工时长、考勤是否正常等
 
                     // 保留原有的实际考勤数据
@@ -494,13 +552,13 @@ public class AttendanceTask {
     }
 
     /**
-     * 获取员工的应考勤时间范围
+     * 获取员工的排班信息
      * 
      * @param person 员工信息
      * @param date   考勤日期
-     * @return 应考勤时间范围字符串，格式如"08:00-17:00"
+     * @return SwmScheduleTime 排班时间信息
      */
-    private String getWorkTimeRangeForPerson(SwmPerson person, Date date) {
+    private SwmScheduleTime getScheduleTimeForPerson(SwmPerson person, Date date) {
         // 1. 获取当前月份
         String month = DateUtil.format(date, "yyyy-MM");
 
@@ -523,26 +581,21 @@ public class AttendanceTask {
         if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
             return null;
         }
-        SwmScheduleTime scheduleTime = scheduleTimeList.get(0);
-
-        if (scheduleTime == null) {
-            return null;
-        }
-
-        // 4. 组合时间范围字符串
-        return scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
+        return scheduleTimeList.get(0);
     }
 
     /**
      * 计算应考勤时长
      * 
-     * @param workTimeRange 工作时间范围，格式如"08:00-17:00"或"20:30-03:00"
+     * @param scheduleTime 排班时间信息
      * @return 应考勤时长(小时)
      */
-    private BigDecimal calculateScheduledHours(String workTimeRange) {
-        if (workTimeRange == null || !workTimeRange.contains("-")) {
+    private BigDecimal calculateScheduledHours(SwmScheduleTime scheduleTime) {
+        if (scheduleTime == null || scheduleTime.getStartTime() == null || scheduleTime.getEndTime() == null) {
             return BigDecimal.ZERO;
         }
+
+        String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
 
         try {
             String[] times = workTimeRange.split("-");
@@ -575,9 +628,21 @@ public class AttendanceTask {
                 return BigDecimal.ZERO;
             }
 
-            // 验证时长的合理性（一般工作时长应该在1-16小时之间）
+            // 验证总时长的合理性（一般工作时长应该在1-16小时之间）
             if (hours < 1 || hours > 16) {
-                log.warn("工作时间范围 {} 计算出的时长 {} 小时可能不合理", workTimeRange, hours);
+                log.warn("班次总时长 {} 计算出的时长 {} 小时可能不合理", workTimeRange, hours);
+            }
+
+            // 减去休息时长
+            Double restTime = scheduleTime.getRestTime();
+            if (restTime != null && restTime > 0) {
+                hours -= restTime;
+            }
+
+            // 确保最终应考勤时长不为负数
+            if (hours < 0) {
+                log.warn("班次 {} 减去休息时长后，应考勤时长为负数: {} 小时", workTimeRange, hours);
+                hours = 0;
             }
 
             return BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
@@ -810,5 +875,48 @@ public class AttendanceTask {
         }
 
         return null;
+    }
+
+    /**
+     * 判断当前时间是否在给定的工作时间范围内
+     *
+     * @param workTimeRange 工作时间范围字符串，如 "08:00-17:00" 或 "18:00-03:00"
+     * @return 如果当前时间在范围内，返回true，否则返回false
+     */
+    private boolean isCurrentTimeInWorkRange(String workTimeRange) {
+        if (workTimeRange == null || workTimeRange.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            String[] times = workTimeRange.split("-");
+            if (times.length != 2) {
+                log.warn("无效的工作时间范围格式: {}", workTimeRange);
+                return false;
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+            Date startTime = sdf.parse(times[0].trim());
+            Date endTime = sdf.parse(times[1].trim());
+
+            // 获取当前时间的 HH:mm 部分，用于比较
+            Date nowTime = sdf.parse(sdf.format(new Date()));
+
+            // 如果结束时间早于开始时间，说明是跨天班次 (如 18:00-03:00)
+            if (endTime.before(startTime)) {
+                // 对于跨天班次，如果当前时间晚于开始时间(在第一天) 或 早于结束时间(在第二天)，则在范围内
+                // 例如：班次18:00-03:00。
+                // 当前时间19:00 -> 19:00 > 18:00 (true) -> 在范围内
+                // 当前时间02:00 -> 02:00 < 03:00 (true) -> 在范围内
+                // 当前时间04:00 -> 04:00 > 18:00(false) && 04:00 < 03:00(false) -> 不在范围内
+                return nowTime.after(startTime) || nowTime.before(endTime);
+            } else {
+                // 对于普通当天班次 (如 08:00-17:00)，当前时间必须在两者之间
+                return nowTime.after(startTime) && nowTime.before(endTime);
+            }
+        } catch (Exception e) {
+            log.error("解析或比较工作时间范围时出错: {}", workTimeRange, e);
+            return false;
+        }
     }
 }
