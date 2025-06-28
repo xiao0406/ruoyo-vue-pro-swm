@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jeesite.modules.swm.dao.SwmHandleRecordDao">
-    
+
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmHandleRecord">
         SELECT ${sqlMap.column.toSql()}
@@ -33,5 +33,26 @@
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
-    
-</mapper> 
+
+    <select id="latestHandleRecord" resultType="com.jeesite.modules.swm.entity.SwmHandleRecord">
+        SELECT a.id             AS id,
+               a.record_name    AS recordName,
+               a.warning_id     AS warningId,
+               a.warning_record AS warningRecord,
+               a.alarm_time     AS alarmTime,
+               a.handler        AS handler,
+               a.handle_time    AS handleTime,
+               a.handle_process AS handleProcess,
+               a.handle_status  AS handleStatus,
+               a.remarks,
+               a.attachment,
+               a.create_by      AS createBy,
+               a.create_date    AS createDate,
+               a.update_by      AS updateBy,
+               a.update_date    AS updateDate
+        FROM swm_handle_record a
+        WHERE a.status = '0'
+        order by a.alarm_time DESC
+        limit #{limit}
+    </select>
+</mapper>

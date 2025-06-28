@@ -308,9 +308,11 @@ public class SwmHazardSourceController extends BaseController {
         DateRange dateRange = parseDateRange(beginDate, endDate);
 
         Map<String, Object> result = new HashMap<>();
+        // 危险源累计总数
+        int totalCount = swmHazardSourceService.countAll();
 
         // 1. 危险源总数
-        int totalCount = swmHazardSourceService.countByDateRange(
+        int rangeCount = swmHazardSourceService.countByDateRange(
                 dateRange.getBeginDate(),
                 dateRange.getEndDate(),
                 null); // 不限制状态
@@ -322,11 +324,11 @@ public class SwmHazardSourceController extends BaseController {
                 Arrays.asList(SwmHazardSource.HazardSourceStatusEnum.WAIT, SwmHazardSource.HazardSourceStatusEnum.IN_PROGRESS));
 
         // 3. 已关闭危险源数量（总数 - 未关闭的）
-        int closedCount = totalCount - unclosedCount;
+        int closedCount = rangeCount - unclosedCount;
 
         // 4. 危险源整改率（保留2位小数）
-        double rectificationRate = totalCount > 0 ?
-                Math.round(closedCount * 10000.0 / totalCount) / 100.0 : 0;
+        double rectificationRate = rangeCount > 0 ?
+                Math.round(closedCount * 10000.0 / rangeCount) / 100.0 : 0;
 
         // 5. 未制定巡检计划的数量
         int noInspectionPlanCount = swmHazardSourceService.countNoInspectionPlan(
@@ -334,11 +336,12 @@ public class SwmHazardSourceController extends BaseController {
                 dateRange.getEndDate());
 
         // 返回结果
-        result.put("totalCount", totalCount);
-        result.put("unclosedCount", unclosedCount);
-        result.put("closedCount", closedCount);
-        result.put("rectificationRate", rectificationRate);
-        result.put("noInspectionPlanCount", noInspectionPlanCount);
+        result.put("totalCount", totalCount); // 危险源总数累计
+        result.put("rangeCount", totalCount); // 危险源总数
+        result.put("unclosedCount", unclosedCount); //未关闭的
+        result.put("closedCount", closedCount); //已整改的
+        result.put("rectificationRate", rectificationRate);//危险源整改率
+        result.put("noInspectionPlanCount", noInspectionPlanCount);//未制定巡检计划的数量
 
         return result;
     }

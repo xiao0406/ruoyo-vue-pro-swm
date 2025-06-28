@@ -163,4 +163,12 @@ public class SwmHazardSourceService extends CrudService<SwmHazardSourceDao, SwmH
     public int countNoInspectionPlan(Date beginDate, Date endDate){
         return dao.countNoInspectionPlan(beginDate, endDate);
     }
+
+    /**
+     * 统计所有数量
+     * @return
+     */
+    public int countAll() {
+        return dao.countAll();
+    }
 }

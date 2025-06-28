@@ -166,4 +166,8 @@
         AND status = '0'
           AND (is_patrol_included = '0' OR is_patrol_included IS NULL)
     </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM swm_hazard_source WHERE status = '0'
+    </select>
 </mapper>

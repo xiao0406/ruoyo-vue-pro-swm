@@ -1,28 +1,27 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
-import com.jeesite.common.service.CrudService;
 import com.jeesite.common.lang.DateUtils;
+import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmAlarmConfigDao;
 import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.swm.entity.SwmAlarmConfig;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
 import com.jeesite.modules.sys.utils.DictUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
-import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.utils.R;
 import org.springframework.beans.BeanUtils;
-import javax.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.text.SimpleDateFormat;
+import javax.annotation.PreDestroy;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -57,16 +56,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     "trigger_reason, handler, handle_time, handle_process, handle_status, attachment, " +
                     "create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, " +
                     "front_alarm, type, x, y, hazard_category " +
-                    "FROM %s.swm_warning_management WHERE id='%s' LIMIT 1", 
+                    "FROM %s.swm_warning_management WHERE id='%s' LIMIT 1",
                 dbname, swmWarningManagement.getId());
-            
+
             try {
                 logger.info("执行单条查询SQL: {}", sql);
                 R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
                 if (result.getCode() == R.SUCCESS && result.getData() != null) {
                     JSONObject data = result.getData();
                     JSONArray rows = data.getJSONArray("data");
-                    
+
                     if (rows != null && rows.size() > 0) {
                         SwmWarningManagement entity = convertToEntity(rows.getJSONArray(0), data.getJSONArray("column_meta"));
                         logger.info("从时序数据库查询到警告记录，ID: {}, 警告时间: {}, 报警时间: {}",
@@ -80,7 +79,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 logger.error("从TDengine获取预警数据失败", e);
             }
         }
-        
+
         // 如果TDengine查询失败，回退到原始查询
         return super.get(swmWarningManagement);
     }
@@ -95,7 +94,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         if (page == null) {
             page = new Page<>();
         }
-        
+
         // 构建TDengine查询SQL
         StringBuilder sqlBuilder = new StringBuilder();
         // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
@@ -106,32 +105,32 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                .append("front_alarm, type, x, y, hazard_category ")
                .append("FROM ").append(dbname).append(".swm_warning_management");
-        
+
         // 添加查询条件
         List<String> conditions = new ArrayList<>();
-        
+
         // 如果需要排除一键SOS
         if (swmWarningManagement.isExcludeSOS()) {
             conditions.add("warning_content != '一键SOS'");
             logger.info("添加排除一键SOS的查询条件");
         }
-        
+
         if (swmWarningManagement.getPersonName() != null && !swmWarningManagement.getPersonName().isEmpty()) {
             conditions.add("person_name LIKE '%" + swmWarningManagement.getPersonName() + "%'");
         }
-        
+
         if (swmWarningManagement.getWarningType() != null && !swmWarningManagement.getWarningType().isEmpty()) {
             conditions.add("warning_type = '" + swmWarningManagement.getWarningType() + "'");
         }
-        
+
         if (swmWarningManagement.getWarningContent() != null && !swmWarningManagement.getWarningContent().isEmpty()) {
             conditions.add("warning_content = '" + swmWarningManagement.getWarningContent() + "'");
         }
-        
+
         if (swmWarningManagement.getHandleStatus() != null && !swmWarningManagement.getHandleStatus().isEmpty()) {
             conditions.add("handle_status = '" + swmWarningManagement.getHandleStatus() + "'");
         }
-        
+
         if (!conditions.isEmpty()) {
             sqlBuilder.append(" WHERE ");
             for (int i = 0; i < conditions.size(); i++) {
@@ -141,37 +140,37 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 }
             }
         }
-        
+
         // 计算总记录数
         String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
         R<JSONObject> countResult = tdengineService.executeTDengineSQL(countSql);
         long total = 0;
-        
+
         if (countResult.getCode() == R.SUCCESS && countResult.getData() != null) {
             JSONObject data = countResult.getData();
             JSONArray rows = data.getJSONArray("data");
-            
+
             if (rows != null && rows.size() > 0) {
                 total = rows.getJSONArray(0).getLong(0);
             }
         }
-        
+
         // 添加排序和分页
         sqlBuilder.append(" ORDER BY warning_time DESC");
         sqlBuilder.append(" LIMIT ").append(page.getPageSize());
         sqlBuilder.append(" OFFSET ").append((page.getPageNo() - 1) * page.getPageSize());
-        
+
         logger.info("执行SQL: {}", sqlBuilder.toString());
-        
+
         // 执行查询
         R<JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
         List<SwmWarningManagement> list = new ArrayList<>();
-        
+
         if (result.getCode() == R.SUCCESS && result.getData() != null) {
             JSONObject data = result.getData();
             JSONArray rows = data.getJSONArray("data");
             JSONArray columnMeta = data.getJSONArray("column_meta");
-            
+
             if (rows != null) {
                 for (int i = 0; i < rows.size(); i++) {
                     try {
@@ -186,7 +185,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 }
             }
         }
-        
+
         // 设置分页结果
         page.setCount(total);
         page.setList(list);
@@ -212,7 +211,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         }
 
         SwmWarningManagement entity = new SwmWarningManagement();
-        
+
         try {
             for (int i = 0; i < columnMeta.size(); i++) {
                 if (i >= row.size()) {
@@ -223,17 +222,17 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 if (column == null || column.size() == 0) {
                     continue;
                 }
-                
+
                 String columnName = column.getStr(0);
                 if (columnName == null) {
                     continue;
                 }
-                
+
                 Object value = row.get(i);
                 if (value == null) {
                     continue; // 跳过空值
                 }
-                
+
                 switch (columnName) {
                     case "id":
                         entity.setId(row.getStr(i));
@@ -405,7 +404,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                 }
             }
-            
+
             // 设置显示文本值
             if (entity.getWarningType() != null) {
                 // 修复warningType=1时显示为"主动报警"的问题
@@ -415,16 +414,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 entity.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", entity.getWarningType(), entity.getWarningType()));
                 }
             }
-            
+
             if (entity.getHandleStatus() != null) {
                 entity.setHandleStatusText(DictUtils.getDictLabel("handle_status_enum", entity.getHandleStatus(), entity.getHandleStatus()));
             }
-            
+
         } catch (Exception e) {
             logger.error("转换TDengine数据异常", e);
             return null;
         }
-        
+
         return entity;
     }
 
@@ -449,11 +448,11 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             StringBuilder sql = new StringBuilder();
             sql.append("INSERT INTO ").append(dbname).append(".swm_warning_management")
                .append(" (");
-            
+
             // 字段列表
             List<String> columns = new ArrayList<>();
             List<String> values = new ArrayList<>();
-            
+
             // 添加必要的字段
             addField(columns, values, "id", swmWarningManagement.getId(), true);
             addField(columns, values, "create_date", new Date(), false);
@@ -480,13 +479,13 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             addField(columns, values, "type", swmWarningManagement.getType(), true);
             addField(columns, values, "x", swmWarningManagement.getX(), true);
             addField(columns, values, "y", swmWarningManagement.getY(), true);
-            
+
             // 构建SQL语句
             sql.append(String.join(",", columns))
                .append(") VALUES (")
                .append(String.join(",", values))
                .append(")");
-            
+
             // 执行插入
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql.toString());
             if (result.getCode() != R.SUCCESS) {
@@ -498,100 +497,100 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             // 如果是更新，构建更新SQL
             StringBuilder sql = new StringBuilder();
             sql.append("UPDATE ").append(dbname).append(".swm_warning_management SET ");
-            
+
             // 更新字段列表
             List<String> updates = new ArrayList<>();
-            
+
             // 只更新非空字段
             if (swmWarningManagement.getUpdateBy() != null) {
                 updates.add("update_by = '" + swmWarningManagement.getUpdateBy() + "'");
             }
             updates.add("update_date = " + System.currentTimeMillis());
-            
+
             if (swmWarningManagement.getStatus() != null) {
                 updates.add("status = '" + swmWarningManagement.getStatus() + "'");
             }
-            
+
             if (swmWarningManagement.getRemarks() != null) {
                 updates.add("remarks = '" + swmWarningManagement.getRemarks() + "'");
             }
-            
+
             if (swmWarningManagement.getPersonName() != null) {
                 updates.add("person_name = '" + swmWarningManagement.getPersonName() + "'");
             }
-            
+
             if (swmWarningManagement.getWarningType() != null) {
                 updates.add("warning_type = '" + swmWarningManagement.getWarningType() + "'");
             }
-            
+
             if (swmWarningManagement.getWarningContent() != null) {
                 updates.add("warning_content = '" + swmWarningManagement.getWarningContent() + "'");
             }
-            
+
             if (swmWarningManagement.getWarningTime() != null) {
                 updates.add("warning_time = " + swmWarningManagement.getWarningTime().getTime());
             }
-            
+
             if (swmWarningManagement.getAlarmRecord() != null) {
                 updates.add("alarm_record = '" + swmWarningManagement.getAlarmRecord() + "'");
             }
-            
+
             if (swmWarningManagement.getAlarmTime() != null) {
                 updates.add("alarm_time = " + swmWarningManagement.getAlarmTime().getTime());
             }
-            
+
             if (swmWarningManagement.getTriggerReason() != null) {
                 updates.add("trigger_reason = '" + swmWarningManagement.getTriggerReason() + "'");
             }
-            
+
             if (swmWarningManagement.getHandler() != null) {
                 updates.add("handler = '" + swmWarningManagement.getHandler() + "'");
             }
-            
+
             if (swmWarningManagement.getHandleTime() != null) {
                 updates.add("handle_time = " + swmWarningManagement.getHandleTime().getTime());
             }
-            
+
             if (swmWarningManagement.getHandleProcess() != null) {
                 updates.add("handle_process = '" + swmWarningManagement.getHandleProcess() + "'");
             }
-            
+
             if (swmWarningManagement.getHandleStatus() != null) {
                 updates.add("handle_status = '" + swmWarningManagement.getHandleStatus() + "'");
             }
-            
+
             if (swmWarningManagement.getAttachment() != null) {
                 updates.add("attachment = '" + swmWarningManagement.getAttachment() + "'");
             }
-            
+
             if (swmWarningManagement.getDeviceId() != null) {
                 updates.add("device_id = '" + swmWarningManagement.getDeviceId() + "'");
             }
-            
+
             if (swmWarningManagement.getIdCard() != null) {
                 updates.add("id_card = '" + swmWarningManagement.getIdCard() + "'");
             }
-            
+
             if (swmWarningManagement.getFrontAlarm() != null) {
                 updates.add("front_alarm = '" + swmWarningManagement.getFrontAlarm() + "'");
             }
-            
+
             if (swmWarningManagement.getType() != null) {
                 updates.add("type = '" + swmWarningManagement.getType() + "'");
             }
-            
+
             if (swmWarningManagement.getX() != null) {
                 updates.add("x = '" + swmWarningManagement.getX() + "'");
             }
-            
+
             if (swmWarningManagement.getY() != null) {
                 updates.add("y = '" + swmWarningManagement.getY() + "'");
             }
-            
+
             // 完成SQL语句
             sql.append(String.join(",", updates))
                .append(" WHERE id = '").append(swmWarningManagement.getId()).append("'");
-            
+
             // 执行更新
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql.toString());
             if (result.getCode() != R.SUCCESS) {
@@ -625,9 +624,9 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     @Transactional(readOnly = false)
     public void delete(SwmWarningManagement swmWarningManagement) {
         // 构建删除SQL
-        String sql = String.format("DELETE FROM %s.swm_warning_management WHERE id='%s'", 
+        String sql = String.format("DELETE FROM %s.swm_warning_management WHERE id='%s'",
             dbname, swmWarningManagement.getId());
-        
+
         // 执行删除
         R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
         if (result.getCode() != R.SUCCESS) {
@@ -639,7 +638,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
     /**
      * 处理预警并向MySQL插入或更新完整记录
-     * 
+     *
      * @param id 预警ID
      * @param handler 处置人
      * @param handleTime 处置时间
@@ -651,27 +650,27 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     @Transactional(readOnly = false)
     public boolean processWarningToMySql(String id, String handler, Date handleTime, String handleProcess, String handleStatus, String attachment) {
         logger.info("处理预警并向MySQL插入或更新完整记录，预警ID：{}", id);
-        
+
         // 只查询时序数据库中的预警记录，不进行修改
         SwmWarningManagement swmWarningManagement = this.get(id);
         if (swmWarningManagement == null) {
             logger.error("预警记录不存在，ID：{}", id);
             return false;
         }
-        
+
         try {
             // 先查询MySQL中是否已存在该记录
             SwmWarningManagement query = new SwmWarningManagement();
             query.setId(id);
             SwmWarningManagement existingRecord = super.get(query);
-            
+
             if (existingRecord == null) {
                 // MySQL中不存在，需要插入
                 logger.info("MySQL中不存在该预警记录，准备插入新记录，ID：{}", id);
-        
+
         // 创建一个新对象用于MySQL插入
         SwmWarningManagement mysqlWarning = new SwmWarningManagement();
-        
+
         // 从时序数据库查询的记录中复制基础属性
         mysqlWarning.setId(swmWarningManagement.getId());
         mysqlWarning.setCreateBy(swmWarningManagement.getCreateBy());
@@ -693,14 +692,14 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         mysqlWarning.setType(swmWarningManagement.getType());
         mysqlWarning.setX(swmWarningManagement.getX());
         mysqlWarning.setY(swmWarningManagement.getY());
-        
+
         // 设置前端传入的处置信息
         mysqlWarning.setHandler(handler);
         mysqlWarning.setHandleTime(handleTime);
         mysqlWarning.setHandleProcess(handleProcess);
         mysqlWarning.setHandleStatus(handleStatus);
         mysqlWarning.setAttachment(attachment);
-        
+
         // 计算处置时长（处置时间减去报警时间，单位：分钟）
         if (handleStatus != null && handleStatus.equals("1") && handleTime != null && mysqlWarning.getAlarmTime() != null) {
             // 报警时间需要加上8小时再计算，因为存储的是UTC时间
@@ -708,30 +707,30 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             calendar.setTime(mysqlWarning.getAlarmTime());
             calendar.add(Calendar.HOUR_OF_DAY, 8); // 直接加上8小时
             Date adjustedAlarmTime = calendar.getTime();
-            
+
             long durationMillis = handleTime.getTime() - adjustedAlarmTime.getTime();
             long durationMinutes = durationMillis / (60 * 1000);
             mysqlWarning.setDisposalDuration(durationMinutes > 0 ? durationMinutes : 0);
-            logger.info("计算处置时长：报警时间 {} + 8小时调整为 {}，处置时间 {}，处置时长 {} 分钟", 
+            logger.info("计算处置时长：报警时间 {} + 8小时调整为 {}，处置时间 {}，处置时长 {} 分钟",
                 mysqlWarning.getAlarmTime(), adjustedAlarmTime, handleTime, durationMinutes);
         } else {
             mysqlWarning.setDisposalDuration(0L);
         }
-        
+
             // 使用自定义方法直接向MySQL插入数据
             dao.insertToMySql(mysqlWarning);
             logger.info("成功向MySQL数据库插入预警处置记录，ID：{}", id);
             } else {
                 // MySQL中已存在该记录，进行更新
                 logger.info("MySQL中已存在该预警记录，准备更新记录，ID：{}", id);
-                
+
                 // 更新处置信息
                 existingRecord.setHandler(handler);
                 existingRecord.setHandleTime(handleTime);
                 existingRecord.setHandleProcess(handleProcess);
                 existingRecord.setHandleStatus(handleStatus);
                 existingRecord.setUpdateDate(new Date()); // 更新时间
-                
+
                 // 计算处置时长（处置时间减去报警时间，单位：分钟）
                 if (handleStatus != null && handleStatus.equals("1") && handleTime != null && existingRecord.getAlarmTime() != null) {
                     // 报警时间需要加上8小时再计算，因为存储的是UTC时间
@@ -739,16 +738,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     calendar.setTime(existingRecord.getAlarmTime());
                     calendar.add(Calendar.HOUR_OF_DAY, 8); // 直接加上8小时
                     Date adjustedAlarmTime = calendar.getTime();
-                    
+
                     long durationMillis = handleTime.getTime() - adjustedAlarmTime.getTime();
                     long durationMinutes = durationMillis / (60 * 1000);
                     existingRecord.setDisposalDuration(durationMinutes > 0 ? durationMinutes : 0);
-                    logger.info("计算处置时长：报警时间 {} + 8小时调整为 {}，处置时间 {}，处置时长 {} 分钟", 
+                    logger.info("计算处置时长：报警时间 {} + 8小时调整为 {}，处置时间 {}，处置时长 {} 分钟",
                         existingRecord.getAlarmTime(), adjustedAlarmTime, handleTime, durationMinutes);
                 } else {
                     existingRecord.setDisposalDuration(0L);
                 }
-                
+
                 // 更新坐标信息
                 if (swmWarningManagement.getX() != null) {
                     existingRecord.setX(swmWarningManagement.getX());
@@ -756,17 +755,17 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 if (swmWarningManagement.getY() != null) {
                     existingRecord.setY(swmWarningManagement.getY());
                 }
-                
+
                 // 如果附件不为空，则更新
                 if (attachment != null && !attachment.isEmpty()) {
                     existingRecord.setAttachment(attachment);
                 }
-                
+
                 // 使用父类的save方法更新记录
                 super.save(existingRecord);
                 logger.info("成功更新MySQL数据库中的预警处置记录，ID：{}", id);
             }
-            
+
             return true;
         } catch (Exception e) {
             logger.error("向MySQL数据库插入或更新预警处置记录失败", e);
@@ -776,24 +775,24 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
     /**
      * 混合查询分页数据（从时序数据库和MySQL混合查询）
-     * 
+     *
      * @param page 分页对象
      * @param swmWarningManagement 查询条件
      * @return 混合数据的分页结果
      */
     public Page<SwmWarningManagement> hybridFindPage(Page<SwmWarningManagement> page, SwmWarningManagement swmWarningManagement) {
         logger.info("开始混合查询分页数据...");
-        
+
         // 检查是否是查询已处置数据(handleStatus=1)
         if (swmWarningManagement != null && "1".equals(swmWarningManagement.getHandleStatus())) {
             logger.info("查询已处置数据，直接从MySQL数据库查询");
-            
+
             // 创建一个简单的分页查询
             Page<SwmWarningManagement> mysqlPage = new Page<>(page.getPageNo(), page.getPageSize());
-            
+
             // 直接使用新增的DAO方法查询已处置数据
             List<SwmWarningManagement> mysqlList = dao.findProcessedInMySql(swmWarningManagement);
-            
+
             // 设置显示文本值
             if (mysqlList != null) {
                 for (SwmWarningManagement item : mysqlList) {
@@ -810,42 +809,42 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     }
                 }
             }
-            
+
             // 手动计算总数和分页
             long total = mysqlList != null ? mysqlList.size() : 0;
             int fromIndex = (page.getPageNo() - 1) * page.getPageSize();
             int toIndex = Math.min(fromIndex + page.getPageSize(), mysqlList.size());
-            
+
             // 得到当前页的数据子集
-            List<SwmWarningManagement> pageList = fromIndex < toIndex ? 
+            List<SwmWarningManagement> pageList = fromIndex < toIndex ?
                     mysqlList.subList(fromIndex, toIndex) : new ArrayList<>();
-                    
+
             // 设置结果页和返回
             mysqlPage.setCount(total);
             mysqlPage.setList(pageList);
             logger.info("从MySQL查询到 {} 条已处置数据", total);
-            
+
             return mysqlPage;
         }
-        
+
         // 1. 首先从MySQL获取所有已处置的记录ID（无论是否符合查询条件）
         List<String> processedIds = dao.findAllProcessedIds();
         Set<String> processedIdSet = new HashSet<>(processedIds);
         logger.info("从MySQL获取到 {} 条已处置记录ID", processedIdSet.size());
-        
+
         // 2. 从时序数据库获取数据（非已处置数据的查询）
         Page<SwmWarningManagement> tdEnginePage = this.findPage(page, swmWarningManagement);
         List<SwmWarningManagement> tdEngineList = tdEnginePage.getList();
-        
+
         if (tdEngineList == null || tdEngineList.isEmpty()) {
             logger.info("时序数据库查询结果为空，直接返回空结果");
             return tdEnginePage;
         }
-        
+
         // 3. 过滤掉时序数据库中已经在MySQL中标记为已处置的记录，防止重复
         List<SwmWarningManagement> filteredTdEngineList = new ArrayList<>();
         List<String> needMySqlIds = new ArrayList<>();
-        
+
         for (SwmWarningManagement item : tdEngineList) {
             if (processedIdSet.contains(item.getId())) {
                 // 这条记录在MySQL中已标记为处置过，我们需要查询MySQL获取处置后的数据
@@ -855,21 +854,21 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 filteredTdEngineList.add(item);
             }
         }
-        
+
         // 4. 从MySQL中查询已处置的记录
         List<SwmWarningManagement> mysqlList = new ArrayList<>();
         if (!needMySqlIds.isEmpty()) {
             mysqlList = dao.findInMySqlByIds(needMySqlIds);
         }
-        
+
         // 5. 合并结果，去重并确保正确排序
         Map<String, SwmWarningManagement> resultMap = new HashMap<>();
-        
+
         // 先添加时序数据库中未处置的数据
         for (SwmWarningManagement item : filteredTdEngineList) {
             resultMap.put(item.getId(), item);
         }
-        
+
         // 再添加MySQL中已处置的数据
         for (SwmWarningManagement item : mysqlList) {
             // 设置显示文本值
@@ -887,7 +886,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             // 覆盖原有记录（如果有的话）
             resultMap.put(item.getId(), item);
         }
-        
+
         // 6. 恢复原始排序
         List<SwmWarningManagement> resultList = new ArrayList<>();
         for (SwmWarningManagement item : tdEngineList) {
@@ -896,7 +895,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 resultList.add(resultItem);
             }
         }
-        
+
         // 7. 设置结果列表并返回
         tdEnginePage.setList(resultList);
         logger.info("混合查询完成，返回 {} 条记录", resultList.size());
@@ -922,23 +921,23 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         if (swmWarningManagement == null) {
             swmWarningManagement = new SwmWarningManagement();
         }
-        
+
         // 设置查询近7天的条件
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_YEAR, -6); // 7天前（包含今天）
         Date startDate = calendar.getTime();
-        
+
         calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_YEAR, 1); // 明天
         Date endDate = calendar.getTime();
-        
+
         // 使用sqlMap设置日期范围
         swmWarningManagement.getSqlMap().getWhere()
             .and("warning_time", QueryType.GTE, startDate)
             .and("warning_time", QueryType.LT, endDate);
-        
+
         swmWarningManagement.setStatus("0"); // 状态为0的记录
-        
+
         // 调用混合分页查询方法
         return hybridFindPage(page, swmWarningManagement);
     }
@@ -949,14 +948,14 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     public List<SwmWarningManagement> listTodayWarning() {
         return dao.listTodayWarning();
     }
-    
+
     /**
      * 获取今日已处置的预警记录
      */
     public List<SwmWarningManagement> listTodayHandledWarning() {
         // 查询所有今日预警
         List<SwmWarningManagement> allTodayWarnings = listTodayWarning();
-        
+
         // 过滤已处置的预警（handleStatus为1表示已处置）
         return allTodayWarnings.stream()
                 .filter(warning -> "1".equals(warning.getHandleStatus()))
@@ -969,7 +968,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     public List<SwmWarningManagement> listCurrentMonthWarning() {
         return dao.listCurrentMonthWarning();
     }
-    
+
     /**
      * 获取当月已处置的预警记录
      */
@@ -980,37 +979,37 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     /**
      * 为预警记录列表填充班组信息
      * 通过身份证号从fms_worker和fms_work_group表中获取班组名称
-     * 
+     *
      * @param warningList 预警记录列表
      */
     public void fillWorkGroupInfo(List<SwmWarningManagement> warningList) {
         if (warningList == null || warningList.isEmpty()) {
             return;
         }
-        
+
         // 收集所有不为空的身份证号
         List<String> idCards = warningList.stream()
                 .filter(w -> w.getIdCard() != null && !w.getIdCard().isEmpty())
                 .map(SwmWarningManagement::getIdCard)
                 .distinct()
                 .collect(Collectors.toList());
-        
+
         if (idCards.isEmpty()) {
             return;
         }
-        
+
         try {
             // 批量查询身份证号对应的班组信息
             Map<String, String> idCardToWorkGroupMap = new HashMap<>();
             List<Map<String, String>> workGroupInfoList = dao.findWorkGroupNamesByIdCards(idCards);
-            
+
             // 将查询结果转换为idCard -> workGroupName的映射
             for (Map<String, String> map : workGroupInfoList) {
                 if (map.containsKey("idCard") && map.containsKey("value")) {
                     idCardToWorkGroupMap.put(map.get("idCard"), map.get("value"));
                 }
             }
-            
+
             // 将班组信息填充到预警记录中
             for (SwmWarningManagement warning : warningList) {
                 if (warning.getIdCard() != null && idCardToWorkGroupMap.containsKey(warning.getIdCard())) {
@@ -1021,18 +1020,18 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.error("填充班组信息失败", e);
         }
     }
-    
+
     /**
      * 为预警记录列表填充位置信息
      * 从TDengine的area_fence_data表中查询位置信息
-     * 
+     *
      * @param warningList 预警记录列表
      */
     public void fillLocationInfo(List<SwmWarningManagement> warningList) {
         if (warningList == null || warningList.isEmpty()) {
             return;
         }
-        
+
         try {
             // 收集所有有效的设备ID和身份证号
             List<Map<String, Object>> queryParams = new ArrayList<>();
@@ -1040,7 +1039,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 String deviceId = warning.getDeviceId();
                 String idCard = warning.getIdCard();
                 Date warningTime = warning.getWarningTime();
-                
+
                 if (deviceId != null && !deviceId.isEmpty() && warningTime != null) {
                     Map<String, Object> param = new HashMap<>();
                     param.put("deviceId", deviceId);
@@ -1051,17 +1050,17 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     queryParams.add(param);
                 }
             }
-            
+
             if (queryParams.isEmpty()) {
                 return;
             }
-            
+
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT device_id, id_card, area_name, time FROM ")
                      .append(dbname).append(".area_fence_data")
                      .append(" WHERE (");
-            
+
             // 添加每个设备ID和时间范围的条件
             for (int i = 0; i < queryParams.size(); i++) {
                 Map<String, Object> param = queryParams.get(i);
@@ -1069,39 +1068,39 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 String idCard = (String) param.get("idCard");
                 long tenMinutesBefore = (long) param.get("tenMinutesBefore");
                 long tenMinutesAfter = (long) param.get("tenMinutesAfter");
-                
+
                 if (i > 0) {
                     sqlBuilder.append(" OR ");
                 }
-                
+
                 sqlBuilder.append("(device_id = '").append(deviceId).append("'");
-                
+
                 // 如果有身份证号，也加入条件
                 if (idCard != null && !idCard.isEmpty()) {
                     sqlBuilder.append(" AND id_card = '").append(idCard).append("'");
                 }
-                
+
                 sqlBuilder.append(" AND time >= ").append(tenMinutesBefore)
                          .append(" AND time <= ").append(tenMinutesAfter).append(")");
             }
-            
+
             sqlBuilder.append(") ORDER BY device_id, id_card, time DESC");
-            
+
             // 执行批量查询
             R<JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
-            
+
             if (result.getCode() == R.SUCCESS && result.getData() != null) {
                 JSONObject data = result.getData();
                 JSONArray rows = data.getJSONArray("data");
                 JSONArray columnMeta = data.getJSONArray("column_meta");
-                
+
                 if (rows != null && rows.size() > 0) {
                     // 提取列索引
                     int deviceIdIdx = -1;
                     int idCardIdx = -1;
                     int areaNameIdx = -1;
                     int timeIdx = -1;
-                    
+
                     for (int i = 0; i < columnMeta.size(); i++) {
                         JSONArray column = columnMeta.getJSONArray(i);
                         if (column != null && column.size() > 0) {
@@ -1117,10 +1116,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                             }
                         }
                     }
-                    
+
                     // 创建设备ID和身份证号到位置信息的映射
                     Map<String, Map<String, String>> deviceLocationMap = new HashMap<>();
-                    
+
                     // 处理查询结果
                     for (int i = 0; i < rows.size(); i++) {
                         JSONArray row = rows.getJSONArray(i);
@@ -1128,10 +1127,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                             String deviceId = row.getStr(deviceIdIdx);
                             String idCard = idCardIdx >= 0 ? row.getStr(idCardIdx) : null;
                             String areaName = row.getStr(areaNameIdx);
-                            
+
                             if (deviceId != null && areaName != null) {
                                 String key = deviceId + ":" + (idCard != null ? idCard : "");
-                                
+
                                 // 只保存每个设备ID和身份证号组合的第一条记录（最新的）
                                 if (!deviceLocationMap.containsKey(key)) {
                                     Map<String, String> locationInfo = new HashMap<>();
@@ -1141,16 +1140,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                             }
                         }
                     }
-                    
+
                     // 填充位置信息到预警记录
                     for (SwmWarningManagement warning : warningList) {
                         String deviceId = warning.getDeviceId();
                         String idCard = warning.getIdCard();
-                        
+
                         if (deviceId != null) {
                             String key = deviceId + ":" + (idCard != null ? idCard : "");
                             Map<String, String> locationInfo = deviceLocationMap.get(key);
-                            
+
                             if (locationInfo != null) {
                                 String areaName = locationInfo.get("areaName");
                                 if (areaName != null && !areaName.isEmpty()) {
@@ -1172,10 +1171,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
      */
     public List<SwmWarningManagement> findTodayWarningWithHybrid() {
         logger.info("开始混合查询今日最新20条预警数据...");
-        
+
         // 创建一个简单的分页对象，设置为第1页，每页20条
         Page<SwmWarningManagement> page = new Page<>(1, 20);
-        
+
         // 创建查询条件，设置为今天的日期范围
         SwmWarningManagement swmWarningManagement = new SwmWarningManagement();
         Calendar calendar = Calendar.getInstance();
@@ -1183,28 +1182,28 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         Date startDate = calendar.getTime();
-        
+
         calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_YEAR, 1);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         Date endDate = calendar.getTime();
-        
+
         // 设置查询今日的条件
         swmWarningManagement.getSqlMap().getWhere()
             .and("warning_time", QueryType.GTE, startDate)
             .and("warning_time", QueryType.LT, endDate);
-        
+
         swmWarningManagement.setStatus("0"); // 状态为0的记录
-        
+
         // 调用混合查询方法
         Page<SwmWarningManagement> resultPage = hybridFindPage(page, swmWarningManagement);
-        
+
         // 返回结果列表
         List<SwmWarningManagement> resultList = resultPage.getList();
         logger.info("混合查询今日预警数据完成，返回 {} 条记录", resultList.size());
-        
+
         return resultList;
     }
 
@@ -1214,25 +1213,25 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
      * 1. 时序数据库中front_alarm=1，且在MySQL中不存在相同id和id_card的记录
      * 2. 如果MySQL中存在记录且front_alarm=0，则不需要告警
      * 3. 根据时序数据库中的type字段与alarm_config表的alarm_key匹配，判断是否需要告警和弹框确认
-     * 
+     *
      * 告警分类规则：
      * - 如果是否报警(enableAlarm)为0，则不显示任何通知
      * - 如果是否报警为1，是否弹窗确认(needConfirm)为0，则只在消息弹窗显示，自动确认
      * - 如果是否报警为1，是否弹窗确认为1，则在告警通知和消息弹窗都显示
-     * 
+     *
      * @return 包含两个列表：confirmList(需要确认的告警)和notificationList(只需通知的告警)
      */
     @Autowired
     private SwmAlarmConfigDao alarmConfigDao;
-    
+
     // 添加线程池用于异步确认告警
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    
+
     public Map<String, Object> getPopupWarnings() {
         List<SwmWarningManagement> confirmList = new ArrayList<>(); // 需要弹框确认的告警
         List<SwmWarningManagement> notificationList = new ArrayList<>(); // 需要消息提示但不需要确认的告警
         Map<String, Object> result = new HashMap<>();
-        
+
         try {
             // 0. 获取所有启用的告警配置
             List<SwmAlarmConfig> allConfigs = alarmConfigDao.findAllEnabled();
@@ -1240,26 +1239,26 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             for (SwmAlarmConfig config : allConfigs) {
                 configMap.put(config.getAlarmKey(), config);
             }
-            
+
             // 获取所有需要弹窗确认的告警配置
             List<SwmAlarmConfig> needConfirmConfigs = alarmConfigDao.findAllNeedConfirm();
             Set<String> needConfirmKeys = new HashSet<>();
             for (SwmAlarmConfig config : needConfirmConfigs) {
                 needConfirmKeys.add(config.getAlarmKey());
             }
-            
-            logger.info("获取到{}个启用的告警配置，其中{}个需要弹窗确认", 
+
+            logger.info("获取到{}个启用的告警配置，其中{}个需要弹窗确认",
                        allConfigs.size(), needConfirmKeys.size());
-            
+
             // 1. 查询时序数据库中front_alarm=1的记录
             String sql = String.format("SELECT * FROM %s.swm_warning_management WHERE front_alarm='1' ORDER BY warning_time DESC LIMIT 20", dbname);
             R<JSONObject> tdResult = tdengineService.executeTDengineSQL(sql);
-            
+
             if (tdResult.getCode() == R.SUCCESS && tdResult.getData() != null) {
                 JSONObject data = tdResult.getData();
                 JSONArray rows = data.getJSONArray("data");
                 JSONArray columnMeta = data.getJSONArray("column_meta");
-                
+
                 if (rows != null) {
                     for (int i = 0; i < rows.size(); i++) {
                         try {
@@ -1268,7 +1267,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                             if (tdEntity == null || tdEntity.getId() == null) {
                                 continue;
                             }
-                            
+
                             // 手动对预警时间加8小时
                             if (tdEntity.getWarningTime() != null) {
                                 Calendar calendar = Calendar.getInstance();
@@ -1276,7 +1275,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 calendar.add(Calendar.HOUR_OF_DAY, 8);
                                 tdEntity.setWarningTime(calendar.getTime());
                             }
-                            
+
                             // 2. 在MySQL中检查是否存在相同ID和身份证号的记录
                             SwmWarningManagement query = new SwmWarningManagement();
                             query.setId(tdEntity.getId());
@@ -1284,26 +1283,26 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 query.setIdCard(tdEntity.getIdCard());
                             }
                             SwmWarningManagement mysqlEntity = super.get(query);
-                            
+
                             // 如果MySQL中存在且front_alarm=0，则不需要告警
                             if (mysqlEntity != null && "0".equals(mysqlEntity.getFrontAlarm())) {
                                 continue;
                             }
-                            
+
                             // 3. 根据预警类型检查告警配置
                             // 时序数据库swm_warning_management的type字段与mysql的swm_alarm_config表的alarm_key匹配
                             String warningType = tdEntity.getType();
                             SwmAlarmConfig alarmConfig = configMap.get(warningType);
-                            
+
                             // 如果没有对应的配置或配置为不告警，则跳过
                             if (alarmConfig == null || alarmConfig.getEnableAlarm() == 0) {
                                 logger.info("警告类型 {} 未配置或配置为不告警，跳过", warningType);
                                 continue;
                             }
-                            
+
                             // 添加配置信息到实体
                             tdEntity.setExtraData("alarmConfig", alarmConfig);
-                            
+
                             // 4. 根据配置分类处理
                             // 如果是否报警为1，是否弹窗确认为1，则添加到confirmList和notificationList
                             if (alarmConfig.getEnableAlarm() == 1 && alarmConfig.getNeedConfirm() == 1) {
@@ -1311,7 +1310,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 if (confirmList.size() < 5) {  // 最多5条需要确认的告警
                                     confirmList.add(tdEntity);
                                 }
-                                
+
                                 // 同时也添加到通知列表，通知列表不自动确认
                                 if (notificationList.size() < 10) {
                                     // 深拷贝一份，避免共享引用
@@ -1328,7 +1327,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 if (notificationList.size() < 10) {  // 最多10条通知
                                     tdEntity.setExtraData("needConfirm", false);
                                     notificationList.add(tdEntity);
-                                    
+
                                     // 异步自动确认，使用线程池
                                     final String warningId = tdEntity.getId();
                                     executorService.submit(() -> {
@@ -1352,13 +1351,13 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         } catch (Exception e) {
             logger.error("获取告警数据失败", e);
         }
-        
+
         result.put("confirmList", confirmList);
         result.put("notificationList", notificationList);
-        
-        logger.info("获取告警数据完成，需要确认的告警: {}条，只需通知的告警: {}条", 
+
+        logger.info("获取告警数据完成，需要确认的告警: {}条，只需通知的告警: {}条",
                     confirmList.size(), notificationList.size());
-        
+
         return result;
     }
 
@@ -1374,36 +1373,36 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.warn("告警ID为空，无法处理确认");
             return false;
         }
-        
+
         try {
             // 1. 从时序数据库获取完整记录
             String sql = String.format("SELECT * FROM %s.swm_warning_management WHERE id='%s' LIMIT 1", dbname, id);
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
-            
+
             if (result.getCode() != R.SUCCESS || result.getData() == null) {
                 logger.error("从时序数据库获取告警数据失败，ID: {}", id);
                 return false;
             }
-            
+
             JSONObject data = result.getData();
             JSONArray rows = data.getJSONArray("data");
             if (rows == null || rows.size() == 0) {
                 logger.error("告警记录不存在，ID: {}", id);
                 return false;
             }
-            
+
             // 2. 转换为实体
             SwmWarningManagement entity = convertToEntity(rows.getJSONArray(0), data.getJSONArray("column_meta"));
             if (entity == null) {
                 logger.error("告警数据转换失败，ID: {}", id);
                 return false;
             }
-            
+
             // 3. 查询MySQL中是否存在
             SwmWarningManagement query = new SwmWarningManagement();
             query.setId(id);
             SwmWarningManagement mysqlEntity = super.get(query);
-            
+
             // 4. 根据查询结果决定插入或更新
             if (mysqlEntity == null) {
                 // MySQL中不存在，需要插入
@@ -1420,7 +1419,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 super.save(mysqlEntity);
                 logger.info("告警确认：更新MySQL记录front_alarm=0, x={}, y={}, ID: {}", entity.getX(), entity.getY(), id);
             }
-            
+
             return true;
         } catch (Exception e) {
             logger.error("处理告警确认失败", e);
@@ -1435,13 +1434,13 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
      * 2. 从MySQL筛选相同id和id_card且handle_status为1的记录（已处置的记录）
      * 3. 将时序数据库查到的所有数据减去MySQL中已处置的记录，得到未处置的数据
      * 4. 排除危险源报警类型的数据
-     * 
+     *
      * @param keyword 搜索关键词（可选）
      * @return 未处置的预警记录列表
      */
     public List<SwmWarningManagement> findUnhandledWarnings(String keyword) {
         logger.info("开始查询未处置预警记录，关键词: {}", keyword);
-        
+
         // 1. 从时序数据库查询所有数据
         StringBuilder sqlBuilder = new StringBuilder();
         // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段，保证时区正确
@@ -1452,10 +1451,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                .append("front_alarm, type, x, y, hazard_category ")
                .append("FROM ").append(dbname).append(".swm_warning_management");
-        
+
         // 添加排序条件
         sqlBuilder.append(" ORDER BY warning_time DESC");
-        
+
         // 执行查询，获取时序数据库所有记录
         List<SwmWarningManagement> tdEngineList = new ArrayList<>();
         try {
@@ -1464,7 +1463,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 JSONObject data = result.getData();
                 JSONArray rows = data.getJSONArray("data");
                 JSONArray columnMeta = data.getJSONArray("column_meta");
-                
+
                 if (rows != null) {
                     for (int i = 0; i < rows.size(); i++) {
                         try {
@@ -1482,24 +1481,24 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         } catch (Exception e) {
             logger.error("从时序数据库查询数据失败: {}", e.getMessage());
         }
-        
+
         logger.info("从时序数据库获取到 {} 条记录", tdEngineList.size());
-        
+
         // 2. 从MySQL获取所有已处置的记录（handle_status为1）的ID和idCard
         List<SwmWarningManagement> processedList = dao.findAllProcessedWarnings();
         logger.info("从MySQL获取到 {} 条已处置记录", processedList.size());
-        
+
         // 创建已处置记录的映射，用于快速查找
         Map<String, Set<String>> processedMap = new HashMap<>();
         for (SwmWarningManagement processed : processedList) {
             String id = processed.getId();
             String idCard = processed.getIdCard();
-            
+
             if (id != null) {
                 if (!processedMap.containsKey(id)) {
                     processedMap.put(id, new HashSet<>());
                 }
-                
+
                 if (idCard != null) {
                     processedMap.get(id).add(idCard);
                 } else {
@@ -1508,19 +1507,19 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 }
             }
         }
-        
+
         // 3. 过滤时序数据库记录，只保留未处置的记录并排除危险源报警
         List<SwmWarningManagement> unhandledList = new ArrayList<>();
         for (SwmWarningManagement tdEntity : tdEngineList) {
             String id = tdEntity.getId();
             String idCard = tdEntity.getIdCard();
             String warningContent = tdEntity.getWarningContent();
-            
+
             // 排除危险源报警
             if ("危险源报警".equals(warningContent)) {
                 continue;
             }
-            
+
             boolean isProcessed = false;
             if (processedMap.containsKey(id)) {
                 Set<String> processedIdCards = processedMap.get(id);
@@ -1532,7 +1531,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     isProcessed = true;
                 }
             }
-            
+
             // 只添加未处置的记录
             if (!isProcessed) {
                 // 设置未处置状态
@@ -1540,50 +1539,50 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 unhandledList.add(tdEntity);
             }
         }
-        
+
         // 4. 根据关键词过滤结果（如果提供了关键词）
         List<SwmWarningManagement> filteredList = unhandledList;
         if (StringUtils.isNotBlank(keyword)) {
             filteredList = new ArrayList<>();
             String lowerKeyword = keyword.toLowerCase();
-            
+
             for (SwmWarningManagement warning : unhandledList) {
                 boolean matches = false;
-                
+
                 // 检查人员姓名
-                if (warning.getPersonName() != null && 
+                if (warning.getPersonName() != null &&
                     warning.getPersonName().toLowerCase().contains(lowerKeyword)) {
                     matches = true;
                 }
-                
+
                 // 检查身份证号
-                if (!matches && warning.getIdCard() != null && 
+                if (!matches && warning.getIdCard() != null &&
                     warning.getIdCard().toLowerCase().contains(lowerKeyword)) {
                     matches = true;
                 }
-                
+
                 // 检查预警内容
                 String warningContent = warning.getWarningContent();
                 if (!matches && warningContent != null) {
                     // 如果预警内容是数字，尝试转换为文本形式
                     if (warningContent.matches("\\d+")) {
-                        warningContent = DictUtils.getDictLabel("warning_content_enum", 
+                        warningContent = DictUtils.getDictLabel("warning_content_enum",
                             warningContent, warningContent);
                     }
-                    
+
                     if (warningContent.toLowerCase().contains(lowerKeyword)) {
                         matches = true;
                     }
                 }
-                
+
                 if (matches) {
                     filteredList.add(warning);
                 }
             }
         }
-        
+
         logger.info("过滤后得到 {} 条未处置预警记录", filteredList.size());
-        
+
         return filteredList;
     }
 

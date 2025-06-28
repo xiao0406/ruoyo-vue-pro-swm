@@ -92,4 +92,9 @@ public interface SwmHazardSourceDao extends CrudDao<SwmHazardSource> {
      * 统计未制定巡检计划的数量
      */
     int countNoInspectionPlan(@Param("beginDate") Date beginDate,@Param("endDate") Date endDate);
+
+    /**
+     * 统计所有数量
+     */
+    int countAll();
 }

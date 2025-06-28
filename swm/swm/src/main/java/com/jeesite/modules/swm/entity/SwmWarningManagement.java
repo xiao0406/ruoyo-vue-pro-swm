@@ -61,7 +61,7 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
         public static String getText(String value) {
             System.out.println("WarningTypeEnum.getText被调用，参数value=" + value);
             String result;
-            
+
             // 特殊处理warningType=1的情况，直接返回主动报警
             if ("1".equals(value)) {
                 System.out.println("WarningTypeEnum.getText: 特殊处理warningType=1，返回主动报警");
@@ -146,13 +146,13 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private String x; // x坐标
     private String y; // y坐标
     private String hazardCategory; // 危险源类别
-    
+
     // 用于显示的属性，不对应数据库字段
     private String workGroupName; // 班组名称
     private String warningTypeText; // 预警类型显示文本
     private String handleStatusText; // 处置状态显示文本
     private String areaName; // 位置信息
-    
+
     // 查询条件，不对应数据库字段
     private transient boolean excludeSOS; // 是否排除一键SOS预警
 

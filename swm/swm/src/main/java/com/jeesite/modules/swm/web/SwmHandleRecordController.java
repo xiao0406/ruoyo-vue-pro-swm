@@ -28,7 +28,7 @@ import java.util.ArrayList;
 
 /**
  * 处置记录Controller
- * 
+ *
  * @author zwf
  * @version 2025-05-16
  */
@@ -386,7 +386,7 @@ public class SwmHandleRecordController extends BaseController {
 
     /**
      * 获取未处置的预警记录列表
-     * 
+     *
      * @author Shawn
      * @date 2025/06/25
      */
@@ -585,5 +585,15 @@ public class SwmHandleRecordController extends BaseController {
             logger.error("更新处置记录名称格式失败", e);
             return renderResult(Global.FALSE, text("更新处置记录名称格式失败：" + e.getMessage()));
         }
+    }
+
+    /**
+     * 热力图-获取最新的报警处置记录
+     */
+    @GetMapping("latestHandleRecord")
+    @ResponseBody
+    @ApiOperation(value = "热力图-告警数量趋势-最近处置记录")
+    public List<SwmHandleRecord> latestHandleRecord() {
+        return swmHandleRecordService.latestHandleRecord(10);
     }
 }

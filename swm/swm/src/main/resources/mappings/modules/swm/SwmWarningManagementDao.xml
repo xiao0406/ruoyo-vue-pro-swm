@@ -220,7 +220,7 @@
         AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
         AND status = '0'
     </select>
-    
+
     <!-- 获取当月已处理的预警，在SQL中添加8小时时区调整 -->
     <select id="listCurrentMonthHandledWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
@@ -243,18 +243,217 @@
 
     <!-- 根据身份证号列表批量查询班组名称 -->
     <select id="findWorkGroupNamesByIdCards" resultType="java.util.Map">
-        SELECT 
+        SELECT
             w.identity_code AS idCard,
             wg.work_group_name AS value
-        FROM 
+        FROM
             fms_worker w
-        LEFT JOIN 
+        LEFT JOIN
             fms_work_group wg ON w.work_group_id = wg.id
-        WHERE 
+        WHERE
             w.identity_code IN
             <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
                 #{idCard}
             </foreach>
     </select>
 
+    <!-- 按日期范围分组统计 -->
+    <select id="countByDateRangeGroupByDay" resultType="map">
+        SELECT DATE_FORMAT(warning_time, '%Y-%m-%d') as date,
+               COUNT(*)                              as count
+        FROM swm_warning_management
+        WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+          AND (CASE
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
+            END)
+        GROUP BY DATE(warning_time)
+        ORDER BY date
+    </select>
+
+    <!--    查询TOP N危险源类别-->
+    <select id="findTopCategories" resultType="map">
+        SELECT
+        hazard_category AS category,
+        COUNT(*) AS count
+        FROM swm_warning_management
+        WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+          AND warning_content = '危险源报警'
+        GROUP BY hazard_category
+        ORDER BY count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!--    查询TOP N预警内容-->
+    <select id="findTopWarningContent" resultType="map">
+        SELECT
+            warning_content AS warningContent,
+            COUNT(*) AS count
+        FROM swm_warning_management
+        WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+          AND warning_content != '危险源报警'
+        GROUP BY warning_content
+        ORDER BY count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询TOP N违规人员 -->
+    <select id="findViolationPersonTop10" resultType="map">
+        SELECT
+        a.person_name AS "personName",
+        COUNT(*) AS "violationCount",
+        GROUP_CONCAT(DISTINCT a.warning_type) AS "warningType"
+        FROM
+        swm_warning_management a
+        WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+          AND warning_content = '危险源报警'
+        GROUP BY
+        a.person_name
+        ORDER BY
+        COUNT(*) DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 按类别和日期范围分组统计 -->
+    <select id="countHazardCategoryCategoryTrendByDateRange" resultType="map">
+        SELECT
+            hazard_category as category,
+            DATE_FORMAT(warning_time, '%Y-%m-%d') as date,
+            COUNT(*) as count
+        FROM swm_warning_management
+        WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+          AND warning_content = '危险源报警'
+          AND hazard_category is not null
+        GROUP BY hazard_category, DATE(warning_time)
+        ORDER BY date, category
+    </select>
+
+    <!-- 按告警内容和日期范围分组统计 -->
+    <select id="countHazardCategoryCategoryTrendByDateRange" resultType="map">
+        SELECT
+            hazard_category as category,
+            DATE_FORMAT(warning_time, '%Y-%m-%d') as date,
+            COUNT(*) as count
+        FROM swm_warning_management
+        WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+          AND warning_content = '危险源报警'
+          AND hazard_category is not null
+        GROUP BY hazard_category, DATE(warning_time)
+        ORDER BY date, category
+    </select>
+
+    <select id="countWarningContentTrendByDateRange" resultType="java.util.Map">
+        SELECT
+            warning_content as category,
+            DATE_FORMAT(warning_time, '%Y-%m-%d') as date,
+            COUNT(*) as count
+        FROM swm_warning_management
+        WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+          AND warning_content != '危险源报警'
+          AND warning_content is not null
+        GROUP BY warning_content, DATE(warning_time)
+        ORDER BY date, category
+    </select>
+
+    <!-- 按时间范围统计数量 -->
+    <select id="countByDateRange" resultType="long">
+        SELECT COUNT(*)
+        FROM swm_warning_management
+        WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+          AND (CASE
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
+            END)
+    </select>
+
+    <!-- 按预警内容统计总数 -->
+    <select id="countTotal" resultType="long">
+        SELECT COUNT(*)
+        FROM swm_warning_management
+        WHERE status = '0'
+          AND (CASE
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
+            END)
+    </select>
+
+    <!-- 统计不同违规人员数量 -->
+    <select id="countDistinctPersonByWarningContentAndDateRange" resultType="long">
+        SELECT COUNT(DISTINCT person_name)
+        FROM swm_warning_management
+        WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+          AND (CASE
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
+            END)
+    </select>
+
+    <select id="latestHazardSourceRecord" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
+        SELECT a.id,
+               a.person_name     AS personName,
+               a.warning_type    AS warningType,
+               a.warning_content AS warningContent,
+               a.warning_time    AS warningTime,
+               a.alarm_record    AS alarmRecord,
+               a.alarm_time      AS alarmTime,
+               a.trigger_reason  AS triggerReason,
+               a.handler,
+               a.handle_time     AS handleTime,
+               a.handle_process  AS handleProcess,
+               a.handle_status   AS handleStatus,
+               a.attachment,
+               a.device_id       AS deviceId,
+               a.id_card         AS idCard,
+               a.hazard_category AS hazardCategory
+        FROM swm_warning_management a
+        WHERE a.status = '0'
+          AND (CASE
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
+            END)
+        order by a.warning_time desc
+        limit #{limit}
+    </select>
+
+    <!-- 处置效率TOP N统计 -->
+    <select id="findHandleEfficiencyTop10" resultType="map">
+        SELECT a.handler                          AS "handler",
+               ROUND(AVG(a.disposal_duration), 2) AS "avgHandleMinutes"
+        FROM swm_warning_management a
+        WHERE a.warning_content != '危险源报警'
+          AND a.handle_status = '1'
+          AND a.handler IS NOT NULL
+          AND a.disposal_duration IS NOT NULL
+          AND DATE(handle_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+        GROUP BY a.handler
+        HAVING COUNT(*) > 0
+        ORDER BY avgHandleMinutes ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="countHandledByDateRange" resultType="long">
+        SELECT COUNT(*)
+        FROM swm_warning_management a
+        WHERE a.handle_status = '1'
+          AND DATE(handle_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND a.status = '0'
+    </select>
+
+    <select id="countTodayNonHazardSource" resultType="long">
+        SELECT COUNT(*)
+        FROM swm_warning_management
+        WHERE warning_time <![CDATA[ >= ]]> DATE_FORMAT(CURDATE(), '%Y-%m-%d 00:00:00')
+        AND warning_time <![CDATA[ <= ]]> DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), '%Y-%m-%d 00:00:00')
+        AND status = '0'
+        AND warning_content != '危险源报警'
+    </select>
 </mapper>
