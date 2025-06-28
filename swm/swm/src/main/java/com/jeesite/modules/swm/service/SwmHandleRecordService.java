@@ -18,7 +18,7 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmHandleRecord> {
-    
+
     /**
      * 获取单条数据
      * @param swmHandleRecord
@@ -28,7 +28,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
     public SwmHandleRecord get(SwmHandleRecord swmHandleRecord) {
         return super.get(swmHandleRecord);
     }
-    
+
     /**
      * 查询分页数据
      * @param swmHandleRecord
@@ -39,7 +39,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
         // 如果需要传入分页参数，可以通过entity中的分页参数来处理
         return super.findPage(swmHandleRecord);
     }
-    
+
     /**
      * 查询列表数据
      * @param swmHandleRecord
@@ -49,7 +49,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
     public List<SwmHandleRecord> findList(SwmHandleRecord swmHandleRecord) {
         return super.findList(swmHandleRecord);
     }
-    
+
     /**
      * 查询分页数据（包含文本值）
      * @param page 分页对象
@@ -61,18 +61,18 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
         if (page != null) {
             swmHandleRecord.setPage(page);
         }
-        
+
         // 调用父类的findPage方法
         Page<SwmHandleRecord> pageResult = super.findPage(swmHandleRecord);
-        
+
         // 处理文本值
         List<SwmHandleRecord> originalList = pageResult.getList();
         List<SwmHandleRecord> resultList = new ArrayList<>();
-        
+
         for (SwmHandleRecord record : originalList) {
             // 创建新对象以避免修改原始对象
             SwmHandleRecord newRecord = new SwmHandleRecord(record.getId());
-            
+
             // 复制所有属性
             newRecord.setRecordName(record.getRecordName());
             newRecord.setWarningId(record.getWarningId());
@@ -88,19 +88,19 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
             newRecord.setUpdateDate(record.getUpdateDate());
             newRecord.setRemarks(record.getRemarks());
             newRecord.setStatus(record.getStatus());
-            
+
             // 设置处置状态文本
             newRecord.setHandleStatusText(SwmHandleRecord.HandleStatusEnum.getText(record.getHandleStatus()));
-            
+
             resultList.add(newRecord);
         }
-        
+
         // 设置转换后的结果列表
         pageResult.setList(resultList);
-        
+
         return pageResult;
     }
-    
+
     /**
      * 保存数据（插入或更新）
      * @param swmHandleRecord
@@ -109,36 +109,36 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
     @Transactional(readOnly = false)
     public void save(SwmHandleRecord swmHandleRecord) {
         // 如果是新记录且有预警ID，且状态为草稿，则先检查是否已存在相同预警ID的草稿记录
-        if (swmHandleRecord.getIsNewRecord() && 
-            swmHandleRecord.getWarningId() != null && 
+        if (swmHandleRecord.getIsNewRecord() &&
+            swmHandleRecord.getWarningId() != null &&
             !swmHandleRecord.getWarningId().isEmpty() &&
             SwmHandleRecord.HandleStatusEnum.DRAFT.equals(swmHandleRecord.getHandleStatus())) {
-            
+
             // 查找相同预警ID的草稿记录
             SwmHandleRecord query = new SwmHandleRecord();
             query.setWarningId(swmHandleRecord.getWarningId());
             query.setHandleStatus(SwmHandleRecord.HandleStatusEnum.DRAFT);
-            
+
             List<SwmHandleRecord> existingRecords = findList(query);
-            
+
             // 如果找到了已存在的草稿记录，则更新该记录而不是创建新记录
             if (existingRecords != null && !existingRecords.isEmpty()) {
                 SwmHandleRecord existingRecord = existingRecords.get(0);
-                
+
                 // 将现有草稿记录的ID设置到当前记录，以便更新而不是插入
                 swmHandleRecord.setId(existingRecord.getId());
                 swmHandleRecord.setIsNewRecord(false);
-                
+
                 // 保留现有记录的创建信息
                 swmHandleRecord.setCreateBy(existingRecord.getCreateBy());
                 swmHandleRecord.setCreateDate(existingRecord.getCreateDate());
             }
         }
-        
+
         // 调用父类的保存方法
         super.save(swmHandleRecord);
     }
-    
+
     /**
      * 更新状态
      * @param swmHandleRecord
@@ -148,7 +148,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
     public void updateStatus(SwmHandleRecord swmHandleRecord) {
         super.updateStatus(swmHandleRecord);
     }
-    
+
     /**
      * 删除数据
      * @param swmHandleRecord
@@ -158,7 +158,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
     public void delete(SwmHandleRecord swmHandleRecord) {
         super.delete(swmHandleRecord);
     }
-    
+
     /**
      * 根据预警ID查询处置记录
      * @param warningId 预警ID
@@ -168,13 +168,13 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
         SwmHandleRecord record = new SwmHandleRecord();
         record.setWarningId(warningId);
         List<SwmHandleRecord> recordList = findList(record);
-        
+
         // 确保处置记录名称格式正确
         for (SwmHandleRecord item : recordList) {
             // 检查记录名称格式是否需要更新
             String recordName = item.getRecordName();
             String warningRecord = item.getWarningRecord();
-            
+
             // 如果记录名称不符合"处置personName触发warningContent"格式，尝试修正
             if (recordName == null || !recordName.contains("处置") || !recordName.contains("触发")) {
                 // 从预警记录中提取人员名称
@@ -182,20 +182,20 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
                 if (warningRecord != null && warningRecord.contains("触发预警记录")) {
                     personName = warningRecord.replace("触发预警记录", "");
                 }
-                
+
                 // 从相关联的预警管理记录中获取预警内容（这里简化处理）
                 String warningContent = "预警"; // 默认值
-                
+
                 if (personName != null && !personName.isEmpty()) {
                     String formattedName = "处置" + personName + "触发" + warningContent;
                     item.setRecordName(formattedName);
                 }
             }
         }
-        
+
         return recordList;
     }
-    
+
     /**
      * 更新处置记录名称格式
      * 将记录名称格式从"处置（处置人）触发（预警内容）"更新为"处置personName触发warningContent"
@@ -204,25 +204,34 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
     public void updateRecordNameFormat() {
         // 获取所有记录
         List<SwmHandleRecord> allRecords = this.findList(new SwmHandleRecord());
-        
+
         for (SwmHandleRecord record : allRecords) {
             String recordName = record.getRecordName();
-            
+
             // 如果记录名称是旧格式，更新为新格式
             if (recordName != null && recordName.contains("处置（") && recordName.contains("）触发（")) {
                 // 提取处置人信息
                 String content = recordName.substring(recordName.indexOf("处置（") + 3, recordName.indexOf("）触发（"));
-                
+
                 // 提取预警内容信息
                 String warningContent = recordName.substring(recordName.indexOf("）触发（") + 4, recordName.lastIndexOf("）"));
-                
+
                 // 构造新的记录名称格式
                 String newRecordName = "处置" + content + "触发" + warningContent;
                 record.setRecordName(newRecordName);
-                
+
                 // 保存更新
                 this.save(record);
             }
         }
     }
-} 
+
+    /**
+     * 获取最新的报警处置记录
+     * @param limit 获取的记录数
+     * @return
+     */
+    public List<SwmHandleRecord> latestHandleRecord(int limit) {
+        return dao.latestHandleRecord(limit);
+    }
+}

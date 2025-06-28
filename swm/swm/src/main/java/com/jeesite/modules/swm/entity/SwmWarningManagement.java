@@ -30,6 +30,7 @@ import java.util.Map;
         @Column(name = "handler", attrName = "handler", label = "处置人"),
         @Column(name = "handle_time", attrName = "handleTime", label = "处置时间"),
         @Column(name = "handle_process", attrName = "handleProcess", label = "处置过程"),
+        @Column(name = "disposal_duration", attrName = "disposalDuration", label = "处置时长(min）"),
         @Column(name = "handle_status", attrName = "handleStatus", label = "处置状态"),
         @Column(name = "attachment", attrName = "attachment", label = "附件路径", comment = "附件路径"),
         @Column(name = "device_id", attrName = "deviceId", label = "设备ID"),
@@ -57,7 +58,7 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
         public static String getText(String value) {
             System.out.println("WarningTypeEnum.getText被调用，参数value=" + value);
             String result;
-            
+
             // 特殊处理warningType=1的情况，直接返回主动报警
             if ("1".equals(value)) {
                 System.out.println("WarningTypeEnum.getText: 特殊处理warningType=1，返回主动报警");
@@ -132,19 +133,21 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private String handler; // 处置人
     private Date handleTime; // 处置时间
     private String handleProcess; // 处置过程
+    private Long disposalDuration; // 处置时长
     private String handleStatus; // 处置状态
     private String attachment; // 附件路径
     private String deviceId; // 设备ID
     private String idCard; // 身份证号
     private String frontAlarm; // 前端弹框提示
     private String type; // 告警类型，与alarm_config表的alarm_key匹配
-    
+
     // 用于显示的属性，不对应数据库字段
     private String workGroupName; // 班组名称
     private String warningTypeText; // 预警类型显示文本
     private String handleStatusText; // 处置状态显示文本
     private String areaName; // 位置信息
-    
+    private String hazardCategory; //危险源类别
+
     // 查询条件，不对应数据库字段
     private transient boolean excludeSOS; // 是否排除一键SOS预警
 
@@ -399,5 +402,21 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setAreaName(String areaName) {
         this.areaName = areaName;
+    }
+
+    public String getHazardCategory() {
+        return hazardCategory;
+    }
+
+    public void setHazardCategory(String hazardCategory) {
+        this.hazardCategory = hazardCategory;
+    }
+
+    public Long getDisposalDuration() {
+        return disposalDuration;
+    }
+
+    public void setDisposalDuration(Long disposalDuration) {
+        this.disposalDuration = disposalDuration;
     }
 }

@@ -1,17 +1,16 @@
 package com.jeesite.modules.swm.web;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.swm.entity.SwmAlarmConfig;
 import com.jeesite.modules.swm.entity.SwmHandleRecord;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
 import com.jeesite.modules.swm.service.SwmHandleRecordService;
+import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmWarningManagementService;
-import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
@@ -25,20 +24,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-// 添加需要的导入语句
-import com.jeesite.modules.sys.entity.User;
-import com.jeesite.modules.sys.utils.UserUtils;
-import com.jeesite.modules.swm.entity.SwmPerson;
-import com.jeesite.modules.swm.service.SwmPersonService;
-import com.jeesite.common.utils.excel.ExcelExport;
+import java.util.stream.Collectors;
 
 /**
  * 预警管理表Controller
@@ -58,7 +50,7 @@ public class SwmWarningManagementController extends BaseController {
 
     @Autowired
     private SwmHandleRecordService swmHandleRecordService;
-    
+
     @Autowired
     private SwmWarningManagementDao swmWarningManagementDao;
 
@@ -98,10 +90,10 @@ public class SwmWarningManagementController extends BaseController {
         if (swmWarningManagement == null) {
             swmWarningManagement = new SwmWarningManagement();
         }
-        
+
         // 添加排除一键SOS的条件
         swmWarningManagement.setExcludeSOS(true);
-        
+
         logger.info("查询参数: personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS=true",
             swmWarningManagement.getPersonName(),
             swmWarningManagement.getWarningType(),
@@ -116,11 +108,11 @@ public class SwmWarningManagementController extends BaseController {
         // 添加日志检查返回的数据
         if (resultPage != null && resultPage.getList() != null && !resultPage.getList().isEmpty()) {
             logger.info("返回数据总条数: {}", resultPage.getCount());
-            
+
             // 检查数据是否来自MySQL还是时序数据库
             int mysqlCount = 0;
             int tdEngineCount = 0;
-            
+
             for (SwmWarningManagement item : resultPage.getList()) {
                 if (item.getDeviceId() != null || item.getIdCard() != null) {
                     mysqlCount++;
@@ -128,7 +120,7 @@ public class SwmWarningManagementController extends BaseController {
                     tdEngineCount++;
                 }
             }
-            
+
             logger.info("返回数据中，来自MySQL的记录: {}条，来自时序数据库的记录: {}条", mysqlCount, tdEngineCount);
         } else {
             logger.info("返回数据为空或没有记录");
@@ -145,12 +137,12 @@ public class SwmWarningManagementController extends BaseController {
     @ApiOperation("查看编辑表单")
     public Map<String, Object> form(SwmWarningManagement swmWarningManagement) {
         Map<String, Object> result = new HashMap<>();
-        
+
         if (swmWarningManagement != null && swmWarningManagement.getId() != null) {
             // 先从MySQL数据库查询
             logger.info("从MySQL数据库查询预警记录，ID: {}", swmWarningManagement.getId());
             SwmWarningManagement mysqlRecord = swmWarningManagementDao.findInMySqlByIdAndIdCard(swmWarningManagement.getId(), null);
-            
+
             // 如果MySQL中没有找到，再从时序数据库查询
             if (mysqlRecord == null) {
                 logger.info("MySQL中未找到记录，尝试从时序数据库查询");
@@ -158,36 +150,36 @@ public class SwmWarningManagementController extends BaseController {
             } else {
                 logger.info("在MySQL中找到预警记录");
             }
-            
+
             // 如果找到了记录
             if (mysqlRecord != null) {
                 Map<String, Object> warningData = new HashMap<>();
-                
+
                 // 复制基本属性
                 warningData.put("id", mysqlRecord.getId());
-                
+
                 // 修改personName格式，添加idCard信息和触发的预警内容
                 String idCard = mysqlRecord.getIdCard() != null ? mysqlRecord.getIdCard() : "未知";
                 String originalPersonName = mysqlRecord.getPersonName() != null ? mysqlRecord.getPersonName() : "未知人员";
                 String warningContent = mysqlRecord.getWarningContent() != null ? mysqlRecord.getWarningContent() : "未知预警";
-                
+
                 // 处理预警内容，如果是数字则转换为对应的文本
                 if (warningContent != null && warningContent.matches("\\d+")) {
                     warningContent = DictUtils.getDictLabel("warning_content_enum", warningContent, warningContent);
                 }
-                
+
                 // 新的personName格式：【idCard】某某触发warningContent
                 String formattedPersonName = "【" + idCard + "】" + originalPersonName + "触发" + warningContent;
                 warningData.put("personName", formattedPersonName);
-                
+
                 // 预警时间已在SQL中调整时区，这里直接使用
                 warningData.put("warningTime", mysqlRecord.getWarningTime());
-                
+
                 warningData.put("alarmRecord", mysqlRecord.getAlarmRecord());
-                
+
                 // 报警时间已在SQL中调整时区，这里直接使用
                 warningData.put("alarmTime", mysqlRecord.getAlarmTime());
-                
+
                 warningData.put("triggerReason", mysqlRecord.getTriggerReason());
                 warningData.put("handler", mysqlRecord.getHandler());
                 warningData.put("handleTime", mysqlRecord.getHandleTime());
@@ -331,9 +323,9 @@ public class SwmWarningManagementController extends BaseController {
     @ResponseBody
     @ApiOperation("处理预警")
     public String process(String id, String handler, String handleTime, String handleProcess, String handleStatus, String attachment) {
-       
+
         logger.info("收到预警处理请求，预警ID：{}", id);
-        
+
         // 解析处置时间
         Date handleTimeDate;
         if (handleTime != null && !handleTime.isEmpty()) {
@@ -341,50 +333,50 @@ public class SwmWarningManagementController extends BaseController {
         } else {
             handleTimeDate = new Date();
         }
-        
+
         // 调用服务层方法处理预警并向MySQL插入数据
         boolean result = swmWarningManagementService.processWarningToMySql(
             id, handler, handleTimeDate, handleProcess, handleStatus, attachment);
-        
+
         if (!result) {
             return renderResult(Global.FALSE, text("预警处置失败！"));
         }
-        
+
         // 处置记录表中创建新记录
         SwmWarningManagement swmWarningManagement = swmWarningManagementService.get(id);
         SwmHandleRecord handleRecord = SwmHandleRecord.createNewRecord();
         handleRecord.setWarningId(id);
-        
+
         // 获取预警内容的文本值
-        String warningContentText = DictUtils.getDictLabel("warning_content_enum", 
+        String warningContentText = DictUtils.getDictLabel("warning_content_enum",
                 swmWarningManagement.getWarningContent(), swmWarningManagement.getWarningContent());
-        
+
         // 构造处置记录名称：处置personName触发warningContent
         String recordName = "处置" + swmWarningManagement.getPersonName() + "触发" + warningContentText;
         handleRecord.setRecordName(recordName);
-        
+
         // 构造预警记录：personName触发warningContent (不带"处置"前缀)
         String warningRecord = swmWarningManagement.getPersonName() + "触发" + warningContentText;
         handleRecord.setWarningRecord(warningRecord);
-        
+
         // 设置报警时间
-        handleRecord.setAlarmTime(swmWarningManagement.getAlarmTime() != null ? 
+        handleRecord.setAlarmTime(swmWarningManagement.getAlarmTime() != null ?
                 swmWarningManagement.getAlarmTime() : swmWarningManagement.getWarningTime());
-        
+
         // 设置处置信息
         handleRecord.setHandler(handler);
         handleRecord.setHandleTime(handleTimeDate);
         handleRecord.setHandleProcess(handleProcess);
         handleRecord.setHandleStatus(handleStatus);
-        
+
         // 设置附件路径
         if (attachment != null && !attachment.isEmpty()) {
             handleRecord.setAttachment(attachment);
         }
-        
+
         // 保存处置记录
         swmHandleRecordService.save(handleRecord);
-        
+
         return renderResult(Global.TRUE, text("预警处置成功！"));
     }
 
@@ -398,12 +390,12 @@ public class SwmWarningManagementController extends BaseController {
     @ResponseBody
     public Map<String, Object> getPopupWarnings() {
         Map<String, Object> resultData = swmWarningManagementService.getPopupWarnings();
-        
+
         // 处理需要确认的告警数据
         @SuppressWarnings("unchecked")
         List<SwmWarningManagement> confirmList = (List<SwmWarningManagement>) resultData.get("confirmList");
         List<Map<String, Object>> confirmResult = new ArrayList<>();
-        
+
         if (confirmList != null && !confirmList.isEmpty()) {
             for (SwmWarningManagement item : confirmList) {
                 Map<String, Object> map = new HashMap<>();
@@ -411,7 +403,7 @@ public class SwmWarningManagementController extends BaseController {
                 map.put("personName", item.getPersonName());
                 map.put("warningType", item.getWarningType());
                 map.put("triggerReason", item.getTriggerReason());
-                
+
                 // 确保warningTypeText正确显示
                 String warningTypeText;
                 if ("2".equals(item.getWarningType())) {
@@ -427,26 +419,26 @@ public class SwmWarningManagementController extends BaseController {
                     }
                 }
                 map.put("warningTypeText", warningTypeText);
-                
+
                 map.put("warningContent", item.getWarningContent());
                 map.put("warningTime", item.getWarningTime());
-                
+
                 // 附加告警配置信息
                 SwmAlarmConfig config = (SwmAlarmConfig) item.getExtraDataValue("alarmConfig");
                 if (config != null) {
                     map.put("alarmName", config.getAlarmName());
                     map.put("dialogPosition", config.getDialogPosition());
                 }
-                
+
                 confirmResult.add(map);
             }
         }
-        
+
         // 处理通知类告警数据
         @SuppressWarnings("unchecked")
         List<SwmWarningManagement> notificationList = (List<SwmWarningManagement>) resultData.get("notificationList");
         List<Map<String, Object>> notificationResult = new ArrayList<>();
-        
+
         if (notificationList != null && !notificationList.isEmpty()) {
             for (SwmWarningManagement item : notificationList) {
                 Map<String, Object> map = new HashMap<>();
@@ -454,7 +446,7 @@ public class SwmWarningManagementController extends BaseController {
                 map.put("personName", item.getPersonName());
                 map.put("warningType", item.getWarningType());
                 map.put("triggerReason", item.getTriggerReason());
-                
+
                 // 确保warningTypeText正确显示
                 String warningTypeText;
                 if ("2".equals(item.getWarningType())) {
@@ -470,24 +462,24 @@ public class SwmWarningManagementController extends BaseController {
                     }
                 }
                 map.put("warningTypeText", warningTypeText);
-                
+
                 map.put("warningContent", item.getWarningContent());
                 map.put("warningTime", item.getWarningTime());
-                
+
                 // 附加告警配置信息
                 SwmAlarmConfig config = (SwmAlarmConfig) item.getExtraDataValue("alarmConfig");
                 if (config != null) {
                     map.put("alarmName", config.getAlarmName());
                 }
-                
+
                 // 添加是否需要确认的标记
                 Boolean needConfirm = (Boolean) item.getExtraDataValue("needConfirm");
                 map.put("needConfirm", needConfirm != null ? needConfirm : false);
-                
+
                 notificationResult.add(map);
             }
         }
-        
+
         // 构建返回结果
         Map<String, Object> result = new HashMap<>();
         result.put("code", 0);
@@ -496,10 +488,10 @@ public class SwmWarningManagementController extends BaseController {
         data.put("confirmList", confirmResult);
         data.put("notificationList", notificationResult);
         result.put("data", data);
-        
-        logger.info("返回告警数据，confirmList: {}条, notificationList: {}条", 
+
+        logger.info("返回告警数据，confirmList: {}条, notificationList: {}条",
                   confirmResult.size(), notificationResult.size());
-        
+
         return result;
     }
 
@@ -511,11 +503,11 @@ public class SwmWarningManagementController extends BaseController {
     @ApiOperation("确认告警")
     public R confirmWarning(String id) {
         logger.info("接收到告警确认请求，ID: {}", id);
-        
+
         if (id == null || id.isEmpty()) {
             return R.fail("告警ID不能为空");
         }
-        
+
         boolean success = swmWarningManagementService.confirmWarning(id);
         if (success) {
             return R.ok("告警已确认");
@@ -538,10 +530,10 @@ public class SwmWarningManagementController extends BaseController {
         if (swmWarningManagement == null) {
             swmWarningManagement = new SwmWarningManagement();
         }
-        
+
         // 设置固定的warningContent为"一键SOS"
         swmWarningManagement.setWarningContent("一键SOS");
-        
+
         logger.info("查询SOS报警参数: personName={}, warningType={}, warningContent={}, handleStatus={}",
             swmWarningManagement.getPersonName(),
             swmWarningManagement.getWarningType(),
@@ -555,8 +547,405 @@ public class SwmWarningManagementController extends BaseController {
 
         return resultPage;
     }
-    
 
-    
+    /**
+     * 热力图-违规数量趋势 （数据来源-swm_warning_management-筛选warning_content=危险源报警的记录)
+     * @param beginDate 开始时间
+     * @param endDate 结束时间
+     * @return
+     */
+    @GetMapping("hazardWarningStatistics")
+    @ResponseBody
+    @ApiOperation(value = "热力图-违规数量趋势")
+    public Map<String, Object> hazardSourceStatistics(@RequestParam(required = false) String beginDate, @RequestParam(required = false) String endDate) {
+
+        Map<String, Object> result = new HashMap<>();
+        List<DictData> hazardCategoryList = DictUtils.getDictList("hazard_category_enum");
+        // 创建字典值(dictValue)到标签(dictLabelRaw)的映射
+        Map<String, String> valueToLabelMap = hazardCategoryList.stream()
+                .collect(Collectors.toMap(
+                        DictData::getDictValue,
+                        DictData::getDictLabelRaw,
+                        (existing, replacement) -> existing)); // 如果有重复键，保留已存在的
+
+
+        // 1. 危险源违规数量趋势折线图
+        result.put("totalTrend", getHazardSourceTotalTrend(beginDate, endDate,true));
+
+        // 2. 危险源类别TOP 10 柱状图
+        result.put("categoryTop10", getHazardSourceCategoryTop10(beginDate, endDate,valueToLabelMap));
+
+        // 3. 高频违规人员榜
+        result.put("violationTop10", getViolationPersonTop10(beginDate, endDate));
+
+        // 4. 危险源类别趋势折线图
+        result.put("categoryTrend", getHazardSourceCategoryTrend(beginDate, endDate,valueToLabelMap,true));
+
+        return result;
+    }
+
+    /**
+     * 热力图-告警数量趋势 （数据来源-swm_warning_management-筛选warning_content != 危险源报警的记录)
+     * @param beginDate 开始时间
+     * @param endDate 结束时间
+     * @return
+     */
+    @GetMapping("nonHazardWarningStatistics")
+    @ResponseBody
+    @ApiOperation(value = "热力图-告警数量趋势")
+    public Map<String, Object> nonHazardWarningStatistics(@RequestParam(required = false) String beginDate, @RequestParam(required = false) String endDate) {
+
+        Map<String, Object> result = new HashMap<>();
+        List<DictData> hazardCategoryList = DictUtils.getDictList("hazard_category_enum");
+        // 创建字典值(dictValue)到标签(dictLabelRaw)的映射
+        Map<String, String> valueToLabelMap = hazardCategoryList.stream()
+                .collect(Collectors.toMap(
+                        DictData::getDictValue,
+                        DictData::getDictLabelRaw,
+                        (existing, replacement) -> existing)); // 如果有重复键，保留已存在的
+
+
+        // 1. 非危险源总数趋势折线图
+        result.put("totalTrend", getHazardSourceTotalTrend(beginDate, endDate,false));
+
+        // 2. 高频告警榜
+        result.put("warningContentTop10", getWarningContentTop10(beginDate,endDate));
+
+        // 3. 处置效率榜
+        result.put("handleEfficiencyTop10", getHandleEfficiencyTop10(beginDate, endDate));
+
+        // 4. 非危险源类别趋势折线图
+        result.put("categoryTrend", getHazardSourceCategoryTrend(beginDate, endDate,valueToLabelMap,false));
+        return result;
+    }
+
+
+    /**
+     * 热力图-违规数量趋势 -最新危险源报警记录
+     */
+    @GetMapping("latestHazardSourceRecord")
+    @ResponseBody
+    @ApiOperation(value = "热力图-违规数量趋势-最新危险源报警记录")
+    public List<SwmWarningManagement> latestHazardSourceRecord() {
+       return swmWarningManagementDao.latestHazardSourceRecord(10);
+    }
+
+    /**
+     * 热力图-违规数量趋势-中间数据 （数据来源-swm_warning_management-筛选warning_content = 危险源报警的记录)
+     * @param beginDate 开始日期
+     * @param endDate 结束日期
+     * @return
+     */
+    @GetMapping("hazardSourceCounts")
+    @ResponseBody
+    @ApiOperation(value = "热力图-危险源数量统计-(中间数据)")
+    public Map<String, Object> getHazardSourceCounts(@RequestParam(required = false) String beginDate, @RequestParam(required = false) String endDate) {
+
+        // 处理日期范围（默认近30天）
+        DateRange dateRange = parseDateRange(beginDate, endDate);
+
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 时间范围内的危险源报警总数
+        Long rangeCount = swmWarningManagementDao.countByDateRange(
+                dateRange.getBeginDate(),
+                dateRange.getEndDate(),
+                true
+        );
+        result.put("rangeCount", rangeCount != null ? rangeCount : 0);
+
+        // 2. 全部危险源报警总数（不限制时间范围）
+        Long totalCount = swmWarningManagementDao.countTotal(true);
+        result.put("totalCount", totalCount != null ? totalCount : 0);
+
+        // 3. 违规人员数量（时间范围内）
+        Long violatorCount = swmWarningManagementDao.countDistinctPersonByWarningContentAndDateRange(
+                dateRange.getBeginDate(),
+                dateRange.getEndDate(),
+                true
+        );
+        result.put("violatorCount", violatorCount != null ? violatorCount : 0);
+        return result;
+    }
+
+    /**
+     * 热力图-告警数量趋势-中间数据（数据来源-swm_warning_management-筛选warning_content != 危险源报警的记录)
+     * @param beginDate 开始日期
+     * @param endDate 结束日期
+     * @return
+     */
+    @GetMapping("nonHazardSourceCounts")
+    @ResponseBody
+    @ApiOperation(value = "热力图-危险源数量统计-(中间数据)")
+    public Map<String, Object> nonHazardSourceCounts(@RequestParam(required = false) String beginDate, @RequestParam(required = false) String endDate) {
+
+        // 处理日期范围（默认近30天）
+        DateRange dateRange = parseDateRange(beginDate, endDate);
+
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 时间范围内的非危险源报警总数
+        Long rangeCount = swmWarningManagementDao.countByDateRange(
+                dateRange.getBeginDate(),
+                dateRange.getEndDate(),
+                false
+        );
+        result.put("rangeCount", rangeCount != null ? rangeCount : 0);
+
+        // 2. 全部非危险源报警总数（不限制时间范围）
+        Long totalCount = swmWarningManagementDao.countTotal(false);
+        result.put("totalCount", totalCount != null ? totalCount : 0);
+
+        // 3. 处置告警数量（时间范围内已处置的）
+        Long handledCount = swmWarningManagementDao.countHandledByDateRange(
+                dateRange.getBeginDate(),
+                dateRange.getEndDate()
+        );
+        result.put("handledCount", handledCount != null ? handledCount : 0);
+
+        // 4. 告警处置率（处置数量/总数量）
+        double handleRate = 0.0;
+        if (rangeCount != null && rangeCount > 0) {
+            handleRate = (double)handledCount / rangeCount * 100;
+        }
+        result.put("handleRate", Double.parseDouble(String.format("%.2f", handleRate)));
+
+        // 5. 今日新增告警数量(非危险源告警数量）
+        Long todayCount = swmWarningManagementDao.countTodayNonHazardSource();
+
+        result.put("todayCount", todayCount != null ? todayCount : 0);
+        return result;
+    }
+
+
+    /**
+     * 获取处置效率TOP10（平均处置时间最短）
+     * @param beginDate 开始时间
+     * @param endDate 结束时间
+     * @return List<Map> 包含处置人、处理次数、平均处置时间(小时)
+     */
+    private List<Map<String, Object>> getHandleEfficiencyTop10(String beginDate, String endDate) {
+        // 执行查询
+        return swmWarningManagementDao.findHandleEfficiencyTop10(beginDate,endDate,10);
+    }
+
+    /**
+     * 获取危险源总数趋势数据
+     */
+    private List<Map<String, Object>> getHazardSourceTotalTrend(String beginDateStr, String endDateStr,boolean isHazardSourceAlarm) {
+        // 解析日期参数
+        DateRange dateRange = parseDateRange(beginDateStr, endDateStr);
+
+        // 获取日期列表
+        List<String> dateList = getDateList(dateRange.getBeginDate(), dateRange.getEndDate());
+
+        // 一次性查询所有数据
+        List<Map<String, Object>> dbResults = swmWarningManagementDao.countByDateRangeGroupByDay(
+                dateRange.getBeginDate(),
+                dateRange.getEndDate(),
+                isHazardSourceAlarm
+        );
+
+        // 转换为按日期索引的Map
+        Map<String, Integer> countMap = dbResults.stream()
+                .collect(Collectors.toMap(
+                        item -> (String) item.get("date"),
+                        item -> ((Number) item.get("count")).intValue()
+                ));
+
+        // 构建返回结果 - 使用显式类型声明
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (String date : dateList) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("date", date);
+            item.put("count", countMap.getOrDefault(date, 0));
+            result.add(item);
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取危险源类别TOP 10数据
+     */
+    private List<Map<String, Object>> getHazardSourceCategoryTop10(String beginDate,String endDate,Map<String, String> valueToLabelMap) {
+        List<Map<String, Object>> topCategories = swmWarningManagementDao.findTopCategories(beginDate, endDate, 10);
+        return transformedCategoryDict(valueToLabelMap, topCategories);
+    }
+
+    /**
+     * 获取预警内容 TOP 10数据 （非危险源报警）
+     */
+    private List<Map<String, Object>> getWarningContentTop10(String beginDate,String endDate) {
+        return swmWarningManagementDao.findTopWarningContent(beginDate, endDate, 10);
+    }
+
+    /**
+     * 获取高频违规人员TOP10
+     * @param beginDate 开始时间（可为空）
+     * @param endDate 结束时间（可为空）
+     * @return List<Map> 包含人员姓名、违规次数、预警类型
+     */
+    private List<Map<String, Object>> getViolationPersonTop10(String beginDate, String endDate) {
+
+        // 1. 执行分组统计查询
+        List<Map<String, Object>> violationList = swmWarningManagementDao.findViolationPersonTop10(beginDate,endDate,10);
+
+        // 2. 处理预警类型显示文本
+        violationList.forEach(item -> {
+            String warningType = (String) item.get("warningType");
+            item.put("warningTypeText", SwmWarningManagement.WarningTypeEnum.getText(warningType));
+        });
+
+        return violationList;
+    }
+
+    /**
+     * 获取字典值转换后的数据
+     * @param valueToLabelMap 字典值转换
+     * @param categoryCounts 类别数量
+     * @return
+     */
+    private static List<Map<String, Object>> transformedCategoryDict(Map<String, String> valueToLabelMap, List<Map<String, Object>> categoryCounts) {
+        // 转换categoryCounts中的category值
+        List<Map<String, Object>> transformedCategoryCounts = categoryCounts.stream()
+                .map(originalMap -> {
+                    Map<String, Object> newMap = new HashMap<>(originalMap);
+                    if (originalMap.containsKey("category")) {
+                        String dictValue = (String) originalMap.get("category");
+                        String dictLabel = valueToLabelMap.getOrDefault(dictValue, dictValue);
+                        newMap.put("category", dictLabel);
+                    }
+                    return newMap;
+                })
+                .collect(Collectors.toList());
+        return transformedCategoryCounts;
+    }
+
+    /**
+     * 获取危险源类别趋势数据
+     */
+    private Map<String, List<Map<String, Object>>> getHazardSourceCategoryTrend(String beginDateStr, String endDateStr,Map<String, String> valueToLabelMap,boolean isHazardSourceAlarm) {
+        // 解析日期参数
+       DateRange dateRange = parseDateRange(beginDateStr, endDateStr);
+
+        // 一次性查询所有类别的趋势数据
+        List<Map<String, Object>> allData;
+        if(isHazardSourceAlarm){
+            allData  = transformedCategoryDict(valueToLabelMap, swmWarningManagementDao.countHazardCategoryCategoryTrendByDateRange(dateRange.getBeginDate(),dateRange.getEndDate()));
+        }else{
+            allData = swmWarningManagementDao.countWarningContentTrendByDateRange(dateRange.getBeginDate(),dateRange.getEndDate());
+        }
+
+        // 按类别分组（使用传统方式创建Map）
+        Map<String, List<Map<String, Object>>> groupedData = allData.stream()
+                .collect(Collectors.groupingBy(
+                        item -> (String) item.get("category"),
+                        Collectors.mapping(
+                                item -> {
+                                    Map<String, Object> map = new HashMap<>();
+                                    map.put("date", item.get("date"));
+                                    map.put("count", item.get("count"));
+                                    return map;
+                                },
+                                Collectors.toList()
+                        )
+                ));
+
+        // 生成完整日期列表
+        List<String> dateList = getDateList(dateRange.getBeginDate(), dateRange.getEndDate());
+
+        // 补全缺失日期数据（使用传统方式创建Map）
+        groupedData.forEach((category, data) -> {
+            Map<String, Integer> dateCountMap = data.stream()
+                    .collect(Collectors.toMap(
+                            item -> (String) item.get("date"),
+                            item -> ((Number) item.get("count")).intValue()
+                    ));
+
+            List<Map<String, Object>> completeData = dateList.stream()
+                    .map(date -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("date", date);
+                        map.put("count", dateCountMap.getOrDefault(date, 0));
+                        return map;
+                    })
+                    .collect(Collectors.toList());
+
+            groupedData.put(category, completeData);
+        });
+
+        return groupedData;
+    }
+
+    /**
+     * 解析日期范围
+     */
+    private DateRange parseDateRange(String beginDateStr, String endDateStr) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date beginDate = null;
+        Date endDate = null;
+
+        try {
+            if (StringUtils.isNotBlank(beginDateStr)) {
+                beginDate = sdf.parse(beginDateStr);
+            }
+            if (StringUtils.isNotBlank(endDateStr)) {
+                endDate = sdf.parse(endDateStr);
+            }
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("日期格式不正确，请使用yyyy-MM-dd格式");
+        }
+
+        // 默认近30天
+        if (beginDate == null || endDate == null) {
+            Calendar cal = Calendar.getInstance();
+            endDate = cal.getTime();
+            cal.add(Calendar.DAY_OF_MONTH, -30);
+            beginDate = cal.getTime();
+        }
+
+        return new DateRange(beginDate, endDate);
+    }
+
+    /**
+     * 生成日期列表
+     */
+    private List<String> getDateList(Date beginDate, Date endDate) {
+        List<String> dateList = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(beginDate);
+
+        while (!cal.getTime().after(endDate)) {
+            dateList.add(sdf.format(cal.getTime()));
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+        return dateList;
+    }
+
+    /**
+     * 日期范围内部类
+     */
+    private static class DateRange {
+        private final Date beginDate;
+        private final Date endDate;
+
+        public DateRange(Date beginDate, Date endDate) {
+            this.beginDate = beginDate;
+            this.endDate = endDate;
+        }
+
+        public Date getBeginDate() {
+            return beginDate;
+        }
+
+        public Date getEndDate() {
+            return endDate;
+        }
+    }
+
 
 }
