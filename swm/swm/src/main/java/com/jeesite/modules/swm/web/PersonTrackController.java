@@ -20,6 +20,7 @@ import cn.hutool.json.JSONObject;
 
 import java.util.*;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
@@ -330,6 +331,113 @@ public class PersonTrackController extends BaseController {
 
             Map<String, Object> data = new HashMap<>();
             // 轨迹点个数
+            logger.info("轨迹点个数: {}", trajectoryPoints.size());
+            data.put("trajectoryPoints", trajectoryPoints);
+            data.put("timelineEvents", timelineEvents);
+
+            result.put("success", true);
+            result.put("data", data);
+            result.put("message", "获取人员轨迹数据成功");
+
+        } catch (Exception e) {
+            logger.error("获取人员轨迹数据失败", e);
+            result.put("success", false);
+            result.put("message", "获取人员轨迹数据失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取人员轨迹数据（精确到秒）
+     * 
+     * @param personId      人员ID
+     * @param idCard        身份证号码
+     * @param startDateTime 开始时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @param endDateTime   结束时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @return 轨迹数据
+     * @author Shawn
+     * @date 2025/06/25
+     */
+    @GetMapping("/getPersonTrajectoryByDateTime")
+    @ResponseBody
+    @ApiOperation("获取人员轨迹数据（精确到秒）")
+    public Map<String, Object> getPersonTrajectoryByDateTime(
+            @ApiParam(value = "人员ID") @RequestParam(required = false) String personId,
+            @ApiParam(value = "身份证号码", required = true) @RequestParam String idCard,
+            @ApiParam(value = "开始时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String startDateTime,
+            @ApiParam(value = "结束时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String endDateTime) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // --- 解析时间参数 ---
+            String startDate = null;
+            String endDate = null;
+            Integer startTime = null;
+            Integer endTime = null;
+
+            if (startDateTime != null && !startDateTime.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    startDate = startDateTime.substring(0, 10);
+                    LocalTime localStartTime = LocalTime.parse(startDateTime.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    startTime = localStartTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析开始时间格式错误: {}", startDateTime, e);
+                    result.put("success", false);
+                    result.put("message", "开始时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            if (endDateTime != null && !endDateTime.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    endDate = endDateTime.substring(0, 10);
+                    LocalTime localEndTime = LocalTime.parse(endDateTime.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    endTime = localEndTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析结束时间格式错误: {}", endDateTime, e);
+                    result.put("success", false);
+                    result.put("message", "结束时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            // --- 核心逻辑 (与 getPersonTrajectory 相同) ---
+            Map<String, Object> personInfo = getPersonByIdCard(idCard);
+
+            if (personInfo == null) {
+                result.put("success", false);
+                result.put("message", "未找到身份证号为 " + idCard + " 的人员信息");
+                return result;
+            }
+
+            String personName = (String) personInfo.get("name");
+            String workType = (String) personInfo.get("workType");
+            String organization = (String) personInfo.get("organization");
+            String workShop = (String) personInfo.get("workShop");
+            String teamGroup = (String) personInfo.get("teamGroup");
+
+            List<Map<String, Object>> trajectoryPoints = getTrajectoryPoints(
+                    personId != null ? personId : (String) personInfo.get("id"),
+                    personName,
+                    workType,
+                    organization,
+                    workShop,
+                    teamGroup,
+                    idCard,
+                    startDate,
+                    endDate,
+                    startTime,
+                    endTime);
+
+            List<Map<String, Object>> timelineEvents = new ArrayList<>();
+
+            Map<String, Object> data = new HashMap<>();
             logger.info("轨迹点个数: {}", trajectoryPoints.size());
             data.put("trajectoryPoints", trajectoryPoints);
             data.put("timelineEvents", timelineEvents);
