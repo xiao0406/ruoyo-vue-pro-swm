@@ -19,6 +19,10 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 
 import java.util.*;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 /**
  * 人员追踪控制器
@@ -326,6 +330,115 @@ public class PersonTrackController extends BaseController {
             List<Map<String, Object>> timelineEvents = new ArrayList<>();
 
             Map<String, Object> data = new HashMap<>();
+            // 轨迹点个数
+            logger.info("轨迹点个数: {}", trajectoryPoints.size());
+            data.put("trajectoryPoints", trajectoryPoints);
+            data.put("timelineEvents", timelineEvents);
+
+            result.put("success", true);
+            result.put("data", data);
+            result.put("message", "获取人员轨迹数据成功");
+
+        } catch (Exception e) {
+            logger.error("获取人员轨迹数据失败", e);
+            result.put("success", false);
+            result.put("message", "获取人员轨迹数据失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取人员轨迹数据（精确到秒）
+     * 
+     * @param personId      人员ID
+     * @param idCard        身份证号码
+     * @param startDateTime 开始时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @param endDateTime   结束时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @return 轨迹数据
+     * @author Shawn
+     * @date 2025/06/25
+     */
+    @GetMapping("/getPersonTrajectoryByDateTime")
+    @ResponseBody
+    @ApiOperation("获取人员轨迹数据（精确到秒）")
+    public Map<String, Object> getPersonTrajectoryByDateTime(
+            @ApiParam(value = "人员ID") @RequestParam(required = false) String personId,
+            @ApiParam(value = "身份证号码", required = true) @RequestParam String idCard,
+            @ApiParam(value = "开始时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String startDateTime,
+            @ApiParam(value = "结束时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String endDateTime) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // --- 解析时间参数 ---
+            String startDate = null;
+            String endDate = null;
+            Integer startTime = null;
+            Integer endTime = null;
+
+            if (startDateTime != null && !startDateTime.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    startDate = startDateTime.substring(0, 10);
+                    LocalTime localStartTime = LocalTime.parse(startDateTime.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    startTime = localStartTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析开始时间格式错误: {}", startDateTime, e);
+                    result.put("success", false);
+                    result.put("message", "开始时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            if (endDateTime != null && !endDateTime.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    endDate = endDateTime.substring(0, 10);
+                    LocalTime localEndTime = LocalTime.parse(endDateTime.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    endTime = localEndTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析结束时间格式错误: {}", endDateTime, e);
+                    result.put("success", false);
+                    result.put("message", "结束时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            // --- 核心逻辑 (与 getPersonTrajectory 相同) ---
+            Map<String, Object> personInfo = getPersonByIdCard(idCard);
+
+            if (personInfo == null) {
+                result.put("success", false);
+                result.put("message", "未找到身份证号为 " + idCard + " 的人员信息");
+                return result;
+            }
+
+            String personName = (String) personInfo.get("name");
+            String workType = (String) personInfo.get("workType");
+            String organization = (String) personInfo.get("organization");
+            String workShop = (String) personInfo.get("workShop");
+            String teamGroup = (String) personInfo.get("teamGroup");
+
+            List<Map<String, Object>> trajectoryPoints = getTrajectoryPoints(
+                    personId != null ? personId : (String) personInfo.get("id"),
+                    personName,
+                    workType,
+                    organization,
+                    workShop,
+                    teamGroup,
+                    idCard,
+                    startDate,
+                    endDate,
+                    startTime,
+                    endTime);
+
+            List<Map<String, Object>> timelineEvents = new ArrayList<>();
+
+            Map<String, Object> data = new HashMap<>();
+            logger.info("轨迹点个数: {}", trajectoryPoints.size());
             data.put("trajectoryPoints", trajectoryPoints);
             data.put("timelineEvents", timelineEvents);
 
@@ -451,8 +564,12 @@ public class PersonTrackController extends BaseController {
                                 }
 
                                 if (!trajectoryPoints.isEmpty()) {
-                                    logger.info("身份证 {} ({}) 成功转换 {} 个轨迹点", idCard, personName, trajectoryPoints.size());
-                                    return trajectoryPoints;
+                                    // 对轨迹点进行10分钟间隔抽样，减少数据量
+                                    List<Map<String, Object>> sampledPoints = sampleTrajectoryPoints(trajectoryPoints,
+                                            10);
+                                    logger.info("身份证 {} ({}) 原始轨迹点: {} 个，10分钟间隔抽样后: {} 个",
+                                            idCard, personName, trajectoryPoints.size(), sampledPoints.size());
+                                    return sampledPoints;
                                 }
                             }
                         }
@@ -506,9 +623,9 @@ public class PersonTrackController extends BaseController {
     private Map<String, Object> createPersonPosition(String id, String name, int x, int y,
             String workType, String organization, String workShop,
             String teamGroup, String workHours, String attendanceStatus, String idCard) {
-        
-        return createPersonPosition(id, name, x, y, workType, organization, workShop, 
-            teamGroup, workHours, attendanceStatus, idCard, null);
+
+        return createPersonPosition(id, name, x, y, workType, organization, workShop,
+                teamGroup, workHours, attendanceStatus, idCard, null);
     }
 
     /**
@@ -522,6 +639,139 @@ public class PersonTrackController extends BaseController {
         event.put("type", type); // 1-正常 2-报警 3-警告
 
         return event;
+    }
+
+    /**
+     * 对轨迹点进行时间间隔抽样，减少数据量
+     * 
+     * @param trajectoryPoints 原始轨迹点列表
+     * @param intervalMinutes  抽样间隔（分钟）
+     * @return 抽样后的轨迹点列表
+     * @author Shawn
+     * @date 2025/06/25
+     */
+    private List<Map<String, Object>> sampleTrajectoryPoints(List<Map<String, Object>> trajectoryPoints,
+            int intervalMinutes) {
+        if (trajectoryPoints == null || trajectoryPoints.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Map<String, Object>> sampledPoints = new ArrayList<>();
+
+        try {
+            // 按时间排序轨迹点（使用LocalDateTime进行准确排序）
+            DateTimeFormatter sortFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            trajectoryPoints.sort((a, b) -> {
+                try {
+                    String timeA = (String) a.get("time");
+                    String timeB = (String) b.get("time");
+
+                    if (timeA == null || timeB == null) {
+                        return timeA == null ? (timeB == null ? 0 : 1) : -1;
+                    }
+
+                    // 处理时间格式，统一转换为标准格式
+                    String normalizedTimeA = normalizeTimeString(timeA);
+                    String normalizedTimeB = normalizeTimeString(timeB);
+
+                    LocalDateTime dateTimeA = LocalDateTime.parse(normalizedTimeA, sortFormatter);
+                    LocalDateTime dateTimeB = LocalDateTime.parse(normalizedTimeB, sortFormatter);
+
+                    return dateTimeA.compareTo(dateTimeB);
+                } catch (Exception e) {
+                    // 如果解析失败，降级使用字符串比较
+                    String timeA = (String) a.get("time");
+                    String timeB = (String) b.get("time");
+                    if (timeA == null || timeB == null) {
+                        return timeA == null ? (timeB == null ? 0 : 1) : -1;
+                    }
+                    return timeA.compareTo(timeB);
+                }
+            });
+
+            LocalDateTime lastSampledTime = null;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            for (Map<String, Object> point : trajectoryPoints) {
+                String timeStr = (String) point.get("time");
+                if (timeStr == null || timeStr.trim().isEmpty()) {
+                    continue;
+                }
+
+                try {
+                    // 处理不同的时间格式
+                    LocalDateTime currentTime;
+                    if (timeStr.contains("T")) {
+                        // 格式：2025-06-13T10:27:27 或 2025-06-13T10:27:27.000
+                        timeStr = timeStr.replace("T", " ");
+                        if (timeStr.contains(".")) {
+                            timeStr = timeStr.substring(0, timeStr.indexOf("."));
+                        }
+                    }
+                    currentTime = LocalDateTime.parse(timeStr, formatter);
+
+                    // 第一个点或者距离上次抽样时间超过指定间隔的点
+                    if (lastSampledTime == null ||
+                            ChronoUnit.MINUTES.between(lastSampledTime, currentTime) >= intervalMinutes) {
+                        sampledPoints.add(point);
+                        lastSampledTime = currentTime;
+                    }
+                } catch (Exception e) {
+                    logger.warn("解析时间失败，跳过该轨迹点: {}", timeStr, e);
+                }
+            }
+
+            // 如果抽样后没有点，至少保留第一个和最后一个点
+            if (sampledPoints.isEmpty() && !trajectoryPoints.isEmpty()) {
+                sampledPoints.add(trajectoryPoints.get(0));
+                if (trajectoryPoints.size() > 1) {
+                    sampledPoints.add(trajectoryPoints.get(trajectoryPoints.size() - 1));
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error("轨迹点抽样失败，返回原始数据", e);
+            return trajectoryPoints;
+        }
+
+        return sampledPoints;
+    }
+
+    /**
+     * 统一时间字符串格式
+     * 
+     * @param timeStr 原始时间字符串
+     * @return 标准化后的时间字符串（yyyy-MM-dd HH:mm:ss格式）
+     * @author Shawn
+     * @date 2025/06/25
+     */
+    private String normalizeTimeString(String timeStr) {
+        if (timeStr == null || timeStr.trim().isEmpty()) {
+            return timeStr;
+        }
+
+        try {
+            // 处理不同的时间格式
+            if (timeStr.contains("T")) {
+                // 格式：2025-06-13T10:27:27 或 2025-06-13T10:27:27.000
+                timeStr = timeStr.replace("T", " ");
+                if (timeStr.contains(".")) {
+                    timeStr = timeStr.substring(0, timeStr.indexOf("."));
+                }
+            }
+
+            // 确保时间格式为 yyyy-MM-dd HH:mm:ss
+            if (timeStr.length() == 19 && timeStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+                return timeStr;
+            }
+
+            // 如果格式不正确，返回原始字符串
+            return timeStr;
+        } catch (Exception e) {
+            logger.warn("时间格式转换失败，使用原始格式: {}", timeStr);
+            return timeStr;
+        }
     }
 
     /**
@@ -763,5 +1013,106 @@ public class PersonTrackController extends BaseController {
             logger.error("构建时间条件失败", e);
             return null;
         }
+    }
+
+    /**
+     * 根据身份证查询区域围栏数据（精确到秒）
+     * 
+     * @param idCard        身份证号
+     * @param startDateTime 开始时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @param endDateTime   结束时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @return 区域围栏数据
+     * @author Shawn
+     * @date 2025/06/25
+     */
+    @GetMapping("/getAreaFenceDataByIdCardByDateTime")
+    @ResponseBody
+    @ApiOperation("根据身份证查询区域围栏数据（精确到秒）")
+    public Map<String, Object> getAreaFenceDataByIdCardByDateTime(
+            @ApiParam(value = "身份证号", required = true) @RequestParam String idCard,
+            @ApiParam(value = "开始时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String startDateTime,
+            @ApiParam(value = "结束时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String endDateTime) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // --- 解析时间参数 ---
+            String startDate = null;
+            String endDate = null;
+            Integer startTime = null;
+            Integer endTime = null;
+
+            if (startDateTime != null && !startDateTime.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    startDate = startDateTime.substring(0, 10);
+                    LocalTime localStartTime = LocalTime.parse(startDateTime.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    startTime = localStartTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析开始时间格式错误: {}", startDateTime, e);
+                    result.put("success", false);
+                    result.put("message", "开始时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            if (endDateTime != null && !endDateTime.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    endDate = endDateTime.substring(0, 10);
+                    LocalTime localEndTime = LocalTime.parse(endDateTime.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    endTime = localEndTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析结束时间格式错误: {}", endDateTime, e);
+                    result.put("success", false);
+                    result.put("message", "结束时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            logger.info("根据身份证查询区域围栏数据，身份证号: {}, 开始日期: {}, 结束日期: {}, 开始时间: {}, 结束时间: {}",
+                    idCard, startDate, endDate, startTime, endTime);
+
+            // 1. 根据身份证从Redis缓存中查找设备ID
+            String deviceId = helmetCacheService.getAssignedDeviceFromCache(idCard, swmHelmetDeviceService);
+
+            if (deviceId == null || deviceId.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "未找到身份证号 " + idCard + " 对应的设备ID");
+                return result;
+            }
+
+            logger.info("身份证 {} 对应的设备ID: {}", idCard, deviceId);
+
+            // 2. 获取设备ID的后8位用于匹配
+            String deviceIdLast8 = getLastEightDigits(deviceId);
+            if (deviceIdLast8 == null) {
+                result.put("success", false);
+                result.put("message", "设备ID格式不正确，无法提取后8位数字");
+                return result;
+            }
+
+            logger.info("设备ID {} 的后8位: {}", deviceId, deviceIdLast8);
+
+            // 3. 查询area_fence_data表，匹配device_id的后8位
+            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8, startDate, endDate,
+                    startTime, endTime);
+
+            result.put("success", true);
+            result.put("data", areaFenceData);
+            result.put("deviceId", deviceId);
+            result.put("deviceIdLast8", deviceIdLast8);
+            result.put("total", areaFenceData.size());
+            result.put("message", "查询区域围栏数据成功");
+
+        } catch (Exception e) {
+            logger.error("根据身份证查询区域围栏数据失败，身份证号: {}", idCard, e);
+            result.put("success", false);
+            result.put("message", "查询区域围栏数据失败：" + e.getMessage());
+        }
+
+        return result;
     }
 }

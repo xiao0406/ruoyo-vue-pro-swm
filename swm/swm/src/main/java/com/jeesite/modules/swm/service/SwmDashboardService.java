@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.service;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+import java.text.SimpleDateFormat;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 大屏数据看板Service
@@ -49,7 +52,9 @@ public class SwmDashboardService {
     
     @Autowired
     private SwmBeaconStationService swmBeaconStationService;
-    
+
+    @Value("${tdengine.dbname}")
+    private String dbname;
     /**
      * 获取启用状态的地图路径
      * 
@@ -158,18 +163,18 @@ public class SwmDashboardService {
                      .append(dbname).append(".helmet_runde_ca_report_location")
                      .append(" WHERE time > ").append(twentyMinutesAgo);
             
-            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+            R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
             
             if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
-                cn.hutool.json.JSONObject data = queryResult.getData();
-                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+                JSONObject data = queryResult.getData();
+                JSONArray rows = data.getJSONArray("data");
                 
                 if (rows != null && rows.size() > 0) {
                     // 收集所有在场人员的身份证号
                     Set<String> onSitePersonIdCards = new HashSet<>();
                     
                     for (int i = 0; i < rows.size(); i++) {
-                        cn.hutool.json.JSONArray row = rows.getJSONArray(i);
+                        JSONArray row = rows.getJSONArray(i);
                         if (row != null && row.size() >= 2) {
                             String idCard = row.getStr(1);
                             if (idCard != null && !idCard.isEmpty()) {
@@ -241,15 +246,15 @@ public class SwmDashboardService {
             
             try {
                 // 使用tdengineService执行SQL查询
-                R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+                R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
                 
                 if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
-                    cn.hutool.json.JSONObject data = queryResult.getData();
-                    cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+                    JSONObject data = queryResult.getData();
+                    JSONArray rows = data.getJSONArray("data");
                     
                     if (rows != null) {
                         for (int i = 0; i < rows.size(); i++) {
-                            cn.hutool.json.JSONArray row = rows.getJSONArray(i);
+                            JSONArray row = rows.getJSONArray(i);
                             if (row != null && row.size() >= 2) {
                                 String warningContent = row.getStr(0);
                                 Long count = row.getLong(1);
@@ -342,15 +347,15 @@ public class SwmDashboardService {
                       .append(" WHERE bat_l IS NOT NULL")
                       .append(" GROUP BY device_id");
             
-            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+            R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
             
             if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
-                cn.hutool.json.JSONObject data = queryResult.getData();
-                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+                JSONObject data = queryResult.getData();
+                JSONArray rows = data.getJSONArray("data");
                 
                 if (rows != null) {
                     for (int i = 0; i < rows.size(); i++) {
-                        cn.hutool.json.JSONArray row = rows.getJSONArray(i);
+                        JSONArray row = rows.getJSONArray(i);
                         if (row != null && row.size() >= 2) {
                             // 获取电池电量
                             Integer batLevel = row.getInt(1);
@@ -491,7 +496,7 @@ public class SwmDashboardService {
                     .append(" AND status = '0'");
             
             logger.debug("危险源报警查询SQL: {}", warningSQL.toString());
-            R<cn.hutool.json.JSONObject> warningResult = tdengineService.executeTDengineSQL(warningSQL.toString());
+            R<JSONObject> warningResult = tdengineService.executeTDengineSQL(warningSQL.toString());
             
             // 处理警告查询结果
             if (warningResult.getCode() != R.SUCCESS || warningResult.getData() == null) {
@@ -499,8 +504,8 @@ public class SwmDashboardService {
                 return heatmapData;
             }
             
-            cn.hutool.json.JSONObject warningData = warningResult.getData();
-            cn.hutool.json.JSONArray warningRows = warningData.getJSONArray("data");
+            JSONObject warningData = warningResult.getData();
+            JSONArray warningRows = warningData.getJSONArray("data");
             
             if (warningRows == null || warningRows.size() == 0) {
                 logger.warn("危险源报警记录为空");
@@ -520,7 +525,7 @@ public class SwmDashboardService {
             
             // 并行处理所有行数据
             IntStream.range(0, warningRows.size()).parallel().forEach(i -> {
-                cn.hutool.json.JSONArray row = warningRows.getJSONArray(i);
+                JSONArray row = warningRows.getJSONArray(i);
                 if (row != null && row.size() >= 3) {
                     try {
                         String deviceId = row.getStr(0);
@@ -857,7 +862,7 @@ public class SwmDashboardService {
             }
             logger.debug("坐标数据查询SQL: {}", sqlForLog);
             
-            R<cn.hutool.json.JSONObject> coordinateResult = tdengineService.executeTDengineSQL(coordinateSQL.toString());
+            R<JSONObject> coordinateResult = tdengineService.executeTDengineSQL(coordinateSQL.toString());
             
             // 处理坐标查询结果
             if (coordinateResult.getCode() != R.SUCCESS || coordinateResult.getData() == null) {
@@ -865,8 +870,8 @@ public class SwmDashboardService {
                 return results;
             }
             
-            cn.hutool.json.JSONObject coordinateData = coordinateResult.getData();
-            cn.hutool.json.JSONArray coordinateRows = coordinateData.getJSONArray("data");
+            JSONObject coordinateData = coordinateResult.getData();
+            JSONArray coordinateRows = coordinateData.getJSONArray("data");
             
             if (coordinateRows == null || coordinateRows.size() == 0) {
                 logger.warn("坐标数据为空");
@@ -877,7 +882,7 @@ public class SwmDashboardService {
             
             for (int i = 0; i < coordinateRows.size(); i++) {
                 try {
-                    cn.hutool.json.JSONArray row = coordinateRows.getJSONArray(i);
+                    JSONArray row = coordinateRows.getJSONArray(i);
                     if (row != null && row.size() >= 5) {
                         String elderId = row.getStr(0);
                         String idCard = row.getStr(1);
@@ -989,7 +994,7 @@ public class SwmDashboardService {
             
             logger.debug("宽松条件查询SQL: {}", relaxedSQL.toString());
             
-            R<cn.hutool.json.JSONObject> relaxedResult = tdengineService.executeTDengineSQL(relaxedSQL.toString());
+            R<JSONObject> relaxedResult = tdengineService.executeTDengineSQL(relaxedSQL.toString());
             
             // 处理查询结果
             if (relaxedResult.getCode() != R.SUCCESS || relaxedResult.getData() == null) {
@@ -997,8 +1002,8 @@ public class SwmDashboardService {
                 return results;
             }
             
-            cn.hutool.json.JSONObject relaxedData = relaxedResult.getData();
-            cn.hutool.json.JSONArray relaxedRows = relaxedData.getJSONArray("data");
+            JSONObject relaxedData = relaxedResult.getData();
+            JSONArray relaxedRows = relaxedData.getJSONArray("data");
             
             if (relaxedRows == null || relaxedRows.size() == 0) {
                 logger.warn("宽松条件坐标数据为空");
@@ -1009,7 +1014,7 @@ public class SwmDashboardService {
             
             for (int i = 0; i < relaxedRows.size(); i++) {
                 try {
-                    cn.hutool.json.JSONArray row = relaxedRows.getJSONArray(i);
+                    JSONArray row = relaxedRows.getJSONArray(i);
                     if (row != null && row.size() >= 5) {
                         String elderId = row.getStr(0);
                         String idCard = row.getStr(1);
@@ -1036,5 +1041,166 @@ public class SwmDashboardService {
         }
         
         return results;
+    }
+
+    /**
+     * 获取报警热力图数据（主动报警：一键SOS报警、脱帽报警、跌落报警、静默报警、近电报警）
+     * 
+     * @param month 查询月份，格式 yyyy-MM
+     * @return 包含热力图数据的列表
+     */
+    public List<Map<String, Object>> getAlarmHeatmapData(String month) {
+        List<Map<String, Object>> heatmapData = new ArrayList<>();
+        
+        try {
+            // 计算月份的起止时间戳
+            Calendar calendar = Calendar.getInstance();
+            
+            // 解析传入的月份
+            String[] parts = month.split("-");
+            int year = Integer.parseInt(parts[0]);
+            int monthOfYear = Integer.parseInt(parts[1]);
+            
+            // 设置为当月1号
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, monthOfYear - 1); // 月份从0开始
+            calendar.set(Calendar.DAY_OF_MONTH, 1);
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            
+            long startTime = calendar.getTimeInMillis();
+            
+            // 设置为下月1号
+            calendar.add(Calendar.MONTH, 1);
+            long endTime = calendar.getTimeInMillis();
+            
+            // 构建SQL查询语句 - 查询主动报警记录
+            // 这里筛选报警类型：一键SOS(0)、脱帽报警(1)、跌落报警(4)、静默报警(6)、近电报警(11)
+            StringBuilder alarmSQL = new StringBuilder();
+            alarmSQL.append("SELECT device_id, id_card, x, y, type FROM ")
+                    .append(dbname).append(".swm_warning_management")
+                    .append(" WHERE alarm_time >= ").append(startTime)
+                    .append(" AND alarm_time < ").append(endTime)
+                    .append(" AND type IN (0,1,4,6,11)")
+                    .append(" AND status = '0'")
+                    .append(" AND x IS NOT NULL AND y IS NOT NULL");
+            
+            logger.debug("主动报警热力图查询SQL: {}", alarmSQL.toString());
+            R<JSONObject> alarmResult = tdengineService.executeTDengineSQL(alarmSQL.toString());
+            
+            // 处理查询结果
+            if (alarmResult.getCode() != R.SUCCESS || alarmResult.getData() == null) {
+                logger.warn("未查询到主动报警记录，SQL: {}", alarmSQL.toString());
+                return heatmapData;
+            }
+            
+            JSONObject alarmData = alarmResult.getData();
+            JSONArray alarmRows = alarmData.getJSONArray("data");
+            
+            if (alarmRows == null || alarmRows.size() == 0) {
+                logger.warn("主动报警记录为空");
+                return heatmapData;
+            }
+            
+            logger.info("查询到{}条主动报警记录", alarmRows.size());
+            
+            // 使用Map来合并相同坐标点的数据
+            Map<String, Map<String, Object>> pointMap = new HashMap<>();
+            
+            // 处理每一行报警数据
+            for (int i = 0; i < alarmRows.size(); i++) {
+                JSONArray row = alarmRows.getJSONArray(i);
+                if (row != null && row.size() >= 5) {
+                    try {
+                        String deviceId = row.getStr(0);
+                        String idCard = row.getStr(1);
+                        Double x = row.getDouble(2);
+                        Double y = row.getDouble(3);
+                        Integer type = row.getInt(4);
+                        
+                        if (x != null && y != null) {
+                            // 使用x,y坐标作为key
+                            String key = x + "," + y;
+                            
+                            // 如果已有该坐标点，增加权重值
+                            if (pointMap.containsKey(key)) {
+                                Map<String, Object> point = pointMap.get(key);
+                                int value = (int) point.get("value");
+                                point.put("value", value + 1);
+                                
+                                // 更新报警记录
+                                @SuppressWarnings("unchecked")
+                                List<Map<String, Object>> alarms = (List<Map<String, Object>>) point.get("alarms");
+                                Map<String, Object> alarmInfo = new HashMap<>();
+                                alarmInfo.put("deviceId", deviceId);
+                                alarmInfo.put("idCard", idCard);
+                                alarmInfo.put("type", type);
+                                alarmInfo.put("typeText", getAlarmTypeText(type));
+                                alarms.add(alarmInfo);
+                            } else {
+                                // 创建新的坐标点
+                                Map<String, Object> point = new HashMap<>();
+                                point.put("x", x);
+                                point.put("y", y);
+                                point.put("value", 1);
+                                
+                                // 添加报警记录
+                                List<Map<String, Object>> alarms = new ArrayList<>();
+                                Map<String, Object> alarmInfo = new HashMap<>();
+                                alarmInfo.put("deviceId", deviceId);
+                                alarmInfo.put("idCard", idCard);
+                                alarmInfo.put("type", type);
+                                alarmInfo.put("typeText", getAlarmTypeText(type));
+                                alarms.add(alarmInfo);
+                                point.put("alarms", alarms);
+                                
+                                pointMap.put(key, point);
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.error("处理报警记录出错: row={}", row, e);
+                    }
+                }
+            }
+            
+            // 将Map转换为列表
+            heatmapData = new ArrayList<>(pointMap.values());
+            
+            // 输出统计信息
+            logger.info("查询到{}条主动报警记录，合并后生成{}个热力点",
+                    alarmRows.size(), heatmapData.size());
+            
+        } catch (Exception e) {
+            logger.error("生成报警热力图数据失败", e);
+        }
+        
+        return heatmapData;
+    }
+
+    /**
+     * 获取报警类型的显示文本
+     * 
+     * @param type 报警类型值
+     * @return 报警类型显示文本
+     */
+    private String getAlarmTypeText(Integer type) {
+        if (type == null) return "未知";
+        
+        switch (type) {
+            case 0:
+                return "一键SOS报警";
+            case 1:
+                return "脱帽报警";
+            case 4:
+                return "跌落报警";
+            case 6:
+                return "静默报警";
+            case 11:
+                return "近电报警";
+            default:
+                return "其他报警";
+        }
     }
 } 
