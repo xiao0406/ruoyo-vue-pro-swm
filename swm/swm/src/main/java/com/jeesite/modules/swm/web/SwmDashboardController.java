@@ -1057,4 +1057,39 @@ public class SwmDashboardController extends BaseController {
         BigDecimal efficiencySum = BigDecimal.ZERO;
     }
 
+    /**
+     * 获取主动报警热力图数据（一键SOS、脱帽、跌落、静默、近电报警）
+     */
+    @GetMapping(value = "alarmHeatmap")
+    @ResponseBody
+    @ApiOperation("获取主动报警热力图数据（一键SOS、脱帽、跌落、静默、近电报警）")
+    public Map<String, Object> alarmHeatmap(
+            @RequestParam(value = "month", required = false) String month) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 如果未指定月份，则使用当前月份
+            if (StringUtils.isBlank(month)) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+                month = sdf.format(new Date());
+            }
+
+            // 调用Service层方法获取热力图数据
+            List<Map<String, Object>> heatmapData = swmDashboardService.getAlarmHeatmapData(month);
+
+            // 封装返回结果
+            result.put("success", true);
+            result.put("data", heatmapData);
+            result.put("total", heatmapData.size());
+            result.put("message", "获取主动报警热力图数据成功");
+
+        } catch (Exception e) {
+            logger.error("获取主动报警热力图数据失败", e);
+            result.put("success", false);
+            result.put("message", "获取主动报警热力图数据失败: " + e.getMessage());
+        }
+
+        return result;
+    }
+
 }
