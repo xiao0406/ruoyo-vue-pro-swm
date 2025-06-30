@@ -1014,4 +1014,105 @@ public class PersonTrackController extends BaseController {
             return null;
         }
     }
+
+    /**
+     * 根据身份证查询区域围栏数据（精确到秒）
+     * 
+     * @param idCard        身份证号
+     * @param startDateTime 开始时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @param endDateTime   结束时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @return 区域围栏数据
+     * @author Shawn
+     * @date 2025/06/25
+     */
+    @GetMapping("/getAreaFenceDataByIdCardByDateTime")
+    @ResponseBody
+    @ApiOperation("根据身份证查询区域围栏数据（精确到秒）")
+    public Map<String, Object> getAreaFenceDataByIdCardByDateTime(
+            @ApiParam(value = "身份证号", required = true) @RequestParam String idCard,
+            @ApiParam(value = "开始时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String startDateTime,
+            @ApiParam(value = "结束时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String endDateTime) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // --- 解析时间参数 ---
+            String startDate = null;
+            String endDate = null;
+            Integer startTime = null;
+            Integer endTime = null;
+
+            if (startDateTime != null && !startDateTime.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    startDate = startDateTime.substring(0, 10);
+                    LocalTime localStartTime = LocalTime.parse(startDateTime.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    startTime = localStartTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析开始时间格式错误: {}", startDateTime, e);
+                    result.put("success", false);
+                    result.put("message", "开始时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            if (endDateTime != null && !endDateTime.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    endDate = endDateTime.substring(0, 10);
+                    LocalTime localEndTime = LocalTime.parse(endDateTime.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    endTime = localEndTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析结束时间格式错误: {}", endDateTime, e);
+                    result.put("success", false);
+                    result.put("message", "结束时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            logger.info("根据身份证查询区域围栏数据，身份证号: {}, 开始日期: {}, 结束日期: {}, 开始时间: {}, 结束时间: {}",
+                    idCard, startDate, endDate, startTime, endTime);
+
+            // 1. 根据身份证从Redis缓存中查找设备ID
+            String deviceId = helmetCacheService.getAssignedDeviceFromCache(idCard, swmHelmetDeviceService);
+
+            if (deviceId == null || deviceId.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "未找到身份证号 " + idCard + " 对应的设备ID");
+                return result;
+            }
+
+            logger.info("身份证 {} 对应的设备ID: {}", idCard, deviceId);
+
+            // 2. 获取设备ID的后8位用于匹配
+            String deviceIdLast8 = getLastEightDigits(deviceId);
+            if (deviceIdLast8 == null) {
+                result.put("success", false);
+                result.put("message", "设备ID格式不正确，无法提取后8位数字");
+                return result;
+            }
+
+            logger.info("设备ID {} 的后8位: {}", deviceId, deviceIdLast8);
+
+            // 3. 查询area_fence_data表，匹配device_id的后8位
+            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8, startDate, endDate,
+                    startTime, endTime);
+
+            result.put("success", true);
+            result.put("data", areaFenceData);
+            result.put("deviceId", deviceId);
+            result.put("deviceIdLast8", deviceIdLast8);
+            result.put("total", areaFenceData.size());
+            result.put("message", "查询区域围栏数据成功");
+
+        } catch (Exception e) {
+            logger.error("根据身份证查询区域围栏数据失败，身份证号: {}", idCard, e);
+            result.put("success", false);
+            result.put("message", "查询区域围栏数据失败：" + e.getMessage());
+        }
+
+        return result;
+    }
 }
