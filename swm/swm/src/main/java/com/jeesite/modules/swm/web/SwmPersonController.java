@@ -503,7 +503,6 @@ public class SwmPersonController extends BaseController {
             departure.setGender(swmPerson.getGender());
             departure.setCompany(swmPerson.getCompany());
             departure.setDepartment(swmPerson.getDepartment());
-            departure.setProdLine(swmPerson.getProdLine());
             departure.setWorkProcess(swmPerson.getWorkProcess());
             departure.setTeam(swmPerson.getTeam());
             departure.setJobType(swmPerson.getJobType());
