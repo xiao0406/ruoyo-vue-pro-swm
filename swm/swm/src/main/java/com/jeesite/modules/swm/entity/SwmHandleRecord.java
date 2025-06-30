@@ -41,10 +41,11 @@ public class SwmHandleRecord extends DataEntity<SwmHandleRecord> {
     private String handleProcess;     // 处置过程
     private String handleStatus;      // 处置状态
     private String attachment;        // 附件路径
-    
+    private String warningMan;        // 预警人
+
     // 用于显示的属性，不对应数据库字段
     private String handleStatusText;    // 处置状态显示文本
-    
+
     // 查询条件字段
     private Date beginAlarmTime;      // 查询开始预警/报警时间
     private Date endAlarmTime;        // 查询结束预警/报警时间
@@ -58,7 +59,7 @@ public class SwmHandleRecord extends DataEntity<SwmHandleRecord> {
         public static final String UNHANDLED = "0";  // 未处置
         public static final String HANDLED = "1";    // 已完成
         public static final String DRAFT = "2";      // 草稿
-        
+
         public static String getText(String value) {
             if (UNHANDLED.equals(value)) {
                 return "未处置";
@@ -76,11 +77,11 @@ public class SwmHandleRecord extends DataEntity<SwmHandleRecord> {
         // 创建新实例时才设置默认的处置状态，用于查询时不设置默认值
         // this.handleStatus = HandleStatusEnum.UNHANDLED;
     }
-    
+
     public SwmHandleRecord(String id) {
         super(id);
     }
-    
+
     /**
      * 创建一个新记录（用于保存）
      */
@@ -159,7 +160,7 @@ public class SwmHandleRecord extends DataEntity<SwmHandleRecord> {
     public void setHandleStatus(String handleStatus) {
         this.handleStatus = handleStatus;
     }
-    
+
     /**
      * 获取处置状态显示文本
      */
@@ -169,45 +170,45 @@ public class SwmHandleRecord extends DataEntity<SwmHandleRecord> {
         }
         return this.handleStatusText;
     }
-    
+
     public void setHandleStatusText(String handleStatusText) {
         this.handleStatusText = handleStatusText;
     }
-    
+
     // 查询条件的getter/setter
-    
+
     @JsonIgnore
     public Date getBeginAlarmTime() {
         return beginAlarmTime;
     }
-    
+
     public void setBeginAlarmTime(Date beginAlarmTime) {
         this.beginAlarmTime = beginAlarmTime;
     }
-    
+
     @JsonIgnore
     public Date getEndAlarmTime() {
         return endAlarmTime;
     }
-    
+
     public void setEndAlarmTime(Date endAlarmTime) {
         this.endAlarmTime = endAlarmTime;
     }
-    
+
     @JsonIgnore
     public Date getBeginHandleTime() {
         return beginHandleTime;
     }
-    
+
     public void setBeginHandleTime(Date beginHandleTime) {
         this.beginHandleTime = beginHandleTime;
     }
-    
+
     @JsonIgnore
     public Date getEndHandleTime() {
         return endHandleTime;
     }
-    
+
     public void setEndHandleTime(Date endHandleTime) {
         this.endHandleTime = endHandleTime;
     }
@@ -220,4 +221,12 @@ public class SwmHandleRecord extends DataEntity<SwmHandleRecord> {
     public void setAttachment(String attachment) {
         this.attachment = attachment;
     }
-} 
+
+    public String getWarningMan() {
+        return warningMan;
+    }
+
+    public void setWarningMan(String warningMan) {
+        this.warningMan = warningMan;
+    }
+}

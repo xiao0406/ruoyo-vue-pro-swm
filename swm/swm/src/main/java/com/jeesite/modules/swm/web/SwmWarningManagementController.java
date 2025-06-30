@@ -842,7 +842,19 @@ public class SwmWarningManagementController extends BaseController {
         // 2. 处理预警类型显示文本
         violationList.forEach(item -> {
             String warningType = (String) item.get("warningType");
-            item.put("warningTypeText", SwmWarningManagement.WarningTypeEnum.getText(warningType));
+            if (warningType != null && !warningType.isEmpty()) {
+                // 分割字符串并处理每个类型
+                String warningTypeText = Arrays.stream(warningType.split(","))
+                        .map(String::trim) // 去除前后空格
+                        .filter(s -> !s.isEmpty()) // 过滤空字符串
+                        .map(SwmWarningManagement.WarningTypeEnum::getText) // 转换为文本
+                        .filter(Objects::nonNull) // 过滤掉null值
+                        .collect(Collectors.joining(",")); // 重新用逗号连接
+
+                item.put("warningTypeText", warningTypeText);
+            } else {
+                item.put("warningTypeText", ""); // 处理null或空字符串情况
+            }
         });
 
         return violationList;

@@ -49,8 +49,10 @@
                a.create_by      AS createBy,
                a.create_date    AS createDate,
                a.update_by      AS updateBy,
-               a.update_date    AS updateDate
+               a.update_date    AS updateDate,
+            b.person_name AS warningMan
         FROM swm_handle_record a
+            left join swm_warning_management b on a.warning_id = b.id
         WHERE a.status = '0'
         order by a.alarm_time DESC
         limit #{limit}
