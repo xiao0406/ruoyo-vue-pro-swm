@@ -8,6 +8,7 @@ import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
 import com.jeesite.modules.job.task.AttendanceTask;
+import com.jeesite.modules.swm.job.FmsMonthPlanProlongTask;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,9 @@ public class SwmDailyAttendanceController extends BaseController {
 
     @Autowired
     private AttendanceTask attendanceTask;
+
+    @Autowired
+    private FmsMonthPlanProlongTask fmsMonthPlanProlongTask;
 
     @Autowired
     private AreaFenceDataService areaFenceDataService;
@@ -656,6 +660,28 @@ public class SwmDailyAttendanceController extends BaseController {
         } catch (Exception e) {
             logger.error("月考勤统计任务执行失败: {}", e.getMessage(), e);
             return renderResult(Global.FALSE, "月考勤统计任务执行失败！" + e.getMessage());
+        }
+    }
+
+    /**
+     * 手动触发月度计划顺延任务
+     * 用于测试或手动触发
+     * 
+     * @author: Shawn
+     * @date: 2025/06/30
+     */
+    @PostMapping(value = "runFmsMonthPlanProlongTask")
+    @ResponseBody
+    @ApiOperation("手动触发月度计划顺延任务")
+    public String runFmsMonthPlanProlongTask() {
+        try {
+            logger.info("开始手动触发月度计划顺延任务");
+            fmsMonthPlanProlongTask.execute();
+            logger.info("手动触发月度计划顺延任务完成");
+            return renderResult(Global.TRUE, "月度计划顺延任务执行成功！");
+        } catch (Exception e) {
+            logger.error("月度计划顺延任务执行失败: {}", e.getMessage(), e);
+            return renderResult(Global.FALSE, "月度计划顺延任务执行失败！" + e.getMessage());
         }
     }
 
