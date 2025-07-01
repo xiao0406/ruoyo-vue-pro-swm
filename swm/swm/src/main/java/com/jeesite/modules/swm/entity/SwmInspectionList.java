@@ -6,6 +6,7 @@ import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.JoinTable;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.utils.DictUtils;
 
 import javax.validation.constraints.NotBlank;
@@ -31,13 +32,11 @@ import java.util.Date;
         @Column(includeEntity = DataEntity.class)
 },
         // 联合查询出外键编码的名称数据（attrName="this"，指定this代表，当前实体）
-        joinTable={
-                @JoinTable(type= JoinTable.Type.LEFT_JOIN, entity=SwmPerson.class, attrName="this", alias="b",
-                        on="b.id = a.inspector_id",
-                        columns={
-                                @Column(name="name", attrName="inspector", label="名称"),
-                        }),
-        },orderBy = "a.create_date DESC")
+        joinTable = {
+                @JoinTable(type = JoinTable.Type.LEFT_JOIN, entity = SwmPerson.class, alias = "p", on = "p.id = a.inspector_id COLLATE utf8mb4_general_ci", columns = {
+                        @Column(name = "name", attrName = "inspector", label = "巡检人名称"),
+                }),
+        }, orderBy = "a.create_date DESC")
 public class SwmInspectionList extends DataEntity<SwmInspectionList> {
 
     private static final long serialVersionUID = 1L;

@@ -9,6 +9,7 @@
         a.plan_name AS "planName",
         a.inspection_type AS "inspectionType",
         a.inspector_id AS "inspectorId",
+        p.name AS "inspector",
         a.start_time AS "startTime",
         a.end_time AS "endTime",
         a.attachment_path AS "attachmentPath",
@@ -23,7 +24,38 @@
 
     <!-- 查询连接表 -->
     <sql id="swmInspectionListJoins">
+        LEFT JOIN swm_person p ON p.id = a.inspector_id
     </sql>
+
+    <!-- 根据id查询巡检列表 -->
+    <select id="get" resultType="SwmInspectionList" >
+        SELECT
+            <include refid="swmInspectionListColumns"/>
+        FROM swm_inspection_list a
+        <include refid="swmInspectionListJoins"/>
+        WHERE a.id = #{id}
+    </select>
+
+    <!-- 查询巡检列表 -->
+    <select id="findList" resultType="SwmInspectionList" >
+        SELECT
+            <include refid="swmInspectionListColumns"/>
+        FROM swm_inspection_list a
+        <include refid="swmInspectionListJoins"/>
+        <where>
+            a.status = #{status}
+            <if test="planName != null and planName != ''">
+                AND a.plan_name LIKE concat('%', #{planName}, '%')
+            </if>
+            <if test="inspectionType != null and inspectionType != ''">
+                AND a.inspection_type = #{inspectionType}
+            </if>
+            <if test="inspectionListStatus != null and inspectionListStatus != ''">
+                AND a.inspection_list_status = #{inspectionListStatus}
+            </if>
+        </where>
+        ORDER BY a.update_date DESC
+    </select>
 
     <select id="getLastTaskByPlanId" resultType="com.jeesite.modules.swm.entity.SwmInspectionList">
         select
