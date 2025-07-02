@@ -184,11 +184,19 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                     if (dataArray != null && dataArray.size() > 0) {
                         int batL = dataArray.getJSONArray(0).getInt(1);
                         swmHelmetDevice.setBatteryLevel(batL);
+                        // 如果能查到电量，说明设备在线，设置运动状态为'1'
+                        swmHelmetDevice.setMotionStatus("1");
+                    } else {
+                        // 如果在指定时间范围内没有数据，则认为设备离线
+                        swmHelmetDevice.setMotionStatus("0");
                     }
+                } else {
+                    // 如果查询结果为空，也认为设备离线
+                    swmHelmetDevice.setMotionStatus("0");
                 }
             } catch (Exception e) {
-                // 如果查询时序数据库时发生异常，则电量保持为空 (null)
-                // 记录日志，但不抛出异常，以免影响整个列表的返回
+                // 如果查询时序数据库时发生异常，则电量保持为空 (null)，并标记为离线
+                swmHelmetDevice.setMotionStatus("0");
                 logger.error("查询设备 {} 的电量失败: {}", swmHelmetDevice.getDeviceId(), e.getMessage());
             }
         }
