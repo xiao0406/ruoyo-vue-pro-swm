@@ -6,6 +6,7 @@ package com.jeesite.modules.swm.dao;
 
 import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
+import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import org.apache.ibatis.annotations.Param;
 
@@ -39,7 +40,7 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
 
     /**
      * 根据部门条件查询在职人员
-     * 
+     *
      * @param departmentCondition 部门条件参数，可以是车间ID、班组ID、产线ID、组织编码或身份证号
      * @return 符合条件的在职人员列表
      */
@@ -47,7 +48,7 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
 
     /**
      * 根据关键词搜索人员（支持姓名、身份证、电话多字段搜索）
-     * 
+     *
      * @param keyword 搜索关键词
      * @return 符合条件的在职人员列表
      */
@@ -56,7 +57,7 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
     /**
      * 查询所有在职人员的详细信息（包含关联表ID）
      * 用于缓存初始化
-     * 
+     *
      * @return 包含所有关联表ID的在职人员信息
      * @author Shawn
      * @date 2025/06/23
@@ -65,7 +66,7 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
 
     /**
      * 根据身份证号列表查询人员
-     * 
+     *
      * @param idCards 身份证号列表
      * @return 人员列表
      */
@@ -73,8 +74,13 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
 
     /**
      * 统计不重复身份证的人员数量
-     * 
+     *
      * @return 不重复身份证的人员数量
      */
     int countDistinctByIdentityCard();
+
+    /**
+     * 通过组织和工种查询人员
+     */
+    List<SwmPerson> listByOrgAndWorkType(@Param("query") PersonnelOrganizationQueryParam query);
 }

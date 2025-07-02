@@ -18,7 +18,7 @@ import java.util.*;
 
 /**
  * 日考勤统计表Service
- * 
+ *
  * @author zwf
  * @version 2025-05-20
  */
@@ -36,7 +36,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 获取单条数据
-     * 
+     *
      * @param swmDailyAttendance
      * @return
      */
@@ -47,7 +47,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 查询分页数据
-     * 
+     *
      * @param swmDailyAttendance
      * @return
      */
@@ -68,7 +68,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 查询列表数据
-     * 
+     *
      * @param swmDailyAttendance
      * @return
      */
@@ -90,7 +90,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     /**
      * 保存数据（插入或更新）
      * 保存时自动计算：实际考勤时长、怠工时长、今日达成率
-     * 
+     *
      * @param swmDailyAttendance
      */
     @Override
@@ -185,7 +185,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 更新状态
-     * 
+     *
      * @param swmDailyAttendance
      */
     @Override
@@ -196,7 +196,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 删除数据
-     * 
+     *
      * @param swmDailyAttendance
      */
     @Override
@@ -207,7 +207,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 处理日期，去除时间部分，只保留日期部分
-     * 
+     *
      * @param date 需要处理的日期
      * @return 只包含日期部分的Date对象
      */
@@ -226,7 +226,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工姓名和日期查询考勤记录
-     * 
+     *
      * @param employeeName   员工姓名
      * @param attendanceDate 考勤日期
      * @return 考勤记录
@@ -239,7 +239,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工姓名和日期范围查询考勤记录
-     * 
+     *
      * @param employeeName 员工姓名
      * @param beginDate    开始日期
      * @param endDate      结束日期
@@ -254,7 +254,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据日期查询所有考勤记录
-     * 
+     *
      * @param attendanceDate 考勤日期
      * @return 考勤记录列表
      */
@@ -266,7 +266,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工姓名和月份查询考勤记录
-     * 
+     *
      * @param employeeName 员工姓名
      * @param year         年份
      * @param month        月份 (1-12)
@@ -278,7 +278,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 计算员工某月的统计数据
-     * 
+     *
      * @param employeeName 员工姓名
      * @param year         年份
      * @param month        月份 (1-12)
@@ -353,7 +353,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工ID和日期查询考勤记录
-     * 
+     *
      * @param employeeId     员工ID
      * @param attendanceDate 考勤日期
      * @return 考勤记录
@@ -366,7 +366,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工ID和日期范围查询考勤记录
-     * 
+     *
      * @param employeeId 员工ID
      * @param beginDate  开始日期
      * @param endDate    结束日期
@@ -381,7 +381,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工ID和月份查询考勤记录
-     * 
+     *
      * @param employeeId 员工ID
      * @param year       年份
      * @param month      月份 (1-12)
@@ -393,7 +393,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 计算员工某月的统计数据
-     * 
+     *
      * @param employeeId   员工ID
      * @param employeeName 员工姓名
      * @param year         年份
@@ -588,18 +588,18 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 查询指定月份的日考勤记录
-     * 
-     * @param employeeId 员工ID(可选)
+     *
+     * @param employeeIds 员工ID(可选)
      * @param month      月份(格式: yyyy-MM)
      * @return 日考勤记录列表
      */
-    public List<SwmDailyAttendance> findByMonth(String employeeId, String month) {
-        return dao.findByMonth(employeeId, month);
+    public List<SwmDailyAttendance> findByMonth(List<String> employeeIds, String month) {
+        return dao.findByMonth(employeeIds, month);
     }
 
     /**
      * 根据身份证号计算怠工时长
-     * 
+     *
      * @param idCard        身份证号
      * @param date          日期
      * @param workTimeRange 工作时间范围
@@ -613,7 +613,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据身份证号计算怠工时长
-     * 
+     *
      * @param idCard 身份证号
      * @param date   日期
      * @return 怠工时长
@@ -626,7 +626,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据员工ID获取身份证号
-     * 
+     *
      * @param employeeId 员工ID
      * @return 身份证号
      * @author Shawn
@@ -654,7 +654,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据身份证号计算实际工作时长
-     * 
+     *
      * @param idCard        身份证号
      * @param date          日期
      * @param workTimeRange 工作时间范围
@@ -668,7 +668,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据身份证号计算实际工作时长
-     * 
+     *
      * @param idCard 身份证号
      * @param date   日期
      * @return 实际工作时长

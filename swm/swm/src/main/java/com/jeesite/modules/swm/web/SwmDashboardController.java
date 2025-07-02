@@ -3,10 +3,7 @@ package com.jeesite.modules.swm.web;
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.swm.entity.SwmDailyAttendance;
-import com.jeesite.modules.swm.entity.SwmHazardSource;
-import com.jeesite.modules.swm.entity.SwmPerson;
-import com.jeesite.modules.swm.entity.SwmWarningManagement;
+import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
@@ -584,39 +581,42 @@ public class SwmDashboardController extends BaseController {
     @GetMapping("/attendance/dashboard")
     @ResponseBody
     @ApiOperation("劳动力管理综合考勤统计")
-    public Map<String, Object> attendanceDashboard(SwmPerson swmPerson) {
+    public Map<String, Object> attendanceDashboard(PersonnelOrganizationQueryParam queryParam) {
         Map<String, Object> result = new HashMap<>();
         Date today = new Date();
         String currentMonth = DateUtil.format(today, "yyyy-MM");
 
-        // 1. 查询本月考勤数据并预加载人员信息
-        List<SwmDailyAttendance> monthlyAttendance = swmDailyAttendanceService.findByMonth(null, currentMonth);
-        Map<String, SwmPerson> personMap = preloadPersonData(monthlyAttendance);
+        //查询符合条件的人员
+        List<String> swmPersonIdList = swmPersonService.listByOrgAndWorkType(queryParam)
+                .stream()
+                .map(SwmPerson::getId)
+                .collect(Collectors.toList());
 
-        // 2. 筛选符合条件的考勤数据
-        List<SwmDailyAttendance> filteredAttendance = filterAttendances(monthlyAttendance, personMap, swmPerson);
+        // 1. 查询本月考勤数据并预加载人员信息
+        List<SwmDailyAttendance> monthlyAttendance = swmDailyAttendanceService.findByMonth(swmPersonIdList, currentMonth);
+        Map<String, SwmPerson> personMap = preloadPersonData(monthlyAttendance);
 
         // 3. 并行处理各项统计
         CompletableFuture<Map<String, Object>> todayStats = CompletableFuture.supplyAsync(
-                () -> getTodayAttendanceStats(filteredAttendance, personMap));
+                () -> getTodayAttendanceStats(monthlyAttendance, personMap));
 
         CompletableFuture<Map<String, Object>> monthlyEfficiency = CompletableFuture.supplyAsync(
-                () -> getMonthlyEfficiencyStats(filteredAttendance));
+                () -> getMonthlyEfficiencyStats(monthlyAttendance));
 
         CompletableFuture<Map<String, Object>> monthlyAttendanceChart = CompletableFuture.supplyAsync(
-                () -> getMonthlyAttendanceChartData(filteredAttendance, currentMonth));
+                () -> getMonthlyAttendanceChartData(monthlyAttendance, currentMonth));
 
         CompletableFuture<Map<String, Object>> monthlyEfficiencyChart = CompletableFuture.supplyAsync(
-                () -> getMonthlyEfficiencyChartData(filteredAttendance, currentMonth));
+                () -> getMonthlyEfficiencyChartData(monthlyAttendance, currentMonth));
 
         CompletableFuture<List<Map<String, Object>>> todayTeamRanking = CompletableFuture.supplyAsync(
-                () -> getTeamRanking(filteredAttendance, personMap, true, 10));
+                () -> getTeamRanking(monthlyAttendance, personMap, true, 10));
 
         CompletableFuture<List<Map<String, Object>>> todayJobDistribution = CompletableFuture.supplyAsync(
-                () -> getJobDistribution(filteredAttendance, personMap, true, 10));
+                () -> getJobDistribution(monthlyAttendance, personMap, true, 10));
 
         CompletableFuture<List<Map<String, Object>>> monthlyTeamRanking = CompletableFuture.supplyAsync(
-                () -> getTeamRanking(filteredAttendance, personMap, false, 10));
+                () -> getTeamRanking(monthlyAttendance, personMap, false, 10));
 
         // 等待所有任务完成
         CompletableFuture.allOf(todayStats, monthlyEfficiency, monthlyAttendanceChart,
@@ -650,83 +650,6 @@ public class SwmDashboardController extends BaseController {
 
         return swmPersonService.findListByIds(employeeIds).stream()
                 .collect(Collectors.toMap(SwmPerson::getId, Function.identity()));
-    }
-
-    /**
-     * 筛选考勤数据
-     */
-    private List<SwmDailyAttendance> filterAttendances(List<SwmDailyAttendance> attendances,
-                                                       Map<String, SwmPerson> personMap,
-                                                       SwmPerson queryParams) {
-        // 收集不满足条件的记录用于日志记录
-        List<SwmDailyAttendance> unmatchedRecords = new ArrayList<>();
-
-        List<SwmDailyAttendance> result = attendances.parallelStream()
-                .filter(a -> {
-                    SwmPerson person = personMap.get(a.getEmployeeId());
-                    boolean matched = matchesQuery(person, queryParams);
-                    if (!matched) {
-                        synchronized (unmatchedRecords) {
-                            unmatchedRecords.add(a);
-                        }
-                    }
-                    return matched;
-                })
-                .collect(Collectors.toList());
-
-        // 打印不满足条件的记录
-        if (!unmatchedRecords.isEmpty()) {
-            log.warn("以下考勤记录不满足查询条件:");
-            unmatchedRecords.forEach(record ->
-                    log.warn("员工ID: {}, 姓名: {}, 考勤日期: {}",
-                            record.getEmployeeId(),
-                            record.getEmployeeName(),
-                            DateUtil.format(record.getAttendanceDate(), "yyyy-MM-dd"))
-            );
-            log.warn("共 {} 条记录被过滤", unmatchedRecords.size());
-        }
-
-        return result;
-    }
-
-    /**
-     * 检查人员是否匹配查询条件
-     */
-    private boolean matchesQuery(SwmPerson person, SwmPerson queryParams) {
-        if (person == null)
-            return false;
-
-        // 单位条件
-        if (StringUtils.isNotBlank(queryParams.getCompany()) &&
-                !queryParams.getCompany().equals(person.getCompany())) {
-            return false;
-        }
-
-        // 车间条件
-        if (StringUtils.isNotBlank(queryParams.getDepartment()) &&
-                !queryParams.getDepartment().equals(person.getDepartment())) {
-            return false;
-        }
-
-        // 工序条件
-        if (StringUtils.isNotBlank(queryParams.getWorkProcess()) &&
-                !queryParams.getWorkProcess().equals(person.getWorkProcess())) {
-            return false;
-        }
-
-        // 班组条件
-        if (StringUtils.isNotBlank(queryParams.getTeam()) &&
-                !queryParams.getTeam().equals(person.getTeam())) {
-            return false;
-        }
-
-        // 工种条件
-        if (StringUtils.isNotBlank(queryParams.getJobType()) &&
-                !queryParams.getJobType().equals(person.getJobType())) {
-            return false;
-        }
-
-        return true;
     }
 
     /**

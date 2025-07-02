@@ -9,6 +9,7 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
+import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -165,7 +166,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 通过员工ID查询员工
-     * 
+     *
      * @param employeeIds 员工ID列表
      * @return
      */
@@ -178,7 +179,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 根据部门条件查询在职人员
-     * 
+     *
      * @param departmentCondition 部门条件参数，可以是车间ID、班组ID、产线ID、组织编码或身份证号
      * @return 符合条件的在职人员列表
      */
@@ -191,7 +192,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 根据关键词搜索人员（支持姓名、身份证、电话多字段搜索）
-     * 
+     *
      * @param keyword 搜索关键词
      * @return 符合条件的在职人员列表
      */
@@ -204,7 +205,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 根据身份证号列表查询人员
-     * 
+     *
      * @param idCards 身份证号列表
      * @return 人员列表
      */
@@ -217,10 +218,17 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     /**
      * 统计不重复身份证的人员数量
-     * 
+     *
      * @return 不重复身份证的人员数量
      */
     public int countDistinctByIdentityCard() {
         return dao.countDistinctByIdentityCard();
     }
+
+    /**
+     * 通过组织和工种查询人员
+     */
+    public List<SwmPerson> listByOrgAndWorkType(PersonnelOrganizationQueryParam query){
+        return dao.listByOrgAndWorkType(query);
+    };
 }

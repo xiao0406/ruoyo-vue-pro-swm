@@ -15,7 +15,7 @@ import java.util.List;
  */
 @MyBatisDao
 public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
-    
+
     /**
      * 自定义更新方法，确保包含打卡时间字段
      * @param swmDailyAttendance 日考勤记录
@@ -84,9 +84,9 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
 
     /**
      * 查询指定月份的日考勤记录
-     * @param employeeId 员工ID(可选)
+     * @param employeeIds 员工ID(可选)
      * @param month 月份(格式: yyyy-MM)
      * @return 日考勤记录列表
      */
-    List<SwmDailyAttendance> findByMonth(@Param("employeeId") String employeeId, @Param("month") String month);
+    List<SwmDailyAttendance> findByMonth(@Param("employeeIds") List<String> employeeIds, @Param("month") String month);
 }

@@ -294,34 +294,37 @@
         swm_daily_attendance a
         WHERE
         a.status = '0'
-        <if test="employeeId != null and employeeId != ''">
-            AND a.employee_id = #{employeeId}
+        <if test="employeeIds != null and employeeIds.size() > 0">
+            AND a.employee_id IN
+            <foreach collection="employeeIds" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
         </if>
         AND DATE_FORMAT(a.attendance_date, '%Y-%m') = #{month}
         ORDER BY
         a.attendance_date DESC, a.update_date DESC
     </select>
-    
+
     <!-- 自定义更新方法，确保包含打卡时间字段 -->
     <update id="updateWithClockTime">
-        UPDATE `swm_daily_attendance` SET 
-            `employee_id` = #{employeeId}, 
-            `employee_name` = #{employeeName}, 
-            `attendance_date` = #{attendanceDate}, 
-            `work_time_range` = #{workTimeRange}, 
-            `clock_in_time` = #{clockInTime}, 
-            `clock_out_time` = #{clockOutTime}, 
-            `scheduled_hours` = #{scheduledHours}, 
-            `actual_hours` = #{actualHours}, 
-            `idle_hours` = #{idleHours}, 
-            `effective_work_hours` = #{effectiveWorkHours}, 
-            `daily_efficiency` = #{dailyEfficiency}, 
-            `daily_achievement_rate` = #{dailyAchievementRate}, 
-            `attendance_normal` = #{attendanceNormal}, 
-            `current_position` = #{currentPosition}, 
-            `update_by` = #{updateBy}, 
-            `update_date` = #{updateDate}, 
-            `remarks` = #{remarks} 
+        UPDATE `swm_daily_attendance` SET
+            `employee_id` = #{employeeId},
+            `employee_name` = #{employeeName},
+            `attendance_date` = #{attendanceDate},
+            `work_time_range` = #{workTimeRange},
+            `clock_in_time` = #{clockInTime},
+            `clock_out_time` = #{clockOutTime},
+            `scheduled_hours` = #{scheduledHours},
+            `actual_hours` = #{actualHours},
+            `idle_hours` = #{idleHours},
+            `effective_work_hours` = #{effectiveWorkHours},
+            `daily_efficiency` = #{dailyEfficiency},
+            `daily_achievement_rate` = #{dailyAchievementRate},
+            `attendance_normal` = #{attendanceNormal},
+            `current_position` = #{currentPosition},
+            `update_by` = #{updateBy},
+            `update_date` = #{updateDate},
+            `remarks` = #{remarks}
         WHERE `id` = #{id}
     </update>
 
