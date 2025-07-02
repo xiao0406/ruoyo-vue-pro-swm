@@ -217,40 +217,39 @@
     </select>
 
     <select id="listByOrgAndWorkType" resultType="com.jeesite.modules.swm.entity.SwmPerson">
-        SELECT DISTINCT
-            a.id AS "id",
-            a.name AS "name",
-            a.person_type AS "personType",
-            a.gender AS "gender",
-            o.office_name AS "company",
-            p.position_name AS "department",
-            fpl.prod_line_name AS "prodLine",
-            wg.work_group_name AS "team",
-            f.work_type AS "jobType",
-            a.safety_helmet_id AS "safetyHelmetId",
-            a.personnel_status AS "personnelStatus",
-            a.identity_card AS "identityCard",
-            a.phone_number AS "phoneNumber",
-            a.create_by AS "createBy",
-            a.create_date AS "createDate",
-            a.update_by AS "updateBy",
-            a.update_date AS "updateDate",
-            a.remarks AS "remarks",
-            a.status AS "status",
-            f.id AS "workerArchiveId",
-            o.office_code AS "officeCode",
-            p.id AS "positionArchiveId",
-            wg.id AS "workGroupId",
-            fpl.id AS "prodLineId"
+        SELECT
+        a.id AS "id",
+        a.name AS "name",
+        a.person_type AS "personType",
+        a.gender AS "gender",
+        MAX(o.office_name) AS "company",
+        MAX(p.position_name) AS "department",
+        MAX(fpl.prod_line_name) AS "prodLine",
+        MAX(wg.work_group_name) AS "team",
+        MAX(f.work_type) AS "jobType",
+        a.safety_helmet_id AS "safetyHelmetId",
+        a.personnel_status AS "personnelStatus",
+        a.identity_card AS "identityCard",
+        a.phone_number AS "phoneNumber",
+        a.create_by AS "createBy",
+        a.create_date AS "createDate",
+        a.update_by AS "updateBy",
+        a.update_date AS "updateDate",
+        a.remarks AS "remarks",
+        a.status AS "status",
+        MAX(f.id) AS "workerArchiveId",
+        MAX(o.office_code) AS "officeCode",
+        MAX(p.id) AS "positionArchiveId",
+        MAX(wg.id) AS "workGroupId",
+        MAX(fpl.id) AS "prodLineId"
         FROM swm_person a
-                 LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
-                 LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
-                 LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
-                 LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
-                 LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
+        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
+        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
         WHERE a.personnel_status = '1'
-          AND a.status = '0'
-
+        AND a.status = '0'
         <if test="query.officeCode != null and query.officeCode != ''">
             AND o.office_code = #{query.officeCode}
         </if>
@@ -266,6 +265,7 @@
         <if test="query.jobType != null and query.jobType != ''">
             AND f.work_type = #{query.jobType}
         </if>
-        ORDER BY a.update_date DESC
+        GROUP BY a.id  <!-- 只需按主键分组 -->
+        ORDER BY MAX(a.update_date) DESC  <!-- 聚合排序字段 -->
     </select>
 </mapper>

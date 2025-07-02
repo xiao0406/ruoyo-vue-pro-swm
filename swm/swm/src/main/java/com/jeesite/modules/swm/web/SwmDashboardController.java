@@ -587,15 +587,25 @@ public class SwmDashboardController extends BaseController {
         String currentMonth = DateUtil.format(today, "yyyy-MM");
 
         //查询符合条件的人员
-        List<String> swmPersonIdList = swmPersonService.listByOrgAndWorkType(queryParam)
-                .stream()
+        List<SwmPerson> swmPersonList = swmPersonService.listByOrgAndWorkType(queryParam);
+        List<String> swmPersonIdList = swmPersonList.stream()
                 .map(SwmPerson::getId)
                 .collect(Collectors.toList());
 
         // 1. 查询本月考勤数据并预加载人员信息
-        List<SwmDailyAttendance> monthlyAttendance = swmDailyAttendanceService.findByMonth(swmPersonIdList, currentMonth);
-        Map<String, SwmPerson> personMap = preloadPersonData(monthlyAttendance);
+        List<SwmDailyAttendance> monthlyAttendance;
+        if(!swmPersonIdList.isEmpty()){
+            monthlyAttendance = swmDailyAttendanceService.findByMonth(swmPersonIdList, currentMonth);
+        } else {
+            monthlyAttendance = new ArrayList<>();
+        }
 
+        Map<String, SwmPerson> personMap = swmPersonList.stream()
+                .collect(Collectors.toMap(
+                        SwmPerson::getId,
+                        person -> person,
+                        (existing, replacement) -> existing
+                ));
         // 3. 并行处理各项统计
         CompletableFuture<Map<String, Object>> todayStats = CompletableFuture.supplyAsync(
                 () -> getTodayAttendanceStats(monthlyAttendance, personMap));
