@@ -54,7 +54,52 @@
                 AND a.work_time_range LIKE concat('%', #{workTimeRange}, '%')
             </if>
         </where>
-        ORDER BY ${sqlMap.order.toSql()}
+        <choose>
+            <when test="page != null and page.orderBy != null and page.orderBy != ''">
+                <choose>
+                    <when test="page.orderBy == 'clockInTime asc'">
+                        ORDER BY a.clock_in_time IS NULL ASC, a.clock_in_time ASC
+                    </when>
+                    <when test="page.orderBy == 'clockInTime desc'">
+                        ORDER BY a.clock_in_time DESC
+                    </when>
+                    <when test="page.orderBy == 'clockOutTime asc'">
+                        ORDER BY a.clock_out_time IS NULL ASC, a.clock_out_time ASC
+                    </when>
+                    <when test="page.orderBy == 'clockOutTime desc'">
+                        ORDER BY a.clock_out_time DESC
+                    </when>
+                    <when test="page.orderBy == 'effectiveWorkHours asc'">
+                        ORDER BY a.effective_work_hours = 0, a.effective_work_hours ASC
+                    </when>
+                    <when test="page.orderBy == 'effectiveWorkHours desc'">
+                        ORDER BY a.effective_work_hours DESC
+                    </when>
+                    <when test="page.orderBy == 'idleHours asc'">
+                        ORDER BY a.idle_hours = 0, a.idle_hours ASC
+                    </when>
+                    <when test="page.orderBy == 'idleHours desc'">
+                        ORDER BY a.idle_hours DESC
+                    </when>
+                    <otherwise>
+                        ORDER BY ${page.orderBy}
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                ORDER BY
+                    CASE
+                        WHEN a.clock_in_time IS NOT NULL
+                          OR a.clock_out_time IS NOT NULL
+                          OR a.effective_work_hours > 0
+                          OR a.idle_hours > 0
+                        THEN 0 
+                        ELSE 1
+                    END ASC,
+                    a.attendance_date DESC,
+                    a.update_date DESC
+            </otherwise>
+        </choose>
     </select>
 
     <!-- 根据员工ID和日期查询考勤记录 -->
