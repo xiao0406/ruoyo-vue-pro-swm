@@ -768,7 +768,7 @@ public class AreaFenceDataService {
      * 算法说明：
      * 1. 查询到的数据都是员工在怠工区域（如休息区）的心跳数据
      * 2. 将数据按时间排序
-     * 3. 找出连续的心跳数据段（相邻两个数据点时间间隔小于等于10分钟认为是连续的）
+     * 3. 找出连续的心跳数据段（相邻两个数据点时间间隔小于等于30分钟认为是连续的）
      * 4. 计算每个连续段的时长（从段开始时间到段结束时间）
      * 5. 怠工时长 = 所有连续怠工段的总时长
      * 
@@ -783,8 +783,8 @@ public class AreaFenceDataService {
         // 确保数据按时间排序
         dataList.sort(Comparator.comparing(data -> (Date) data.get("time")));
 
-        // 心跳间隔阈值：10分钟，如果超过这个时间则认为不连续
-        final long HEARTBEAT_THRESHOLD_MS = 10 * 60 * 1000;
+        // 心跳间隔阈值：30分钟，如果超过这个时间则认为不连续
+        final long HEARTBEAT_THRESHOLD_MS = 30 * 60 * 1000;
 
         long totalIdleMinutes = 0;
         Date lastTime = null;
@@ -1107,7 +1107,7 @@ public class AreaFenceDataService {
      * 算法说明：
      * 1. 查询到的数据都是员工在工作区域的心跳数据
      * 2. 将数据按时间排序
-     * 3. 找出连续的心跳数据段（相邻两个数据点时间间隔小于等于10分钟认为是连续的）
+     * 3. 找出连续的心跳数据段（相邻两个数据点时间间隔小于等于30分钟认为是连续的）
      * 4. 计算每个连续段的时长（从段开始时间到段结束时间）
      * 5. 实际工作时长 = 所有连续工作段的总时长
      * 
@@ -1122,8 +1122,8 @@ public class AreaFenceDataService {
         // 确保数据按时间排序
         dataList.sort(Comparator.comparing(data -> (Date) data.get("time")));
 
-        // 心跳间隔阈值：10分钟，如果超过这个时间则认为不连续
-        final long HEARTBEAT_THRESHOLD_MS = 10 * 60 * 1000;
+        // 心跳间隔阈值：30分钟，如果超过这个时间则认为不连续
+        final long HEARTBEAT_THRESHOLD_MS = 30 * 60 * 1000;
 
         long totalWorkMinutes = 0;
         Date lastTime = null;
