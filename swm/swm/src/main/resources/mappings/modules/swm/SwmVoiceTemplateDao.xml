@@ -14,18 +14,19 @@
 	
 	<!-- 查询数据（不过滤status） -->
 	<select id="findListWithoutStatusFilter" resultType="SwmVoiceTemplate">
-		SELECT a.`id` AS "id", 
-		       a.`template_name` AS "templateName", 
-		       a.`template_code` AS "templateCode", 
-		       a.`content` AS "content", 
-		       a.`language` AS "language", 
+		SELECT a.`id` AS "id",
+		       a.`template_name` AS "templateName",
+		       a.`template_code` AS "templateCode",
+		       a.`content` AS "content",
+		       a.`voice_text` AS "voiceText",
+		       a.`language` AS "language",
 		       a.`push_method` AS "pushMethod",
 		       a.`push_frequency` AS "pushFrequency",
-		       a.`status` AS "status", 
-		       a.`create_by` AS "createBy", 
-		       a.`create_date` AS "createDate", 
-		       a.`update_by` AS "updateBy", 
-		       a.`update_date` AS "updateDate", 
+		       a.`status` AS "status",
+		       a.`create_by` AS "createBy",
+		       a.`create_date` AS "createDate",
+		       a.`update_by` AS "updateBy",
+		       a.`update_date` AS "updateDate",
 		       a.`remarks` AS "remarks"
 		FROM `swm_voice_template` a
 		<where>
@@ -41,18 +42,19 @@
 	
 	<!-- 查询状态为0的所有数据 -->
 	<select id="findListWithStatusZero" resultType="SwmVoiceTemplate">
-		SELECT a.`id` AS "id", 
-		       a.`template_name` AS "templateName", 
-		       a.`template_code` AS "templateCode", 
-		       a.`content` AS "content", 
-		       a.`language` AS "language", 
+		SELECT a.`id` AS "id",
+		       a.`template_name` AS "templateName",
+		       a.`template_code` AS "templateCode",
+		       a.`content` AS "content",
+		       a.`voice_text` AS "voiceText",
+		       a.`language` AS "language",
 		       a.`push_method` AS "pushMethod",
 		       a.`push_frequency` AS "pushFrequency",
-		       a.`status` AS "status", 
-		       a.`create_by` AS "createBy", 
-		       a.`create_date` AS "createDate", 
-		       a.`update_by` AS "updateBy", 
-		       a.`update_date` AS "updateDate", 
+		       a.`status` AS "status",
+		       a.`create_by` AS "createBy",
+		       a.`create_date` AS "createDate",
+		       a.`update_by` AS "updateBy",
+		       a.`update_date` AS "updateDate",
 		       a.`remarks` AS "remarks"
 		FROM `swm_voice_template` a
 		<where>
