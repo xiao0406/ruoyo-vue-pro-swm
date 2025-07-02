@@ -162,6 +162,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         List<SwmHelmetDevice> list = dao.findHelmetDeviceListWithRelations(device);
 
         for (SwmHelmetDevice swmHelmetDevice : list) {
+            // 默认将电量设置为空，如果时序数据库中没有查到，则返回null
+            swmHelmetDevice.setBatteryLevel(null);
+
             String sql = String.format(
                     "select time , bat_l from %s.%s " +
                             "where device_id = '%s' " +
@@ -170,9 +173,10 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                             "ORDER BY time DESC \n" +
                             "LIMIT 1;",
                     dbname, HELMET_SUPER_TABLE_NAME, swmHelmetDevice.getDeviceId());
-            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
 
             try {
+                R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
                 if (result != null && result.getData() != null) {
                     JSONObject obj = result.getData();
                     JSONArray dataArray = obj.getJSONArray("data");
@@ -180,21 +184,14 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                     if (dataArray != null && dataArray.size() > 0) {
                         int batL = dataArray.getJSONArray(0).getInt(1);
                         swmHelmetDevice.setBatteryLevel(batL);
-                    } else {
-                        // 无数据标记
-                        System.out.println("设备 " + swmHelmetDevice.getDeviceId() + " 暂无电池数据");
                     }
-                } else {
-
-                    System.out.println("查询结果为空: " + swmHelmetDevice.getDeviceId());
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                // 异常情况设置默认值
+                // 如果查询时序数据库时发生异常，则电量保持为空 (null)
+                // 记录日志，但不抛出异常，以免影响整个列表的返回
+                logger.error("查询设备 {} 的电量失败: {}", swmHelmetDevice.getDeviceId(), e.getMessage());
             }
-            System.out.println("结结果是" + result);
         }
-        // 构建查询SQL
 
         // 设置查询结果
         page.setList(list);
