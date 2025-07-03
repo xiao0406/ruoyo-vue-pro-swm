@@ -76,8 +76,61 @@
                 AND a.`safety_status` = #{safetyStatus}
             </if>
         </where>
-        ORDER BY 
+        ORDER BY
             a.update_time DESC
     </select>
-    
-</mapper> 
+
+    <!-- 根据身份证号查询该人员参与的所有安全教育记录 -->
+    <select id="findByIdentityCard" resultType="com.jeesite.modules.swm.entity.SwmSafetyEducation">
+        SELECT
+            a.`id` AS "id",
+            a.`theme` AS "theme",
+            a.`content_description` AS "contentDescription",
+            a.`safety_education_type` AS "safetyEducationType",
+            a.`start_time` AS "startTime",
+            a.`participants` AS "participants",
+            a.`participants_name` AS "participantsName",
+            a.`safety_status` AS "safetyStatus",
+            a.`participation_type` AS "participationType",
+            a.`attachment_url` AS "attachmentUrl",
+            a.`create_time` AS "createTime",
+            a.`update_time` AS "updateTime",
+            a.`status` AS "status"
+        FROM
+            `swm_safety_education` a
+        WHERE
+            a.`status` = 0
+            AND EXISTS (
+                <!-- 通过子查询找到该身份证对应的所有人员ID -->
+                SELECT 1 FROM `swm_person` p
+                WHERE p.`identity_card` = #{identityCard}
+                AND p.`status` = '0'
+                AND (
+                    <!-- 方式1: 检查JSON格式并使用JSON_CONTAINS查找人员ID -->
+                    (
+                        a.`participants` IS NOT NULL
+                        AND a.`participants` != ''
+                        AND JSON_VALID(a.`participants`) = 1
+                        AND JSON_CONTAINS(a.`participants`, JSON_QUOTE(p.`id`))
+                    )
+                    OR
+                    <!-- 方式2: 逗号分隔格式查找 -->
+                    (
+                        a.`participants` IS NOT NULL
+                        AND a.`participants` != ''
+                        AND FIND_IN_SET(p.`id`, a.`participants`) > 0
+                    )
+                    OR
+                    <!-- 方式3: 直接包含查找（兼容其他格式） -->
+                    (
+                        a.`participants` IS NOT NULL
+                        AND a.`participants` != ''
+                        AND a.`participants` LIKE CONCAT('%', p.`id`, '%')
+                    )
+                )
+            )
+        ORDER BY
+            a.start_time DESC, a.update_time DESC
+    </select>
+
+</mapper>
