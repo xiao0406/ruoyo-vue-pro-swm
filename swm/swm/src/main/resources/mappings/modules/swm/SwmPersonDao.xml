@@ -23,6 +23,7 @@
                a.departure_type AS "departureType",
                a.departure_reason AS "departureReason",
                a.departure_date AS "departureDate",
+               a.is_external_personnel AS "isExternalPersonnel",
                a.create_by AS "createBy",
                a.create_date AS "createDate",
                a.update_by AS "updateBy",
@@ -136,7 +137,8 @@
                a.update_by AS "updateBy",
                a.update_date AS "updateDate",
                a.remarks AS "remarks",
-               a.status AS "status"
+               a.status AS "status",
+               a.is_external_personnel AS "isExternalPersonnel"
         FROM swm_person a
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
@@ -177,6 +179,7 @@
                a.update_date AS "updateDate",
                a.remarks AS "remarks",
                a.status AS "status",
+               a.is_external_personnel AS "isExternalPersonnel",
                -- 关联表的ID字段 2025/06/23 Shawn 添加
                f.id AS "workerArchiveId",                 -- 工人档案ID
                o.office_code AS "officeCode",             -- 组织编码

@@ -152,6 +152,7 @@ public class SwmPersonController extends BaseController {
             personMap.put("departureType", person.getDepartureType());
             personMap.put("departureReason", person.getDepartureReason());
             personMap.put("departureDate", person.getDepartureDate());
+            personMap.put("isExternalPersonnel", person.getIsExternalPersonnel());
             personMap.put("isNewRecord", person.getIsNewRecord());
 
             // 添加枚举文本显示值
