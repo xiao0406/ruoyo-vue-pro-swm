@@ -193,10 +193,20 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
             boolean hasDataInLast5Minutes = checkDeviceDataInLast5Minutes(board.getDeviceId());
 
             if (hasDataInLast5Minutes) {
-                // 5分钟内有数据，设置为工作中和正常状态
+                // 5分钟内有数据，设置为工作中
                 board.setWorkStatus("1"); // 工作中
-                board.setHelmetStatus("1"); // 正常
-                logger.debug("设备 {} 在5分钟内有数据，设置为工作中/正常", board.getDeviceId());
+
+                // 检查是否有静默报警记录来判断安全帽状态
+                boolean hasSilentAlarm = checkSilentAlarmInLast5Minutes(board.getDeviceId());
+                if (hasSilentAlarm) {
+                    // 有静默报警，设置为脱帽状态
+                    board.setHelmetStatus("0"); // 脱帽
+                    logger.debug("设备 {} 在5分钟内有静默报警，设置为工作中/脱帽", board.getDeviceId());
+                } else {
+                    // 无静默报警，设置为正常状态
+                    board.setHelmetStatus("1"); // 正常
+                    logger.debug("设备 {} 在5分钟内有数据且无静默报警，设置为工作中/正常", board.getDeviceId());
+                }
             } else {
                 // 5分钟内没有数据，设置为休息中和脱帽状态
                 board.setWorkStatus("0"); // 休息中
@@ -251,6 +261,50 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
             return false;
         } catch (Exception e) {
             logger.error("检查设备5分钟内数据异常，设备ID: {}", deviceId, e);
+            return false;
+        }
+    }
+
+    /**
+     * 检查设备在最近5分钟内是否有静默报警记录
+     * 
+     * @param deviceId 设备ID（安全帽编号）
+     * @return true表示有静默报警，false表示没有静默报警
+     */
+    private boolean checkSilentAlarmInLast5Minutes(String deviceId) {
+        try {
+            // 计算5分钟前的时间戳
+            long fiveMinutesAgo = System.currentTimeMillis() - 5 * 60 * 1000;
+            String fiveMinutesAgoStr = DateUtils.formatDate(new Date(fiveMinutesAgo), "yyyy-MM-dd HH:mm:ss");
+
+            // 构建查询SQL - 查询5分钟内该设备是否有静默报警记录
+            String sql = String.format(
+                    "SELECT COUNT(*) FROM %s.swm_warning_management WHERE device_id='%s' AND warning_content='静默报警' AND alarm_time >= '%s'",
+                    dbname, deviceId, fiveMinutesAgoStr);
+
+            logger.debug("查询设备5分钟内静默报警SQL: {}", sql);
+
+            R<cn.hutool.json.JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+                cn.hutool.json.JSONObject data = result.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null && rows.size() > 0) {
+                    cn.hutool.json.JSONArray row = rows.getJSONArray(0);
+                    if (row != null && row.size() > 0) {
+                        int count = row.getInt(0);
+                        logger.debug("设备 {} 在5分钟内的静默报警条数: {}", deviceId, count);
+                        return count > 0;
+                    }
+                }
+            } else {
+                logger.warn("查询设备静默报警失败，设备ID: {}, 错误: {}", deviceId, result.getMsg());
+            }
+
+            return false;
+        } catch (Exception e) {
+            logger.error("检查设备5分钟内静默报警异常，设备ID: {}", deviceId, e);
             return false;
         }
     }
