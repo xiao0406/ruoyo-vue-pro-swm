@@ -212,6 +212,7 @@ public class SwmPersonController extends BaseController {
             personData.put("departureTypeText", swmPerson.getDepartureTypeText());
             personData.put("departureReason", swmPerson.getDepartureReason());
             personData.put("departureDate", swmPerson.getDepartureDate()); // 添加离职时间
+            personData.put("isExternalPersonnel", swmPerson.getIsExternalPersonnel()); // 补充字段
 
             result.putAll(personData);
         }

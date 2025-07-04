@@ -41,7 +41,7 @@ import java.util.Date;
         @Column(name = "departure_type", attrName = "departureType", label = "离职类型"),
         @Column(name = "departure_reason", attrName = "departureReason", label = "离职原因"),
         @Column(name = "departure_date", attrName = "departureDate", label = "离职时间"),
-        @Column(name = "is_external_personnel", attrName = "isExternalPersonnel", label = "是否厂外人员"),
+        @Column(name = "is_external_personnel", attrName = "isExternalPersonnel", label = "是否厂内员工"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmPerson extends DataEntity<SwmPerson> {
@@ -143,7 +143,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String departureType; // 离职类型
     private String departureReason; // 离职原因
     private Date departureDate; // 离职时间
-    private String isExternalPersonnel; // 是否厂外人员
+    private String isExternalPersonnel; // 是否厂内员工
     private String classes;// 所属班次
 
     public SwmPerson() {
@@ -345,7 +345,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
         this.departureDate = departureDate;
     }
 
-    @Length(min = 0, max = 10, message = "是否厂外人员不能超过10个字符")
+    @Length(min = 0, max = 10, message = "是否厂内员工不能超过10个字符")
     public String getIsExternalPersonnel() {
         return isExternalPersonnel;
     }
