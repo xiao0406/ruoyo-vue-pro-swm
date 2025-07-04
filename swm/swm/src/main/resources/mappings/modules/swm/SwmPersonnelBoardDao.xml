@@ -4,7 +4,7 @@
     
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmPersonnelBoard">
-        SELECT 
+        SELECT
             a.id AS "id",
             a.name AS "name",
             o.office_name AS "organization",
@@ -15,9 +15,9 @@
             NULL AS "workStatus",
             NULL AS "helmetStatus",
             a.personnel_status AS "personnelStatus",
-            COALESCE(asm.actual_days, 0) AS "attendanceCount",
-            COALESCE(asm.actual_hours, 0) AS "workingHours",
-            COALESCE(asm.idle_hours, 0) AS "idleHours",
+            COALESCE(da_stats.attendance_count, 0) AS "attendanceCount",
+            COALESCE(da_stats.working_hours, 0) AS "workingHours",
+            COALESCE(da_stats.idle_hours, 0) AS "idleHours",
             a.identity_card AS "idCard",
             a.create_by AS "createBy",
             a.create_date AS "createDate",
@@ -32,8 +32,23 @@
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
         LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
         LEFT JOIN swm_helmet_device hd ON a.identity_card = hd.assigned_person
-        LEFT JOIN swm_attendance_summary asm ON a.id = asm.employee_id 
-            AND asm.month = DATE_FORMAT(NOW(), '%Y-%m') AND asm.status = '0'
+        LEFT JOIN (
+            SELECT
+                da.employee_id,
+                COUNT(CASE
+                    WHEN da.clock_in_time IS NOT NULL
+                         OR da.clock_out_time IS NOT NULL
+                         OR da.actual_hours > 0
+                         OR da.effective_work_hours > 0
+                    THEN 1
+                END) AS attendance_count,
+                COALESCE(SUM(da.effective_work_hours), 0) AS working_hours,
+                COALESCE(SUM(da.idle_hours), 0) AS idle_hours
+            FROM swm_daily_attendance da
+            WHERE da.status = '0'
+                AND DATE_FORMAT(da.attendance_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+            GROUP BY da.employee_id
+        ) da_stats ON a.id = da_stats.employee_id
         <where>
             <if test="name != null and name != ''">
                 AND a.name LIKE CONCAT('%', #{name}, '%')
