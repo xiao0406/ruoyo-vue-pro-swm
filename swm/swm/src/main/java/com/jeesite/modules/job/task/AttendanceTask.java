@@ -97,14 +97,14 @@ public class AttendanceTask {
             query.setAttendanceDate(targetDate);
 
             // 测试使用，生产上要删除 begin
-            java.util.List<String> employeeIds = new java.util.ArrayList<>();
-            employeeIds.add("1935182658452475904");
-            // employeeIds.add("1935182658850934784");
-            if (employeeIds != null && !employeeIds.isEmpty()) {
-                query.getSqlMap().getWhere().and("employee_id",
-                        com.jeesite.common.mybatis.mapper.query.QueryType.IN,
-                        employeeIds);
-            }
+//            java.util.List<String> employeeIds = new java.util.ArrayList<>();
+//            employeeIds.add("1935182658452475904");
+//            // employeeIds.add("1935182658850934784");
+//            if (employeeIds != null && !employeeIds.isEmpty()) {
+//                query.getSqlMap().getWhere().and("employee_id",
+//                        com.jeesite.common.mybatis.mapper.query.QueryType.IN,
+//                        employeeIds);
+//            }
             // 测试使用，生产上要删除 end
 
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
