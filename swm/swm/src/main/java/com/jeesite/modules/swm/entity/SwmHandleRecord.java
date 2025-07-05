@@ -12,6 +12,7 @@ import java.util.Date;
 
 /**
  * 处置记录实体类
+ * 
  * @author zwf
  * @version 2025-05-16
  */
@@ -32,33 +33,34 @@ public class SwmHandleRecord extends DataEntity<SwmHandleRecord> {
 
     private static final long serialVersionUID = 1L;
 
-    private String recordName;        // 处置记录名称
-    private String warningId;         // 关联预警ID
-    private String warningRecord;     // 预警记录
-    private Date alarmTime;           // 预警/报警时间
-    private String handler;           // 处置人
-    private Date handleTime;          // 处置时间
-    private String handleProcess;     // 处置过程
-    private String handleStatus;      // 处置状态
-    private String attachment;        // 附件路径
-    private String warningMan;        // 预警人
+    private String recordName; // 处置记录名称
+    private String warningId; // 关联预警ID
+    private String warningRecord; // 预警记录
+    private Date alarmTime; // 预警/报警时间
+    private String handler; // 处置人
+    private Date handleTime; // 处置时间
+    private String handleProcess; // 处置过程
+    private String handleStatus; // 处置状态
+    private String attachment; // 附件路径
+    private String warningMan; // 预警人
 
     // 用于显示的属性，不对应数据库字段
-    private String handleStatusText;    // 处置状态显示文本
+    private String handleStatusText; // 处置状态显示文本
+    private String warningContent; // 预警内容（从关联的预警记录中获取）
 
     // 查询条件字段
-    private Date beginAlarmTime;      // 查询开始预警/报警时间
-    private Date endAlarmTime;        // 查询结束预警/报警时间
-    private Date beginHandleTime;     // 查询开始处置时间
-    private Date endHandleTime;       // 查询结束处置时间
+    private Date beginAlarmTime; // 查询开始预警/报警时间
+    private Date endAlarmTime; // 查询结束预警/报警时间
+    private Date beginHandleTime; // 查询开始处置时间
+    private Date endHandleTime; // 查询结束处置时间
 
     /**
      * 处置状态枚举
      */
     public static class HandleStatusEnum {
-        public static final String UNHANDLED = "0";  // 未处置
-        public static final String HANDLED = "1";    // 已完成
-        public static final String DRAFT = "2";      // 草稿
+        public static final String UNHANDLED = "0"; // 未处置
+        public static final String HANDLED = "1"; // 已完成
+        public static final String DRAFT = "2"; // 草稿
 
         public static String getText(String value) {
             if (UNHANDLED.equals(value)) {
@@ -228,5 +230,13 @@ public class SwmHandleRecord extends DataEntity<SwmHandleRecord> {
 
     public void setWarningMan(String warningMan) {
         this.warningMan = warningMan;
+    }
+
+    public String getWarningContent() {
+        return warningContent;
+    }
+
+    public void setWarningContent(String warningContent) {
+        this.warningContent = warningContent;
     }
 }
