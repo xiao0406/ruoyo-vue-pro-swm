@@ -21,8 +21,11 @@ import cn.hutool.json.JSONObject;
 import java.util.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 人员追踪控制器
@@ -931,10 +934,13 @@ public class PersonTrackController extends BaseController {
                             String time = String.valueOf(row.get(0));
                             String areaName = String.valueOf(row.get(1));
 
+                            // 转换UTC时间为北京时间
+                            String beijingTime = convertUtcToBeijingTime(time);
+
                             // 如果这个区域还没有记录，则添加（因为已按时间排序，这就是最早的）
                             if (!areaFirstRecordMap.containsKey(areaName)) {
                                 Map<String, Object> record = new HashMap<>();
-                                record.put("time", time);
+                                record.put("time", beijingTime);
                                 record.put("area_name", areaName);
                                 areaFirstRecordMap.put(areaName, record);
                             }
@@ -1115,5 +1121,55 @@ public class PersonTrackController extends BaseController {
         }
 
         return result;
+    }
+
+    /**
+     * 将UTC时间转换为北京时间
+     *
+     * @param utcTimeStr UTC时间字符串
+     * @return 北京时间字符串
+     */
+    private String convertUtcToBeijingTime(String utcTimeStr) {
+        try {
+            if (StringUtils.isBlank(utcTimeStr)) {
+                return utcTimeStr;
+            }
+
+            // 处理不同的时间格式
+            String normalizedTime = utcTimeStr;
+
+            // 如果包含T，替换为空格
+            if (normalizedTime.contains("T")) {
+                normalizedTime = normalizedTime.replace("T", " ");
+            }
+
+            // 去掉毫秒部分和时区信息
+            if (normalizedTime.contains(".")) {
+                normalizedTime = normalizedTime.substring(0, normalizedTime.indexOf("."));
+            }
+            if (normalizedTime.contains("Z")) {
+                normalizedTime = normalizedTime.replace("Z", "");
+            }
+            if (normalizedTime.contains("+")) {
+                normalizedTime = normalizedTime.substring(0, normalizedTime.indexOf("+"));
+            }
+
+            // 解析UTC时间
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime utcDateTime = LocalDateTime.parse(normalizedTime, formatter);
+
+            // 转换为UTC时区的ZonedDateTime
+            ZonedDateTime utcZoned = utcDateTime.atZone(ZoneId.of("UTC"));
+
+            // 转换为北京时间
+            ZonedDateTime beijingZoned = utcZoned.withZoneSameInstant(ZoneId.of("Asia/Shanghai"));
+
+            // 格式化为字符串
+            return beijingZoned.format(formatter);
+
+        } catch (Exception e) {
+            logger.warn("时间转换失败，使用原始时间: {}", utcTimeStr, e);
+            return utcTimeStr;
+        }
     }
 }
