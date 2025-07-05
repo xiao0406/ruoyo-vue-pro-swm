@@ -122,6 +122,11 @@
             OR fpl.id = #{departmentCondition}
             OR o.office_code = #{departmentCondition}
             OR a.identity_card = #{departmentCondition}
+            OR a.company = #{departmentCondition}
+            OR a.department = #{departmentCondition}
+            OR a.prod_line = #{departmentCondition}
+            OR a.team = #{departmentCondition}
+            OR a.job_type = #{departmentCondition}
         )
         AND a.status = '0'
         ORDER BY a.update_date DESC
