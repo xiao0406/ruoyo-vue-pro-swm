@@ -196,16 +196,28 @@ public class SwmFileUploadController extends BaseController {
     @ApiOperation("直接预览文件")
     public void preview(
             @RequestParam("objectName") String objectName,
+            @RequestParam(value = "fileName", required = false) String fileName,
             HttpServletResponse response) {
         InputStream inputStream = null;
         OutputStream outputStream = null;
 
         try {
-            logger.info("预览文件，对象名: {}", objectName);
+            logger.info("预览文件，对象名: {}, 文件名: {}", objectName, fileName);
 
             // 获取文件类型
             String contentType = getContentTypeByFileName(objectName);
             response.setContentType(contentType);
+
+            // 设置下载文件名
+            String downloadFileName = fileName;
+            if (downloadFileName == null || downloadFileName.isEmpty()) {
+                // 如果没有提供文件名，从objectName中提取
+                downloadFileName = objectName.substring(objectName.lastIndexOf("/") + 1);
+            }
+
+            // 对文件名进行URL编码
+            downloadFileName = URLEncoder.encode(downloadFileName, "UTF-8").replaceAll("\\+", "%20");
+            response.setHeader("Content-Disposition", "attachment; filename=" + downloadFileName);
 
             // 从MinIO获取文件流
             inputStream = minioUtils.getObject(objectName);

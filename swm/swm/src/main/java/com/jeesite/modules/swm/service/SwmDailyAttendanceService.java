@@ -5,6 +5,7 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.swm.entity.SwmDailyAttendanceExportEntity;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -590,7 +591,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
      * 查询指定月份的日考勤记录
      *
      * @param employeeIds 员工ID(可选)
-     * @param month      月份(格式: yyyy-MM)
+     * @param month       月份(格式: yyyy-MM)
      * @return 日考勤记录列表
      */
     public List<SwmDailyAttendance> findByMonth(List<String> employeeIds, String month) {
@@ -677,5 +678,57 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
      */
     public double calculateEffectiveWorkHoursByIdCard(String idCard, String date) {
         return areaFenceDataService.calculateEffectiveWorkHoursByIdCard(idCard, date);
+    }
+
+    /**
+     * 查询导出列表数据（不分页）
+     *
+     * @param swmDailyAttendance 查询条件
+     * @return 考勤记录列表
+     */
+    public List<SwmDailyAttendance> findExportList(SwmDailyAttendance swmDailyAttendance) {
+        // 确保有日期条件，如果没有则默认当天
+        if (swmDailyAttendance.getAttendanceDate() == null) {
+            swmDailyAttendance.setAttendanceDate(new Date());
+        }
+
+        // 不设置分页，查询所有数据
+        return dao.findList(swmDailyAttendance);
+    }
+
+    /**
+     * 将SwmDailyAttendance列表转换为导出实体列表
+     *
+     * @param attendanceList 考勤记录列表
+     * @return 导出实体列表
+     */
+    public List<SwmDailyAttendanceExportEntity> convertToExportList(List<SwmDailyAttendance> attendanceList) {
+        List<SwmDailyAttendanceExportEntity> exportList = new ArrayList<>();
+
+        for (SwmDailyAttendance attendance : attendanceList) {
+            SwmDailyAttendanceExportEntity exportEntity = new SwmDailyAttendanceExportEntity();
+
+            // 复制基本字段
+            exportEntity.setEmployeeId(attendance.getEmployeeId());
+            exportEntity.setEmployeeName(attendance.getEmployeeName());
+            exportEntity.setPersonType(attendance.getPersonType());
+            exportEntity.setAttendanceDate(attendance.getAttendanceDate());
+            exportEntity.setWorkTimeRange(attendance.getWorkTimeRange());
+            exportEntity.setClockInTime(attendance.getClockInTime());
+            exportEntity.setClockOutTime(attendance.getClockOutTime());
+            exportEntity.setScheduledHours(attendance.getScheduledHours());
+            exportEntity.setActualHours(attendance.getActualHours());
+            exportEntity.setIdleHours(attendance.getIdleHours());
+            exportEntity.setEffectiveWorkHours(attendance.getEffectiveWorkHours());
+            exportEntity.setDailyEfficiency(attendance.getDailyEfficiency());
+            exportEntity.setDailyAchievementRate(attendance.getDailyAchievementRate());
+            exportEntity.setAttendanceNormal(attendance.getAttendanceNormal());
+            exportEntity.setCurrentPosition(attendance.getCurrentPosition());
+            exportEntity.setRemarks(attendance.getRemarks());
+
+            exportList.add(exportEntity);
+        }
+
+        return exportList;
     }
 }
