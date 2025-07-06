@@ -215,11 +215,22 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
 
     /**
      * 查询在线状态的基站列表
-     * 
+     *
      * @return 在线基站列表
      */
     public List<SwmBeaconStation> findOnlineBeacons() {
         return dao.findOnlineBeacons();
+    }
+
+    /**
+     * 查询没有区域ID的信标列表
+     *
+     * @author Shawn
+     * @date 2025-01-14
+     * @return 没有区域ID的信标列表
+     */
+    public List<SwmBeaconStation> findBeaconsWithoutArea() {
+        return dao.findBeaconsWithoutArea();
     }
 
     /**
