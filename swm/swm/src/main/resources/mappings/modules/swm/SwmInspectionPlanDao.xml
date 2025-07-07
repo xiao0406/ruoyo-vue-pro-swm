@@ -10,10 +10,13 @@
         <where>
             ${sqlMap.dsf}
             <if test="planCode != null and planCode != ''">
-                AND a.plan_code LIKE #{planCode}
+                AND a.plan_code LIKE CONCAT('%', #{planCode}, '%')
             </if>
             <if test="planName != null and planName != ''">
-                AND a.plan_name LIKE #{planName}
+                AND a.plan_name LIKE CONCAT('%', #{planName}, '%')
+            </if>
+            <if test="frequencyDays != null">
+                AND a.frequency_days = #{frequencyDays}
             </if>
             <if test="inspectionType != null and inspectionType != ''">
                 AND a.inspection_type = #{inspectionType}
