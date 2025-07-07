@@ -2,6 +2,8 @@ package com.jeesite.modules.swm.web;
 
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.StringUtils;
+import com.jeesite.modules.utils.R;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
@@ -10,7 +12,6 @@ import com.jeesite.modules.sys.utils.DictUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -162,8 +163,7 @@ public class SwmDashboardController extends BaseController {
         Map<String, Long> warningMap = warnings.stream()
                 .collect(Collectors.groupingBy(
                         SwmWarningManagement::getWarningContent,
-                        Collectors.counting()
-                ));
+                        Collectors.counting()));
         result.put("warning", warningMap);
 
         // 3. 按日期和预警内容分组统计
@@ -176,8 +176,7 @@ public class SwmDashboardController extends BaseController {
                         Collectors.groupingBy(
                                 SwmWarningManagement::getWarningContent, // 按预警内容分组
                                 Collectors.counting() // 统计数量
-                        )
-                ));
+                        )));
 
         // 4. 确保7天都有数据，没有的日期补0
         Map<String, Map<String, Long>> fullWeekStats = ensureFullWeekData(dailyWarningStats);
@@ -195,7 +194,8 @@ public class SwmDashboardController extends BaseController {
     @GetMapping(value = "warningRecordsForPast7Days")
     @ResponseBody
     @ApiOperation("近七日预警报警记录（分页）")
-    public Page<SwmWarningManagement> warningRecordsForPast7Days(SwmWarningManagement swmWarningManagement, Page<SwmWarningManagement> page) {
+    public Page<SwmWarningManagement> warningRecordsForPast7Days(SwmWarningManagement swmWarningManagement,
+            Page<SwmWarningManagement> page) {
         // 获取近7天的预警数据（分页）
         return swmWarningManagementService.findPast7DaysWarningPage(swmWarningManagement, page);
 
@@ -306,7 +306,7 @@ public class SwmDashboardController extends BaseController {
             calendar.add(Calendar.DAY_OF_YEAR, 1);
             long tomorrowStartTime = calendar.getTimeInMillis();
 
-            // TDengine特有语法：1. 不能使用COUNT(*)  2. 不能使用别名
+            // TDengine特有语法：1. 不能使用COUNT(*) 2. 不能使用别名
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT warning_content,COUNT(1) FROM ")
                     .append(dbname).append(".swm_warning_management")
@@ -323,7 +323,8 @@ public class SwmDashboardController extends BaseController {
 
             try {
                 // 使用tdengineService执行SQL查询
-                com.jeesite.modules.utils.R<cn.hutool.json.JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+                com.jeesite.modules.utils.R<cn.hutool.json.JSONObject> result = tdengineService
+                        .executeTDengineSQL(sqlBuilder.toString());
 
                 if (result.getCode() == com.jeesite.modules.utils.R.SUCCESS && result.getData() != null) {
                     cn.hutool.json.JSONObject data = result.getData();
@@ -346,8 +347,7 @@ public class SwmDashboardController extends BaseController {
                     totalCountMap = allWarnings.stream()
                             .collect(Collectors.groupingBy(
                                     SwmWarningManagement::getWarningContent,
-                                    Collectors.counting()
-                            ));
+                                    Collectors.counting()));
                 }
             } catch (Exception e) {
                 logger.error("执行TDengine查询异常: {}", e.getMessage());
@@ -356,8 +356,7 @@ public class SwmDashboardController extends BaseController {
                 totalCountMap = allWarnings.stream()
                         .collect(Collectors.groupingBy(
                                 SwmWarningManagement::getWarningContent,
-                                Collectors.counting()
-                        ));
+                                Collectors.counting()));
             }
 
             // 查询已处置的预警统计
@@ -368,8 +367,7 @@ public class SwmDashboardController extends BaseController {
                 handledCountMap = handledWarnings.stream()
                         .collect(Collectors.groupingBy(
                                 SwmWarningManagement::getWarningContent,
-                                Collectors.counting()
-                        ));
+                                Collectors.counting()));
             } catch (Exception e) {
                 logger.error("查询已处置预警异常: {}", e.getMessage());
                 // 如果查询异常，将已处置数量都设为0
@@ -425,12 +423,11 @@ public class SwmDashboardController extends BaseController {
         } catch (Exception e) {
             logger.error("获取今日预警统计数据异常", e);
             // 出现异常时回退到原始方法，使用默认格式
-        List<SwmWarningManagement> allWarnings = swmWarningManagementService.listTodayWarning();
+            List<SwmWarningManagement> allWarnings = swmWarningManagementService.listTodayWarning();
             Map<String, Long> totalCountMap = allWarnings.stream()
-                .collect(Collectors.groupingBy(
-                        SwmWarningManagement::getWarningContent,
-                        Collectors.counting()
-                ));
+                    .collect(Collectors.groupingBy(
+                            SwmWarningManagement::getWarningContent,
+                            Collectors.counting()));
 
             Map<String, Object> warningMap = new HashMap<>();
             warningMap.put("安全预警", totalCountMap.getOrDefault("危险源报警", 0L));
@@ -446,7 +443,7 @@ public class SwmDashboardController extends BaseController {
             }
             warningMap.put("主动报警", "0/" + activeTotalCount);
 
-        map.put("warning", warningMap);
+            map.put("warning", warningMap);
         }
 
         // 使用混合查询方法获取最新的20条记录
@@ -487,7 +484,7 @@ public class SwmDashboardController extends BaseController {
     }
 
     /**
-  	 * 大屏概览数据
+     * 大屏概览数据
      */
     @GetMapping("/overview")
     @ResponseBody
@@ -524,12 +521,14 @@ public class SwmDashboardController extends BaseController {
         statusCounts.put("IN_PROGRESS", swmHazardSourceService
                 .countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.IN_PROGRESS, year, month));
 
-        //已完成的统计（已关闭和已忽略的）
-        int COMPLETED = swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.COMPLETED, year, month);
-        int CANCELLED = swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.CANCELLED, year, month);
+        // 已完成的统计（已关闭和已忽略的）
+        int COMPLETED = swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.COMPLETED,
+                year, month);
+        int CANCELLED = swmHazardSourceService.countByStatusAndMonth(SwmHazardSource.HazardSourceStatusEnum.CANCELLED,
+                year, month);
         statusCounts.put("COMPLETED", COMPLETED + CANCELLED);
-        //已发现(总数)
-        statusCounts.put("ALL",swmHazardSourceService.countByYearAndMonth(year, month));
+        // 已发现(总数)
+        statusCounts.put("ALL", swmHazardSourceService.countByYearAndMonth(year, month));
         result.put("statusCounts", statusCounts);
 
         // 2. 按危险源类别统计数量
@@ -586,7 +585,7 @@ public class SwmDashboardController extends BaseController {
         Date today = new Date();
         String currentMonth = DateUtil.format(today, "yyyy-MM");
 
-        //查询符合条件的人员
+        // 查询符合条件的人员
         List<SwmPerson> swmPersonList = swmPersonService.listByOrgAndWorkType(queryParam);
         List<String> swmPersonIdList = swmPersonList.stream()
                 .map(SwmPerson::getId)
@@ -594,7 +593,7 @@ public class SwmDashboardController extends BaseController {
 
         // 1. 查询本月考勤数据并预加载人员信息
         List<SwmDailyAttendance> monthlyAttendance;
-        if(!swmPersonIdList.isEmpty()){
+        if (!swmPersonIdList.isEmpty()) {
             monthlyAttendance = swmDailyAttendanceService.findByMonth(swmPersonIdList, currentMonth);
         } else {
             monthlyAttendance = new ArrayList<>();
@@ -604,8 +603,7 @@ public class SwmDashboardController extends BaseController {
                 .collect(Collectors.toMap(
                         SwmPerson::getId,
                         person -> person,
-                        (existing, replacement) -> existing
-                ));
+                        (existing, replacement) -> existing));
         // 3. 并行处理各项统计
         CompletableFuture<Map<String, Object>> todayStats = CompletableFuture.supplyAsync(
                 () -> getTodayAttendanceStats(monthlyAttendance, personMap));
@@ -666,7 +664,7 @@ public class SwmDashboardController extends BaseController {
      * 获取今日考勤统计
      */
     private Map<String, Object> getTodayAttendanceStats(List<SwmDailyAttendance> attendances,
-                                                        Map<String, SwmPerson> personMap) {
+            Map<String, SwmPerson> personMap) {
         Map<String, Object> result = new HashMap<>();
         String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
 
@@ -696,23 +694,46 @@ public class SwmDashboardController extends BaseController {
         Map<String, Object> stats = new HashMap<>();
 
         int totalCount = attendances.size();
+
+        // 新的实际出勤人数逻辑：任一字段有值且大于0就算实际出勤
         long presentCount = attendances.parallelStream()
-                .filter(a -> a.getActualHours() != null && a.getActualHours().compareTo(BigDecimal.ZERO) > 0)
+                .filter(a -> a.getClockInTime() != null ||
+                        a.getClockOutTime() != null ||
+                        (a.getActualHours() != null && a.getActualHours().compareTo(BigDecimal.ZERO) > 0) ||
+                        (a.getIdleHours() != null && a.getIdleHours().compareTo(BigDecimal.ZERO) > 0) ||
+                        (a.getEffectiveWorkHours() != null && a.getEffectiveWorkHours().compareTo(BigDecimal.ZERO) > 0))
                 .count();
 
         BigDecimal attendanceRate = totalCount == 0 ? BigDecimal.ZERO
                 : BigDecimal.valueOf(presentCount)
                         .divide(BigDecimal.valueOf(totalCount), 4, RoundingMode.HALF_UP);
 
-        long workingCount = attendances.parallelStream()
-                .filter(a -> "0".equals(a.getCurrentPosition()))
-                .count();
+        // 获取当前处理的人员类型
+        String personType = getCurrentPersonType(attendances);
+
+        // 在场人数：从TDengine查询当天有位置数据的人数（按类型分类）
+        Map<String, Integer> onSiteStats = getOnSiteCountByTypeFromTDengine();
+
+        // 工作中人数：从TDengine查询1小时内有位置数据的人数（按类型分类）
+        Map<String, Integer> workingStats = getWorkingCountByTypeFromTDengine();
+
+        // 根据人员类型返回对应的统计数据
+        int onSiteCount, workingCount;
+        if ("0".equals(personType)) {
+            // 工人统计
+            onSiteCount = onSiteStats.getOrDefault("worker", 0);
+            workingCount = workingStats.getOrDefault("worker", 0);
+        } else {
+            // 管理员统计
+            onSiteCount = onSiteStats.getOrDefault("manager", 0);
+            workingCount = workingStats.getOrDefault("manager", 0);
+        }
 
         stats.put("totalCount", totalCount);// 应出人数
         stats.put("presentCount", presentCount);// 实出人数
         stats.put("attendanceRate", attendanceRate);// 出勤率
-        stats.put("onSiteCount", totalCount); // 在场人数等于总人数
-        stats.put("workingCount", workingCount);// 工作中人数
+        stats.put("onSiteCount", onSiteCount); // 在场人数（当天有位置数据）
+        stats.put("workingCount", workingCount);// 工作中人数（1小时内有位置数据）
 
         return stats;
     }
@@ -846,9 +867,9 @@ public class SwmDashboardController extends BaseController {
      * 获取班组排名(今日或本月)
      */
     private List<Map<String, Object>> getTeamRanking(List<SwmDailyAttendance> attendances,
-                                                     Map<String, SwmPerson> personMap,
-                                                     boolean isToday,
-                                                     int limit) {
+            Map<String, SwmPerson> personMap,
+            boolean isToday,
+            int limit) {
         String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
 
         // 按班组分组统计
@@ -884,7 +905,7 @@ public class SwmDashboardController extends BaseController {
                     result.put("attendanceRate",
                             stats.totalCount == 0 ? BigDecimal.ZERO
                                     : BigDecimal.valueOf(stats.presentCount)
-                                    .divide(BigDecimal.valueOf(stats.totalCount), 4, RoundingMode.HALF_UP));
+                                            .divide(BigDecimal.valueOf(stats.totalCount), 4, RoundingMode.HALF_UP));
                     result.put("avgEfficiency",
                             stats.totalCount == 0 ? BigDecimal.ZERO
                                     : stats.efficiencySum.divide(BigDecimal.valueOf(stats.totalCount), 2,
@@ -1023,6 +1044,203 @@ public class SwmDashboardController extends BaseController {
         }
 
         return result;
+    }
+
+    /**
+     * 从TDengine查询当天在场人数（按人员类型分类）
+     * 统计当天有位置数据的唯一身份证数量，并按工人/管理员分类
+     */
+    private Map<String, Integer> getOnSiteCountByTypeFromTDengine() {
+        Map<String, Integer> result = new HashMap<>();
+        result.put("worker", 0);
+        result.put("manager", 0);
+
+        try {
+            // 获取当天的开始和结束时间字符串
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Calendar calendar = Calendar.getInstance();
+
+            // 当天开始时间 00:00:00
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            String todayStartTime = sdf.format(calendar.getTime());
+
+            // 当天结束时间 23:59:59
+            calendar.set(Calendar.HOUR_OF_DAY, 23);
+            calendar.set(Calendar.MINUTE, 59);
+            calendar.set(Calendar.SECOND, 59);
+            String todayEndTime = sdf.format(calendar.getTime());
+
+            // 从TDengine获取当天的唯一身份证集合
+            Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(todayStartTime, todayEndTime);
+
+            if (!uniqueIdCards.isEmpty()) {
+                // 通过身份证查询人员信息并按类型分类统计
+                Map<String, Integer> typeStats = classifyPersonsByType(uniqueIdCards);
+                result.put("worker", typeStats.get("worker"));
+                result.put("manager", typeStats.get("manager"));
+
+                logger.info("查询到当天在场人数 - 工人: {}, 管理员: {}",
+                        typeStats.get("worker"), typeStats.get("manager"));
+            } else {
+                logger.warn("查询当天在场人数失败或无数据");
+            }
+
+        } catch (Exception e) {
+            logger.error("查询TDengine当天在场人数分类统计失败", e);
+        }
+
+        return result;
+    }
+
+    /**
+     * 从TDengine查询1小时内工作中人数（按人员类型分类）
+     * 统计1小时内有位置数据的唯一身份证数量，并按工人/管理员分类
+     */
+    private Map<String, Integer> getWorkingCountByTypeFromTDengine() {
+        Map<String, Integer> result = new HashMap<>();
+        result.put("worker", 0);
+        result.put("manager", 0);
+
+        try {
+            // 获取1小时前的时间字符串
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.HOUR_OF_DAY, -1); // 减去1小时
+            String oneHourAgo = sdf.format(calendar.getTime());
+
+            // 从TDengine获取1小时内的唯一身份证集合
+            Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
+
+            if (!uniqueIdCards.isEmpty()) {
+                // 通过身份证查询人员信息并按类型分类统计
+                Map<String, Integer> typeStats = classifyPersonsByType(uniqueIdCards);
+                result.put("worker", typeStats.get("worker"));
+                result.put("manager", typeStats.get("manager"));
+
+                logger.info("查询到1小时内工作中人数 - 工人: {}, 管理员: {} (1小时前时间: {})",
+                        typeStats.get("worker"), typeStats.get("manager"), oneHourAgo);
+            } else {
+                logger.warn("查询1小时内工作中人数失败或无数据");
+            }
+
+        } catch (Exception e) {
+            logger.error("查询TDengine 1小时内工作中人数分类统计失败", e);
+        }
+
+        return result;
+    }
+
+    /**
+     * 从TDengine获取指定时间范围内的唯一身份证集合
+     * 
+     * @param startTime 开始时间（必填）
+     * @param endTime   结束时间（可选，为null时只使用开始时间条件）
+     */
+    private Set<String> getUniqueIdCardsFromTDengine(String startTime, String endTime) {
+        Set<String> uniqueIdCards = new HashSet<>();
+
+        try {
+            String dbname = "plb";
+            String sql;
+
+            if (endTime != null) {
+                // 时间范围查询（当天数据）
+                sql = String.format(
+                        "SELECT DISTINCT id_card FROM %s.external_coordinate_data WHERE time >= '%s' AND time <= '%s'",
+                        dbname, startTime, endTime);
+                logger.info("查询TDengine身份证SQL: {} (时间范围: {} 到 {})", sql, startTime, endTime);
+            } else {
+                // 单一时间点查询（1小时内数据）
+                sql = String.format(
+                        "SELECT DISTINCT id_card FROM %s.external_coordinate_data WHERE time >= '%s'",
+                        dbname, startTime);
+                logger.info("查询TDengine身份证SQL: {} (开始时间: {})", sql, startTime);
+            }
+
+            R<cn.hutool.json.JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+                cn.hutool.json.JSONObject data = result.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+                if (rows != null && !rows.isEmpty()) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        cn.hutool.json.JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() > 0) {
+                            String idCard = row.getStr(0);
+                            if (idCard != null && !idCard.trim().isEmpty()) {
+                                uniqueIdCards.add(idCard);
+                            }
+                        }
+                    }
+                    logger.info("从TDengine查询到 {} 个唯一身份证", uniqueIdCards.size());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("从TDengine查询身份证失败", e);
+        }
+
+        return uniqueIdCards;
+    }
+
+    /**
+     * 根据身份证号查询人员信息并按类型分类统计
+     * 
+     * @param idCards 身份证号集合
+     * @return 分类统计结果 {"worker": 工人数量, "manager": 管理员数量}
+     */
+    private Map<String, Integer> classifyPersonsByType(Set<String> idCards) {
+        Map<String, Integer> result = new HashMap<>();
+        result.put("worker", 0);
+        result.put("manager", 0);
+
+        try {
+            if (idCards.isEmpty()) {
+                return result;
+            }
+
+            // 通过身份证号查询人员信息
+            List<SwmPerson> persons = swmPersonService.findByIdCards(new ArrayList<>(idCards));
+
+            // 按人员类型分类统计
+            int workerCount = 0;
+            int managerCount = 0;
+
+            for (SwmPerson person : persons) {
+                if ("0".equals(person.getPersonType())) {
+                    workerCount++; // 工人
+                } else if ("1".equals(person.getPersonType())) {
+                    managerCount++; // 管理员
+                }
+            }
+
+            result.put("worker", workerCount);
+            result.put("manager", managerCount);
+
+            logger.info("人员分类统计完成 - 总身份证数: {}, 查询到人员: {}, 工人: {}, 管理员: {}",
+                    idCards.size(), persons.size(), workerCount, managerCount);
+
+        } catch (Exception e) {
+            logger.error("人员分类统计失败", e);
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取当前处理的人员类型
+     * 
+     * @param attendances 考勤记录列表
+     * @return 人员类型 ("0"=工人, "1"=管理员)
+     */
+    private String getCurrentPersonType(List<SwmDailyAttendance> attendances) {
+        if (attendances.isEmpty()) {
+            return "0"; // 默认工人
+        }
+        // 从第一条记录获取人员类型（因为已经按类型分组了）
+        return attendances.get(0).getPersonType();
     }
 
 }
