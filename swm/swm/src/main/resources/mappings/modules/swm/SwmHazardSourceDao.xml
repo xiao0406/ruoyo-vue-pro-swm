@@ -47,9 +47,9 @@
         SELECT COUNT(*)
         FROM swm_hazard_source
         WHERE hazard_status = #{status}
-          AND YEAR(registration_time) = #{year}
-          AND MONTH(registration_time) = #{month}
-          AND status = '0';
+        <if test="year != null and year != ''">AND YEAR(registration_time) = #{year}</if>
+        <if test="month != null and month != ''">AND MONTH(registration_time) = #{month}</if>
+        AND status = '0';
     </select>
 
     <!-- 按危险源类别统计数量 -->
@@ -58,9 +58,9 @@
             hazard_category AS category,
             COUNT(*) AS count
         FROM swm_hazard_source
-        WHERE YEAR(registration_time) = #{year}
-          AND MONTH(registration_time) = #{month}
-          AND status = '0'
+        WHERE status = '0'
+            <if test="year != null and year != ''">AND YEAR(registration_time) = #{year}</if>
+            <if test="month != null and month != ''">AND MONTH(registration_time) = #{month}</if>
         GROUP BY hazard_category
     </select>
 
@@ -70,9 +70,9 @@
             hazard_category AS category,
             COUNT(*) AS count
         FROM swm_hazard_source
-        WHERE YEAR(registration_time) = #{year}
-          AND MONTH(registration_time) = #{month}
-          AND status = '0'
+        WHERE status = '0'
+            <if test="year != null and year != ''">AND YEAR(registration_time) = #{year}</if>
+            <if test="month != null and month != ''">AND MONTH(registration_time) = #{month}</if>
         GROUP BY hazard_category
         ORDER BY count DESC
         LIMIT 10
@@ -81,9 +81,9 @@
     <select id="countByYearAndMonth" resultType="int">
         SELECT COUNT(*)
         FROM swm_hazard_source
-        WHERE  YEAR(registration_time) = #{year}
-          AND MONTH(registration_time) = #{month}
-          AND status = '0'
+        WHERE status = '0'
+            <if test="year != null and year != ''">AND YEAR(registration_time) = #{year}</if>
+            <if test="month != null and month != ''">AND MONTH(registration_time) = #{month}</if>
     </select>
 
     <select id="findTopCategories" resultType="map">

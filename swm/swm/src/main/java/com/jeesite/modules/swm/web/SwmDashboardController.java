@@ -509,13 +509,15 @@ public class SwmDashboardController extends BaseController {
     }
 
     /**
-     * 危险源top10
+     * 大屏数据-看板-危险源（查询所有数据,去除月份限制)
      */
     @GetMapping("/hazard")
     @ResponseBody
     @ApiOperation("危险源")
     public Map<String, Object> hazard(@RequestParam("year") String year, @RequestParam("month") String month) {
         Map<String, Object> result = new HashMap<>();
+        year = null;
+        month = null;
 
         // 1. 按状态统计数量
         Map<String, Integer> statusCounts = new HashMap<>();
