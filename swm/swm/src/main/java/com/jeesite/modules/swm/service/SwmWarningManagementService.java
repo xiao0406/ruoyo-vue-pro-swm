@@ -710,6 +710,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 mysqlWarning.setType(swmWarningManagement.getType());
                 mysqlWarning.setX(swmWarningManagement.getX());
                 mysqlWarning.setY(swmWarningManagement.getY());
+                mysqlWarning.setLocation(swmWarningManagement.getLocation());
+                mysqlWarning.setArea(swmWarningManagement.getArea());
 
                 // 设置前端传入的处置信息
                 mysqlWarning.setHandler(handler);
@@ -774,6 +776,14 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 }
                 if (swmWarningManagement.getY() != null) {
                     existingRecord.setY(swmWarningManagement.getY());
+                }
+
+                // 更新位置和区域信息
+                if (swmWarningManagement.getLocation() != null) {
+                    existingRecord.setLocation(swmWarningManagement.getLocation());
+                }
+                if (swmWarningManagement.getArea() != null) {
+                    existingRecord.setArea(swmWarningManagement.getArea());
                 }
 
                 // 如果附件不为空，则更新
@@ -1448,8 +1458,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 // 更新x和y坐标字段
                 mysqlEntity.setX(entity.getX());
                 mysqlEntity.setY(entity.getY());
+                // 更新location和area字段
+                mysqlEntity.setLocation(entity.getLocation());
+                mysqlEntity.setArea(entity.getArea());
                 super.save(mysqlEntity);
-                logger.info("告警确认：更新MySQL记录front_alarm=0, x={}, y={}, ID: {}", entity.getX(), entity.getY(), id);
+                logger.info("告警确认：更新MySQL记录front_alarm=0, x={}, y={}, location={}, area={}, ID: {}",
+                        entity.getX(), entity.getY(), entity.getLocation(), entity.getArea(), id);
             }
 
             return true;
@@ -1481,7 +1495,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                 .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
                 .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
-                .append("front_alarm, type, x, y, hazard_category ")
+                .append("front_alarm, type, x, y, hazard_category, location, area ")
                 .append("FROM ").append(dbname).append(".swm_warning_management");
 
         // 添加排序条件
