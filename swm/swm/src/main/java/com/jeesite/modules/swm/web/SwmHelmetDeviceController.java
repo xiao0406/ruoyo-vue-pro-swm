@@ -12,6 +12,8 @@ import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmHelmetCacheService;
+import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
+import com.jeesite.modules.swm.service.SwmSafetyHelmetOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,6 +40,9 @@ public class SwmHelmetDeviceController extends BaseController {
 
     @Autowired
     private SwmHelmetCacheService helmetCacheService;
+
+    @Autowired
+    private SwmSafetyHelmetOrderService swmSafetyHelmetOrderService;
 
     /**
      * 获取单个头盔设备数据
@@ -246,6 +251,18 @@ public class SwmHelmetDeviceController extends BaseController {
 
         // 使用专门的方法强制清空绑定信息，确保assigned_person字段设置为null
         swmHelmetDeviceService.clearDeviceAssignment(deviceId);
+
+        // 更新安全帽订单表的解绑时间
+        try {
+            // 查找该设备的使用中订单并解绑
+            SwmSafetyHelmetOrder activeOrder = swmSafetyHelmetOrderService.findActiveOrderByDeviceId(deviceId);
+            if (activeOrder != null) {
+                swmSafetyHelmetOrderService.unbindHelmet(activeOrder.getId());
+                logger.info("已更新安全帽订单解绑时间，订单ID: {}", activeOrder.getId());
+            }
+        } catch (Exception e) {
+            logger.error("更新安全帽订单解绑时间失败", e);
+        }
 
         result.put("success", true);
         result.put("message", "解绑人员成功！");

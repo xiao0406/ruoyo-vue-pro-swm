@@ -21,6 +21,8 @@ import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmSafetyEducationService;
 import com.jeesite.modules.swm.entity.SwmSafetyEducation;
+import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
+import com.jeesite.modules.swm.service.SwmSafetyHelmetOrderService;
 import com.jeesite.modules.swm.service.SwmPersonCacheService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.service.SwmHelmetCacheService;
@@ -70,6 +72,9 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private SwmHelmetDeviceService swmHelmetDeviceService;
+
+    @Autowired
+    private SwmSafetyHelmetOrderService swmSafetyHelmetOrderService;
 
     @Autowired
     private TDengineService tdengineService;
@@ -746,6 +751,18 @@ public class SwmPersonController extends BaseController {
             // 使用专门的方法强制清空安全帽绑定信息，确保assigned_person字段设置为null
             swmHelmetDeviceService.clearDeviceAssignment(helmetId);
 
+            // 更新安全帽订单表的解绑时间
+            try {
+                // 查找该设备的使用中订单并解绑
+                SwmSafetyHelmetOrder activeOrder = swmSafetyHelmetOrderService.findActiveOrderByDeviceId(helmetId);
+                if (activeOrder != null) {
+                    swmSafetyHelmetOrderService.unbindHelmet(activeOrder.getId());
+                    logger.info("已更新安全帽订单解绑时间，订单ID: {}", activeOrder.getId());
+                }
+            } catch (Exception e) {
+                logger.error("更新安全帽订单解绑时间失败", e);
+            }
+
             // 更新人员的安全帽编号
             person.setSafetyHelmetId(null);
             swmPersonService.save(person);
@@ -779,6 +796,19 @@ public class SwmPersonController extends BaseController {
 
             // 使用专门的方法强制清空安全帽绑定信息，确保assigned_person字段设置为null
             swmHelmetDeviceService.clearDeviceAssignment(helmetId);
+            
+            // 更新安全帽订单表的解绑时间
+            try {
+                // 查找该设备的使用中订单并解绑
+                SwmSafetyHelmetOrder activeOrder = swmSafetyHelmetOrderService.findActiveOrderByDeviceId(helmetId);
+                if (activeOrder != null) {
+                    swmSafetyHelmetOrderService.unbindHelmet(activeOrder.getId());
+                    logger.info("离职归还安全帽：已更新安全帽订单解绑时间，订单ID: {}", activeOrder.getId());
+                }
+            } catch (Exception e) {
+                logger.error("离职归还安全帽：更新安全帽订单解绑时间失败", e);
+            }
+            
             logger.info("离职归还安全帽：已解除安全帽{}的绑定", helmetId);
 
             // 更新人员的安全帽编号
