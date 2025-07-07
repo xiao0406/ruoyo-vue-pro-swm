@@ -4,9 +4,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.entity.SwmInspectionPlan;
 import com.jeesite.modules.swm.dao.SwmInspectionPlanDao;
+import com.jeesite.modules.sys.utils.DictUtils;
 
 /**
  * 巡检计划Service
@@ -26,7 +28,14 @@ public class SwmInspectionPlanService extends CrudService<SwmInspectionPlanDao, 
      */
     @Override
     public SwmInspectionPlan get(SwmInspectionPlan swmInspectionPlan) {
-        return super.get(swmInspectionPlan);
+        SwmInspectionPlan entity = super.get(swmInspectionPlan);
+        if (entity != null) {
+            // 设置字典文本
+            if (StringUtils.isNotBlank(entity.getInspectionType())) {
+                entity.setInspectionTypeText(DictUtils.getDictLabel(entity.getInspectionType(), "inspection_type", ""));
+            }
+        }
+        return entity;
     }
 
     /**
@@ -38,7 +47,14 @@ public class SwmInspectionPlanService extends CrudService<SwmInspectionPlanDao, 
      */
     @Override
     public Page<SwmInspectionPlan> findPage(SwmInspectionPlan swmInspectionPlan) {
-        return super.findPage(swmInspectionPlan);
+        Page<SwmInspectionPlan> page = super.findPage(swmInspectionPlan);
+        // 设置字典文本
+        for (SwmInspectionPlan entity : page.getList()) {
+            if (StringUtils.isNotBlank(entity.getInspectionType())) {
+                entity.setInspectionTypeText(DictUtils.getDictLabel(entity.getInspectionType(), "inspection_type", ""));
+            }
+        }
+        return page;
     }
 
     /**

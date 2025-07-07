@@ -37,6 +37,7 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
     private String responsiblePersonId; // 巡检负责人id
     private String responsiblePerson; // 巡检负责人
     private Date firstInspectionTime; // 首次巡检时间
+    private String inspectionTypeText; // 巡检类型文本
 
     public SwmInspectionPlan() {
         this(null);
@@ -101,5 +102,13 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 
     public void setFirstInspectionTime(Date firstInspectionTime) {
         this.firstInspectionTime = firstInspectionTime;
+    }
+
+    public String getInspectionTypeText() {
+        return inspectionTypeText;
+    }
+
+    public void setInspectionTypeText(String inspectionTypeText) {
+        this.inspectionTypeText = inspectionTypeText;
     }
 }
