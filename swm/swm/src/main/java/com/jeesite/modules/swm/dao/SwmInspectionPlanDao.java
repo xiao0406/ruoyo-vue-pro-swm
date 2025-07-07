@@ -13,4 +13,12 @@ import com.jeesite.modules.swm.entity.SwmInspectionPlan;
 @MyBatisDao
 public interface SwmInspectionPlanDao extends CrudDao<SwmInspectionPlan> {
 
+    /**
+     * 根据前缀查询最大编号
+     * 
+     * @param prefix 编号前缀
+     * @return 最大编号
+     */
+    String getMaxPlanCodeByPrefix(String prefix);
+
 }

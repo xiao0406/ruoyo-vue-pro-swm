@@ -19,6 +19,7 @@ import java.util.Date;
  */
 @Table(name = "swm_inspection_plan", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
+        @Column(name = "plan_code", attrName = "planCode", label = "巡检计划编号", queryType = QueryType.LIKE),
         @Column(name = "plan_name", attrName = "planName", label = "计划名称", queryType = QueryType.LIKE),
         @Column(name = "frequency_days", attrName = "frequencyDays", label = "巡检频次（天数）"),
         @Column(name = "inspection_type", attrName = "inspectionType", label = "巡检类型"),
@@ -31,6 +32,7 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 
     private static final long serialVersionUID = 1L;
 
+    private String planCode; // 巡检计划编号
     private String planName; // 计划名称
     private Integer frequencyDays; // 巡检频次（天数）
     private String inspectionType; // 巡检类型
@@ -45,6 +47,15 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 
     public SwmInspectionPlan(String id) {
         super(id);
+    }
+
+    @Size(min = 0, max = 50, message = "巡检计划编号长度不能超过 50 个字符")
+    public String getPlanCode() {
+        return planCode;
+    }
+
+    public void setPlanCode(String planCode) {
+        this.planCode = planCode;
     }
 
     @NotBlank(message = "计划名称不能为空")
