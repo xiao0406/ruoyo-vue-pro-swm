@@ -21,8 +21,8 @@ import java.util.Map;
 @Table(name = "swm_warning_management", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "预警单号", isPK = true, queryType = QueryType.LIKE),
         @Column(name = "person_name", attrName = "personName", label = "人员名称", queryType = QueryType.LIKE),
-        @Column(name = "warning_type", attrName = "warningType", label = "预警类型"),
-        @Column(name = "warning_content", attrName = "warningContent", label = "预警内容"),
+        @Column(name = "warning_type", attrName = "warningType", label = "预警性质"),
+        @Column(name = "warning_content", attrName = "warningContent", label = "预警类型"),
         @Column(name = "warning_time", attrName = "warningTime", label = "预警时间"),
         @Column(name = "alarm_record", attrName = "alarmRecord", label = "报警记录"),
         @Column(name = "alarm_time", attrName = "alarmTime", label = "报警时间"),
