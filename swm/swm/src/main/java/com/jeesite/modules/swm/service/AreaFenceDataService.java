@@ -771,12 +771,13 @@ public class AreaFenceDataService {
      * 3. 找出连续的心跳数据段（相邻两个数据点时间间隔小于等于30分钟认为是连续的）
      * 4. 计算每个连续段的时长（从段开始时间到段结束时间）
      * 5. 怠工时长 = 所有连续怠工段的总时长
-     * 
+     *
      * @param dataList 怠工区域心跳数据列表，必须按时间排序
      * @return 怠工时长（小时）
      */
     private double calculateIdleHoursFromData(List<Map<String, Object>> dataList) {
         if (dataList == null || dataList.isEmpty()) {
+            logger.info("怠工区域心跳数据为空，返回0小时");
             return 0.0;
         }
 
@@ -789,36 +790,51 @@ public class AreaFenceDataService {
         long totalIdleMinutes = 0;
         Date lastTime = null;
         Date segmentStartTime = null;
+        int segmentCount = 0;
 
-        logger.debug("开始分析怠工区域心跳数据，总数据条数: {}", dataList.size());
+        logger.info("开始分析怠工区域心跳数据，总数据条数: {}", dataList.size());
+
+        // 打印前几条和后几条数据用于调试
+        if (dataList.size() > 0) {
+            Date firstTime = (Date) dataList.get(0).get("time");
+            Date lastDataTime = (Date) dataList.get(dataList.size() - 1).get("time");
+            logger.info("怠工数据时间范围: {} 到 {}",
+                    DATETIME_FORMAT.format(firstTime),
+                    DATETIME_FORMAT.format(lastDataTime));
+        }
 
         for (int i = 0; i < dataList.size(); i++) {
             Map<String, Object> current = dataList.get(i);
             Date currentTime = (Date) current.get("time");
 
             if (currentTime == null) {
+                logger.warn("发现空时间数据，跳过");
                 continue;
             }
 
             if (lastTime == null) {
                 // 第一条数据，开始新的连续怠工段
                 segmentStartTime = currentTime;
-                logger.debug("开始新的连续怠工段: {}", DATETIME_FORMAT.format(currentTime));
+                segmentCount++;
+                logger.info("开始第{}个连续怠工段: {}", segmentCount, DATETIME_FORMAT.format(currentTime));
             } else {
                 long timeDiff = currentTime.getTime() - lastTime.getTime();
 
                 if (timeDiff <= HEARTBEAT_THRESHOLD_MS) {
                     // 连续的心跳数据，继续当前怠工段
-                    logger.debug("连续怠工心跳: {} -> {}, 间隔: {}ms",
-                            DATETIME_FORMAT.format(lastTime), DATETIME_FORMAT.format(currentTime), timeDiff);
+                    logger.debug("连续怠工心跳: {} -> {}, 间隔: {}分钟",
+                            DATETIME_FORMAT.format(lastTime),
+                            DATETIME_FORMAT.format(currentTime),
+                            timeDiff / (60 * 1000.0));
                 } else {
                     // 超过阈值，结束当前连续怠工段，计算时长
                     if (segmentStartTime != null) {
                         long segmentDurationMs = lastTime.getTime() - segmentStartTime.getTime();
-                        long segmentMinutes = segmentDurationMs / (60 * 1000);
-                        totalIdleMinutes += segmentMinutes;
+                        double segmentMinutes = segmentDurationMs / (60.0 * 1000);
+                        totalIdleMinutes += Math.round(segmentMinutes);
 
-                        logger.debug("连续怠工段结束: {} -> {}, 持续时长: {} 分钟",
+                        logger.info("第{}个连续怠工段结束: {} -> {}, 持续时长: {:.2f} 分钟",
+                                segmentCount,
                                 DATETIME_FORMAT.format(segmentStartTime),
                                 DATETIME_FORMAT.format(lastTime),
                                 segmentMinutes);
@@ -826,8 +842,11 @@ public class AreaFenceDataService {
 
                     // 开始新的连续怠工段
                     segmentStartTime = currentTime;
-                    logger.debug("开始新的连续怠工段: {} (间隔过大: {}ms)",
-                            DATETIME_FORMAT.format(currentTime), timeDiff);
+                    segmentCount++;
+                    logger.info("开始第{}个连续怠工段: {} (间隔过大: {:.1f}分钟)",
+                            segmentCount,
+                            DATETIME_FORMAT.format(currentTime),
+                            timeDiff / (60.0 * 1000));
                 }
             }
 
@@ -837,18 +856,25 @@ public class AreaFenceDataService {
         // 处理最后一个连续怠工段
         if (segmentStartTime != null && lastTime != null) {
             long segmentDurationMs = lastTime.getTime() - segmentStartTime.getTime();
-            long segmentMinutes = segmentDurationMs / (60 * 1000);
-            totalIdleMinutes += segmentMinutes;
+            double segmentMinutes = segmentDurationMs / (60.0 * 1000);
+            totalIdleMinutes += Math.round(segmentMinutes);
 
-            logger.debug("最后连续怠工段: {} -> {}, 持续时长: {} 分钟",
+            logger.info("第{}个连续怠工段结束(最后): {} -> {}, 持续时长: {:.2f} 分钟",
+                    segmentCount,
                     DATETIME_FORMAT.format(segmentStartTime),
                     DATETIME_FORMAT.format(lastTime),
                     segmentMinutes);
         }
 
-        double idleHours = Math.round(totalIdleMinutes / 60.0 * 10.0) / 10.0;
+        // 修改精度计算：使用更精确的小数计算，避免精度丢失
+        double idleHours = totalIdleMinutes / 60.0;
+        // 保留2位小数，提高精度
+        idleHours = Math.round(idleHours * 100.0) / 100.0;
 
-        logger.info("怠工时长计算完成 - 总怠工时长: {} 分钟 ({} 小时)", totalIdleMinutes, idleHours);
+        logger.info("=== 怠工时长计算完成 ===");
+        logger.info("总连续怠工段数: {}", segmentCount);
+        logger.info("总怠工时长: {} 分钟 ({} 小时)", totalIdleMinutes, idleHours);
+        logger.info("============================");
 
         return idleHours;
     }
@@ -1049,48 +1075,53 @@ public class AreaFenceDataService {
 
     /**
      * 根据身份证号计算实际工作时长
-     * 
+     * 新逻辑：统计所有区域的活动时长，不区分工作区域
+     * 时间范围：
+     * - 白天(7:00-23:59)：统计当天 06:00:00 到 次日 06:05:00
+     * - 凌晨(0:00-6:59)：统计前天 06:00:00 到 次日 06:05:00
+     *
      * @param idCard        身份证号
-     * @param date          日期 (yyyy-MM-dd格式)
-     * @param workTimeRange 工作时间范围，格式如"07:00-18:00"或"18:00-03:00"
+     * @param date          日期 (yyyy-MM-dd格式) - 此参数保留向后兼容，但内部使用新的时间计算逻辑
+     * @param workTimeRange 工作时间范围 - 此参数保留向后兼容，但内部使用新的时间计算逻辑
      * @return 实际工作时长(小时)
      * @author Shawn
      * @date 2025/01/27
      */
     public double calculateEffectiveWorkHoursByIdCard(String idCard, String date, String workTimeRange) {
         try {
-            logger.info("开始计算身份证号为 {} 在 {} 工作时间范围 {} 的实际工作时长", idCard, date, workTimeRange);
+            logger.info("开始计算身份证号为 {} 的实际工作时长（新逻辑：全天活动时长）", idCard);
 
-            // 1. 获取工作区域配置 - 查找所有工作区域配置
-            List<DictData> workAreaList = getWorkAreaFenceDataDictList();
-            if (workAreaList.isEmpty()) {
-                logger.warn("未找到工作区域配置");
+            // 新逻辑：根据当前时间确定查询范围，忽略传入的date和workTimeRange参数
+            String[] timeRange = calculateNewTimeRange();
+            String queryStartDateTime = timeRange[0];
+            String queryEndDateTime = timeRange[1];
+
+            logger.info("查询时间范围: {} 到 {}", queryStartDateTime, queryEndDateTime);
+
+            // 查询所有区域的心跳数据（不过滤工作区域）
+            List<Map<String, Object>> allHeartbeatData = queryAllAreaFenceData(idCard, queryStartDateTime,
+                    queryEndDateTime);
+
+            if (allHeartbeatData.isEmpty()) {
+                logger.warn("身份证号 {} 在时间范围 {} 到 {} 未找到任何心跳数据", idCard, queryStartDateTime, queryEndDateTime);
                 return 0.0;
             }
 
-            // 2. 查询工作区域心跳数据
-            List<Map<String, Object>> workHeartbeatData = queryAreaFenceDataByIdCardAndAreas(idCard, workAreaList, date,
-                    workTimeRange);
-            if (workHeartbeatData.isEmpty()) {
-                logger.warn("身份证号 {} 在 {} 工作时间范围 {} 未找到工作区域心跳数据", idCard, date, workTimeRange);
-                return 0.0;
-            }
-
-            // 3. 计算实际工作时长
-            double effectiveWorkHours = calculateEffectiveWorkHoursFromData(workHeartbeatData);
-            logger.info("身份证号 {} 在 {} 工作时间范围 {} 的实际工作时长为: {} 小时", idCard, date, workTimeRange, effectiveWorkHours);
+            // 使用现有的连续性算法计算时长
+            double effectiveWorkHours = calculateEffectiveWorkHoursFromData(allHeartbeatData);
+            logger.info("身份证号 {} 的总活动时长为: {} 小时", idCard, effectiveWorkHours);
 
             return effectiveWorkHours;
 
         } catch (Exception e) {
-            logger.error("计算实际工作时长失败，身份证号: {}, 日期: {}, 工作时间范围: {}", idCard, date, workTimeRange, e);
+            logger.error("计算实际工作时长失败，身份证号: {}", idCard, e);
             return 0.0;
         }
     }
 
     /**
      * 根据身份证号计算实际工作时长（兼容原方法）
-     * 
+     *
      * @param idCard 身份证号
      * @param date   日期 (yyyy-MM-dd格式)
      * @return 实际工作时长(小时)
@@ -1103,19 +1134,187 @@ public class AreaFenceDataService {
     }
 
     /**
+     * 计算新的查询时间范围
+     * 规则：
+     * - 白天(7:00-23:59)：统计当天 06:00:00 到 次日 06:05:00
+     * - 凌晨(0:00-6:59)：统计前天 06:00:00 到 次日 06:05:00
+     *
+     * 注意：往后延5分钟是为了避免定时任务整点启动时遗漏边界数据
+     *
+     * @return 时间范围数组 [开始时间, 结束时间]
+     * @author Shawn
+     * @date 2025/01/28
+     */
+    private String[] calculateNewTimeRange() {
+        Calendar now = Calendar.getInstance();
+        int currentHour = now.get(Calendar.HOUR_OF_DAY);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        if (currentHour >= 0 && currentHour <= 6) {
+            // 凌晨0-6点：统计前天6点到次日6点05分
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DAY_OF_MONTH, -2); // 前天
+            String dayBeforeYesterday = dateFormat.format(cal.getTime());
+
+            cal.setTime(new Date());
+            cal.add(Calendar.DAY_OF_MONTH, 1); // 次日
+            String tomorrow = dateFormat.format(cal.getTime());
+
+            String startTime = dayBeforeYesterday + " 06:00:00";
+            String endTime = tomorrow + " 06:05:00";
+
+            logger.info("凌晨{}点执行，查询前天6点到次日6点05分: {} 到 {}", currentHour, startTime, endTime);
+            return new String[] { startTime, endTime };
+        } else {
+            // 白天7-23点：统计当天6点到次日6点05分
+            String today = dateFormat.format(new Date());
+
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DAY_OF_MONTH, 1); // 次日
+            String tomorrow = dateFormat.format(cal.getTime());
+
+            String startTime = today + " 06:00:00";
+            String endTime = tomorrow + " 06:05:00";
+
+            logger.info("白天{}点执行，查询当天6点到次日6点05分: {} 到 {}", currentHour, startTime, endTime);
+            return new String[] { startTime, endTime };
+        }
+    }
+
+    /**
+     * 查询所有区域的心跳数据（不过滤工作区域）
+     *
+     * @param idCard             身份证号
+     * @param queryStartDateTime 查询开始时间
+     * @param queryEndDateTime   查询结束时间
+     * @return 心跳数据列表
+     * @author Shawn
+     * @date 2025/01/28
+     */
+    private List<Map<String, Object>> queryAllAreaFenceData(String idCard, String queryStartDateTime,
+            String queryEndDateTime) {
+        List<Map<String, Object>> allData = new ArrayList<>();
+
+        try {
+            // 直接查询所有数据，不过滤区域
+            String sql = String.format(
+                    "SELECT time, x, y, area_name, area_id, device_id, id_card " +
+                            "FROM %s.area_fence_data " +
+                            "WHERE id_card = '%s' " +
+                            "AND time >= '%s' " +
+                            "AND time <= '%s' " +
+                            "ORDER BY time ASC",
+                    dbname, idCard, queryStartDateTime, queryEndDateTime);
+
+            logger.debug("查询所有区域心跳数据SQL: {}", sql);
+
+            R<JSONObject> response = tdengineService.executeTDengineSQL(sql);
+            if (response.getCode() == R.SUCCESS && response.getData() != null) {
+                JSONObject data = response.getData();
+                JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null && !rows.isEmpty()) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        JSONArray row = rows.getJSONArray(i);
+                        Map<String, Object> record = new HashMap<>();
+
+                        // 解析时间字段，处理TDengine的时间格式
+                        Object timeObj = row.get(0);
+                        Date parsedTime = parseTimeFromTDengine(timeObj);
+                        record.put("time", parsedTime);
+
+                        record.put("x", row.get(1));
+                        record.put("y", row.get(2));
+                        record.put("area_name", row.get(3));
+                        record.put("area_id", row.get(4));
+                        record.put("device_id", row.get(5));
+                        record.put("id_card", row.get(6));
+                        allData.add(record);
+                    }
+                    logger.info("查询到心跳数据 {} 条", allData.size());
+                } else {
+                    logger.info("查询结果为空");
+                }
+            } else {
+                logger.warn("查询失败: {}", response.getMsg());
+            }
+        } catch (Exception e) {
+            logger.error("查询所有区域心跳数据异常", e);
+        }
+
+        return allData;
+    }
+
+    /**
+     * 解析TDengine返回的时间对象
+     *
+     * @param timeObj TDengine返回的时间对象
+     * @return 解析后的Date对象
+     */
+    private Date parseTimeFromTDengine(Object timeObj) {
+        if (timeObj == null) {
+            return null;
+        }
+
+        try {
+            if (timeObj instanceof Date) {
+                return (Date) timeObj;
+            } else if (timeObj instanceof Long) {
+                return new Date((Long) timeObj);
+            } else if (timeObj instanceof String) {
+                String timeStr = (String) timeObj;
+
+                // 尝试解析ISO 8601格式：2025-01-28T16:00:14.128Z
+                if (timeStr.contains("T") && timeStr.endsWith("Z")) {
+                    SimpleDateFormat utcFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                    utcFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+
+                    // 如果没有毫秒，添加毫秒部分
+                    String isoTimeStr = timeStr;
+                    if (!timeStr.contains(".")) {
+                        isoTimeStr = timeStr.replace("Z", ".000Z");
+                    }
+
+                    try {
+                        return utcFormat.parse(isoTimeStr);
+                    } catch (Exception e) {
+                        // 尝试不带毫秒的格式
+                        SimpleDateFormat utcFormatNoMillis = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                        utcFormatNoMillis.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+                        String noMillisStr = timeStr.contains(".")
+                                ? timeStr.substring(0, timeStr.lastIndexOf(".")) + "Z"
+                                : timeStr;
+                        return utcFormatNoMillis.parse(noMillisStr);
+                    }
+                }
+
+                // 尝试解析普通格式：yyyy-MM-dd HH:mm:ss
+                if (timeStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+                    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(timeStr);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("解析时间对象失败: {}", timeObj, e);
+        }
+
+        return null;
+    }
+
+    /**
      * 从工作区域心跳数据计算实际工作时长
      * 算法说明：
-     * 1. 查询到的数据都是员工在工作区域的心跳数据
+     * 1. 查询到的数据都是员工的心跳数据（新逻辑：所有区域）
      * 2. 将数据按时间排序
      * 3. 找出连续的心跳数据段（相邻两个数据点时间间隔小于等于30分钟认为是连续的）
      * 4. 计算每个连续段的时长（从段开始时间到段结束时间）
      * 5. 实际工作时长 = 所有连续工作段的总时长
-     * 
-     * @param dataList 工作区域心跳数据列表，必须按时间排序
+     *
+     * @param dataList 心跳数据列表，必须按时间排序
      * @return 实际工作时长（小时）
      */
     private double calculateEffectiveWorkHoursFromData(List<Map<String, Object>> dataList) {
         if (dataList == null || dataList.isEmpty()) {
+            logger.info("心跳数据为空，返回0小时");
             return 0.0;
         }
 
@@ -1128,36 +1327,51 @@ public class AreaFenceDataService {
         long totalWorkMinutes = 0;
         Date lastTime = null;
         Date segmentStartTime = null;
+        int segmentCount = 0;
 
-        logger.debug("开始分析工作区域心跳数据，总数据条数: {}", dataList.size());
+        logger.info("开始分析心跳数据，总数据条数: {}", dataList.size());
+
+        // 打印前几条和后几条数据用于调试
+        if (dataList.size() > 0) {
+            Date firstTime = (Date) dataList.get(0).get("time");
+            Date lastDataTime = (Date) dataList.get(dataList.size() - 1).get("time");
+            logger.info("数据时间范围: {} 到 {}",
+                    DATETIME_FORMAT.format(firstTime),
+                    DATETIME_FORMAT.format(lastDataTime));
+        }
 
         for (int i = 0; i < dataList.size(); i++) {
             Map<String, Object> current = dataList.get(i);
             Date currentTime = (Date) current.get("time");
 
             if (currentTime == null) {
+                logger.warn("发现空时间数据，跳过");
                 continue;
             }
 
             if (lastTime == null) {
                 // 第一条数据，开始新的连续工作段
                 segmentStartTime = currentTime;
-                logger.debug("开始新的连续工作段: {}", DATETIME_FORMAT.format(currentTime));
+                segmentCount++;
+                logger.info("开始第{}个连续工作段: {}", segmentCount, DATETIME_FORMAT.format(currentTime));
             } else {
                 long timeDiff = currentTime.getTime() - lastTime.getTime();
 
                 if (timeDiff <= HEARTBEAT_THRESHOLD_MS) {
                     // 连续的心跳数据，继续当前工作段
-                    logger.debug("连续工作心跳: {} -> {}, 间隔: {}ms",
-                            DATETIME_FORMAT.format(lastTime), DATETIME_FORMAT.format(currentTime), timeDiff);
+                    logger.debug("连续心跳: {} -> {}, 间隔: {}分钟",
+                            DATETIME_FORMAT.format(lastTime),
+                            DATETIME_FORMAT.format(currentTime),
+                            timeDiff / (60 * 1000.0));
                 } else {
                     // 超过阈值，结束当前连续工作段，计算时长
                     if (segmentStartTime != null) {
                         long segmentDurationMs = lastTime.getTime() - segmentStartTime.getTime();
-                        long segmentMinutes = segmentDurationMs / (60 * 1000);
-                        totalWorkMinutes += segmentMinutes;
+                        double segmentMinutes = segmentDurationMs / (60.0 * 1000);
+                        totalWorkMinutes += Math.round(segmentMinutes);
 
-                        logger.debug("连续工作段结束: {} -> {}, 持续时长: {} 分钟",
+                        logger.info("第{}个连续工作段结束: {} -> {}, 持续时长: {:.2f} 分钟",
+                                segmentCount,
                                 DATETIME_FORMAT.format(segmentStartTime),
                                 DATETIME_FORMAT.format(lastTime),
                                 segmentMinutes);
@@ -1165,8 +1379,11 @@ public class AreaFenceDataService {
 
                     // 开始新的连续工作段
                     segmentStartTime = currentTime;
-                    logger.debug("开始新的连续工作段: {} (间隔过大: {}ms)",
-                            DATETIME_FORMAT.format(currentTime), timeDiff);
+                    segmentCount++;
+                    logger.info("开始第{}个连续工作段: {} (间隔过大: {:.1f}分钟)",
+                            segmentCount,
+                            DATETIME_FORMAT.format(currentTime),
+                            timeDiff / (60.0 * 1000));
                 }
             }
 
@@ -1176,18 +1393,25 @@ public class AreaFenceDataService {
         // 处理最后一个连续工作段
         if (segmentStartTime != null && lastTime != null) {
             long segmentDurationMs = lastTime.getTime() - segmentStartTime.getTime();
-            long segmentMinutes = segmentDurationMs / (60 * 1000);
-            totalWorkMinutes += segmentMinutes;
+            double segmentMinutes = segmentDurationMs / (60.0 * 1000);
+            totalWorkMinutes += Math.round(segmentMinutes);
 
-            logger.debug("最后连续工作段: {} -> {}, 持续时长: {} 分钟",
+            logger.info("第{}个连续工作段结束(最后): {} -> {}, 持续时长: {:.2f} 分钟",
+                    segmentCount,
                     DATETIME_FORMAT.format(segmentStartTime),
                     DATETIME_FORMAT.format(lastTime),
                     segmentMinutes);
         }
 
-        double workHours = Math.round(totalWorkMinutes / 60.0 * 10.0) / 10.0;
+        // 修改精度计算：使用更精确的小数计算，避免精度丢失
+        double workHours = totalWorkMinutes / 60.0;
+        // 保留2位小数，提高精度
+        workHours = Math.round(workHours * 100.0) / 100.0;
 
-        logger.info("实际工作时长计算完成 - 总实际工作时长: {} 分钟 ({} 小时)", totalWorkMinutes, workHours);
+        logger.info("=== 实际工作时长计算完成 ===");
+        logger.info("总连续工作段数: {}", segmentCount);
+        logger.info("总实际工作时长: {} 分钟 ({} 小时)", totalWorkMinutes, workHours);
+        logger.info("==============================");
 
         return workHours;
     }

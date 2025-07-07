@@ -245,6 +245,7 @@ public class SwmAreaController extends BaseController {
             // 设置区域属性
             swmArea.setAreaName(areaName);
             swmArea.setAreaType(areaType);
+            swmArea.setAreaColor(beaconColor); // 保存区域颜色
             swmArea.setVoicePrompt(voicePrompt);
             swmArea.setFilePath(filePath);
 

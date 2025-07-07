@@ -40,6 +40,8 @@ import java.util.Map;
         @Column(name = "x", attrName = "x", label = "x坐标", comment = "x坐标"),
         @Column(name = "y", attrName = "y", label = "y坐标", comment = "y坐标"),
         @Column(name = "hazard_category", attrName = "hazardCategory", label = "危险源类别"),
+        @Column(name = "location", attrName = "location", label = "位置"),
+        @Column(name = "area", attrName = "area", label = "区域"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.warning_time DESC")
 public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
@@ -146,6 +148,8 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private String x; // x坐标
     private String y; // y坐标
     private String hazardCategory; // 危险源类别
+    private String location; // 位置
+    private String area; // 区域
 
     // 用于显示的属性，不对应数据库字段
     private String workGroupName; // 班组名称
@@ -374,7 +378,7 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setWarningTimeIsNotNull(Boolean isNotNull) {
         if (isNotNull != null && isNotNull) {
-            sqlMap.getWhere().and("warning_time", QueryType.IS_NOT_NULL,null);
+            sqlMap.getWhere().and("warning_time", QueryType.IS_NOT_NULL, null);
         }
     }
 
@@ -385,7 +389,7 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setAlarmTimeIsNotNull(Boolean isNotNull) {
         if (isNotNull != null && isNotNull) {
-            sqlMap.getWhere().and("alarm_time", QueryType.IS_NOT_NULL,null);
+            sqlMap.getWhere().and("alarm_time", QueryType.IS_NOT_NULL, null);
         }
     }
 
@@ -442,5 +446,23 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setHazardCategory(String hazardCategory) {
         this.hazardCategory = hazardCategory;
+    }
+
+    @Length(min = 0, max = 50, message = "位置不能超过50个字符")
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    @Length(min = 0, max = 50, message = "区域不能超过50个字符")
+    public String getArea() {
+        return area;
+    }
+
+    public void setArea(String area) {
+        this.area = area;
     }
 }

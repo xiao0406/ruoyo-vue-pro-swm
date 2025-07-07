@@ -19,6 +19,8 @@ import com.jeesite.modules.swm.excel.SwmPersonExcelModel;
 import com.jeesite.modules.swm.excel.SwmPersonImportListener;
 import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
+import com.jeesite.modules.swm.service.SwmSafetyEducationService;
+import com.jeesite.modules.swm.entity.SwmSafetyEducation;
 import com.jeesite.modules.swm.service.SwmPersonCacheService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.service.SwmHelmetCacheService;
@@ -62,6 +64,9 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private SwmPersonDepartureService swmPersonDepartureService;
+
+    @Autowired
+    private SwmSafetyEducationService swmSafetyEducationService;
 
     @Autowired
     private SwmHelmetDeviceService swmHelmetDeviceService;
@@ -147,6 +152,7 @@ public class SwmPersonController extends BaseController {
             personMap.put("departureType", person.getDepartureType());
             personMap.put("departureReason", person.getDepartureReason());
             personMap.put("departureDate", person.getDepartureDate());
+            personMap.put("isExternalPersonnel", person.getIsExternalPersonnel());
             personMap.put("isNewRecord", person.getIsNewRecord());
 
             // 添加枚举文本显示值
@@ -206,6 +212,7 @@ public class SwmPersonController extends BaseController {
             personData.put("departureTypeText", swmPerson.getDepartureTypeText());
             personData.put("departureReason", swmPerson.getDepartureReason());
             personData.put("departureDate", swmPerson.getDepartureDate()); // 添加离职时间
+            personData.put("isExternalPersonnel", swmPerson.getIsExternalPersonnel()); // 补充字段
 
             result.putAll(personData);
         }
@@ -965,22 +972,22 @@ public class SwmPersonController extends BaseController {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> personData = (Map<String, Object>) entry.getValue();
                     String idCard = (String) personData.get("identityCard");
-                    
+
                     // 如果有关键词，判断是否匹配
                     if (hasKeyword) {
                         boolean matched = false;
-                        
+
                         // 匹配姓名
                         String name = (String) personData.get("name");
                         if (name != null && name.toLowerCase().contains(lowerKeyword)) {
                             matched = true;
                         }
-                        
+
                         // 匹配身份证号
                         if (!matched && idCard != null && idCard.toLowerCase().contains(lowerKeyword)) {
                             matched = true;
                         }
-                        
+
                         // 匹配所属单位
                         if (!matched) {
                             String company = (String) personData.get("company");
@@ -988,7 +995,7 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 匹配所属车间
                         if (!matched) {
                             String department = (String) personData.get("department");
@@ -996,7 +1003,7 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 匹配产线
                         if (!matched) {
                             String prodLine = (String) personData.get("prodLine");
@@ -1004,7 +1011,7 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 匹配所属班组
                         if (!matched) {
                             String team = (String) personData.get("team");
@@ -1012,7 +1019,7 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 匹配工种
                         if (!matched) {
                             String jobType = (String) personData.get("jobType");
@@ -1020,13 +1027,13 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 如果不匹配，跳过此人员
                         if (!matched) {
                             continue;
                         }
                     }
-                    
+
                     // 添加有效的身份证号
                     if (idCard != null && !idCard.trim().isEmpty()) {
                         allIdCards.add(idCard);
@@ -1044,7 +1051,7 @@ public class SwmPersonController extends BaseController {
 
             // 1. 批量查询当天有坐标数据的身份证
             Set<String> idCardsWithCoordinates = batchCheckCoordinateDataToday(allIdCards);
-            
+
             if (idCardsWithCoordinates.isEmpty()) {
                 result.put("success", true);
                 result.put("data", new ArrayList<>());
@@ -1052,45 +1059,46 @@ public class SwmPersonController extends BaseController {
                 result.put("message", "没有当天有坐标数据的人员");
                 return result;
             }
-            
+
             // 2. 批量查询设备ID映射
             Map<String, String> idCardToDeviceMap = batchGetDeviceIdsByIdCards(idCardsWithCoordinates);
-            
+
             // 3. 批量查询电量信息
-            Map<String, Integer> deviceToBatteryMap = batchGetBatteryLevels(new ArrayList<>(idCardToDeviceMap.values()));
-            
+            Map<String, Integer> deviceToBatteryMap = batchGetBatteryLevels(
+                    new ArrayList<>(idCardToDeviceMap.values()));
+
             // 4. 批量查询位置信息
             Map<String, String> idCardToLocationMap = batchGetLocations(idCardsWithCoordinates);
-            
+
             // 5. 批量查询运动状态
             Map<String, String> idCardToMotionStatusMap = batchGetMotionStatuses(idCardsWithCoordinates);
 
             // 过滤并构建结果数据
             List<Map<String, Object>> personsWithCoordinates = new ArrayList<>();
-            
+
             for (Map.Entry<Object, Object> entry : allPersons.entrySet()) {
                 if (entry.getValue() instanceof Map) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> personData = (Map<String, Object>) entry.getValue();
-                    
+
                     // 获取身份证信息
                     String idCard = (String) personData.get("identityCard");
-                    
+
                     // 如果有关键词，判断是否匹配
                     if (hasKeyword) {
                         boolean matched = false;
-                        
+
                         // 匹配姓名
                         String name = (String) personData.get("name");
                         if (name != null && name.toLowerCase().contains(lowerKeyword)) {
                             matched = true;
                         }
-                        
+
                         // 匹配身份证号
                         if (!matched && idCard != null && idCard.toLowerCase().contains(lowerKeyword)) {
                             matched = true;
                         }
-                        
+
                         // 匹配所属单位
                         if (!matched) {
                             String company = (String) personData.get("company");
@@ -1098,7 +1106,7 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 匹配所属车间
                         if (!matched) {
                             String department = (String) personData.get("department");
@@ -1106,7 +1114,7 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 匹配产线
                         if (!matched) {
                             String prodLine = (String) personData.get("prodLine");
@@ -1114,7 +1122,7 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 匹配所属班组
                         if (!matched) {
                             String team = (String) personData.get("team");
@@ -1122,7 +1130,7 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 匹配工种
                         if (!matched) {
                             String jobType = (String) personData.get("jobType");
@@ -1130,39 +1138,39 @@ public class SwmPersonController extends BaseController {
                                 matched = true;
                             }
                         }
-                        
+
                         // 如果不匹配，跳过此人员
                         if (!matched) {
                             continue;
                         }
                     }
-                    
+
                     // 检查是否有坐标数据
                     if (idCard != null && !idCard.isEmpty() && idCardsWithCoordinates.contains(idCard)) {
                         // 获取设备编号
                         String deviceId = idCardToDeviceMap.get(idCard);
-                        
+
                         // 获取电量信息
                         Integer batteryLevel = deviceId != null ? deviceToBatteryMap.get(deviceId) : null;
-                        
+
                         // 获取位置信息
                         String location = idCardToLocationMap.get(idCard);
-                        
+
                         // 如果没有查询到位置信息，使用默认位置
                         if (location == null || location.trim().isEmpty()) {
                             location = String.format("%s%s",
                                     personData.get("company") != null ? personData.get("company") : "天津厂",
                                     personData.get("department") != null ? personData.get("department") : "一车间");
                         }
-                        
+
                         // 获取运动状态
                         String motionStatus = idCardToMotionStatusMap.get(idCard);
-                        
+
                         // 如果没有查询到运动状态，默认为运动状态
                         if (motionStatus == null || motionStatus.trim().isEmpty()) {
                             motionStatus = "运动";
                         }
-                        
+
                         // 创建增强的人员信息，添加设备编号、电量、位置和运动状态信息
                         Map<String, Object> enhancedPersonData = new HashMap<>(personData);
                         enhancedPersonData.put("deviceId", deviceId);
@@ -1172,7 +1180,7 @@ public class SwmPersonController extends BaseController {
                         enhancedPersonData.put("motionStatus", motionStatus); // 运动状态信息
                         // 添加ID作为唯一标识
                         enhancedPersonData.put("id", entry.getKey());
-                        
+
                         personsWithCoordinates.add(enhancedPersonData);
                     }
                 }
@@ -1191,7 +1199,7 @@ public class SwmPersonController extends BaseController {
 
         return result;
     }
-    
+
     /**
      * 批量检查身份证号列表当天是否有坐标数据
      * 
@@ -1203,18 +1211,18 @@ public class SwmPersonController extends BaseController {
         if (idCards == null || idCards.isEmpty()) {
             return result;
         }
-        
+
         try {
             // 获取当前日期的开始和结束时间
             String currentDate = cn.hutool.core.date.DateUtil.today();
             String startTime = currentDate + " 00:00:00";
             String endTime = currentDate + " 23:59:59";
-            
+
             // 构建批量查询SQL，使用IN子句
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT DISTINCT id_card FROM ").append(tdengineDbName)
                     .append(".external_coordinate_data WHERE id_card IN (");
-            
+
             // 添加身份证号列表
             for (int i = 0; i < idCards.size(); i++) {
                 if (i > 0) {
@@ -1222,19 +1230,19 @@ public class SwmPersonController extends BaseController {
                 }
                 sqlBuilder.append("'").append(idCards.get(i)).append("'");
             }
-            
+
             sqlBuilder.append(") AND time >= '").append(startTime)
                     .append("' AND time <= '").append(endTime).append("'");
-            
+
             logger.debug("批量检查坐标数据SQL: {}", sqlBuilder.toString());
-            
+
             // 执行查询
             R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
-            
+
             if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
                 cn.hutool.json.JSONObject data = queryResult.getData();
                 cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-                
+
                 if (rows != null) {
                     for (int i = 0; i < rows.size(); i++) {
                         cn.hutool.json.JSONArray row = rows.getJSONArray(i);
@@ -1250,10 +1258,10 @@ public class SwmPersonController extends BaseController {
         } catch (Exception e) {
             logger.error("批量检查坐标数据异常", e);
         }
-        
+
         return result;
     }
-    
+
     /**
      * 批量获取身份证号对应的设备ID
      * 
@@ -1265,7 +1273,7 @@ public class SwmPersonController extends BaseController {
         if (idCards == null || idCards.isEmpty()) {
             return result;
         }
-        
+
         try {
             // 使用缓存批量获取设备ID
             for (String idCard : idCards) {
@@ -1277,10 +1285,10 @@ public class SwmPersonController extends BaseController {
         } catch (Exception e) {
             logger.error("批量获取设备ID异常", e);
         }
-        
+
         return result;
     }
-    
+
     /**
      * 批量获取设备电量信息
      * 
@@ -1292,13 +1300,13 @@ public class SwmPersonController extends BaseController {
         if (deviceIds == null || deviceIds.isEmpty()) {
             return result;
         }
-        
+
         try {
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT device_id, bat_l FROM ").append(tdengineDbName)
                     .append(".helmet_runde_ca_report_location WHERE device_id IN (");
-            
+
             // 添加设备ID列表
             for (int i = 0; i < deviceIds.size(); i++) {
                 if (i > 0) {
@@ -1306,27 +1314,27 @@ public class SwmPersonController extends BaseController {
                 }
                 sqlBuilder.append("'").append(deviceIds.get(i)).append("'");
             }
-            
+
             sqlBuilder.append(") AND time <= NOW() AND time >= NOW() - 5m ORDER BY device_id, time DESC");
-            
+
             logger.debug("批量查询电量SQL: {}", sqlBuilder.toString());
-            
+
             // 执行查询
             R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
-            
+
             if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
                 cn.hutool.json.JSONObject data = queryResult.getData();
                 cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-                
+
                 // 记录已处理的设备ID，避免重复
                 Set<String> processedDevices = new HashSet<>();
-                
+
                 if (rows != null) {
                     for (int i = 0; i < rows.size(); i++) {
                         cn.hutool.json.JSONArray row = rows.getJSONArray(i);
                         if (row != null && row.size() > 1) {
                             String deviceId = row.getStr(0);
-                            
+
                             // 只处理每个设备的第一条记录（最新的）
                             if (!processedDevices.contains(deviceId)) {
                                 Integer batteryLevel = row.getInt(1);
@@ -1340,10 +1348,10 @@ public class SwmPersonController extends BaseController {
         } catch (Exception e) {
             logger.error("批量获取电量信息异常", e);
         }
-        
+
         return result;
     }
-    
+
     /**
      * 批量获取身份证号对应的位置信息
      * 
@@ -1355,13 +1363,13 @@ public class SwmPersonController extends BaseController {
         if (idCards == null || idCards.isEmpty()) {
             return result;
         }
-        
+
         try {
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT id_card, area_name FROM ").append(tdengineDbName)
                     .append(".area_fence_data WHERE id_card IN (");
-            
+
             // 添加身份证号列表
             int i = 0;
             for (String idCard : idCards) {
@@ -1371,27 +1379,27 @@ public class SwmPersonController extends BaseController {
                 sqlBuilder.append("'").append(idCard).append("'");
                 i++;
             }
-            
+
             sqlBuilder.append(") AND time <= NOW() AND time >= NOW() - 30m ORDER BY id_card, time DESC");
-            
+
             logger.debug("批量查询位置SQL: {}", sqlBuilder.toString());
-            
+
             // 执行查询
             R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
-            
+
             if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
                 cn.hutool.json.JSONObject data = queryResult.getData();
                 cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-                
+
                 // 记录已处理的身份证号，避免重复
                 Set<String> processedIdCards = new HashSet<>();
-                
+
                 if (rows != null) {
                     for (int j = 0; j < rows.size(); j++) {
                         cn.hutool.json.JSONArray row = rows.getJSONArray(j);
                         if (row != null && row.size() > 1) {
                             String idCard = row.getStr(0);
-                            
+
                             // 只处理每个身份证的第一条记录（最新的）
                             if (!processedIdCards.contains(idCard)) {
                                 String areaName = row.getStr(1);
@@ -1405,10 +1413,10 @@ public class SwmPersonController extends BaseController {
         } catch (Exception e) {
             logger.error("批量获取位置信息异常", e);
         }
-        
+
         return result;
     }
-    
+
     /**
      * 批量获取身份证号对应的运动状态
      * 
@@ -1420,13 +1428,13 @@ public class SwmPersonController extends BaseController {
         if (idCards == null || idCards.isEmpty()) {
             return result;
         }
-        
+
         try {
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT id_card, COUNT(*) FROM ").append(tdengineDbName)
                     .append(".helmet_ca_sos WHERE id_card IN (");
-            
+
             // 添加身份证号列表
             int i = 0;
             for (String idCard : idCards) {
@@ -1436,18 +1444,19 @@ public class SwmPersonController extends BaseController {
                 sqlBuilder.append("'").append(idCard).append("'");
                 i++;
             }
-            
-            sqlBuilder.append(") AND time <= NOW() AND time >= NOW() - 5m AND (type = '1' OR type = '6') GROUP BY id_card");
-            
+
+            sqlBuilder.append(
+                    ") AND time <= NOW() AND time >= NOW() - 5m AND (type = '1' OR type = '6') GROUP BY id_card");
+
             logger.debug("批量查询运动状态SQL: {}", sqlBuilder.toString());
-            
+
             // 执行查询
             R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
-            
+
             if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
                 cn.hutool.json.JSONObject data = queryResult.getData();
                 cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-                
+
                 if (rows != null) {
                     for (int j = 0; j < rows.size(); j++) {
                         cn.hutool.json.JSONArray row = rows.getJSONArray(j);
@@ -1459,7 +1468,7 @@ public class SwmPersonController extends BaseController {
                         }
                     }
                 }
-                
+
                 // 对于没有查询到结果的身份证，默认为运动状态
                 for (String idCard : idCards) {
                     if (!result.containsKey(idCard)) {
@@ -1470,7 +1479,7 @@ public class SwmPersonController extends BaseController {
         } catch (Exception e) {
             logger.error("批量获取运动状态异常", e);
         }
-        
+
         return result;
     }
 
@@ -1742,6 +1751,7 @@ public class SwmPersonController extends BaseController {
 
     /**
      * 批量完成安全教育
+     * 
      * @param personIds 人员ID列表，以逗号分隔
      * @return 处理结果
      */
@@ -1793,12 +1803,12 @@ public class SwmPersonController extends BaseController {
             result.put("message", String.format("批量完成安全教育成功，共处理 %d 条记录，成功 %d 条", totalCount, successCount));
             result.put("successCount", successCount);
             result.put("totalCount", totalCount);
-            
+
             if (!failedNames.isEmpty()) {
                 result.put("failedCount", failedNames.size());
                 result.put("failedNames", String.join(", ", failedNames));
             }
-            
+
             return result;
         } catch (Exception e) {
             logger.error("批量完成安全教育出现异常", e);
@@ -1806,5 +1816,64 @@ public class SwmPersonController extends BaseController {
             result.put("message", "批量完成安全教育失败：" + e.getMessage());
             return result;
         }
+    }
+
+    /**
+     * 根据身份证号查询该人员参与的所有安全教育记录
+     */
+    @GetMapping(value = "getSafetyEducationByIdentityCard")
+    @ResponseBody
+    public Map<String, Object> getSafetyEducationByIdentityCard(@RequestParam("identityCard") String identityCard) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            if (identityCard == null || identityCard.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "身份证号不能为空");
+                return result;
+            }
+
+            // 查询该人员参与的所有安全教育记录
+            List<SwmSafetyEducation> educationList = swmSafetyEducationService.findByIdentityCard(identityCard);
+
+            // 处理返回数据，添加枚举文本显示
+            List<Map<String, Object>> processedList = new ArrayList<>();
+            for (SwmSafetyEducation education : educationList) {
+                Map<String, Object> educationMap = new HashMap<>();
+
+                // 基本信息
+                educationMap.put("id", education.getId());
+                educationMap.put("theme", education.getTheme());
+                educationMap.put("contentDescription", education.getContentDescription());
+                educationMap.put("safetyEducationType", education.getSafetyEducationType());
+                educationMap.put("startTime", education.getStartTime());
+                educationMap.put("participants", education.getParticipants());
+                educationMap.put("participantsName", education.getParticipantsName());
+                educationMap.put("safetyStatus", education.getSafetyStatus());
+                educationMap.put("participationType", education.getParticipationType());
+                educationMap.put("attachmentUrl", education.getAttachmentUrl());
+                educationMap.put("createTime", education.getCreateTime());
+                educationMap.put("updateTime", education.getUpdateTime());
+
+                // 添加枚举文本显示
+                educationMap.put("safetyEducationTypeText", education.getSafetyEducationTypeText());
+                educationMap.put("participationTypeText", education.getParticipationTypeText());
+                educationMap.put("safetyStatusText", education.getSafetyStatusText());
+
+                processedList.add(educationMap);
+            }
+
+            result.put("success", true);
+            result.put("data", processedList);
+            result.put("total", processedList.size());
+            result.put("message", "查询成功");
+
+        } catch (Exception e) {
+            logger.error("查询人员安全教育记录异常", e);
+            result.put("success", false);
+            result.put("message", "查询安全教育记录失败：" + e.getMessage());
+        }
+
+        return result;
     }
 }

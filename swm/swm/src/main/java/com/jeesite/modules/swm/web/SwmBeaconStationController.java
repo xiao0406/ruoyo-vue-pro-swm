@@ -238,6 +238,36 @@ public class SwmBeaconStationController extends BaseController {
     }
 
     /**
+     * 查询没有区域ID的信标列表
+     *
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @GetMapping("findBeaconsWithoutArea")
+    @ResponseBody
+    @ApiOperation(value = "获取没有区域ID的信标列表")
+    public Map<String, Object> findBeaconsWithoutArea() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<SwmBeaconStation> beaconList = swmBeaconStationService.findBeaconsWithoutArea();
+
+            result.put("success", true);
+            result.put("data", beaconList);
+            result.put("total", beaconList != null ? beaconList.size() : 0);
+            result.put("message", "查询成功");
+
+            logger.info("查询没有区域ID的信标成功，共找到 {} 个信标", beaconList != null ? beaconList.size() : 0);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("data", new ArrayList<>());
+            result.put("total", 0);
+            result.put("message", "查询失败: " + e.getMessage());
+            logger.error("查询没有区域ID的信标失败", e);
+        }
+        return result;
+    }
+
+    /**
      * 根据GPS坐标范围查询基站列表
      */
     @GetMapping("findByGpsRange")

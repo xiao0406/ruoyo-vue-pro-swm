@@ -12,15 +12,17 @@ import java.util.List;
 
 /**
  * 安全教育Service
+ * 
  * @author zwf
  * @version 2025-05-14
  */
 @Service
 @Transactional(readOnly = true)
 public class SwmSafetyEducationService extends CrudService<SwmSafetyEducationDao, SwmSafetyEducation> {
-    
+
     /**
      * 获取单条数据
+     * 
      * @param swmSafetyEducation
      * @return
      */
@@ -28,9 +30,10 @@ public class SwmSafetyEducationService extends CrudService<SwmSafetyEducationDao
     public SwmSafetyEducation get(SwmSafetyEducation swmSafetyEducation) {
         return super.get(swmSafetyEducation);
     }
-    
+
     /**
      * 查询分页数据
+     * 
      * @param swmSafetyEducation 查询条件
      * @return
      */
@@ -38,29 +41,48 @@ public class SwmSafetyEducationService extends CrudService<SwmSafetyEducationDao
     public Page<SwmSafetyEducation> findPage(SwmSafetyEducation swmSafetyEducation) {
         return super.findPage(swmSafetyEducation);
     }
-    
+
     /**
      * 查询所有记录，不带默认的状态过滤
+     * 
      * @return 所有记录列表
      */
     public List<SwmSafetyEducation> findAllWithoutStatusFilter() {
         return dao.findAllWithoutStatusFilter();
     }
-    
+
     /**
      * 使用自定义条件查询安全教育记录
-     * @param theme 主题（模糊查询）
+     * 
+     * @param theme               主题（模糊查询）
      * @param safetyEducationType 安全教育类型
-     * @param participationType 参与类型
-     * @param safetyStatus 状态
+     * @param participationType   参与类型
+     * @param safetyStatus        状态
      * @return 符合条件的记录列表
      */
-    public List<SwmSafetyEducation> findByCustomConditions(String theme, String safetyEducationType, String participationType, String safetyStatus) {
+    public List<SwmSafetyEducation> findByCustomConditions(String theme, String safetyEducationType,
+            String participationType, String safetyStatus) {
         return dao.findByCustomConditions(theme, safetyEducationType, participationType, safetyStatus);
     }
-    
+
+    /**
+     * 根据身份证号查询该人员参与的所有安全教育记录
+     * 注意：participants字段存储的是swm_person表的id，不是身份证号
+     * 所以需要先根据身份证号查出对应的人员ID，再匹配安全教育记录
+     *
+     * @param identityCard 身份证号
+     * @return 该人员参与的安全教育记录列表
+     */
+    public List<SwmSafetyEducation> findByIdentityCard(String identityCard) {
+        if (identityCard == null || identityCard.trim().isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        return dao.findByIdentityCard(identityCard);
+    }
+
     /**
      * 保存数据（插入或更新）
+     * 
      * @param swmSafetyEducation
      */
     @Override
@@ -69,9 +91,10 @@ public class SwmSafetyEducationService extends CrudService<SwmSafetyEducationDao
     public void save(SwmSafetyEducation swmSafetyEducation) {
         super.save(swmSafetyEducation);
     }
-    
+
     /**
      * 更新状态
+     * 
      * @param swmSafetyEducation
      */
     @Override
@@ -80,9 +103,10 @@ public class SwmSafetyEducationService extends CrudService<SwmSafetyEducationDao
     public void updateStatus(SwmSafetyEducation swmSafetyEducation) {
         super.updateStatus(swmSafetyEducation);
     }
-    
+
     /**
      * 删除数据
+     * 
      * @param swmSafetyEducation
      */
     @Override
@@ -91,4 +115,4 @@ public class SwmSafetyEducationService extends CrudService<SwmSafetyEducationDao
     public void delete(SwmSafetyEducation swmSafetyEducation) {
         super.delete(swmSafetyEducation);
     }
-} 
+}

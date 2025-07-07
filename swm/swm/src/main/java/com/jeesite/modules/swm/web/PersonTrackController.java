@@ -21,8 +21,11 @@ import cn.hutool.json.JSONObject;
 import java.util.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 人员追踪控制器
@@ -350,11 +353,11 @@ public class PersonTrackController extends BaseController {
 
     /**
      * 获取人员轨迹数据（精确到秒）
-     * 
-     * @param personId      人员ID
-     * @param idCard        身份证号码
-     * @param startDateTime 开始时间 (格式: yyyy-MM-dd HH:mm:ss)
-     * @param endDateTime   结束时间 (格式: yyyy-MM-dd HH:mm:ss)
+     *
+     * @param personId  人员ID
+     * @param idCard    身份证号码
+     * @param startDate 开始时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @param endDate   结束时间 (格式: yyyy-MM-dd HH:mm:ss)
      * @return 轨迹数据
      * @author Shawn
      * @date 2025/06/25
@@ -365,42 +368,42 @@ public class PersonTrackController extends BaseController {
     public Map<String, Object> getPersonTrajectoryByDateTime(
             @ApiParam(value = "人员ID") @RequestParam(required = false) String personId,
             @ApiParam(value = "身份证号码", required = true) @RequestParam String idCard,
-            @ApiParam(value = "开始时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String startDateTime,
-            @ApiParam(value = "结束时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String endDateTime) {
+            @ApiParam(value = "开始时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String startDate,
+            @ApiParam(value = "结束时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String endDate) {
 
         Map<String, Object> result = new HashMap<>();
 
         try {
             // --- 解析时间参数 ---
-            String startDate = null;
-            String endDate = null;
+            String parsedStartDate = null;
+            String parsedEndDate = null;
             Integer startTime = null;
             Integer endTime = null;
 
-            if (startDateTime != null && !startDateTime.trim().isEmpty()) {
+            if (startDate != null && !startDate.trim().isEmpty()) {
                 try {
-                    LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                    startDate = startDateTime.substring(0, 10);
-                    LocalTime localStartTime = LocalTime.parse(startDateTime.substring(11),
+                    LocalDateTime.parse(startDate, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    parsedStartDate = startDate.substring(0, 10);
+                    LocalTime localStartTime = LocalTime.parse(startDate.substring(11),
                             DateTimeFormatter.ofPattern("HH:mm:ss"));
                     startTime = localStartTime.toSecondOfDay();
                 } catch (Exception e) {
-                    logger.error("解析开始时间格式错误: {}", startDateTime, e);
+                    logger.error("解析开始时间格式错误: {}", startDate, e);
                     result.put("success", false);
                     result.put("message", "开始时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
                     return result;
                 }
             }
 
-            if (endDateTime != null && !endDateTime.trim().isEmpty()) {
+            if (endDate != null && !endDate.trim().isEmpty()) {
                 try {
-                    LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                    endDate = endDateTime.substring(0, 10);
-                    LocalTime localEndTime = LocalTime.parse(endDateTime.substring(11),
+                    LocalDateTime.parse(endDate, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    parsedEndDate = endDate.substring(0, 10);
+                    LocalTime localEndTime = LocalTime.parse(endDate.substring(11),
                             DateTimeFormatter.ofPattern("HH:mm:ss"));
                     endTime = localEndTime.toSecondOfDay();
                 } catch (Exception e) {
-                    logger.error("解析结束时间格式错误: {}", endDateTime, e);
+                    logger.error("解析结束时间格式错误: {}", endDate, e);
                     result.put("success", false);
                     result.put("message", "结束时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
                     return result;
@@ -430,8 +433,8 @@ public class PersonTrackController extends BaseController {
                     workShop,
                     teamGroup,
                     idCard,
-                    startDate,
-                    endDate,
+                    parsedStartDate,
+                    parsedEndDate,
                     startTime,
                     endTime);
 
@@ -931,10 +934,13 @@ public class PersonTrackController extends BaseController {
                             String time = String.valueOf(row.get(0));
                             String areaName = String.valueOf(row.get(1));
 
+                            // 转换UTC时间为北京时间
+                            String beijingTime = convertUtcToBeijingTime(time);
+
                             // 如果这个区域还没有记录，则添加（因为已按时间排序，这就是最早的）
                             if (!areaFirstRecordMap.containsKey(areaName)) {
                                 Map<String, Object> record = new HashMap<>();
-                                record.put("time", time);
+                                record.put("time", beijingTime);
                                 record.put("area_name", areaName);
                                 areaFirstRecordMap.put(areaName, record);
                             }
@@ -1017,10 +1023,10 @@ public class PersonTrackController extends BaseController {
 
     /**
      * 根据身份证查询区域围栏数据（精确到秒）
-     * 
-     * @param idCard        身份证号
-     * @param startDateTime 开始时间 (格式: yyyy-MM-dd HH:mm:ss)
-     * @param endDateTime   结束时间 (格式: yyyy-MM-dd HH:mm:ss)
+     *
+     * @param idCard    身份证号
+     * @param startDate 开始时间 (格式: yyyy-MM-dd HH:mm:ss)
+     * @param endDate   结束时间 (格式: yyyy-MM-dd HH:mm:ss)
      * @return 区域围栏数据
      * @author Shawn
      * @date 2025/06/25
@@ -1030,42 +1036,42 @@ public class PersonTrackController extends BaseController {
     @ApiOperation("根据身份证查询区域围栏数据（精确到秒）")
     public Map<String, Object> getAreaFenceDataByIdCardByDateTime(
             @ApiParam(value = "身份证号", required = true) @RequestParam String idCard,
-            @ApiParam(value = "开始时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String startDateTime,
-            @ApiParam(value = "结束时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String endDateTime) {
+            @ApiParam(value = "开始时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String startDate,
+            @ApiParam(value = "结束时间 (格式: yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String endDate) {
 
         Map<String, Object> result = new HashMap<>();
 
         try {
             // --- 解析时间参数 ---
-            String startDate = null;
-            String endDate = null;
+            String parsedStartDate = null;
+            String parsedEndDate = null;
             Integer startTime = null;
             Integer endTime = null;
 
-            if (startDateTime != null && !startDateTime.trim().isEmpty()) {
+            if (startDate != null && !startDate.trim().isEmpty()) {
                 try {
-                    LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                    startDate = startDateTime.substring(0, 10);
-                    LocalTime localStartTime = LocalTime.parse(startDateTime.substring(11),
+                    LocalDateTime.parse(startDate, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    parsedStartDate = startDate.substring(0, 10);
+                    LocalTime localStartTime = LocalTime.parse(startDate.substring(11),
                             DateTimeFormatter.ofPattern("HH:mm:ss"));
                     startTime = localStartTime.toSecondOfDay();
                 } catch (Exception e) {
-                    logger.error("解析开始时间格式错误: {}", startDateTime, e);
+                    logger.error("解析开始时间格式错误: {}", startDate, e);
                     result.put("success", false);
                     result.put("message", "开始时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
                     return result;
                 }
             }
 
-            if (endDateTime != null && !endDateTime.trim().isEmpty()) {
+            if (endDate != null && !endDate.trim().isEmpty()) {
                 try {
-                    LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                    endDate = endDateTime.substring(0, 10);
-                    LocalTime localEndTime = LocalTime.parse(endDateTime.substring(11),
+                    LocalDateTime.parse(endDate, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    parsedEndDate = endDate.substring(0, 10);
+                    LocalTime localEndTime = LocalTime.parse(endDate.substring(11),
                             DateTimeFormatter.ofPattern("HH:mm:ss"));
                     endTime = localEndTime.toSecondOfDay();
                 } catch (Exception e) {
-                    logger.error("解析结束时间格式错误: {}", endDateTime, e);
+                    logger.error("解析结束时间格式错误: {}", endDate, e);
                     result.put("success", false);
                     result.put("message", "结束时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
                     return result;
@@ -1073,7 +1079,7 @@ public class PersonTrackController extends BaseController {
             }
 
             logger.info("根据身份证查询区域围栏数据，身份证号: {}, 开始日期: {}, 结束日期: {}, 开始时间: {}, 结束时间: {}",
-                    idCard, startDate, endDate, startTime, endTime);
+                    idCard, parsedStartDate, parsedEndDate, startTime, endTime);
 
             // 1. 根据身份证从Redis缓存中查找设备ID
             String deviceId = helmetCacheService.getAssignedDeviceFromCache(idCard, swmHelmetDeviceService);
@@ -1097,7 +1103,8 @@ public class PersonTrackController extends BaseController {
             logger.info("设备ID {} 的后8位: {}", deviceId, deviceIdLast8);
 
             // 3. 查询area_fence_data表，匹配device_id的后8位
-            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8, startDate, endDate,
+            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8, parsedStartDate,
+                    parsedEndDate,
                     startTime, endTime);
 
             result.put("success", true);
@@ -1114,5 +1121,55 @@ public class PersonTrackController extends BaseController {
         }
 
         return result;
+    }
+
+    /**
+     * 将UTC时间转换为北京时间
+     *
+     * @param utcTimeStr UTC时间字符串
+     * @return 北京时间字符串
+     */
+    private String convertUtcToBeijingTime(String utcTimeStr) {
+        try {
+            if (StringUtils.isBlank(utcTimeStr)) {
+                return utcTimeStr;
+            }
+
+            // 处理不同的时间格式
+            String normalizedTime = utcTimeStr;
+
+            // 如果包含T，替换为空格
+            if (normalizedTime.contains("T")) {
+                normalizedTime = normalizedTime.replace("T", " ");
+            }
+
+            // 去掉毫秒部分和时区信息
+            if (normalizedTime.contains(".")) {
+                normalizedTime = normalizedTime.substring(0, normalizedTime.indexOf("."));
+            }
+            if (normalizedTime.contains("Z")) {
+                normalizedTime = normalizedTime.replace("Z", "");
+            }
+            if (normalizedTime.contains("+")) {
+                normalizedTime = normalizedTime.substring(0, normalizedTime.indexOf("+"));
+            }
+
+            // 解析UTC时间
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime utcDateTime = LocalDateTime.parse(normalizedTime, formatter);
+
+            // 转换为UTC时区的ZonedDateTime
+            ZonedDateTime utcZoned = utcDateTime.atZone(ZoneId.of("UTC"));
+
+            // 转换为北京时间
+            ZonedDateTime beijingZoned = utcZoned.withZoneSameInstant(ZoneId.of("Asia/Shanghai"));
+
+            // 格式化为字符串
+            return beijingZoned.format(formatter);
+
+        } catch (Exception e) {
+            logger.warn("时间转换失败，使用原始时间: {}", utcTimeStr, e);
+            return utcTimeStr;
+        }
     }
 }

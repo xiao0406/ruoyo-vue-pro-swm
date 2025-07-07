@@ -97,14 +97,14 @@ public class AttendanceTask {
             query.setAttendanceDate(targetDate);
 
             // 测试使用，生产上要删除 begin
-            // java.util.List<String> employeeIds = new java.util.ArrayList<>();
-            // employeeIds.add("1935182658540556288");
-            // employeeIds.add("1935182658850934784");
-            // if (employeeIds != null && !employeeIds.isEmpty()) {
-            // query.getSqlMap().getWhere().and("employee_id",
-            // com.jeesite.common.mybatis.mapper.query.QueryType.IN,
-            // employeeIds);
-            // }
+//            java.util.List<String> employeeIds = new java.util.ArrayList<>();
+//            employeeIds.add("1935182658452475904");
+//            // employeeIds.add("1935182658850934784");
+//            if (employeeIds != null && !employeeIds.isEmpty()) {
+//                query.getSqlMap().getWhere().and("employee_id",
+//                        com.jeesite.common.mybatis.mapper.query.QueryType.IN,
+//                        employeeIds);
+//            }
             // 测试使用，生产上要删除 end
 
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
@@ -206,10 +206,10 @@ public class AttendanceTask {
                         // @author: Shawn
                         // @date: 2025/01/27
                         if (clockInTime == null || clockOutTime == null) {
-                            // 没有打卡时间且TDengine也没有可用数据，实际考勤时长为0
-                            record.setActualHours(BigDecimal.ZERO);
-                            XxlJobHelper.log("员工[{}]{}没有完整的打卡记录且TDengine也无可用数据，实际考勤时长为0",
-                                    record.getEmployeeId(), record.getEmployeeName());
+                            // 没有打卡时间且TDengine也没有可用数据，使用兜底逻辑
+                            BigDecimal actualHours = applyActualHoursFallback(record, BigDecimal.ZERO,
+                                    "没有完整的打卡记录且TDengine也无可用数据");
+                            record.setActualHours(actualHours);
                         } else {
                             // 有完整打卡时间（可能来自TDengine），计算实际工作时长
                             BigDecimal clockWorkHours = calculateWorkHoursBetweenTimes(clockInTime, clockOutTime);
@@ -217,10 +217,9 @@ public class AttendanceTask {
                             // 实际考勤时长 = 打卡工作时长 - 怠工时长
                             BigDecimal actualHours = clockWorkHours.subtract(record.getIdleHours());
 
-                            // 确保实际考勤时长不为负数
-                            if (actualHours.compareTo(BigDecimal.ZERO) < 0) {
-                                actualHours = BigDecimal.ZERO;
-                            }
+                            // 应用兜底逻辑
+                            actualHours = applyActualHoursFallback(record, actualHours,
+                                    "打卡工作时长减去怠工时长后");
 
                             record.setActualHours(actualHours.setScale(2, RoundingMode.HALF_UP));
                             String dataSource = usedTdengineData ? "(包含TDengine数据)" : "";
@@ -918,5 +917,33 @@ public class AttendanceTask {
             log.error("解析或比较工作时间范围时出错: {}", workTimeRange, e);
             return false;
         }
+    }
+
+    /**
+     * 应用实际考勤时长兜底逻辑
+     * 当实际考勤时长 <= 0 时，使用实际工作时长作为兜底
+     *
+     * @param record                考勤记录
+     * @param calculatedActualHours 计算出的实际考勤时长
+     * @param context               上下文描述，用于日志记录
+     * @return 最终的实际考勤时长
+     * @author: Shawn
+     * @date: 2025/01/27
+     */
+    private BigDecimal applyActualHoursFallback(SwmDailyAttendance record, BigDecimal calculatedActualHours,
+            String context) {
+        if (calculatedActualHours.compareTo(BigDecimal.ZERO) <= 0) {
+            BigDecimal effectiveWorkHours = record.getEffectiveWorkHours();
+            if (effectiveWorkHours != null && effectiveWorkHours.compareTo(BigDecimal.ZERO) > 0) {
+                XxlJobHelper.log("员工[{}]{}{}实际考勤时长 <= 0，使用实际工作时长作为兜底: {} 小时",
+                        record.getEmployeeId(), record.getEmployeeName(), context, effectiveWorkHours);
+                return effectiveWorkHours;
+            } else {
+                XxlJobHelper.log("员工[{}]{}{}实际考勤时长 <= 0 且实际工作时长也无效，设为0小时",
+                        record.getEmployeeId(), record.getEmployeeName(), context);
+                return BigDecimal.ZERO;
+            }
+        }
+        return calculatedActualHours;
     }
 }

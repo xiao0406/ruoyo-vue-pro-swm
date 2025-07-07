@@ -4,6 +4,7 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmHandleRecordDao;
 import com.jeesite.modules.swm.entity.SwmHandleRecord;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,7 +13,8 @@ import java.util.List;
 
 /**
  * 处置记录Service
- * @author  zwf
+ * 
+ * @author zwf
  * @version 2025-05-16
  */
 @Service
@@ -21,6 +23,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
 
     /**
      * 获取单条数据
+     * 
      * @param swmHandleRecord
      * @return
      */
@@ -31,6 +34,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
 
     /**
      * 查询分页数据
+     * 
      * @param swmHandleRecord
      * @return
      */
@@ -42,6 +46,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
 
     /**
      * 查询列表数据
+     * 
      * @param swmHandleRecord
      * @return
      */
@@ -52,7 +57,8 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
 
     /**
      * 查询分页数据（包含文本值）
-     * @param page 分页对象
+     * 
+     * @param page            分页对象
      * @param swmHandleRecord
      * @return
      */
@@ -88,6 +94,26 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
             newRecord.setUpdateDate(record.getUpdateDate());
             newRecord.setRemarks(record.getRemarks());
             newRecord.setStatus(record.getStatus());
+            newRecord.setAttachment(record.getAttachment());
+
+            // 复制关联查询的字段
+            newRecord.setWarningMan(record.getWarningMan());
+
+            // 处理预警内容字段：将文本值转换为字典键值
+            String warningContent = record.getWarningContent();
+            if (warningContent != null && !warningContent.isEmpty()) {
+                // 尝试通过字典反向查找键值
+                String dictValue = DictUtils.getDictValue("warning_content_enum", warningContent, "");
+                if (!dictValue.isEmpty()) {
+                    // 找到对应的字典键值，使用键值
+                    newRecord.setWarningContent(dictValue);
+                } else {
+                    // 未找到对应的字典键值，直接使用原文本
+                    newRecord.setWarningContent(warningContent);
+                }
+            } else {
+                newRecord.setWarningContent(warningContent);
+            }
 
             // 设置处置状态文本
             newRecord.setHandleStatusText(SwmHandleRecord.HandleStatusEnum.getText(record.getHandleStatus()));
@@ -103,6 +129,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
 
     /**
      * 保存数据（插入或更新）
+     * 
      * @param swmHandleRecord
      */
     @Override
@@ -110,9 +137,9 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
     public void save(SwmHandleRecord swmHandleRecord) {
         // 如果是新记录且有预警ID，且状态为草稿，则先检查是否已存在相同预警ID的草稿记录
         if (swmHandleRecord.getIsNewRecord() &&
-            swmHandleRecord.getWarningId() != null &&
-            !swmHandleRecord.getWarningId().isEmpty() &&
-            SwmHandleRecord.HandleStatusEnum.DRAFT.equals(swmHandleRecord.getHandleStatus())) {
+                swmHandleRecord.getWarningId() != null &&
+                !swmHandleRecord.getWarningId().isEmpty() &&
+                SwmHandleRecord.HandleStatusEnum.DRAFT.equals(swmHandleRecord.getHandleStatus())) {
 
             // 查找相同预警ID的草稿记录
             SwmHandleRecord query = new SwmHandleRecord();
@@ -141,6 +168,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
 
     /**
      * 更新状态
+     * 
      * @param swmHandleRecord
      */
     @Override
@@ -151,6 +179,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
 
     /**
      * 删除数据
+     * 
      * @param swmHandleRecord
      */
     @Override
@@ -161,6 +190,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
 
     /**
      * 根据预警ID查询处置记录
+     * 
      * @param warningId 预警ID
      * @return 处置记录列表
      */
@@ -214,7 +244,8 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
                 String content = recordName.substring(recordName.indexOf("处置（") + 3, recordName.indexOf("）触发（"));
 
                 // 提取预警内容信息
-                String warningContent = recordName.substring(recordName.indexOf("）触发（") + 4, recordName.lastIndexOf("）"));
+                String warningContent = recordName.substring(recordName.indexOf("）触发（") + 4,
+                        recordName.lastIndexOf("）"));
 
                 // 构造新的记录名称格式
                 String newRecordName = "处置" + content + "触发" + warningContent;
@@ -228,6 +259,7 @@ public class SwmHandleRecordService extends CrudService<SwmHandleRecordDao, SwmH
 
     /**
      * 获取最新的报警处置记录
+     * 
      * @param limit 获取的记录数
      * @return
      */

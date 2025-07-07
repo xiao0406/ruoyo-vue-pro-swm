@@ -12,6 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -464,7 +468,7 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
 
     /**
      * 处理查询结果
-     * 
+     *
      * @param jsonObject TDengine查询结果
      * @return 处理后的数据列表
      */
@@ -484,6 +488,12 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
                         JSONArray columnInfo = columnMeta.getJSONArray(j);
                         String columnName = columnInfo.getStr(0);
                         Object value = row.get(j);
+
+                        // 处理时间字段的时区转换
+                        if (isTimeColumn(columnName) && value != null) {
+                            value = convertUtcToBeijingTime(value.toString());
+                        }
+
                         map.put(columnName, value);
                     }
                     list.add(map);
@@ -498,7 +508,7 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
 
     /**
      * 判断字符串是否为数字
-     * 
+     *
      * @param str 字符串
      * @return 是否为数字
      */
@@ -508,6 +518,70 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
             return true;
         } catch (NumberFormatException e) {
             return false;
+        }
+    }
+
+    /**
+     * 判断是否为时间列
+     *
+     * @param columnName 列名
+     * @return 是否为时间列
+     */
+    private boolean isTimeColumn(String columnName) {
+        return "time".equals(columnName) ||
+                columnName.contains("time") ||
+                columnName.contains("Time") ||
+                columnName.startsWith("last_row(time") ||
+                columnName.equals("last_row(time)");
+    }
+
+    /**
+     * 将UTC时间转换为北京时间
+     *
+     * @param utcTimeStr UTC时间字符串
+     * @return 北京时间字符串
+     */
+    private String convertUtcToBeijingTime(String utcTimeStr) {
+        try {
+            if (StringUtils.isBlank(utcTimeStr)) {
+                return utcTimeStr;
+            }
+
+            // 处理不同的时间格式
+            String normalizedTime = utcTimeStr;
+
+            // 如果包含T，替换为空格
+            if (normalizedTime.contains("T")) {
+                normalizedTime = normalizedTime.replace("T", " ");
+            }
+
+            // 去掉毫秒部分和时区信息
+            if (normalizedTime.contains(".")) {
+                normalizedTime = normalizedTime.substring(0, normalizedTime.indexOf("."));
+            }
+            if (normalizedTime.contains("Z")) {
+                normalizedTime = normalizedTime.replace("Z", "");
+            }
+            if (normalizedTime.contains("+")) {
+                normalizedTime = normalizedTime.substring(0, normalizedTime.indexOf("+"));
+            }
+
+            // 解析UTC时间
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime utcDateTime = LocalDateTime.parse(normalizedTime, formatter);
+
+            // 转换为UTC时区的ZonedDateTime
+            ZonedDateTime utcZoned = utcDateTime.atZone(ZoneId.of("UTC"));
+
+            // 转换为北京时间
+            ZonedDateTime beijingZoned = utcZoned.withZoneSameInstant(ZoneId.of("Asia/Shanghai"));
+
+            // 格式化为字符串
+            return beijingZoned.format(formatter);
+
+        } catch (Exception e) {
+            log.warn("时间转换失败，使用原始时间: {}", utcTimeStr, e);
+            return utcTimeStr;
         }
     }
 }

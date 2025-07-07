@@ -47,12 +47,12 @@
             id, create_by, create_date, update_by, update_date, remarks, status,
             person_name, warning_type, warning_content, warning_time, alarm_record,
             alarm_time, trigger_reason, handler, handle_time, handle_process,
-            handle_status, attachment, device_id, id_card, disposal_duration
+            handle_status, attachment, device_id, id_card, disposal_duration, location, area
         ) VALUES (
             #{id}, #{createBy}, #{createDate}, #{updateBy}, #{updateDate}, #{remarks}, #{status},
             #{personName}, #{warningType}, #{warningContent}, #{warningTime}, #{alarmRecord},
             #{alarmTime}, #{triggerReason}, #{handler}, #{handleTime}, #{handleProcess},
-            #{handleStatus}, #{attachment}, #{deviceId}, #{idCard}, #{disposalDuration}
+            #{handleStatus}, #{attachment}, #{deviceId}, #{idCard}, #{disposalDuration}, #{location}, #{area}
         )
     </insert>
 

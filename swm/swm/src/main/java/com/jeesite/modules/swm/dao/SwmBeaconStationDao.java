@@ -43,6 +43,14 @@ public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
         List<SwmBeaconStation> findOnlineBeacons();
 
         /**
+         * 查询没有区域ID的信标列表
+         *
+         * @author Shawn
+         * @date 2025-01-14
+         */
+        List<SwmBeaconStation> findBeaconsWithoutArea();
+
+        /**
          * 根据GPS坐标范围查询基站列表
          */
         List<SwmBeaconStation> findByGpsRange(@Param("minLongitude") Double minLongitude,

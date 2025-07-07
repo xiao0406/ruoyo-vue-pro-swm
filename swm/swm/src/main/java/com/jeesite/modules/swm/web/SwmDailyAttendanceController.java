@@ -5,8 +5,13 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.swm.entity.SwmDailyAttendanceExportEntity;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
+import com.jeesite.common.utils.excel.ExcelExport;
+import com.jeesite.common.lang.DateUtils;
+import com.jeesite.modules.util.MinioUtils;
+import org.springframework.mock.web.MockMultipartFile;
 import com.jeesite.modules.job.task.AttendanceTask;
 import com.jeesite.modules.swm.job.FmsMonthPlanProlongTask;
 import io.swagger.annotations.Api;
@@ -20,6 +25,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -57,6 +64,9 @@ public class SwmDailyAttendanceController extends BaseController {
 
     @Autowired
     private SwmAttendanceSummaryService swmAttendanceSummaryService;
+
+    @Autowired
+    private MinioUtils minioUtils;
 
     @Autowired
     private AttendanceTask attendanceTask;
@@ -682,6 +692,70 @@ public class SwmDailyAttendanceController extends BaseController {
         } catch (Exception e) {
             logger.error("月度计划顺延任务执行失败: {}", e.getMessage(), e);
             return renderResult(Global.FALSE, "月度计划顺延任务执行失败！" + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出日考勤记录
+     */
+    @RequestMapping(value = "exportData")
+    @ResponseBody
+    @ApiOperation("导出日考勤记录")
+    public String exportData(SwmDailyAttendance swmDailyAttendance, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+        // 验证日期参数，确保只导出一天数据
+        if (swmDailyAttendance.getAttendanceDate() == null) {
+            return renderResult(Global.FALSE, text("请选择考勤日期！"));
+        }
+
+        try {
+            // 获取所有符合条件的数据（不分页）
+            List<SwmDailyAttendance> list = swmDailyAttendanceService.findExportList(swmDailyAttendance);
+
+            if (list.isEmpty()) {
+                return renderResult(Global.FALSE, text("没有符合条件的数据可以导出！"));
+            }
+
+            // 转换为导出实体
+            List<SwmDailyAttendanceExportEntity> exportList = swmDailyAttendanceService.convertToExportList(list);
+
+            // 生成文件名
+            String fileName = "日考勤记录_" + DateUtils.formatDate(swmDailyAttendance.getAttendanceDate(), "yyyyMMdd") + "_"
+                    + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
+
+            // 使用ExcelExport生成Excel文件
+            byte[] excelData;
+            try (ExcelExport ee = new ExcelExport("日考勤记录", SwmDailyAttendanceExportEntity.class);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                ee.setDataList(exportList);
+                ee.getWorkbook().write(baos);
+                excelData = baos.toByteArray();
+            }
+
+            // 创建MockMultipartFile用于上传到MinIO
+            MockMultipartFile mockFile = new MockMultipartFile(
+                    "file",
+                    fileName,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    excelData);
+
+            // 构建MinIO存储路径
+            String objectName = "daily-attendance/"
+                    + DateUtils.formatDate(swmDailyAttendance.getAttendanceDate(), "yyyyMMdd") + "/" + fileName;
+            logger.info("Excel文件将存储在MinIO路径: {}", objectName);
+
+            // 使用MinioUtils上传文件到MinIO
+            Map<String, Object> uploadResult = minioUtils.upload(mockFile, objectName);
+            logger.info("MinIO上传成功，返回结果: {}", uploadResult);
+
+            // 生成预览URL，使用相对路径，并添加fileName参数
+            String previewUrl = "fileUpload/preview?objectName=" + objectName + "&fileName=" + fileName;
+            logger.info("生成预览URL: {}", previewUrl);
+
+            return renderResult(Global.TRUE, text("导出成功！"), previewUrl);
+        } catch (Exception e) {
+            logger.error("导出日考勤记录失败: {}", e.getMessage(), e);
+            return renderResult(Global.FALSE, text("导出失败！") + e.getMessage());
         }
     }
 
