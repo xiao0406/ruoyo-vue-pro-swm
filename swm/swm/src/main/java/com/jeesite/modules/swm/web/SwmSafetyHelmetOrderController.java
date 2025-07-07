@@ -26,7 +26,7 @@ import java.util.Map;
  * 安全帽订购记录控制器
  */
 @Controller
-@RequestMapping(value = "${adminPath}/swmSafetyHelmetOrder")
+@RequestMapping(value = "${adminPath}/safetyHelmetOrder")
 public class SwmSafetyHelmetOrderController extends BaseController {
 
     @Autowired
