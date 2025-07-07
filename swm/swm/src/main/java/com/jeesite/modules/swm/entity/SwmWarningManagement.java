@@ -19,7 +19,7 @@ import java.util.Map;
  * @version 2025-05-16
  */
 @Table(name = "swm_warning_management", alias = "a", columns = {
-        @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
+        @Column(name = "id", attrName = "id", label = "预警单号", isPK = true, queryType = QueryType.LIKE),
         @Column(name = "person_name", attrName = "personName", label = "人员名称", queryType = QueryType.LIKE),
         @Column(name = "warning_type", attrName = "warningType", label = "预警类型"),
         @Column(name = "warning_content", attrName = "warningContent", label = "预警内容"),

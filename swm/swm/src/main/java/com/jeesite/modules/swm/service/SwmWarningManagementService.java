@@ -120,6 +120,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.info("添加排除一键SOS的查询条件");
         }
 
+        // 添加预警单号(ID)查询条件
+        if (swmWarningManagement.getId() != null && !swmWarningManagement.getId().isEmpty()) {
+            conditions.add("id LIKE '%" + swmWarningManagement.getId() + "%'");
+            logger.info("添加预警单号查询条件: {}", swmWarningManagement.getId());
+        }
+
         if (swmWarningManagement.getPersonName() != null && !swmWarningManagement.getPersonName().isEmpty()) {
             conditions.add("person_name LIKE '%" + swmWarningManagement.getPersonName() + "%'");
         }
