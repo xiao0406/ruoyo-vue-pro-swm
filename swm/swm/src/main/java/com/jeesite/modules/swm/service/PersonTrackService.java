@@ -3,7 +3,10 @@ package com.jeesite.modules.swm.service;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.PersonTrackDao;
 import com.jeesite.modules.swm.entity.PersonTrackInfo;
+import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
+import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
+import com.jeesite.modules.swm.service.SwmPersonCacheService;
 
 import com.jeesite.modules.utils.R;
 import org.slf4j.Logger;
@@ -11,7 +14,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
+import java.util.Date;
 
 /**
  * 人员追踪服务类
@@ -31,6 +36,12 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
     @Autowired
     private ExternalCoordinateDataService externalCoordinateDataService;
+
+    @Autowired
+    private SwmDailyAttendanceService swmDailyAttendanceService;
+
+    @Autowired
+    private SwmPersonCacheService swmPersonCacheService;
 
     /**
      * 从数据库查询人员数据并转换为位置信息
@@ -159,6 +170,10 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                             int x = (int) Math.round(Double.parseDouble(xObj.toString()));
                             int y = (int) Math.round(Double.parseDouble(yObj.toString()));
 
+                            // 获取真实的考勤数据 2025/07/07 Shawn 修改
+                            String workHours = getWorkHoursFromAttendance(identityCard);
+                            String attendanceStatus = getAttendanceStatusFromAttendance(identityCard);
+
                             // 创建人员位置信息，包含颜色信息 2025/06/24 Shawn 修改
                             Map<String, Object> position = createPersonPositionWithColors(
                                     personId,
@@ -169,8 +184,8 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                                     organization,
                                     workShop,
                                     teamGroup,
-                                    "8小时", // 工作时长默认值
-                                    "正常考勤", // 考勤状态默认值
+                                    workHours, // 从考勤记录获取工作时长
+                                    attendanceStatus, // 从考勤记录获取考勤状态
                                     identityCard,
                                     true, // 标记为真实位置
                                     person, // 传入完整的person对象
@@ -358,10 +373,128 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         position.put("positionArchiveId", person.getPositionArchiveId());
         position.put("workGroupId", person.getWorkGroupId());
         position.put("prodLineId", person.getProdLineId());
-        
+
         // 添加手机号字段
         position.put("phoneNumber", person.getPhoneNumber());
 
         return position;
+    }
+
+    /**
+     * 根据身份证号获取工作时长
+     *
+     * @param identityCard 身份证号
+     * @return 格式化的工作时长，如"6.5小时"
+     * @author Shawn
+     * @date 2025/07/07
+     */
+    private String getWorkHoursFromAttendance(String identityCard) {
+        try {
+            if (identityCard == null || identityCard.trim().isEmpty()) {
+                return "0小时";
+            }
+
+            // 1. 通过身份证获取员工信息
+            Map<String, Object> personInfo = swmPersonCacheService.getActivePersonByIdentityCard(identityCard);
+            if (personInfo == null) {
+                logger.debug("身份证 {} 未找到对应的员工信息", identityCard);
+                return "0小时";
+            }
+
+            String employeeId = (String) personInfo.get("id");
+            if (employeeId == null) {
+                logger.debug("身份证 {} 对应的员工ID为空", identityCard);
+                return "0小时";
+            }
+
+            // 2. 查询当日考勤记录
+            Date today = new Date();
+            SwmDailyAttendance attendance = swmDailyAttendanceService.findByEmployeeIdAndDate(employeeId, today);
+
+            if (attendance == null) {
+                logger.debug("员工ID {} 当日无考勤记录", employeeId);
+                return "0小时";
+            }
+
+            // 3. 获取实际工作时长
+            BigDecimal effectiveWorkHours = attendance.getEffectiveWorkHours();
+            if (effectiveWorkHours == null) {
+                return "0小时";
+            }
+
+            // 4. 格式化返回
+            double hours = effectiveWorkHours.doubleValue();
+            if (hours == 0) {
+                return "0小时";
+            } else if (hours == (int) hours) {
+                // 整数小时
+                return String.format("%.0f小时", hours);
+            } else {
+                // 带小数的小时
+                return String.format("%.1f小时", hours);
+            }
+
+        } catch (Exception e) {
+            logger.error("获取身份证 {} 的工作时长失败", identityCard, e);
+            return "0小时";
+        }
+    }
+
+    /**
+     * 根据身份证号获取考勤状态
+     *
+     * @param identityCard 身份证号
+     * @return 考勤状态描述，如"正常考勤"或"异常考勤"
+     * @author Shawn
+     * @date 2025/07/07
+     */
+    private String getAttendanceStatusFromAttendance(String identityCard) {
+        try {
+            if (identityCard == null || identityCard.trim().isEmpty()) {
+                return "未知状态";
+            }
+
+            // 1. 通过身份证获取员工信息
+            Map<String, Object> personInfo = swmPersonCacheService.getActivePersonByIdentityCard(identityCard);
+            if (personInfo == null) {
+                logger.debug("身份证 {} 未找到对应的员工信息", identityCard);
+                return "未知状态";
+            }
+
+            String employeeId = (String) personInfo.get("id");
+            if (employeeId == null) {
+                logger.debug("身份证 {} 对应的员工ID为空", identityCard);
+                return "未知状态";
+            }
+
+            // 2. 查询当日考勤记录
+            Date today = new Date();
+            SwmDailyAttendance attendance = swmDailyAttendanceService.findByEmployeeIdAndDate(employeeId, today);
+
+            if (attendance == null) {
+                logger.debug("员工ID {} 当日无考勤记录", employeeId);
+                return "无考勤记录";
+            }
+
+            // 3. 获取考勤状态
+            String attendanceNormal = attendance.getAttendanceNormal();
+            if (attendanceNormal == null) {
+                return "正常考勤";
+            }
+
+            // 4. 根据状态码返回描述
+            switch (attendanceNormal) {
+                case "0":
+                    return "正常考勤";
+                case "1":
+                    return "异常考勤";
+                default:
+                    return "正常考勤";
+            }
+
+        } catch (Exception e) {
+            logger.error("获取身份证 {} 的考勤状态失败", identityCard, e);
+            return "查询失败";
+        }
     }
 }
