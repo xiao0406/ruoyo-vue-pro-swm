@@ -10,6 +10,7 @@
         a.inspection_type AS "inspectionType",
         a.inspector_id AS "inspectorId",
         p.name AS "inspector",
+        plan.plan_code AS "planCode",
         a.start_time AS "startTime",
         a.end_time AS "endTime",
         a.attachment_path AS "attachmentPath",
@@ -25,6 +26,7 @@
     <!-- 查询连接表 -->
     <sql id="swmInspectionListJoins">
         LEFT JOIN swm_person p ON p.id = a.inspector_id
+        LEFT JOIN swm_inspection_plan plan ON plan.id = a.plan_id
     </sql>
 
     <!-- 根据id查询巡检列表 -->
@@ -44,8 +46,14 @@
         <include refid="swmInspectionListJoins"/>
         <where>
             a.status = #{status}
+            <if test="planCode != null and planCode != ''">
+                AND plan.plan_code LIKE concat('%', #{planCode}, '%')
+            </if>
             <if test="planName != null and planName != ''">
                 AND a.plan_name LIKE concat('%', #{planName}, '%')
+            </if>
+            <if test="inspector != null and inspector != ''">
+                AND p.name LIKE concat('%', #{inspector}, '%')
             </if>
             <if test="inspectionType != null and inspectionType != ''">
                 AND a.inspection_type = #{inspectionType}
@@ -60,7 +68,9 @@
     <select id="getLastTaskByPlanId" resultType="com.jeesite.modules.swm.entity.SwmInspectionList">
         select
         <include refid="swmInspectionListColumns"/>
-        from swm_inspection_list a where a.plan_id = #{planId} order by a.start_time desc limit 1
+        from swm_inspection_list a
+        <include refid="swmInspectionListJoins"/>
+        where a.plan_id = #{planId} order by a.start_time desc limit 1
     </select>
 
     <select id="latestInspectionRecord" resultType="com.jeesite.modules.swm.entity.SwmInspectionList">
@@ -79,9 +89,11 @@
                a.update_date            AS "updateDate",
                a.remarks                AS "remarks",
                a.status                 AS "status",
-               b.name                   AS "inspector"
+               b.name                   AS "inspector",
+               plan.plan_code           AS "planCode"
         from swm_inspection_list a
                  left join swm_person b on a.inspector_id = b.id
+                 left join swm_inspection_plan plan on plan.id = a.plan_id
         where a.status = '0'
         order by a.start_time desc limit #{limit}
     </select>

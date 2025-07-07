@@ -73,6 +73,7 @@ public class SwmInspectionList extends DataEntity<SwmInspectionList> {
     private String inspectionListStatus; // 巡检列表状态
 
     // 额外字段，非数据库字段
+    private String planCode; // 巡检计划编号（通过JOIN查询获得）
     private String inspectionTypeText; // 巡检类型文本
     private String inspectionListStatusText; // 巡检列表状态文本
 
@@ -179,5 +180,13 @@ public class SwmInspectionList extends DataEntity<SwmInspectionList> {
 
     public void setInspectionListStatusText(String inspectionListStatusText) {
         this.inspectionListStatusText = inspectionListStatusText;
+    }
+
+    public String getPlanCode() {
+        return planCode;
+    }
+
+    public void setPlanCode(String planCode) {
+        this.planCode = planCode;
     }
 }
