@@ -209,6 +209,74 @@ public class SwmAreaService extends CrudService<SwmAreaDao, SwmArea> {
     }
 
     /**
+     * 根据信标ID列表更新信标的区域和颜色
+     *
+     * @author Shawn
+     * @date 2025-01-14
+     * @param areaId      区域ID
+     * @param bids        信标ID列表
+     * @param beaconColor 信标颜色
+     */
+    @Transactional(readOnly = false)
+    public void updateBeaconsByIds(String areaId, List<String> bids, String beaconColor) {
+        if (bids == null || bids.isEmpty()) {
+            logger.warn("updateBeaconsByIds: bids为空");
+            return;
+        }
+
+        logger.info("开始根据信标ID列表更新信标关联，区域ID: {}, 信标ID列表: {}", areaId, bids);
+
+        int processedCount = 0;
+        for (String bid : bids) {
+            if (bid == null || bid.trim().isEmpty()) {
+                logger.warn("跳过空的信标ID");
+                continue;
+            }
+
+            try {
+                // 根据主键ID查找信标
+                SwmBeaconStation beacon = swmBeaconStationService.get(bid.trim());
+
+                if (beacon != null) {
+                    logger.info("更新信标 {} 的区域关联为: {}", beacon.getBeaconId(), areaId);
+                    beacon.setArea(areaId);
+                    if (beaconColor != null && !beaconColor.trim().isEmpty()) {
+                        beacon.setBeaconColor(beaconColor);
+                    }
+                    swmBeaconStationService.save(beacon);
+                    processedCount++;
+                } else {
+                    logger.warn("信标ID {} 没有找到对应的信标", bid);
+                }
+            } catch (Exception e) {
+                logger.error("处理信标ID {} 失败", bid, e);
+                continue;
+            }
+        }
+
+        logger.info("完成信标关联更新，共处理 {} 个信标", processedCount);
+    }
+
+    /**
+     * 更新区域的信标关联（编辑模式专用，通过信标ID）
+     * 先清空该区域的所有信标关联，再根据新的信标ID列表重新设置
+     *
+     * @author Shawn
+     * @date 2025-01-14
+     * @param areaId      区域ID
+     * @param bids        新的信标ID列表
+     * @param beaconColor 信标颜色
+     */
+    @Transactional(readOnly = false)
+    public void updateAreaBeaconAssociationByIds(String areaId, List<String> bids, String beaconColor) {
+        // 第一步：清空该区域下所有信标的关联
+        clearBeaconAreaAndColor(areaId);
+
+        // 第二步：根据新的信标ID列表重新设置信标关联
+        updateBeaconsByIds(areaId, bids, beaconColor);
+    }
+
+    /**
      * 获取区域对应的信标坐标列表
      * 
      * @author Shawn
@@ -406,6 +474,78 @@ public class SwmAreaService extends CrudService<SwmAreaDao, SwmArea> {
         }
 
         logger.info("信标冲突检查完成，共发现 {} 个冲突", conflicts.size());
+        return conflicts;
+    }
+
+    /**
+     * 检查信标ID是否已被其他区域使用
+     *
+     * @author Shawn
+     * @date 2025-01-14
+     * @param bids          信标ID列表
+     * @param currentAreaId 当前区域ID，编辑时传入（可为空）
+     * @return 冲突信息列表
+     */
+    public List<Map<String, Object>> checkBeaconConflictsByIds(List<String> bids, String currentAreaId) {
+        List<Map<String, Object>> conflicts = new ArrayList<>();
+
+        if (bids == null || bids.isEmpty()) {
+            return conflicts;
+        }
+
+        logger.info("开始检查信标ID冲突，信标ID列表: {}, 当前区域ID: {}", bids, currentAreaId);
+
+        for (String bid : bids) {
+            if (bid == null || bid.trim().isEmpty()) {
+                continue;
+            }
+
+            try {
+                // 根据主键ID查找信标
+                SwmBeaconStation beacon = swmBeaconStationService.get(bid.trim());
+
+                if (beacon != null) {
+                    String beaconArea = beacon.getArea();
+
+                    // 如果信标已被其他区域使用（不是当前区域）
+                    if (beaconArea != null && !beaconArea.trim().isEmpty() &&
+                            !beaconArea.equals(currentAreaId)) {
+
+                        // 获取区域名称
+                        String areaName = "";
+                        try {
+                            SwmArea area = get(beaconArea);
+                            if (area != null) {
+                                areaName = area.getAreaName();
+                            }
+                        } catch (Exception e) {
+                            logger.warn("获取区域名称失败: {}", beaconArea, e);
+                            areaName = "未知区域";
+                        }
+
+                        Map<String, Object> conflict = new HashMap<>();
+                        conflict.put("beaconId", beacon.getBeaconId());
+                        conflict.put("conflictAreaId", beaconArea);
+                        conflict.put("conflictAreaName", areaName);
+                        conflict.put("coordinate", "(" +
+                                (beacon.getPixelX() != null ? beacon.getPixelX().intValue() : "未知") + ", " +
+                                (beacon.getPixelY() != null ? beacon.getPixelY().intValue() : "未知") + ")");
+
+                        conflicts.add(conflict);
+
+                        logger.warn("发现信标冲突: 信标ID: {}, 已被区域 {} ({}) 使用",
+                                beacon.getBeaconId(), areaName, beaconArea);
+                    }
+                } else {
+                    logger.warn("信标ID {} 没有找到对应的信标", bid);
+                }
+            } catch (Exception e) {
+                logger.error("检查信标ID {} 冲突失败", bid, e);
+                continue;
+            }
+        }
+
+        logger.info("信标ID冲突检查完成，共发现 {} 个冲突", conflicts.size());
         return conflicts;
     }
 }

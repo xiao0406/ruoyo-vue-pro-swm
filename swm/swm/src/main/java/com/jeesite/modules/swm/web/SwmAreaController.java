@@ -10,6 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.alibaba.fastjson.JSON;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -209,7 +211,7 @@ public class SwmAreaController extends BaseController {
 
     /**
      * 保存区域并更新信标
-     * 
+     *
      * @author Shawn
      * @date 2025-01-14
      */
@@ -268,6 +270,103 @@ public class SwmAreaController extends BaseController {
             } else if (isEdit != null && isEdit) {
                 // 编辑模式下，如果信标列表为空，则清空该区域的所有信标关联
                 logger.info("编辑模式且信标列表为空：调用clearBeaconAreaAndColor");
+                swmAreaService.clearBeaconAreaAndColor(swmArea.getId());
+            }
+
+            result.put("success", true);
+            result.put("message", isEdit != null && isEdit ? "更新区域成功！" : "保存区域成功！");
+            result.put("data", swmArea);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "保存区域失败：" + e.getMessage());
+            logger.error("保存区域失败", e);
+        }
+        return result;
+    }
+
+    /**
+     * 保存区域并通过信标ID更新信标
+     *
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @PostMapping(value = "saveAreaWithBeaconIds")
+    @ResponseBody
+    @ApiOperation("保存区域并通过信标ID更新信标")
+    public Map<String, Object> saveAreaWithBeaconIds(@RequestBody Map<String, Object> params) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String id = (String) params.get("id");
+            String areaName = (String) params.get("areaName");
+            String areaType = (String) params.get("areaType");
+            String voicePrompt = (String) params.get("voicePrompt");
+            String filePath = (String) params.get("filePath");
+            List<String> bids = (List<String>) params.get("bids");
+            String beaconColor = (String) params.get("beaconColor");
+            Boolean isEdit = (Boolean) params.get("isEdit");
+
+            SwmArea swmArea;
+            if (isEdit != null && isEdit && id != null && !id.trim().isEmpty()) {
+                // 编辑模式：获取现有区域
+                swmArea = swmAreaService.get(id);
+                if (swmArea == null) {
+                    result.put("success", false);
+                    result.put("message", "区域不存在！");
+                    return result;
+                }
+            } else {
+                // 新增模式：创建新区域对象
+                swmArea = new SwmArea();
+            }
+
+            // 设置区域属性
+            swmArea.setAreaName(areaName);
+            swmArea.setAreaType(areaType);
+            swmArea.setAreaColor(beaconColor); // 保存区域颜色
+            swmArea.setVoicePrompt(voicePrompt);
+            swmArea.setFilePath(filePath);
+
+            // 将 bids 转换为 JSON 字符串并设置到区域对象
+            if (bids != null && !bids.isEmpty()) {
+                String bIdsJson = JSON.toJSONString(bids);
+                swmArea.setBIds(bIdsJson);
+                logger.info("设置区域信标ID列表: {}", bIdsJson);
+            } else {
+                swmArea.setBIds(null);
+                logger.info("清空区域信标ID列表");
+            }
+
+            // 保存区域（同时保存 b_ids 字段）
+            swmAreaService.save(swmArea);
+
+            // 处理信标ID列表并更新信标
+            logger.info("处理信标ID列表，区域ID: {}, 信标ID列表: {}, 是否编辑: {}", swmArea.getId(), bids, isEdit);
+
+            if (bids != null && !bids.isEmpty()) {
+                // 先检查冲突
+                List<Map<String, Object>> conflicts = swmAreaService.checkBeaconConflictsByIds(bids, swmArea.getId());
+
+                if (!conflicts.isEmpty()) {
+                    result.put("success", false);
+                    result.put("message", "发现信标冲突，无法保存");
+                    result.put("conflicts", conflicts);
+                    result.put("hasConflicts", true);
+                    return result; // 直接返回，阻止保存
+                }
+
+                // 没有冲突，继续更新信标
+                if (isEdit != null && isEdit) {
+                    // 编辑模式：先清空再重新设置，确保移除的信标不再关联该区域
+                    logger.info("编辑模式：调用updateAreaBeaconAssociationByIds");
+                    swmAreaService.updateAreaBeaconAssociationByIds(swmArea.getId(), bids, beaconColor);
+                } else {
+                    // 新增模式：直接设置信标关联
+                    logger.info("新增模式：调用updateBeaconsByIds");
+                    swmAreaService.updateBeaconsByIds(swmArea.getId(), bids, beaconColor);
+                }
+            } else if (isEdit != null && isEdit) {
+                // 编辑模式下，如果信标ID列表为空，则清空该区域的所有信标关联
+                logger.info("编辑模式且信标ID列表为空：调用clearBeaconAreaAndColor");
                 swmAreaService.clearBeaconAreaAndColor(swmArea.getId());
             }
 
@@ -567,6 +666,84 @@ public class SwmAreaController extends BaseController {
             result.put("success", false);
             result.put("message", "批量更新信标颜色失败：" + e.getMessage());
             logger.error("批量更新信标颜色失败", e);
+        }
+        return result;
+    }
+
+    /**
+     * 检查信标ID冲突
+     *
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @PostMapping(value = "checkBeaconIdConflicts")
+    @ResponseBody
+    @ApiOperation("检查信标ID冲突")
+    public Map<String, Object> checkBeaconIdConflicts(@RequestBody Map<String, Object> params) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<String> beaconIds = (List<String>) params.get("beaconIds");
+            String currentAreaId = (String) params.get("currentAreaId");
+
+            if (beaconIds == null || beaconIds.isEmpty()) {
+                result.put("success", true);
+                result.put("conflicts", new ArrayList<>());
+                result.put("message", "没有需要检查的信标ID");
+                return result;
+            }
+
+            List<Map<String, Object>> conflicts = swmAreaService.checkBeaconConflictsByIds(beaconIds, currentAreaId);
+
+            result.put("success", true);
+            result.put("conflicts", conflicts);
+            result.put("hasConflicts", !conflicts.isEmpty());
+            result.put("message", conflicts.isEmpty() ? "没有发现冲突" : "发现 " + conflicts.size() + " 个冲突");
+
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "检查信标ID冲突失败：" + e.getMessage());
+            logger.error("检查信标ID冲突失败", e);
+        }
+        return result;
+    }
+
+    /**
+     * 测试获取区域的 bIds 字段
+     *
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @RequestMapping(value = "testGetAreaBIds")
+    @ResponseBody
+    @ApiOperation("测试获取区域的bIds字段")
+    public Map<String, Object> testGetAreaBIds(String areaId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            if (areaId == null || areaId.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "区域ID不能为空");
+                return result;
+            }
+
+            SwmArea area = swmAreaService.get(areaId);
+            if (area == null) {
+                result.put("success", false);
+                result.put("message", "区域不存在");
+                return result;
+            }
+
+            result.put("success", true);
+            result.put("areaId", area.getId());
+            result.put("areaName", area.getAreaName());
+            result.put("bIds", area.getBIds());
+            result.put("message", "获取成功");
+
+            logger.info("获取区域 {} 的 bIds 字段: {}", area.getAreaName(), area.getBIds());
+
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "获取失败：" + e.getMessage());
+            logger.error("获取区域bIds失败", e);
         }
         return result;
     }

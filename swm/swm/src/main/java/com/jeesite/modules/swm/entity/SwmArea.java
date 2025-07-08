@@ -24,6 +24,7 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "work_shop", attrName = "workShop", label = "车间ID"),
         @Column(name = "voice_prompt", attrName = "voicePrompt", label = "语音提示"),
         @Column(name = "file_path", attrName = "filePath", label = "文件路径"),
+        @Column(name = "b_ids", attrName = "bIds", label = "关联的信标ID列表"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmArea extends DataEntity<SwmArea> {
@@ -36,6 +37,7 @@ public class SwmArea extends DataEntity<SwmArea> {
     private String workShop; // 车间ID
     private String voicePrompt; // 语音提示
     private String filePath; // 文件路径
+    private String bIds; // 关联的信标ID列表，JSON格式
 
     public SwmArea() {
         this(null);
@@ -97,5 +99,13 @@ public class SwmArea extends DataEntity<SwmArea> {
 
     public void setFilePath(String filePath) {
         this.filePath = filePath;
+    }
+
+    public String getBIds() {
+        return bIds;
+    }
+
+    public void setBIds(String bIds) {
+        this.bIds = bIds;
     }
 }
