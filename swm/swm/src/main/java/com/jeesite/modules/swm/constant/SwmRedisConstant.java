@@ -24,6 +24,14 @@ public class SwmRedisConstant {
     }
 
     /**
+     * 区域数据相关缓存（IOT模块初始化）
+     */
+    public static class Area {
+        /** 所有区域数据缓存 */
+        public static final String ALL_AREA_DATA = "iot:area:all";
+    }
+
+    /**
      * 缓存过期时间（秒）
      */
     public static class TTL {

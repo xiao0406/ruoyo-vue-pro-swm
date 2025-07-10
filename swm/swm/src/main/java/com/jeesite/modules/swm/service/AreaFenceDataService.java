@@ -8,6 +8,7 @@ package com.jeesite.modules.swm.service;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.lang.StringUtils;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.AreaFenceData;
 import com.jeesite.modules.swm.entity.AttendanceCheckResult;
 import com.jeesite.modules.swm.entity.SwmPerson;
@@ -501,7 +502,7 @@ public class AreaFenceDataService {
     }
 
     /**
-     * 获取休息区域的配置列表（从Redis缓存swm:area:all中获取area_type为"1"的区域）
+     * 获取休息区域的配置列表（从Redis缓存iot:area:all中获取area_type为"1"的区域）
      * 
      * @return 休息区域ID列表
      * @author Shawn
@@ -512,11 +513,11 @@ public class AreaFenceDataService {
         try {
             List<DictData> dictList = new ArrayList<>();
 
-            logger.info("开始从Redis缓存swm:area:all获取休息区域数据...");
+            logger.info("开始从Redis缓存iot:area:all获取休息区域数据...");
 
             // 使用StringRedisTemplate来获取原始字符串数据，避免序列化问题
             try {
-                String rawData = stringRedisTemplate.opsForValue().get("swm:area:all");
+                String rawData = stringRedisTemplate.opsForValue().get(SwmRedisConstant.Area.ALL_AREA_DATA);
                 if (rawData != null && !rawData.isEmpty()) {
                     logger.debug("从Redis获取到原始数据长度: {}", rawData.length());
 
@@ -569,17 +570,17 @@ public class AreaFenceDataService {
                         }
                     }
 
-                    logger.info("从Redis缓存swm:area:all中获取到休息区域数量: {}", dictList.size());
+                    logger.info("从Redis缓存iot:area:all中获取到休息区域数量: {}", dictList.size());
                 } else {
-                    logger.warn("Redis缓存swm:area:all为空或不存在");
+                    logger.warn("Redis缓存iot:area:all为空或不存在");
                 }
             } catch (Exception e) {
-                logger.warn("从Redis缓存swm:area:all解析数据失败: {}", e.getMessage());
+                logger.warn("从Redis缓存iot:area:all解析数据失败: {}", e.getMessage());
 
                 // 尝试使用RedisTemplate的方式
                 try {
                     logger.info("尝试使用RedisTemplate方式获取数据...");
-                    Object cachedData = redisTemplate.opsForValue().get("swm:area:all");
+                    Object cachedData = redisTemplate.opsForValue().get(SwmRedisConstant.Area.ALL_AREA_DATA);
 
                     if (cachedData instanceof List) {
                         List<?> areaList = (List<?>) cachedData;
@@ -951,7 +952,7 @@ public class AreaFenceDataService {
     }
 
     /**
-     * 获取工作区域的配置列表（从Redis缓存swm:area:all中获取area_type为"0"的区域）
+     * 获取工作区域的配置列表（从Redis缓存iot:area:all中获取area_type为"0"的区域）
      * 
      * @return 工作区域ID列表
      * @author Shawn
@@ -962,11 +963,11 @@ public class AreaFenceDataService {
         try {
             List<DictData> dictList = new ArrayList<>();
 
-            logger.info("开始从Redis缓存swm:area:all获取工作区域数据...");
+            logger.info("开始从Redis缓存iot:area:all获取工作区域数据...");
 
             // 使用StringRedisTemplate来获取原始字符串数据，避免序列化问题
             try {
-                String rawData = stringRedisTemplate.opsForValue().get("swm:area:all");
+                String rawData = stringRedisTemplate.opsForValue().get(SwmRedisConstant.Area.ALL_AREA_DATA);
                 if (rawData != null && !rawData.isEmpty()) {
                     logger.debug("从Redis获取到原始数据长度: {}", rawData.length());
 
@@ -1019,17 +1020,17 @@ public class AreaFenceDataService {
                         }
                     }
 
-                    logger.info("从Redis缓存swm:area:all中获取到工作区域数量: {}", dictList.size());
+                    logger.info("从Redis缓存iot:area:all中获取到工作区域数量: {}", dictList.size());
                 } else {
-                    logger.warn("Redis缓存swm:area:all为空或不存在");
+                    logger.warn("Redis缓存iot:area:all为空或不存在");
                 }
             } catch (Exception e) {
-                logger.warn("从Redis缓存swm:area:all解析数据失败: {}", e.getMessage());
+                logger.warn("从Redis缓存iot:area:all解析数据失败: {}", e.getMessage());
 
                 // 尝试使用RedisTemplate的方式
                 try {
                     logger.info("尝试使用RedisTemplate方式获取数据...");
-                    Object cachedData = redisTemplate.opsForValue().get("swm:area:all");
+                    Object cachedData = redisTemplate.opsForValue().get(SwmRedisConstant.Area.ALL_AREA_DATA);
 
                     if (cachedData instanceof List) {
                         List<?> areaList = (List<?>) cachedData;
