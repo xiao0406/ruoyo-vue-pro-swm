@@ -43,10 +43,15 @@
     <!-- 根据身份证号获取班组名称 -->
     <select id="getWorkGroupNameByIdCard" resultType="String">
         SELECT 
-            wg.work_group_name
-        FROM fms_worker w
+            COALESCE(wg.work_group_name, backup_wg.work_group_name) AS work_group_name
+        FROM swm_person sp
+        -- 原有关联（通过fms_worker关联）
+        LEFT JOIN fms_worker w ON sp.identity_card = w.identity_code COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id
-        WHERE w.identity_code = #{idCard}
+        -- 备用关联（通过swm_person表中保存的team字段关联）
+        LEFT JOIN fms_work_group backup_wg ON sp.team = backup_wg.id COLLATE utf8mb4_general_ci
+        WHERE sp.identity_card = #{idCard}
+        AND sp.status = '0'
         LIMIT 1
     </select>
     
@@ -85,15 +90,20 @@
     
     <!-- 批量获取班组名称 -->
     <select id="batchGetWorkGroupNameByIdCards" resultType="java.util.Map">
-        SELECT 
-              w.identity_code AS "key",
-            wg.work_group_name AS "value"
-        FROM fms_worker w
+        SELECT DISTINCT
+            sp.identity_card AS "key",
+            COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "value"
+        FROM swm_person sp
+        -- 原有关联（通过fms_worker关联）
+        LEFT JOIN fms_worker w ON sp.identity_card = w.identity_code COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id
-        WHERE w.identity_code IN
+        -- 备用关联（通过swm_person表中保存的team字段关联）
+        LEFT JOIN fms_work_group backup_wg ON sp.team = backup_wg.id COLLATE utf8mb4_general_ci
+        WHERE sp.identity_card IN
         <foreach collection="list" item="idCard" open="(" separator="," close=")">
             #{idCard}
         </foreach>
+        AND sp.status = '0'
     </select>
     
     <!-- 根据年份和月份获取不重复身份证的排班人数 -->
