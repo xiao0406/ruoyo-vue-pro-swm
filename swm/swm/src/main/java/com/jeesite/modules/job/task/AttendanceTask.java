@@ -97,14 +97,14 @@ public class AttendanceTask {
             query.setAttendanceDate(targetDate);
 
             // 测试使用，生产上要删除 begin
-//            java.util.List<String> employeeIds = new java.util.ArrayList<>();
-//            employeeIds.add("1935182658452475904");
-//            // employeeIds.add("1935182658850934784");
-//            if (employeeIds != null && !employeeIds.isEmpty()) {
-//                query.getSqlMap().getWhere().and("employee_id",
-//                        com.jeesite.common.mybatis.mapper.query.QueryType.IN,
-//                        employeeIds);
-//            }
+            // java.util.List<String> employeeIds = new java.util.ArrayList<>();
+            // employeeIds.add("1935182658452475904");
+            // // employeeIds.add("1935182658850934784");
+            // if (employeeIds != null && !employeeIds.isEmpty()) {
+            // query.getSqlMap().getWhere().and("employee_id",
+            // com.jeesite.common.mybatis.mapper.query.QueryType.IN,
+            // employeeIds);
+            // }
             // 测试使用，生产上要删除 end
 
             List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
@@ -250,33 +250,10 @@ public class AttendanceTask {
                                 record.getEmployeeId(), record.getEmployeeName(),
                                 record.getEffectiveWorkHours(), record.getScheduledHours(), dailyAchievementRate);
 
-                        // 更新考勤状态逻辑
+                        // 更新考勤状态逻辑 - 使用新的业务规则
                         // @author: Shawn
-                        // @date: 2024/07/31 (Re-described logic)
-                        String workTimeRangeForStatus = record.getWorkTimeRange();
-                        BigDecimal effectiveWorkHoursForStatus = record.getEffectiveWorkHours();
-
-                        // 1. 如果在目前时间范围在work_time_range时间范围内，内实际工作时长>0，那考勤状态是正常的。
-                        if (isCurrentTimeInWorkRange(workTimeRangeForStatus) &&
-                                effectiveWorkHoursForStatus != null &&
-                                effectiveWorkHoursForStatus.compareTo(BigDecimal.ZERO) > 0) {
-                            record.setAttendanceNormal("0"); // 正常
-                            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [正常] (当前时间在班次内且实际工作时长>0)",
-                                    record.getEmployeeId(), record.getEmployeeName());
-                        }
-                        // 2. 如果有上班打卡时间或下班打卡时间，实际工作时长<=0，就是异常。
-                        else if ((clockInTime != null || clockOutTime != null) &&
-                                (effectiveWorkHoursForStatus == null
-                                        || effectiveWorkHoursForStatus.compareTo(BigDecimal.ZERO) <= 0)) {
-                            record.setAttendanceNormal("1"); // 异常
-                            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [异常] (有打卡记录但实际工作时长<=0)",
-                                    record.getEmployeeId(), record.getEmployeeName());
-                        }
-                        // 3. 其他情况不用处理，原来是怎么样就怎么样。
-                        else {
-                            XxlJobHelper.log("员工[{}]{} 考勤状态未做更改，保留原状态: {}",
-                                    record.getEmployeeId(), record.getEmployeeName(), record.getAttendanceNormal());
-                        }
+                        // @date: 2025/01/27
+                        updateAttendanceStatusByNewRule(record);
 
                         swmDailyAttendanceService.update(record);
 
@@ -945,5 +922,153 @@ public class AttendanceTask {
             }
         }
         return calculatedActualHours;
+    }
+
+    /**
+     * 根据新业务规则更新考勤状态
+     * 正常：有上下班打卡都不为空并且应考勤时长>=实际考勤时长
+     * 异常：上下班打卡记录其中一个有值 或 实际工作时长为有值 或 实际考勤时长为有值
+     * 判断顺序：先判断正常，再判断异常，最后保持原状态
+     * 
+     * @param record 考勤记录（actualHours、effectiveWorkHours等字段已计算完成）
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    private void updateAttendanceStatusByNewRule(SwmDailyAttendance record) {
+        String originalStatus = record.getAttendanceNormal();
+
+        // 1. 优先判断正常条件
+        if (isNormalAttendanceCondition(record)) {
+            record.setAttendanceNormal("0");
+            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [正常] - 完整打卡且应考勤时长>=实际考勤时长",
+                    record.getEmployeeId(), record.getEmployeeName());
+            return;
+        }
+
+        // 2. 判断异常条件
+        if (isAbnormalAttendanceCondition(record)) {
+            record.setAttendanceNormal("1");
+            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [异常] - 满足异常条件",
+                    record.getEmployeeId(), record.getEmployeeName());
+            return;
+        }
+
+        // 3. 判断未考勤条件
+        if (isNotAttendanceCondition(record)) {
+            record.setAttendanceNormal("3");
+            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [未考勤] - 没有打卡且无工作时长数据",
+                    record.getEmployeeId(), record.getEmployeeName());
+            return;
+        }
+
+        // 4. 其他情况保持原状态
+        XxlJobHelper.log("员工[{}]{} 考勤状态保持不变: {}",
+                record.getEmployeeId(), record.getEmployeeName(), originalStatus);
+    }
+
+    /**
+     * 判断是否满足正常考勤条件
+     * 条件：clockInTime != null AND clockOutTime != null AND scheduledHours != null
+     * AND actualHours != null AND scheduledHours >= actualHours
+     * 
+     * @param record 考勤记录
+     * @return true-满足正常条件，false-不满足
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    private boolean isNormalAttendanceCondition(SwmDailyAttendance record) {
+        Date clockInTime = record.getClockInTime();
+        Date clockOutTime = record.getClockOutTime();
+        BigDecimal scheduledHours = record.getScheduledHours();
+        BigDecimal actualHours = record.getActualHours();
+
+        // 5个条件必须全部满足
+        boolean hasCompleteClockTimes = (clockInTime != null && clockOutTime != null);
+        boolean hasScheduledHours = (scheduledHours != null);
+        boolean hasActualHours = (actualHours != null);
+        boolean scheduledGEActual = (scheduledHours != null && actualHours != null &&
+                scheduledHours.compareTo(actualHours) >= 0);
+
+        boolean isNormal = hasCompleteClockTimes && hasScheduledHours && hasActualHours && scheduledGEActual;
+
+        // 详细日志记录（DEBUG级别）
+        if (log.isDebugEnabled()) {
+            log.debug("员工[{}]{} 正常条件判断详情: clockIn={}, clockOut={}, scheduled={}, actual={}, 结果={}",
+                    record.getEmployeeId(), record.getEmployeeName(),
+                    clockInTime != null, clockOutTime != null,
+                    scheduledHours, actualHours, isNormal);
+        }
+
+        return isNormal;
+    }
+
+    /**
+     * 判断是否满足异常考勤条件
+     * 条件：满足任一即为异常
+     * 条件A：clockInTime != null OR clockOutTime != null
+     * 条件B：effectiveWorkHours != null AND effectiveWorkHours > 0
+     * 条件C：actualHours != null AND actualHours > 0
+     * 
+     * @param record 考勤记录
+     * @return true-满足异常条件，false-不满足
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    private boolean isAbnormalAttendanceCondition(SwmDailyAttendance record) {
+        Date clockInTime = record.getClockInTime();
+        Date clockOutTime = record.getClockOutTime();
+        BigDecimal effectiveWorkHours = record.getEffectiveWorkHours();
+        BigDecimal actualHours = record.getActualHours();
+
+        // 满足任一条件即为异常
+        boolean hasPartialClockRecord = (clockInTime != null || clockOutTime != null);
+        boolean hasEffectiveWorkHours = (effectiveWorkHours != null
+                && effectiveWorkHours.compareTo(BigDecimal.ZERO) > 0);
+        boolean hasActualHours = (actualHours != null && actualHours.compareTo(BigDecimal.ZERO) > 0);
+
+        boolean isAbnormal = hasPartialClockRecord || hasEffectiveWorkHours || hasActualHours;
+
+        // 详细日志记录（DEBUG级别）
+        if (log.isDebugEnabled()) {
+            log.debug("员工[{}]{} 异常条件判断详情: 部分打卡记录={}, 实际工作时长有值={}, 实际考勤时长有值={}, 结果={}",
+                    record.getEmployeeId(), record.getEmployeeName(),
+                    hasPartialClockRecord, hasEffectiveWorkHours, hasActualHours, isAbnormal);
+        }
+
+        return isAbnormal;
+    }
+
+    /**
+     * 判断是否满足未考勤条件
+     * 条件：clockInTime == null AND clockOutTime == null AND effectiveWorkHours ==
+     * null AND actualHours == null
+     * 
+     * @param record 考勤记录
+     * @return true-满足未考勤条件，false-不满足
+     * @author Shawn
+     * @date 2025/01/27
+     */
+    private boolean isNotAttendanceCondition(SwmDailyAttendance record) {
+        Date clockInTime = record.getClockInTime();
+        Date clockOutTime = record.getClockOutTime();
+        BigDecimal effectiveWorkHours = record.getEffectiveWorkHours();
+        BigDecimal actualHours = record.getActualHours();
+
+        // 4个条件必须全部满足
+        boolean noClockRecord = (clockInTime == null && clockOutTime == null);
+        boolean noEffectiveWorkHours = (effectiveWorkHours == null
+                || effectiveWorkHours.compareTo(BigDecimal.ZERO) <= 0);
+        boolean noActualHours = (actualHours == null || actualHours.compareTo(BigDecimal.ZERO) <= 0);
+
+        boolean isNotAttendance = noClockRecord && noEffectiveWorkHours && noActualHours;
+
+        // 详细日志记录（DEBUG级别）
+        if (log.isDebugEnabled()) {
+            log.debug("员工[{}]{} 未考勤条件判断详情: 无打卡记录={}, 无实际工作时长={}, 无实际考勤时长={}, 结果={}",
+                    record.getEmployeeId(), record.getEmployeeName(),
+                    noClockRecord, noEffectiveWorkHours, noActualHours, isNotAttendance);
+        }
+
+        return isNotAttendance;
     }
 }
