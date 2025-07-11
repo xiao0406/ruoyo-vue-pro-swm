@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 头盔设备管理实体类
@@ -113,6 +114,9 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     private Date unbindTime; // 解绑时间
     private Integer bindDurationDays; // 绑定时长(天)
     private String usageStatus; // 使用状态(0-已解绑, 1-使用中)
+
+    // 非数据库字段，用于查询条件
+    private List<String> deviceIdList; // 设备ID列表，用于批量查询
 
     public SwmHelmetDevice() {
         super();
@@ -279,5 +283,13 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
 
     public void setUsageStatus(String usageStatus) {
         this.usageStatus = usageStatus;
+    }
+
+    public List<String> getDeviceIdList() {
+        return deviceIdList;
+    }
+
+    public void setDeviceIdList(List<String> deviceIdList) {
+        this.deviceIdList = deviceIdList;
     }
 }

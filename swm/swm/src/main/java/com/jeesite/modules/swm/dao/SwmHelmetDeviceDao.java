@@ -58,7 +58,7 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * @date 2025-05-31
      */
     int clearDeviceAssignment(@Param("deviceId") String deviceId);
-    
+
     /**
      * 带有人员关联信息的列表查询，关联fms_worker、fms_work_group和fms_position_archive表
      * 用于替代实体类默认查询
@@ -67,4 +67,12 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * @date 2025-06-01
      */
     List<SwmHelmetDevice> findHelmetDeviceListWithRelations(SwmHelmetDevice swmHelmetDevice);
+
+    /**
+     * 根据设备ID列表查询设备详情（带人员关联信息）
+     * 
+     * @author Shawn
+     * @date 2025-01-13
+     */
+    List<SwmHelmetDevice> findHelmetDeviceListByDeviceIds(SwmHelmetDevice device);
 }

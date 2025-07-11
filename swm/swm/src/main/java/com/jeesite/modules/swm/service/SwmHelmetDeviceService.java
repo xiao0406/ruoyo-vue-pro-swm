@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -145,7 +147,87 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             device.setPage(new Page<>());
         }
 
-        // 获取分页对象
+        // 判断是否有电量查询条件
+        if (device.getBatteryLevel() != null) {
+            // 走两阶段查询流程
+            return findPageWithBatteryFilter(device);
+        } else {
+            // 走原有查询流程
+            return findPageNormal(device);
+        }
+    }
+
+    /**
+     * 带电量条件的两阶段查询
+     * 
+     * @author Shawn
+     * @date 2025-01-13
+     */
+    private Page<SwmHelmetDevice> findPageWithBatteryFilter(SwmHelmetDevice device) {
+        Page<SwmHelmetDevice> page = device.getPage();
+
+        try {
+            // 第一阶段：从TDengine查询符合电量条件的设备ID列表
+            List<String> filteredDeviceIds = findDeviceIdsByBatteryLevel(device.getBatteryLevel());
+
+            if (filteredDeviceIds.isEmpty()) {
+                // 没有符合条件的设备，返回空结果
+                page.setCount(0);
+                page.setList(new ArrayList<>());
+                return page;
+            }
+
+            // 第二阶段：根据设备ID列表查询设备详情
+            // 手动实现分页逻辑
+            int pageNum = page.getPageNo();
+            int pageSize = page.getPageSize();
+            int start = (pageNum - 1) * pageSize;
+            int end = Math.min(start + pageSize, filteredDeviceIds.size());
+
+            // 设置总数
+            page.setCount(filteredDeviceIds.size());
+
+            if (start >= filteredDeviceIds.size()) {
+                // 页码超出范围
+                page.setList(new ArrayList<>());
+                return page;
+            }
+
+            // 获取当前页的设备ID
+            List<String> pageDeviceIds = filteredDeviceIds.subList(start, end);
+
+            // 创建查询条件对象，设置设备ID列表
+            SwmHelmetDevice queryDevice = new SwmHelmetDevice();
+            queryDevice.setDeviceIdList(pageDeviceIds);
+            // 保持其他查询条件
+            queryDevice.setHelmetType(device.getHelmetType());
+            queryDevice.setAssignedPerson(device.getAssignedPerson());
+
+            // 根据设备ID列表查询设备详情
+            List<SwmHelmetDevice> list = dao.findHelmetDeviceListByDeviceIds(queryDevice);
+
+            // 为每个设备设置最新电量
+            for (SwmHelmetDevice swmHelmetDevice : list) {
+                updateDeviceBatteryLevel(swmHelmetDevice);
+            }
+
+            page.setList(list);
+            return page;
+
+        } catch (Exception e) {
+            logger.error("电量条件查询失败，降级到普通查询", e);
+            // 降级到普通查询
+            return findPageNormal(device);
+        }
+    }
+
+    /**
+     * 普通查询流程（原有逻辑）
+     * 
+     * @author Shawn
+     * @date 2025-01-13
+     */
+    private Page<SwmHelmetDevice> findPageNormal(SwmHelmetDevice device) {
         Page<SwmHelmetDevice> page = device.getPage();
 
         // 先查询总数，设置到page对象中
@@ -161,50 +243,115 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         // 查询数据列表
         List<SwmHelmetDevice> list = dao.findHelmetDeviceListWithRelations(device);
 
+        // 为每个设备设置最新电量
         for (SwmHelmetDevice swmHelmetDevice : list) {
-            // 默认将电量设置为空，如果时序数据库中没有查到，则返回null
-            swmHelmetDevice.setBatteryLevel(null);
-
-            String sql = String.format(
-                    "select time , bat_l from %s.%s " +
-                            "where device_id = '%s' " +
-                            "AND time <= NOW() " +
-                            "AND time >= NOW() - 5m \n" +
-                            "ORDER BY time DESC \n" +
-                            "LIMIT 1;",
-                    dbname, HELMET_SUPER_TABLE_NAME, swmHelmetDevice.getDeviceId());
-
-            try {
-                R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
-
-                if (result != null && result.getData() != null) {
-                    JSONObject obj = result.getData();
-                    JSONArray dataArray = obj.getJSONArray("data");
-
-                    if (dataArray != null && dataArray.size() > 0) {
-                        int batL = dataArray.getJSONArray(0).getInt(1);
-                        swmHelmetDevice.setBatteryLevel(batL);
-                        // 如果能查到电量，说明设备在线，设置运动状态为'1'
-                        swmHelmetDevice.setMotionStatus("1");
-                    } else {
-                        // 如果在指定时间范围内没有数据，则认为设备离线
-                        swmHelmetDevice.setMotionStatus("0");
-                    }
-                } else {
-                    // 如果查询结果为空，也认为设备离线
-                    swmHelmetDevice.setMotionStatus("0");
-                }
-            } catch (Exception e) {
-                // 如果查询时序数据库时发生异常，则电量保持为空 (null)，并标记为离线
-                swmHelmetDevice.setMotionStatus("0");
-                logger.error("查询设备 {} 的电量失败: {}", swmHelmetDevice.getDeviceId(), e.getMessage());
-            }
+            updateDeviceBatteryLevel(swmHelmetDevice);
         }
 
         // 设置查询结果
         page.setList(list);
-
         return page;
+    }
+
+    /**
+     * 更新设备电量信息
+     * 
+     * @author Shawn
+     * @date 2025-01-13
+     */
+    private void updateDeviceBatteryLevel(SwmHelmetDevice swmHelmetDevice) {
+        // 默认将电量设置为空，如果时序数据库中没有查到，则返回null
+        swmHelmetDevice.setBatteryLevel(null);
+
+        String sql = String.format(
+                "select time , bat_l from %s.%s " +
+                        "where device_id = '%s' " +
+                        "AND time <= NOW() " +
+                        "AND time >= NOW() - 5m \n" +
+                        "ORDER BY time DESC \n" +
+                        "LIMIT 1;",
+                dbname, HELMET_SUPER_TABLE_NAME, swmHelmetDevice.getDeviceId());
+
+        try {
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            if (result != null && result.getData() != null) {
+                JSONObject obj = result.getData();
+                JSONArray dataArray = obj.getJSONArray("data");
+
+                if (dataArray != null && dataArray.size() > 0) {
+                    int batL = dataArray.getJSONArray(0).getInt(1);
+                    swmHelmetDevice.setBatteryLevel(batL);
+                    // 如果能查到电量，说明设备在线，设置运动状态为'1'
+                    swmHelmetDevice.setMotionStatus("1");
+                } else {
+                    // 如果在指定时间范围内没有数据，则认为设备离线
+                    swmHelmetDevice.setMotionStatus("0");
+                }
+            } else {
+                // 如果查询结果为空，也认为设备离线
+                swmHelmetDevice.setMotionStatus("0");
+            }
+        } catch (Exception e) {
+            // 如果查询时序数据库时发生异常，则电量保持为空 (null)，并标记为离线
+            swmHelmetDevice.setMotionStatus("0");
+            logger.error("查询设备 {} 的电量失败: {}", swmHelmetDevice.getDeviceId(), e.getMessage());
+        }
+    }
+
+    /**
+     * 根据电量条件从TDengine查询设备ID列表
+     * 使用LAST_ROW函数确保查询的是每个设备的最新电量状态
+     * 
+     * @author Shawn
+     * @date 2025-01-13
+     */
+    private List<String> findDeviceIdsByBatteryLevel(Integer batteryLevel) {
+        List<String> deviceIds = new ArrayList<>();
+
+        // 使用LAST_ROW函数获取每个设备在最近5分钟内的最新电量记录
+        // 只返回最新电量为指定值的设备
+        String sql = String.format(
+                "SELECT device_id, LAST_ROW(bat_l) as latest_battery " +
+                        "FROM %s.%s " +
+                        "WHERE time >= NOW() - 5m " +
+                        "GROUP BY device_id " +
+                        "HAVING LAST_ROW(bat_l) = %d;",
+                dbname, HELMET_SUPER_TABLE_NAME, batteryLevel);
+
+        try {
+            logger.info("根据电量条件{}%查询设备ID的SQL: {}", batteryLevel, sql);
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            if (result != null && result.getCode() == R.SUCCESS && result.getData() != null) {
+                JSONObject obj = result.getData();
+                JSONArray dataArray = obj.getJSONArray("data");
+
+                if (dataArray != null && dataArray.size() > 0) {
+                    for (int i = 0; i < dataArray.size(); i++) {
+                        JSONArray row = dataArray.getJSONArray(i);
+                        String deviceId = row.getStr(0);
+                        Integer latestBattery = row.getInt(1);
+
+                        if (deviceId != null && !deviceId.trim().isEmpty()) {
+                            deviceIds.add(deviceId);
+                            logger.debug("设备 {} 的最新电量: {}%", deviceId, latestBattery);
+                        }
+                    }
+                }
+            } else {
+                logger.warn("TDengine查询失败或无数据, 返回码: {}, 消息: {}",
+                        result != null ? result.getCode() : "null",
+                        result != null ? result.getMsg() : "null");
+            }
+
+            logger.info("根据电量条件{}%查询到{}个设备（确保是最新状态）", batteryLevel, deviceIds.size());
+            return deviceIds;
+
+        } catch (Exception e) {
+            logger.error("根据电量条件查询设备ID失败: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
     }
 
     /**

@@ -140,4 +140,57 @@
         ORDER BY a.update_date DESC
     </select>
     
+    <!-- 根据设备ID列表查询设备详情（带人员关联信息） -->
+    <select id="findHelmetDeviceListByDeviceIds" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
+        SELECT
+            a.id,
+            a.device_id,
+            a.helmet_type,
+            a.battery_level,
+            a.ip,
+            a.mac_address,
+            a.assigned_person,
+            a.person_name,
+            a.person_phone,
+            CASE 
+                WHEN a.assigned_person IS NOT NULL AND a.assigned_person != '' THEN pa.position_name
+                ELSE a.assigned_workshop
+            END AS assigned_workshop,
+            a.assigned_process,
+            CASE 
+                WHEN a.assigned_person IS NOT NULL AND a.assigned_person != '' THEN wg.work_group_name
+                ELSE a.assigned_team
+            END AS assigned_team,
+            a.motion_status,
+            a.bind_time,
+            a.unbind_time,
+            a.bind_duration_days,
+            a.usage_status,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks
+        FROM swm_helmet_device a
+        LEFT JOIN fms_worker w ON a.assigned_person = w.identity_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_position_archive pa ON w.work_shop_code = pa.id COLLATE utf8mb4_general_ci
+        <where>
+            a.status = '0' ${sqlMap.dsf}
+            <if test="deviceIdList != null and deviceIdList.size() > 0">
+                AND a.device_id IN
+                <foreach collection="deviceIdList" item="deviceId" open="(" separator="," close=")">
+                    #{deviceId}
+                </foreach>
+            </if>
+            <if test="helmetType != null and helmetType != ''">
+                AND a.helmet_type = #{helmetType}
+            </if>
+            <if test="assignedPerson != null and assignedPerson != ''">
+                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+            </if>
+        </where>
+        ORDER BY a.update_date DESC
+    </select>
+    
 </mapper> 
