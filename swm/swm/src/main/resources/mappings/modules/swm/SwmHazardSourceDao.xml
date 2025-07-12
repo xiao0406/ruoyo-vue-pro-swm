@@ -18,16 +18,19 @@
         <where>
             ${sqlMap.dsf}
             <if test="hazardName != null and hazardName != ''">
-                AND a.hazard_name LIKE #{hazardName}
+                AND a.hazard_name LIKE CONCAT('%', #{hazardName}, '%')
             </if>
             <if test="hazardCategory != null and hazardCategory != ''">
                 AND a.hazard_category = #{hazardCategory}
             </if>
             <if test="location != null and location != ''">
-                AND a.location LIKE #{location}
+                AND a.location LIKE CONCAT('%', #{location}, '%')
             </if>
             <if test="beaconIdentifier != null and beaconIdentifier != ''">
-                AND a.beacon_identifier LIKE #{beaconIdentifier}
+                AND a.beacon_identifier LIKE CONCAT('%', #{beaconIdentifier}, '%')
+            </if>
+            <if test="beaconTag != null and beaconTag != ''">
+                AND a.beacon_tag LIKE CONCAT('%', #{beaconTag}, '%')
             </if>
             <if test="isPatrolIncluded != null and isPatrolIncluded != ''">
                 AND a.is_patrol_included = #{isPatrolIncluded}

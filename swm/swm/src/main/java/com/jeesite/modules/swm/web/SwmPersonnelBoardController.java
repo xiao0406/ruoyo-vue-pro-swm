@@ -62,6 +62,19 @@ public class SwmPersonnelBoardController extends BaseController {
     @ApiOperation("查询列表数据")
     public Map<String, Object> listData(SwmPersonnelBoard swmPersonnelBoard, HttpServletRequest request,
             HttpServletResponse response) {
+        // 从请求中获取时间类型和时间值参数
+        String timeType = request.getParameter("timeType");
+        String timeValue = request.getParameter("timeValue");
+        
+        // 默认为当月
+        if (timeType == null || timeType.isEmpty()) {
+            timeType = "month";
+        }
+        
+        // 设置时间参数到查询对象
+        swmPersonnelBoard.setTimeType(timeType);
+        swmPersonnelBoard.setTimeValue(timeValue);
+        
         Page<SwmPersonnelBoard> page = swmPersonnelBoardService.findPage(new Page<>(request, response),
                 swmPersonnelBoard);
 

@@ -207,4 +207,8 @@ public class SwmMonitorDeviceInfo extends DataEntity<SwmMonitorDeviceInfo> {
     public void setCameraIndexCode(String cameraIndexCode) {
         this.cameraIndexCode = cameraIndexCode;
     }
+
+    public boolean getIsTreeLeaf() {
+        return "1".equals(this.treeLeaf);
+    }
 }

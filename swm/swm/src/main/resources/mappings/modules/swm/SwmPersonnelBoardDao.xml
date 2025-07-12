@@ -53,7 +53,22 @@
                 COALESCE(SUM(da.idle_hours), 0) AS idle_hours
             FROM swm_daily_attendance da
             WHERE da.status = '0'
-                AND DATE_FORMAT(da.attendance_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+                <if test="timeType != null and timeValue != null">
+                    <choose>
+                        <when test="timeType == 'day'">
+                            AND DATE_FORMAT(da.attendance_date, '%Y-%m-%d') = #{timeValue}
+                        </when>
+                        <when test="timeType == 'week'">
+                            AND DATE_FORMAT(da.attendance_date, '%Y-%u') = #{timeValue}
+                        </when>
+                        <otherwise>
+                            AND DATE_FORMAT(da.attendance_date, '%Y-%m') = #{timeValue}
+                        </otherwise>
+                    </choose>
+                </if>
+                <if test="timeType == null or timeValue == null">
+                    AND DATE_FORMAT(da.attendance_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+                </if>
             GROUP BY da.employee_id
         ) da_stats ON a.id = da_stats.employee_id
         <where>

@@ -1,9 +1,14 @@
 package com.jeesite.modules.swm.service;
 
+import com.alibaba.fastjson.JSONObject;
+import com.jeesite.common.collect.ListUtils;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmMonitorDeviceInfoDao;
 import com.jeesite.modules.swm.entity.SwmMonitorDeviceInfo;
+import com.jeesite.modules.sys.dao.MonitorDeviceInfoDao;
+import com.jeesite.modules.sys.entity.MonitorDeviceInfo;
+import com.jeesite.modules.sys.entity.Role;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,5 +97,59 @@ public class SwmMonitorDeviceInfoService extends CrudService<SwmMonitorDeviceInf
      */
     public List<SwmMonitorDeviceInfo> officeDeviceList(SwmMonitorDeviceInfo swmMonitorDeviceInfo) {
         return dao.officeDeviceList(swmMonitorDeviceInfo);
+    }
+
+    /**
+     * 查询公司列表
+     */
+    public List<JSONObject> companyTreeData() {
+
+        List<JSONObject> mapList = ListUtils.newArrayList();
+        SwmMonitorDeviceInfo where = new SwmMonitorDeviceInfo();
+        where.setRecType("1");
+        List<SwmMonitorDeviceInfo> list = this.findList(where);
+
+        for(int i = 0; i < list.size(); ++i) {
+            SwmMonitorDeviceInfo e = (SwmMonitorDeviceInfo)list.get(i);
+            if ("0".equals(e.getStatus())) {
+                JSONObject map = new JSONObject();
+                map.put("id", e.getId());
+                map.put("pId", e.getParentId());
+                map.put("code", e.getId());
+                map.put("name", e.getName());
+                map.put("title", e.getName());
+                map.put("isParent", !e.getIsTreeLeaf());
+                map.put("treeSort", e.getTreeSort());
+                mapList.add(map);
+            }
+        }
+
+        return mapList;
+
+    }
+
+
+    public List<JSONObject> roleTreeData() {
+        List<JSONObject> mapList = ListUtils.newArrayList();
+        Role where = new Role();
+        where.setStatus("0");
+        where.setUserType("employee");
+        List<Role> list = ((SwmMonitorDeviceInfoDao)this.dao).findAllRoleList(where);
+
+        for(int i = 0; i < list.size(); ++i) {
+            Role e = (Role)list.get(i);
+            if ("0".equals(e.getStatus())) {
+                JSONObject map = new JSONObject();
+                map.put("id", e.getId());
+                map.put("pId", "0");
+                map.put("code", e.getViewCode());
+                map.put("name", e.getRoleName());
+                map.put("title", e.getRoleName());
+                map.put("isParent", false);
+                mapList.add(map);
+            }
+        }
+
+        return mapList;
     }
 }

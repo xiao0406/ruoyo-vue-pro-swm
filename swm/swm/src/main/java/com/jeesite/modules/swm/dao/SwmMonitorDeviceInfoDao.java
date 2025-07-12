@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.dao;
 import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmMonitorDeviceInfo;
+import com.jeesite.modules.sys.entity.Role;
 
 import java.util.List;
 
@@ -21,4 +22,6 @@ public interface SwmMonitorDeviceInfoDao extends CrudDao<SwmMonitorDeviceInfo> {
      * @return 设备列表
      */
     List<SwmMonitorDeviceInfo> officeDeviceList(SwmMonitorDeviceInfo swmMonitorDeviceInfo);
+
+    List<Role> findAllRoleList(Role where);
 }
