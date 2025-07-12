@@ -184,41 +184,81 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             int start = (pageNum - 1) * pageSize;
             int end = Math.min(start + pageSize, filteredDeviceIds.size());
 
-            // 设置总数
-            page.setCount(filteredDeviceIds.size());
+            // 如果有其他查询条件，需要重新计算总数
+            if (hasOtherConditions(device)) {
+                // 创建查询条件对象，设置设备ID列表（包含所有符合电量条件的设备）
+                SwmHelmetDevice countDevice = new SwmHelmetDevice();
+                countDevice.setDeviceIdList(filteredDeviceIds);
+                countDevice.setHelmetType(device.getHelmetType());
+                countDevice.setAssignedPerson(device.getAssignedPerson());
 
-            if (start >= filteredDeviceIds.size()) {
-                // 页码超出范围
-                page.setList(new ArrayList<>());
+                // 查询符合所有条件的设备总数
+                List<SwmHelmetDevice> allFilteredDevices = dao.findHelmetDeviceListByDeviceIds(countDevice);
+                page.setCount(allFilteredDevices.size());
+
+                // 重新计算分页
+                if (start >= allFilteredDevices.size()) {
+                    page.setList(new ArrayList<>());
+                    return page;
+                }
+
+                end = Math.min(start + pageSize, allFilteredDevices.size());
+                // 获取当前页的数据
+                List<SwmHelmetDevice> list = allFilteredDevices.subList(start, end);
+
+                // 为每个设备设置最新电量
+                for (SwmHelmetDevice swmHelmetDevice : list) {
+                    updateDeviceBatteryLevel(swmHelmetDevice);
+                }
+
+                page.setList(list);
+                return page;
+            } else {
+                // 没有其他查询条件，直接使用设备ID列表的大小作为总数
+                page.setCount(filteredDeviceIds.size());
+
+                if (start >= filteredDeviceIds.size()) {
+                    // 页码超出范围
+                    page.setList(new ArrayList<>());
+                    return page;
+                }
+
+                // 获取当前页的设备ID
+                List<String> pageDeviceIds = filteredDeviceIds.subList(start, end);
+
+                // 创建查询条件对象，设置设备ID列表
+                SwmHelmetDevice queryDevice = new SwmHelmetDevice();
+                queryDevice.setDeviceIdList(pageDeviceIds);
+
+                // 根据设备ID列表查询设备详情
+                List<SwmHelmetDevice> list = dao.findHelmetDeviceListByDeviceIds(queryDevice);
+
+                // 为每个设备设置最新电量
+                for (SwmHelmetDevice swmHelmetDevice : list) {
+                    updateDeviceBatteryLevel(swmHelmetDevice);
+                }
+
+                page.setList(list);
                 return page;
             }
-
-            // 获取当前页的设备ID
-            List<String> pageDeviceIds = filteredDeviceIds.subList(start, end);
-
-            // 创建查询条件对象，设置设备ID列表
-            SwmHelmetDevice queryDevice = new SwmHelmetDevice();
-            queryDevice.setDeviceIdList(pageDeviceIds);
-            // 保持其他查询条件
-            queryDevice.setHelmetType(device.getHelmetType());
-            queryDevice.setAssignedPerson(device.getAssignedPerson());
-
-            // 根据设备ID列表查询设备详情
-            List<SwmHelmetDevice> list = dao.findHelmetDeviceListByDeviceIds(queryDevice);
-
-            // 为每个设备设置最新电量
-            for (SwmHelmetDevice swmHelmetDevice : list) {
-                updateDeviceBatteryLevel(swmHelmetDevice);
-            }
-
-            page.setList(list);
-            return page;
 
         } catch (Exception e) {
             logger.error("电量条件查询失败，降级到普通查询", e);
             // 降级到普通查询
             return findPageNormal(device);
         }
+    }
+
+    /**
+     * 检查是否有除了电量之外的其他查询条件
+     * 
+     * @author Shawn
+     * @date 2025-01-13
+     */
+    private boolean hasOtherConditions(SwmHelmetDevice device) {
+        return (device.getHelmetType() != null && !device.getHelmetType().trim().isEmpty())
+                || (device.getAssignedPerson() != null && !device.getAssignedPerson().trim().isEmpty())
+                || (device.getDeviceId() != null && !device.getDeviceId().trim().isEmpty());
     }
 
     /**
@@ -230,8 +270,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     private Page<SwmHelmetDevice> findPageNormal(SwmHelmetDevice device) {
         Page<SwmHelmetDevice> page = device.getPage();
 
-        // 先查询总数，设置到page对象中
-        long count = dao.findCount(device);
+        // 先查询总数，使用自定义计数查询以支持复杂查询条件
+        long count = dao.findHelmetDeviceCountWithRelations(device);
         page.setCount(count);
 
         // 如果总数为0，则直接返回空列表

@@ -134,12 +134,35 @@
                 AND a.helmet_type = #{helmetType}
             </if>
             <if test="assignedPerson != null and assignedPerson != ''">
-                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+                AND (a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%') 
+                     OR a.person_name LIKE CONCAT('%', #{assignedPerson}, '%'))
             </if>
         </where>
         ORDER BY a.update_date DESC
     </select>
     
+    <!-- 带有人员关联信息的计数查询，用于替代框架默认的计数查询 -->
+    <select id="findHelmetDeviceCountWithRelations" resultType="long">
+        SELECT COUNT(DISTINCT a.id)
+        FROM swm_helmet_device a
+        LEFT JOIN fms_worker w ON a.assigned_person = w.identity_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_position_archive pa ON w.work_shop_code = pa.id COLLATE utf8mb4_general_ci
+        <where>
+            a.status = '0' ${sqlMap.dsf}
+            <if test="deviceId != null and deviceId != ''">
+                AND a.device_id LIKE CONCAT('%', #{deviceId}, '%')
+            </if>
+            <if test="helmetType != null and helmetType != ''">
+                AND a.helmet_type = #{helmetType}
+            </if>
+            <if test="assignedPerson != null and assignedPerson != ''">
+                AND (a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%') 
+                     OR a.person_name LIKE CONCAT('%', #{assignedPerson}, '%'))
+            </if>
+        </where>
+    </select>
+
     <!-- 根据设备ID列表查询设备详情（带人员关联信息） -->
     <select id="findHelmetDeviceListByDeviceIds" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
         SELECT
@@ -187,7 +210,8 @@
                 AND a.helmet_type = #{helmetType}
             </if>
             <if test="assignedPerson != null and assignedPerson != ''">
-                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+                AND (a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%') 
+                     OR a.person_name LIKE CONCAT('%', #{assignedPerson}, '%'))
             </if>
         </where>
         ORDER BY a.update_date DESC

@@ -69,6 +69,14 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
     List<SwmHelmetDevice> findHelmetDeviceListWithRelations(SwmHelmetDevice swmHelmetDevice);
 
     /**
+     * 带有人员关联信息的计数查询，用于替代框架默认的计数查询
+     * 
+     * @author Shawn
+     * @date 2025-01-13
+     */
+    long findHelmetDeviceCountWithRelations(SwmHelmetDevice swmHelmetDevice);
+
+    /**
      * 根据设备ID列表查询设备详情（带人员关联信息）
      * 
      * @author Shawn
