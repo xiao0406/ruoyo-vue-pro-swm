@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.web;
 
+import com.alibaba.fastjson.JSONObject;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
@@ -53,7 +54,6 @@ public class SwmMonitorDeviceInfoController extends BaseController {
 	/**
 	 * 查询列表
 	 */
-	@RequiresPermissions("swm:monitorDeviceInfo:view")
 	@RequestMapping(value = { "list", "" })
 	@ApiOperation(value = "查询列表", notes = "查询列表")
 	public String list(SwmMonitorDeviceInfo swmMonitorDeviceInfo, Model model) {
@@ -64,7 +64,6 @@ public class SwmMonitorDeviceInfoController extends BaseController {
 	/**
 	 * 查询列表数据
 	 */
-	@RequiresPermissions("swm:monitorDeviceInfo:view")
 	@RequestMapping(value = "listData")
 	@ResponseBody
 	@ApiOperation(value = "查询列表数据", notes = "查询列表数据")
@@ -89,7 +88,6 @@ public class SwmMonitorDeviceInfoController extends BaseController {
 	/**
 	 * 查看编辑表单
 	 */
-	@RequiresPermissions("swm:monitorDeviceInfo:view")
 	@RequestMapping(value = "form")
 	@ApiOperation(value = "查看编辑表单", notes = "查看编辑表单")
 	public String form(SwmMonitorDeviceInfo swmMonitorDeviceInfo, Model model) {
@@ -100,7 +98,6 @@ public class SwmMonitorDeviceInfoController extends BaseController {
 	/**
 	 * 保存数据
 	 */
-	@RequiresPermissions("swm:monitorDeviceInfo:edit")
 	@PostMapping(value = "save")
 	@ResponseBody
 	@ApiOperation(value = "保存数据", notes = "保存数据")
@@ -112,7 +109,6 @@ public class SwmMonitorDeviceInfoController extends BaseController {
 	/**
 	 * 删除数据
 	 */
-	@RequiresPermissions("swm:monitorDeviceInfo:edit")
 	@RequestMapping(value = "delete")
 	@ResponseBody
 	@ApiOperation(value = "删除数据", notes = "删除数据")
@@ -147,4 +143,29 @@ public class SwmMonitorDeviceInfoController extends BaseController {
 		Page<SwmMonitorDeviceInfo> page = swmMonitorDeviceInfoCoreService.officeDeviceListUpdate(swmMonitorDeviceInfo);
 		return page;
 	}
+
+
+	/**
+	 * 查询公司列表
+	 */
+	@RequestMapping(value = "companyTreeData")
+	@ResponseBody
+	@ApiOperation(value = "查询公司列表", notes = "查询公司列表")
+	public List<JSONObject> companyTreeData(HttpServletRequest request, HttpServletResponse response) {
+		return swmMonitorDeviceInfoService.companyTreeData();
+	}
+
+
+	/**
+	 * 查询角色列表
+	 */
+	@RequestMapping(value = "roleTreeData")
+	@ResponseBody
+	@ApiOperation(value = "查询角色列表", notes = "查询角色列表")
+	public List<JSONObject> roleTreeData(HttpServletRequest request, HttpServletResponse response) {
+		return swmMonitorDeviceInfoService.roleTreeData();
+	}
+
+
+
 }

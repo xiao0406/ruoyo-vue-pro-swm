@@ -53,7 +53,7 @@
                 AND a.plan_name LIKE concat('%', #{planName}, '%')
             </if>
             <if test="inspector != null and inspector != ''">
-                AND p.name LIKE concat('%', #{inspector}, '%')
+                AND p.name = #{inspector}
             </if>
             <if test="inspectionType != null and inspectionType != ''">
                 AND a.inspection_type = #{inspectionType}

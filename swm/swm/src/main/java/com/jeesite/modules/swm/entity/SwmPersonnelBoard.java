@@ -36,6 +36,30 @@ import java.math.BigDecimal;
 public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
 
     private static final long serialVersionUID = 1L;
+    
+    // 查询时间类型: day, week, month
+    private String timeType;
+    
+    // 查询时间值: YYYY-MM-DD, YYYY-WW, YYYY-MM
+    private String timeValue;
+    
+    // Getter and Setter for timeType
+    public String getTimeType() {
+        return timeType;
+    }
+    
+    public void setTimeType(String timeType) {
+        this.timeType = timeType;
+    }
+    
+    // Getter and Setter for timeValue
+    public String getTimeValue() {
+        return timeValue;
+    }
+    
+    public void setTimeValue(String timeValue) {
+        this.timeValue = timeValue;
+    }
 
     /**
      * 工作状态枚举

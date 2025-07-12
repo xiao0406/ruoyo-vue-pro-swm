@@ -60,5 +60,17 @@
         </where>
         ORDER BY a.update_date DESC
     </select>
-    
+    <select id="findAllRoleList" resultType="com.jeesite.modules.sys.entity.Role">
+        select * from js_sys_role
+        <where>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="userType != null and userType != ''">
+                and user_type = #{userType}
+            </if>
+        </where>
+        order by role_sort ASC
+    </select>
+
 </mapper>
