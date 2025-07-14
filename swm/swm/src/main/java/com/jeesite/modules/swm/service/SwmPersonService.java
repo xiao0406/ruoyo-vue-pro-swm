@@ -228,7 +228,37 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
     /**
      * 通过组织和工种查询人员
      */
-    public List<SwmPerson> listByOrgAndWorkType(PersonnelOrganizationQueryParam query){
+    public List<SwmPerson> listByOrgAndWorkType(PersonnelOrganizationQueryParam query) {
         return dao.listByOrgAndWorkType(query);
     };
+
+    /**
+     * 根据身份证号列表查询在职人员
+     * 
+     * @param identityCards 身份证号列表
+     * @return 在职人员列表
+     * @author Shawn
+     * @date 2025-01-15
+     */
+    public List<SwmPerson> findActivePersonsByIdentityCards(List<String> identityCards) {
+        if (identityCards == null || identityCards.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return dao.findActivePersonsByIdentityCards(identityCards);
+    }
+
+    /**
+     * 根据手机号列表查询在职人员
+     * 
+     * @param phoneNumbers 手机号列表
+     * @return 在职人员列表
+     * @author Shawn
+     * @date 2025-01-15
+     */
+    public List<SwmPerson> findActivePersonsByPhoneNumbers(List<String> phoneNumbers) {
+        if (phoneNumbers == null || phoneNumbers.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return dao.findActivePersonsByPhoneNumbers(phoneNumbers);
+    }
 }

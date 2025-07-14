@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -96,6 +97,25 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
 
     @Override
     public void doAfterAllAnalysed(AnalysisContext context) {
+        // Step 1: 批次内排重检查
+        List<String> batchDuplicateErrors = checkBatchDuplicates(list);
+        if (!batchDuplicateErrors.isEmpty()) {
+            errors.addAll(batchDuplicateErrors);
+            errorCount += batchDuplicateErrors.size();
+            logger.warn("批次内发现重复数据，停止导入：{}", batchDuplicateErrors);
+            return; // 立即停止，不执行后续处理
+        }
+
+        // Step 2: 全局排重检查
+        List<String> globalDuplicateErrors = checkGlobalDuplicates(list);
+        if (!globalDuplicateErrors.isEmpty()) {
+            errors.addAll(globalDuplicateErrors);
+            errorCount += globalDuplicateErrors.size();
+            logger.warn("与系统数据发现重复，停止导入：{}", globalDuplicateErrors);
+            return; // 立即停止，不执行后续处理
+        }
+
+        // Step 3: 排重检查通过，继续原有的数据处理逻辑
         saveData();
         logger.info("所有数据解析完成，共处理{}条记录，成功{}条，失败{}条", totalCount, successCount, errorCount);
     }
@@ -288,6 +308,117 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
             errors.add("第" + rowIndex + "行，字段[组织架构]：层级关系验证发生异常 - " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * 批次内排重检查
+     * 
+     * @param data 数据列表
+     * @return 错误信息列表
+     */
+    private List<String> checkBatchDuplicates(List<SwmPersonExcelEnhancedModel> data) {
+        List<String> errors = new ArrayList<>();
+
+        // 身份证号码排重
+        Map<String, List<Integer>> identityCardMap = new HashMap<>();
+        // 手机号码排重
+        Map<String, List<Integer>> phoneNumberMap = new HashMap<>();
+
+        // 遍历数据收集重复信息
+        for (int i = 0; i < data.size(); i++) {
+            SwmPersonExcelEnhancedModel rowData = data.get(i);
+            String identityCard = rowData.getIdentityCard();
+            String phoneNumber = rowData.getPhoneNumber();
+
+            // 收集身份证重复位置
+            if (StringUtils.isNotBlank(identityCard)) {
+                identityCardMap.computeIfAbsent(identityCard, k -> new ArrayList<>()).add(i + 2); // +2因为Excel从第2行开始
+            }
+
+            // 收集手机号重复位置
+            if (StringUtils.isNotBlank(phoneNumber)) {
+                phoneNumberMap.computeIfAbsent(phoneNumber, k -> new ArrayList<>()).add(i + 2);
+            }
+        }
+
+        // 生成身份证重复错误信息
+        for (Map.Entry<String, List<Integer>> entry : identityCardMap.entrySet()) {
+            if (entry.getValue().size() > 1) {
+                String rowsStr = entry.getValue().stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining("行、"));
+                errors.add(String.format("第%s行，字段[身份证号码]：存在重复 (%s)", rowsStr, entry.getKey()));
+            }
+        }
+
+        // 生成手机号重复错误信息
+        for (Map.Entry<String, List<Integer>> entry : phoneNumberMap.entrySet()) {
+            if (entry.getValue().size() > 1) {
+                String rowsStr = entry.getValue().stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining("行、"));
+                errors.add(String.format("第%s行，字段[手机号码]：存在重复 (%s)", rowsStr, entry.getKey()));
+            }
+        }
+
+        return errors;
+    }
+
+    /**
+     * 全局排重检查
+     * 
+     * @param data 数据列表
+     * @return 错误信息列表
+     */
+    private List<String> checkGlobalDuplicates(List<SwmPersonExcelEnhancedModel> data) {
+        List<String> errors = new ArrayList<>();
+
+        // 收集所有身份证号码和手机号码
+        List<String> identityCards = data.stream()
+                .map(SwmPersonExcelEnhancedModel::getIdentityCard)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
+
+        List<String> phoneNumbers = data.stream()
+                .map(SwmPersonExcelEnhancedModel::getPhoneNumber)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
+
+        // 批量查询数据库中的在职人员
+        List<SwmPerson> existingPersonsByIdentity = swmPersonService.findActivePersonsByIdentityCards(identityCards);
+        List<SwmPerson> existingPersonsByPhone = swmPersonService.findActivePersonsByPhoneNumbers(phoneNumbers);
+
+        // 构建查询结果的Map
+        Map<String, SwmPerson> identityCardPersonMap = existingPersonsByIdentity.stream()
+                .collect(Collectors.toMap(SwmPerson::getIdentityCard, p -> p));
+        Map<String, SwmPerson> phoneNumberPersonMap = existingPersonsByPhone.stream()
+                .collect(Collectors.toMap(SwmPerson::getPhoneNumber, p -> p));
+
+        // 检查每行数据是否与数据库重复
+        for (int i = 0; i < data.size(); i++) {
+            SwmPersonExcelEnhancedModel rowData = data.get(i);
+            int rowIndex = i + 2; // Excel从第2行开始
+
+            // 检查身份证号码重复
+            if (StringUtils.isNotBlank(rowData.getIdentityCard())) {
+                SwmPerson existingPerson = identityCardPersonMap.get(rowData.getIdentityCard());
+                if (existingPerson != null) {
+                    errors.add(String.format("第%d行，字段[身份证号码]：与在职人员[%s]重复 (%s)",
+                            rowIndex, existingPerson.getName(), rowData.getIdentityCard()));
+                }
+            }
+
+            // 检查手机号码重复
+            if (StringUtils.isNotBlank(rowData.getPhoneNumber())) {
+                SwmPerson existingPerson = phoneNumberPersonMap.get(rowData.getPhoneNumber());
+                if (existingPerson != null) {
+                    errors.add(String.format("第%d行，字段[手机号码]：与在职人员[%s]重复 (%s)",
+                            rowIndex, existingPerson.getName(), rowData.getPhoneNumber()));
+                }
+            }
+        }
+
+        return errors;
     }
 
     /**

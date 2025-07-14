@@ -316,4 +316,38 @@
         GROUP BY a.id  <!-- 只需按主键分组 -->
         ORDER BY MAX(a.update_date) DESC  <!-- 聚合排序字段 -->
     </select>
+
+    <!-- 根据身份证号列表查询在职人员 -->
+    <select id="findActivePersonsByIdentityCards" parameterType="java.util.List" resultType="SwmPerson">
+        SELECT 
+            a.id AS "id",
+            a.name AS "name",
+            a.identity_card AS "identityCard",
+            a.phone_number AS "phoneNumber",
+            a.personnel_status AS "personnelStatus"
+        FROM swm_person a
+        WHERE a.personnel_status = '1'
+        AND a.status = '0'
+        AND a.identity_card IN
+        <foreach collection="identityCards" item="identityCard" open="(" separator="," close=")">
+            #{identityCard}
+        </foreach>
+    </select>
+
+    <!-- 根据手机号列表查询在职人员 -->
+    <select id="findActivePersonsByPhoneNumbers" parameterType="java.util.List" resultType="SwmPerson">
+        SELECT 
+            a.id AS "id",
+            a.name AS "name",
+            a.identity_card AS "identityCard",
+            a.phone_number AS "phoneNumber",
+            a.personnel_status AS "personnelStatus"
+        FROM swm_person a
+        WHERE a.personnel_status = '1'
+        AND a.status = '0'
+        AND a.phone_number IN
+        <foreach collection="phoneNumbers" item="phoneNumber" open="(" separator="," close=")">
+            #{phoneNumber}
+        </foreach>
+    </select>
 </mapper>

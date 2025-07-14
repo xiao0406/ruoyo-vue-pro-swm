@@ -83,4 +83,24 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
      * 通过组织和工种查询人员
      */
     List<SwmPerson> listByOrgAndWorkType(@Param("query") PersonnelOrganizationQueryParam query);
+
+    /**
+     * 根据身份证号列表查询在职人员
+     * 
+     * @param identityCards 身份证号列表
+     * @return 在职人员列表
+     * @author Shawn
+     * @date 2025-01-15
+     */
+    List<SwmPerson> findActivePersonsByIdentityCards(@Param("identityCards") List<String> identityCards);
+
+    /**
+     * 根据手机号列表查询在职人员
+     * 
+     * @param phoneNumbers 手机号列表
+     * @return 在职人员列表
+     * @author Shawn
+     * @date 2025-01-15
+     */
+    List<SwmPerson> findActivePersonsByPhoneNumbers(@Param("phoneNumbers") List<String> phoneNumbers);
 }
