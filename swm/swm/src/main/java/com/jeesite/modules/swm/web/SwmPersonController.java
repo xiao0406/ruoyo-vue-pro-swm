@@ -17,6 +17,9 @@ import com.jeesite.modules.swm.entity.SwmPersonDeparture;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.excel.SwmPersonExcelModel;
 import com.jeesite.modules.swm.excel.SwmPersonImportListener;
+import com.jeesite.modules.swm.excel.SwmPersonExcelEnhancedModel;
+import com.jeesite.modules.swm.excel.SwmPersonImportEnhancedListener;
+import com.jeesite.modules.swm.service.OrgValidationService;
 import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmSafetyEducationService;
@@ -41,6 +44,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.InputStream;
+import java.net.URLEncoder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -63,6 +68,9 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private SwmPersonService swmPersonService;
+
+    @Autowired
+    private OrgValidationService orgValidationService;
 
     @Autowired
     private SwmPersonDepartureService swmPersonDepartureService;
@@ -392,6 +400,133 @@ public class SwmPersonController extends BaseController {
             }
         } catch (Exception e) {
             logger.error("导入Excel异常", e);
+            result.put("success", false);
+            result.put("message", "导入失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 下载增强版导入人员Excel模板（包含组织架构数据）
+     */
+    @GetMapping(value = "importTemplateEnhanced")
+    public void importTemplateEnhanced(HttpServletResponse response) throws IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        String fileName = URLEncoder.encode("人员信息导入模板(增强版)", "UTF-8").replaceAll("\\+", "%20");
+        response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+
+        try {
+            // 创建增强版模板并写入到响应流
+            EasyExcel.write(response.getOutputStream(), SwmPersonExcelEnhancedModel.class)
+                    .sheet("人员信息")
+                    .doWrite(new ArrayList<>());
+        } catch (Exception e) {
+            logger.error("生成增强版Excel模板失败", e);
+            // 返回错误信息
+            response.setContentType("application/json;charset=utf-8");
+            response.getWriter().write("{\"success\":false,\"message\":\"增强版模板生成失败，请稍后重试\"}");
+        }
+    }
+
+    /**
+     * 导入人员Excel（增强版，支持组织架构验证）
+     */
+    @PostMapping(value = "importExcelEnhanced")
+    @ResponseBody
+    public Map<String, Object> importExcelEnhanced(@RequestParam("file") MultipartFile file) throws IOException {
+        Map<String, Object> result = new HashMap<>();
+
+        if (file.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "请选择文件上传");
+            return result;
+        }
+
+        try (InputStream inputStream = file.getInputStream()) {
+            // 先读取Excel数据进行预处理和检查
+            List<SwmPersonExcelEnhancedModel> excelData = new ArrayList<>();
+            EasyExcel.read(inputStream, SwmPersonExcelEnhancedModel.class,
+                    new AnalysisEventListener<SwmPersonExcelEnhancedModel>() {
+                        @Override
+                        public void invoke(SwmPersonExcelEnhancedModel data, AnalysisContext context) {
+                            excelData.add(data);
+                        }
+
+                        @Override
+                        public void doAfterAllAnalysed(AnalysisContext context) {
+                        }
+                    }).sheet().doRead();
+
+            // 检查身份证重复的在职人员
+            List<String> duplicateIdentityCards = new ArrayList<>();
+            Map<String, String> duplicatePersons = new HashMap<>();
+
+            for (SwmPersonExcelEnhancedModel model : excelData) {
+                // 只检查具有身份证号的数据
+                if (StringUtils.isNotBlank(model.getIdentityCard())) {
+                    // 查询数据库中是否已存在相同身份证的在职人员
+                    SwmPerson existingPerson = swmPersonService.getByIdentityCard(model.getIdentityCard());
+                    if (existingPerson != null
+                            && SwmPerson.PersonStatusEnum.ACTIVE.equals(existingPerson.getPersonnelStatus())) {
+                        duplicateIdentityCards.add(model.getIdentityCard());
+                        duplicatePersons.put(model.getIdentityCard(),
+                                String.format("姓名: %s, 身份证: %s", existingPerson.getName(),
+                                        existingPerson.getIdentityCard()));
+                    }
+                }
+            }
+
+            // 如果存在重复的在职人员身份证，返回错误
+            if (!duplicateIdentityCards.isEmpty()) {
+                result.put("success", false);
+                result.put("hasDuplicates", true);
+                result.put("duplicateIdentityCards", duplicateIdentityCards);
+                result.put("duplicatePersons", duplicatePersons);
+
+                StringBuilder message = new StringBuilder("导入失败：存在相同身份证的在职人员，请检查以下身份证：");
+                for (String key : duplicatePersons.keySet()) {
+                    message.append("\n").append(duplicatePersons.get(key));
+                }
+                result.put("message", message.toString());
+
+                return result;
+            }
+
+            // 没有重复，继续导入过程
+            // 重新打开文件流进行实际导入
+            try (InputStream secondInputStream = file.getInputStream()) {
+                // 创建增强版Excel读取监听器
+                SwmPersonImportEnhancedListener listener = new SwmPersonImportEnhancedListener();
+
+                // 读取Excel
+                EasyExcel.read(secondInputStream, SwmPersonExcelEnhancedModel.class, listener)
+                        .sheet()
+                        .doRead();
+
+                // 获取结果
+                SwmPersonImportEnhancedListener.ImportResult importResult = listener.getImportResult();
+
+                // 返回导入结果
+                result.put("success", true);
+                result.put("total", importResult.getTotalCount());
+                result.put("successCount", importResult.getSuccessCount());
+                result.put("errorCount", importResult.getErrorCount());
+                result.put("errors", importResult.getErrors());
+                result.put("warnings", importResult.getWarnings());
+
+                // 构建详细消息
+                StringBuilder message = new StringBuilder();
+                message.append("导入完成：成功").append(importResult.getSuccessCount()).append("条，失败")
+                        .append(importResult.getErrorCount()).append("条");
+                if (!importResult.getWarnings().isEmpty()) {
+                    message.append("，转换").append(importResult.getWarnings().size()).append("条");
+                }
+                result.put("message", message.toString());
+            }
+        } catch (Exception e) {
+            logger.error("增强版导入Excel异常", e);
             result.put("success", false);
             result.put("message", "导入失败：" + e.getMessage());
         }
@@ -796,7 +931,7 @@ public class SwmPersonController extends BaseController {
 
             // 使用专门的方法强制清空安全帽绑定信息，确保assigned_person字段设置为null
             swmHelmetDeviceService.clearDeviceAssignment(helmetId);
-            
+
             // 更新安全帽订单表的解绑时间
             try {
                 // 查找该设备的使用中订单并解绑
@@ -808,7 +943,7 @@ public class SwmPersonController extends BaseController {
             } catch (Exception e) {
                 logger.error("离职归还安全帽：更新安全帽订单解绑时间失败", e);
             }
-            
+
             logger.info("离职归还安全帽：已解除安全帽{}的绑定", helmetId);
 
             // 更新人员的安全帽编号
@@ -1906,4 +2041,5 @@ public class SwmPersonController extends BaseController {
 
         return result;
     }
+
 }
