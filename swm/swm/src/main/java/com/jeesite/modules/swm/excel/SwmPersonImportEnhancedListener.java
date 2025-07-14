@@ -121,7 +121,8 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
                         data.getDepartment(),
                         data.getProdLine(),
                         data.getTeam(),
-                        data.getJobType());
+                        data.getJobType(),
+                        data.getPersonType());
 
         if (!hierarchyResult.isSuccess()) {
             errors.add("第" + rowIndex + "行，组织架构字段转换失败: " + hierarchyResult.getErrorMessage());
@@ -143,6 +144,9 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         }
         if (StringUtils.isNotBlank(hierarchyResult.getJobTypeId())) {
             data.setJobType(hierarchyResult.getJobTypeId());
+        }
+        if (StringUtils.isNotBlank(hierarchyResult.getPersonTypeId())) {
+            data.setPersonType(hierarchyResult.getPersonTypeId());
         }
 
         // 记录转换信息

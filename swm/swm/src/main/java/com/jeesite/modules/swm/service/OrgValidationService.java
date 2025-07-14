@@ -382,6 +382,69 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
     }
 
     /**
+     * 转换人员类型名称为编码
+     */
+    public NameConversionResult convertPersonTypeNameToCode(String personTypeInput) {
+        if (StringUtils.isBlank(personTypeInput)) {
+            return new NameConversionResult(personTypeInput, personTypeInput, false);
+        }
+
+        // 如果已经是编码格式，直接返回
+        if (isCodeFormat(personTypeInput)) {
+            // 验证编码是否有效
+            if ("0".equals(personTypeInput) || "1".equals(personTypeInput)) {
+                return new NameConversionResult(personTypeInput, personTypeInput, false);
+            } else {
+                return new NameConversionResult(personTypeInput, "无效的人员类型编码: " + personTypeInput);
+            }
+        }
+
+        // 先尝试直接转换常见的输入格式
+        String normalizedInput = normalizePersonTypeInput(personTypeInput);
+        if (normalizedInput != null) {
+            return new NameConversionResult(personTypeInput, normalizedInput, true);
+        }
+
+        // 查询字典表进行转换
+        try {
+            String code = swmCommonOptionsDao.getPersonTypeCodeByName(personTypeInput);
+            if (StringUtils.isNotBlank(code)) {
+                return new NameConversionResult(personTypeInput, code, true);
+            } else {
+                return new NameConversionResult(personTypeInput, "未找到人员类型: " + personTypeInput +
+                        "（支持格式：工人/0/worker，管理者/管理员/1/manager）");
+            }
+        } catch (Exception e) {
+            return new NameConversionResult(personTypeInput, "查询人员类型时发生错误: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 标准化人员类型输入
+     * 支持多种输入格式的快速转换
+     */
+    private String normalizePersonTypeInput(String input) {
+        if (StringUtils.isBlank(input)) {
+            return null;
+        }
+
+        String value = input.trim().toLowerCase();
+
+        // 工人相关输入 -> 0
+        if ("工人".equals(input.trim()) || "0".equals(value) || "worker".equals(value)) {
+            return "0";
+        }
+
+        // 管理者相关输入 -> 1
+        if ("管理者".equals(input.trim()) || "管理员".equals(input.trim()) ||
+                "1".equals(value) || "manager".equals(value)) {
+            return "1";
+        }
+
+        return null;
+    }
+
+    /**
      * 层级转换结果
      */
     public static class HierarchyConversionResult {
@@ -390,6 +453,7 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
         private String prodLineId;
         private String teamId;
         private String jobTypeId;
+        private String personTypeId;
         private boolean success;
         private String errorMessage;
         private List<String> conversionMessages = new ArrayList<>();
@@ -443,6 +507,14 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
             this.jobTypeId = jobTypeId;
         }
 
+        public String getPersonTypeId() {
+            return personTypeId;
+        }
+
+        public void setPersonTypeId(String personTypeId) {
+            this.personTypeId = personTypeId;
+        }
+
         public boolean isSuccess() {
             return success;
         }
@@ -480,10 +552,12 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
      * @param prodLineName   产线名称
      * @param teamName       班组名称
      * @param jobTypeName    工种名称
+     * @param personTypeName 人员类型名称
      * @return 层级转换结果
      */
     public HierarchyConversionResult convertHierarchyNamesToCodes(
-            String companyName, String departmentName, String prodLineName, String teamName, String jobTypeName) {
+            String companyName, String departmentName, String prodLineName, String teamName, String jobTypeName,
+            String personTypeName) {
 
         HierarchyConversionResult result = new HierarchyConversionResult();
 
@@ -566,6 +640,21 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
             }
         }
 
+        // 6. 转换人员类型名称为编码
+        if (StringUtils.isNotBlank(personTypeName)) {
+            NameConversionResult personTypeResult = convertPersonTypeNameToCode(personTypeName);
+            if (!personTypeResult.isConverted() && StringUtils.isNotBlank(personTypeResult.getErrorMessage())) {
+                result.setSuccess(false);
+                result.setErrorMessage("人员类型转换失败: " + personTypeResult.getErrorMessage());
+                return result;
+            }
+            result.setPersonTypeId(personTypeResult.getConvertedValue());
+            if (personTypeResult.isConverted()) {
+                result.addConversionMessage(
+                        "人员类型名称 '" + personTypeName + "' 转换为编码: " + personTypeResult.getConvertedValue());
+            }
+        }
+
         result.setSuccess(true);
         return result;
     }
@@ -600,10 +689,11 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
      * @param prodLineName   产线名称
      * @param teamName       班组名称
      * @param jobTypeName    工种名称
+     * @param personTypeName 人员类型名称
      * @return 测试结果描述
      */
     public String testHierarchyConversion(String companyName, String departmentName,
-            String prodLineName, String teamName, String jobTypeName) {
+            String prodLineName, String teamName, String jobTypeName, String personTypeName) {
         StringBuilder result = new StringBuilder();
         result.append("=== 层级转换测试 ===\n");
         result.append("输入数据：\n");
@@ -611,10 +701,11 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
         result.append("车间: ").append(departmentName).append("\n");
         result.append("产线: ").append(prodLineName).append("\n");
         result.append("班组: ").append(teamName).append("\n");
-        result.append("工种: ").append(jobTypeName).append("\n\n");
+        result.append("工种: ").append(jobTypeName).append("\n");
+        result.append("人员类型: ").append(personTypeName).append("\n\n");
 
         HierarchyConversionResult conversionResult = convertHierarchyNamesToCodes(
-                companyName, departmentName, prodLineName, teamName, jobTypeName);
+                companyName, departmentName, prodLineName, teamName, jobTypeName, personTypeName);
 
         if (conversionResult.isSuccess()) {
             result.append("转换成功！\n");
@@ -623,7 +714,8 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
             result.append("车间ID: ").append(conversionResult.getDepartmentId()).append("\n");
             result.append("产线ID: ").append(conversionResult.getProdLineId()).append("\n");
             result.append("班组ID: ").append(conversionResult.getTeamId()).append("\n");
-            result.append("工种ID: ").append(conversionResult.getJobTypeId()).append("\n\n");
+            result.append("工种ID: ").append(conversionResult.getJobTypeId()).append("\n");
+            result.append("人员类型ID: ").append(conversionResult.getPersonTypeId()).append("\n\n");
 
             if (!conversionResult.getConversionMessages().isEmpty()) {
                 result.append("转换信息：\n");

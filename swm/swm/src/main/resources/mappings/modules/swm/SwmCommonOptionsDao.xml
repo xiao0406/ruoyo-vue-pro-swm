@@ -87,6 +87,16 @@
         LIMIT 1
     </select>
     
+    <!-- 根据人员类型名称获取编码 -->
+    <select id="getPersonTypeCodeByName" resultType="String">
+        SELECT dict_value 
+        FROM js_sys_dict_data 
+        WHERE dict_type = 'person_type_enum' 
+        AND dict_label = #{personTypeName}
+        AND status = '0'
+        LIMIT 1
+    </select>
+    
     <!-- 层级关系验证查询 -->
     
     <!-- 验证车间是否属于指定单位 -->
