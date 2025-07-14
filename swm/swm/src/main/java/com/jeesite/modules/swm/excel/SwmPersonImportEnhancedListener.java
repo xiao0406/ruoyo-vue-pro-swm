@@ -89,7 +89,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
 
         } catch (Exception e) {
             logger.error("处理第{}行数据时发生异常: {}", rowIndex, e.getMessage(), e);
-            errors.add("第" + rowIndex + "行处理时发生异常: " + e.getMessage());
+            errors.add("第" + rowIndex + "行，字段[数据处理]：发生异常 - " + e.getMessage());
             errorCount++;
         }
     }
@@ -125,7 +125,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
                         data.getPersonType());
 
         if (!hierarchyResult.isSuccess()) {
-            errors.add("第" + rowIndex + "行，组织架构字段转换失败: " + hierarchyResult.getErrorMessage());
+            errors.add("第" + rowIndex + "行，字段[组织架构]：转换失败 - " + hierarchyResult.getErrorMessage());
             return false;
         }
 
@@ -151,7 +151,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
 
         // 记录转换信息
         for (String conversionMessage : hierarchyResult.getConversionMessages()) {
-            warnings.add("第" + rowIndex + "行，" + conversionMessage);
+            warnings.add("第" + rowIndex + "行，字段[组织架构]：" + conversionMessage);
         }
 
         return true;
@@ -165,36 +165,36 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
 
         // 必填字段验证
         if (StringUtils.isBlank(data.getName())) {
-            errors.add("第" + rowIndex + "行，姓名不能为空");
+            errors.add("第" + rowIndex + "行，字段[姓名]：不能为空");
             valid = false;
         }
 
         if (StringUtils.isBlank(data.getGender())) {
-            errors.add("第" + rowIndex + "行，性别不能为空");
+            errors.add("第" + rowIndex + "行，字段[性别]：不能为空");
             valid = false;
         }
 
         if (StringUtils.isBlank(data.getPersonType())) {
-            errors.add("第" + rowIndex + "行，人员类型不能为空");
+            errors.add("第" + rowIndex + "行，字段[人员类型]：不能为空");
             valid = false;
         }
 
         if (StringUtils.isBlank(data.getIsExternalPersonnel())) {
-            errors.add("第" + rowIndex + "行，是否厂内员工不能为空");
+            errors.add("第" + rowIndex + "行，字段[是否场内员工]：不能为空");
             valid = false;
         }
 
         // 格式验证
         if (StringUtils.isNotBlank(data.getIdentityCard())) {
             if (!data.getIdentityCard().matches("^\\d{15}$|^\\d{18}$|^\\d{17}[Xx]$")) {
-                errors.add("第" + rowIndex + "行，身份证号码格式不正确");
+                errors.add("第" + rowIndex + "行，字段[身份证号码]：格式不正确");
                 valid = false;
             }
         }
 
         if (StringUtils.isNotBlank(data.getPhoneNumber())) {
             if (!data.getPhoneNumber().matches("^1[3-9]\\d{9}$")) {
-                errors.add("第" + rowIndex + "行，手机号码格式不正确");
+                errors.add("第" + rowIndex + "行，字段[手机号码]：格式不正确");
                 valid = false;
             }
         }
@@ -211,23 +211,23 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         // 内部员工组织架构字段必填验证
         if (data.isInternalPersonnel()) {
             if (StringUtils.isBlank(data.getCompany())) {
-                errors.add("第" + rowIndex + "行，厂内员工的所属单位不能为空");
+                errors.add("第" + rowIndex + "行，字段[所属单位]：厂内员工此字段不能为空");
                 valid = false;
             }
             if (StringUtils.isBlank(data.getDepartment())) {
-                errors.add("第" + rowIndex + "行，厂内员工的所属车间不能为空");
+                errors.add("第" + rowIndex + "行，字段[所属车间]：厂内员工此字段不能为空");
                 valid = false;
             }
             if (StringUtils.isBlank(data.getProdLine())) {
-                errors.add("第" + rowIndex + "行，厂内员工的产线不能为空");
+                errors.add("第" + rowIndex + "行，字段[所属产线]：厂内员工此字段不能为空");
                 valid = false;
             }
             if (StringUtils.isBlank(data.getTeam())) {
-                errors.add("第" + rowIndex + "行，厂内员工的所属班组不能为空");
+                errors.add("第" + rowIndex + "行，字段[所属班组]：厂内员工此字段不能为空");
                 valid = false;
             }
             if (StringUtils.isBlank(data.getJobType())) {
-                errors.add("第" + rowIndex + "行，厂内员工的所属工种不能为空");
+                errors.add("第" + rowIndex + "行，字段[所属工种]：厂内员工此字段不能为空");
                 valid = false;
             }
         }
@@ -236,7 +236,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         if (StringUtils.isNotBlank(data.getPersonType())) {
             if (!SwmPerson.PersonTypeEnum.WORKER.equals(data.getPersonType()) &&
                     !SwmPerson.PersonTypeEnum.MANAGER.equals(data.getPersonType())) {
-                errors.add("第" + rowIndex + "行，人员类型只能是：0（工人）或1（管理者）");
+                errors.add("第" + rowIndex + "行，字段[人员类型]：只能是0（工人）或1（管理者）");
                 valid = false;
             }
         }
@@ -244,7 +244,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         // 性别验证
         if (StringUtils.isNotBlank(data.getGender())) {
             if (!"男".equals(data.getGender()) && !"女".equals(data.getGender())) {
-                errors.add("第" + rowIndex + "行，性别只能是：男或女");
+                errors.add("第" + rowIndex + "行，字段[性别]：只能是男或女");
                 valid = false;
             }
         }
@@ -266,14 +266,14 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
                     data.getCompany(), data.getDepartment(), data.getProdLine(), data.getTeam());
 
             if (!result.isValid()) {
-                errors.add("第" + rowIndex + "行，组织架构层级关系验证失败: " + result.getMessage());
+                errors.add("第" + rowIndex + "行，字段[组织架构]：层级关系验证失败 - " + result.getMessage());
                 return false;
             }
 
             return true;
         } catch (Exception e) {
             logger.error("第{}行层级关系验证发生异常", rowIndex, e);
-            errors.add("第" + rowIndex + "行，层级关系验证发生异常: " + e.getMessage());
+            errors.add("第" + rowIndex + "行，字段[组织架构]：层级关系验证发生异常 - " + e.getMessage());
             return false;
         }
     }
@@ -329,7 +329,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
 
         } catch (Exception e) {
             logger.error("保存数据时发生异常", e);
-            errors.add("保存数据时发生异常: " + e.getMessage());
+            errors.add("数据保存异常: " + e.getMessage());
             errorCount += list.size();
         } finally {
             list.clear();

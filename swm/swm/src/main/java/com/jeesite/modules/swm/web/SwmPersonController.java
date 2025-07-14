@@ -508,8 +508,11 @@ public class SwmPersonController extends BaseController {
                 // 获取结果
                 SwmPersonImportEnhancedListener.ImportResult importResult = listener.getImportResult();
 
+                // 判断导入是否成功：只有没有错误时才算成功
+                boolean isSuccess = importResult.getErrorCount() == 0;
+
                 // 返回导入结果
-                result.put("success", true);
+                result.put("success", isSuccess);
                 result.put("total", importResult.getTotalCount());
                 result.put("successCount", importResult.getSuccessCount());
                 result.put("errorCount", importResult.getErrorCount());
