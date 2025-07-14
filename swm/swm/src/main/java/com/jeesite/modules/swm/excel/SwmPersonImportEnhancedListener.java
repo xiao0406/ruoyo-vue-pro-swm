@@ -184,6 +184,18 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
             valid = false;
         }
 
+        // 身份证号码必填验证
+        if (StringUtils.isBlank(data.getIdentityCard())) {
+            errors.add("第" + rowIndex + "行，字段[身份证号码]：不能为空");
+            valid = false;
+        }
+
+        // 手机号码必填验证
+        if (StringUtils.isBlank(data.getPhoneNumber())) {
+            errors.add("第" + rowIndex + "行，字段[手机号码]：不能为空");
+            valid = false;
+        }
+
         // 格式验证
         if (StringUtils.isNotBlank(data.getIdentityCard())) {
             if (!data.getIdentityCard().matches("^\\d{15}$|^\\d{18}$|^\\d{17}[Xx]$")) {
