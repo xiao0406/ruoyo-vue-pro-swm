@@ -414,7 +414,7 @@ public class SwmPersonController extends BaseController {
     public void importTemplateEnhanced(HttpServletResponse response) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("utf-8");
-        String fileName = URLEncoder.encode("人员信息导入模板(增强版)", "UTF-8").replaceAll("\\+", "%20");
+        String fileName = URLEncoder.encode("人员信息导入模板", "UTF-8").replaceAll("\\+", "%20");
         response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
 
         try {
@@ -423,10 +423,10 @@ public class SwmPersonController extends BaseController {
                     .sheet("人员信息")
                     .doWrite(new ArrayList<>());
         } catch (Exception e) {
-            logger.error("生成增强版Excel模板失败", e);
+            logger.error("生成Excel模板失败", e);
             // 返回错误信息
             response.setContentType("application/json;charset=utf-8");
-            response.getWriter().write("{\"success\":false,\"message\":\"增强版模板生成失败，请稍后重试\"}");
+            response.getWriter().write("{\"success\":false,\"message\":\"模板生成失败，请稍后重试\"}");
         }
     }
 
@@ -526,7 +526,7 @@ public class SwmPersonController extends BaseController {
                 result.put("message", message.toString());
             }
         } catch (Exception e) {
-            logger.error("增强版导入Excel异常", e);
+            logger.error("导入Excel异常", e);
             result.put("success", false);
             result.put("message", "导入失败：" + e.getMessage());
         }
