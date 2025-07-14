@@ -291,7 +291,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
                 person.setGender(excelModel.getGender());
                 person.setIdentityCard(excelModel.getIdentityCard());
                 person.setPhoneNumber(excelModel.getPhoneNumber());
-                person.setIsExternalPersonnel(excelModel.getIsExternalPersonnel());
+                person.setIsExternalPersonnel(excelModel.getStandardizedExternalPersonnel());
 
                 // 组织架构字段
                 if (excelModel.isInternalPersonnel()) {
