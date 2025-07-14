@@ -111,6 +111,9 @@ public class SwmPersonnelBoardController extends BaseController {
             boardMap.put("isNewRecord", board.getIsNewRecord());
             // 添加身份证号码
             boardMap.put("id_card", board.getIdCard());
+            // 添加休闲区统计数据
+            boardMap.put("leisureCount", board.getLeisureCount());
+            boardMap.put("leisureDurationMin", board.getLeisureDurationMin());
 
             // 添加枚举文本显示值
             boardMap.put("workStatusText", board.getWorkStatusText());
@@ -155,6 +158,9 @@ public class SwmPersonnelBoardController extends BaseController {
             boardData.put("remarks", swmPersonnelBoard.getRemarks());
             // 添加身份证号码
             boardData.put("id_card", swmPersonnelBoard.getIdCard());
+            // 添加休闲区统计数据
+            boardData.put("leisureCount", swmPersonnelBoard.getLeisureCount());
+            boardData.put("leisureDurationMin", swmPersonnelBoard.getLeisureDurationMin());
 
             // 处理枚举值
             boardData.put("workStatus", swmPersonnelBoard.getWorkStatus());

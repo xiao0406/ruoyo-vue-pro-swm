@@ -2,6 +2,37 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jeesite.modules.swm.dao.SwmPersonnelBoardDao">
     
+    <!-- 通用查询映射结果 -->
+    <resultMap id="personnelBoardResult" type="com.jeesite.modules.swm.entity.SwmPersonnelBoard">
+        <id property="id" column="id" />
+        <result property="name" column="name" />
+        <result property="organization" column="organization" />
+        <result property="workshop" column="workshop" />
+        <result property="process" column="process" />
+        <result property="team" column="team" />
+        <result property="workStatus" column="work_status" />
+        <result property="deviceId" column="device_id" />
+        <result property="helmetStatus" column="helmet_status" />
+        <result property="personnelStatus" column="personnel_status" />
+        <result property="attendanceCount" column="attendance_count" />
+        <result property="workingHours" column="working_hours" />
+        <result property="idleHours" column="idle_hours" />
+        <result property="idCard" column="id_card" />
+        <result property="leisureCount" column="leisure_count" />
+        <result property="leisureDurationMin" column="leisure_duration_min" />
+        <result property="createBy" column="create_by" />
+        <result property="createDate" column="create_date" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateDate" column="update_date" />
+        <result property="remarks" column="remarks" />
+        <result property="status" column="status" />
+    </resultMap>
+    
+    <!-- 查询休闲区域ID (area_type=3 的区域) -->
+    <select id="findLeisureAreaIds" resultType="java.lang.String">
+        SELECT id FROM swm_area WHERE area_type = '3' AND status = '0'
+    </select>
+    
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmPersonnelBoard">
         SELECT

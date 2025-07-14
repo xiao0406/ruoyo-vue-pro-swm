@@ -125,6 +125,10 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
     private BigDecimal workingHours; // 本月工作时长(小时)
     private BigDecimal idleHours; // 本月怠工时长(小时)
     private String idCard; // 身份证号码
+    
+    // 新增字段：休闲区统计
+    private Integer leisureCount; // 进入休闲次数
+    private Integer leisureDurationMin; // 休闲区总逗留时长(分钟)
 
     // 用于显示的文本属性，不对应数据库字段
     private String workStatusText; // 工作状态显示文本
@@ -294,5 +298,21 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
 
     public void setIdCard(String idCard) {
         this.idCard = idCard;
+    }
+    
+    public Integer getLeisureCount() {
+        return leisureCount;
+    }
+
+    public void setLeisureCount(Integer leisureCount) {
+        this.leisureCount = leisureCount;
+    }
+
+    public Integer getLeisureDurationMin() {
+        return leisureDurationMin;
+    }
+
+    public void setLeisureDurationMin(Integer leisureDurationMin) {
+        this.leisureDurationMin = leisureDurationMin;
     }
 }

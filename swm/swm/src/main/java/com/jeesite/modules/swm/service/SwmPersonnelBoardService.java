@@ -8,6 +8,9 @@ import com.jeesite.modules.swm.service.TDengineService;
 import com.jeesite.modules.utils.R;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.lang.DateUtils;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.HashMap;
 
 /**
  * 人员看板表Service
@@ -60,6 +69,8 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
         if (page != null && page.getList() != null) {
             for (SwmPersonnelBoard board : page.getList()) {
                 setPersonnelStatus(board);
+                // 设置休闲区统计数据
+                setLeisureAreaStats(board, swmPersonnelBoard.getTimeType(), swmPersonnelBoard.getTimeValue());
             }
         }
 
@@ -306,6 +317,280 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
         } catch (Exception e) {
             logger.error("检查设备5分钟内静默报警异常，设备ID: {}", deviceId, e);
             return false;
+        }
+    }
+
+    /**
+     * 设置休闲区统计数据
+     * 根据时间类型和值查询休闲区的进入次数和逗留时长
+     * 
+     * @param board 人员看板数据
+     * @param timeType 时间类型：day, week, month
+     * @param timeValue 时间值：YYYY-MM-DD, YYYY-WW, YYYY-MM
+     */
+    private void setLeisureAreaStats(SwmPersonnelBoard board, String timeType, String timeValue) {
+        // 默认值初始化
+        board.setLeisureCount(0);
+        board.setLeisureDurationMin(0);
+        
+        // 检查必要的参数
+        if (board == null) {
+            logger.warn("人员看板数据为null，无法查询休闲区统计");
+            return;
+        }
+        
+        // 确保至少有身份证号或设备ID其中一个参数，否则无法查询
+        boolean hasIdCard = StringUtils.isNotBlank(board.getIdCard());
+        boolean hasDeviceId = StringUtils.isNotBlank(board.getDeviceId());
+        
+        if (!hasIdCard && !hasDeviceId) {
+            logger.warn("人员ID: {}，既没有身份证号也没有设备ID，无法查询休闲区统计", board.getId());
+            return;
+        }
+
+        try {
+            // 计算查询的开始时间和结束时间
+            String startTimeStr = "";
+            String endTimeStr = "";
+            
+            // 获取当前时间作为默认结束时间
+            Date now = new Date();
+            endTimeStr = DateUtils.formatDate(now, "yyyy-MM-dd HH:mm:ss");
+            
+            // 根据时间类型和值计算开始时间
+            if (timeType == null || "month".equals(timeType)) {
+                // 月查询：如果没有指定月份，使用当前月份
+                String monthStr = timeValue;
+                if (StringUtils.isBlank(monthStr)) {
+                    monthStr = DateUtils.formatDate(now, "yyyy-MM");
+                }
+                // 解析年月
+                String[] parts = monthStr.split("-");
+                if (parts.length >= 2) {
+                    int year = Integer.parseInt(parts[0]);
+                    int month = Integer.parseInt(parts[1]);
+                    
+                    // 创建月初日期
+                    Calendar cal = Calendar.getInstance();
+                    cal.set(Calendar.YEAR, year);
+                    cal.set(Calendar.MONTH, month - 1); // 月份从0开始
+                    cal.set(Calendar.DAY_OF_MONTH, 1);
+                    cal.set(Calendar.HOUR_OF_DAY, 0);
+                    cal.set(Calendar.MINUTE, 0);
+                    cal.set(Calendar.SECOND, 0);
+                    
+                    startTimeStr = DateUtils.formatDate(cal.getTime(), "yyyy-MM-dd HH:mm:ss");
+                    
+                    // 计算月末（下个月的第一天减1秒）
+                    cal.add(Calendar.MONTH, 1);
+                    endTimeStr = DateUtils.formatDate(cal.getTime(), "yyyy-MM-dd HH:mm:ss");
+                } else {
+                    // 格式错误，使用当月
+                    startTimeStr = DateUtils.formatDate(now, "yyyy-MM") + "-01 00:00:00";
+                }
+            } else if ("day".equals(timeType)) {
+                // 日查询：使用指定日期
+                String dayStr = timeValue;
+                if (StringUtils.isBlank(dayStr)) {
+                    dayStr = DateUtils.formatDate(now, "yyyy-MM-dd");
+                }
+                
+                // 设置为当天0点
+                startTimeStr = dayStr + " 00:00:00";
+                
+                // 结束时间为当天23:59:59
+                try {
+                    Date startDate = DateUtils.parseDate(startTimeStr);
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(startDate);
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                    cal.add(Calendar.SECOND, -1);
+                    endTimeStr = DateUtils.formatDate(cal.getTime(), "yyyy-MM-dd HH:mm:ss");
+                } catch (Exception e) {
+                    // 解析失败，使用当天
+                    endTimeStr = dayStr + " 23:59:59";
+                }
+            } else if ("week".equals(timeType)) {
+                // 周查询：解析类似"2025-30"这样的格式，表示2025年第30周
+                if (StringUtils.isBlank(timeValue)) {
+                    // 获取当前是一年中的第几周
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(now);
+                    int year = cal.get(Calendar.YEAR);
+                    int week = cal.get(Calendar.WEEK_OF_YEAR);
+                    timeValue = year + "-" + String.format("%02d", week);
+                }
+                
+                logger.debug("解析周参数: {}", timeValue);
+                
+                // 解析年和周
+                String[] parts = timeValue.split("-");
+                if (parts.length >= 2) {
+                    try {
+                        int year = Integer.parseInt(parts[0]);
+                        // 去除前导零（如有）
+                        String weekPart = parts[1].replaceFirst("^0+(?!$)", "");
+                        int week = Integer.parseInt(weekPart);
+                        
+                        // 计算该周的第一天（周一）
+                        Calendar cal = Calendar.getInstance();
+                        cal.clear();
+                        cal.set(Calendar.YEAR, year);
+                        cal.set(Calendar.WEEK_OF_YEAR, week);
+                        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                        startTimeStr = DateUtils.formatDate(cal.getTime(), "yyyy-MM-dd") + " 00:00:00";
+                        
+                        // 计算该周的最后一天（周日）
+                        cal.add(Calendar.DAY_OF_WEEK, 6);
+                        endTimeStr = DateUtils.formatDate(cal.getTime(), "yyyy-MM-dd") + " 23:59:59";
+                    } catch (NumberFormatException e) {
+                        logger.error("解析周参数失败: {}, 错误: {}", timeValue, e.getMessage());
+                        // 使用当周
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(now);
+                        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                        startTimeStr = DateUtils.formatDate(cal.getTime(), "yyyy-MM-dd") + " 00:00:00";
+                        cal.add(Calendar.DAY_OF_WEEK, 6);
+                        endTimeStr = DateUtils.formatDate(cal.getTime(), "yyyy-MM-dd") + " 23:59:59";
+                    }
+                } else {
+                    logger.error("无效的周参数格式: {}", timeValue);
+                    // 使用当周
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(now);
+                    cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                    startTimeStr = DateUtils.formatDate(cal.getTime(), "yyyy-MM-dd") + " 00:00:00";
+                    cal.add(Calendar.DAY_OF_WEEK, 6);
+                    endTimeStr = DateUtils.formatDate(cal.getTime(), "yyyy-MM-dd") + " 23:59:59";
+                }
+            }
+            
+            logger.debug("计算休闲区统计 - 时间范围: {} 至 {}, 时间类型: {}, 时间值: {}", 
+                    startTimeStr, endTimeStr, timeType, timeValue);
+
+            // 构建查询条件，确保包含id_card或device_id
+            StringBuilder whereClause = new StringBuilder();
+            
+            // 首选身份证号条件
+            if (hasIdCard) {
+                whereClause.append("id_card='").append(board.getIdCard()).append("'");
+                logger.debug("使用身份证号进行查询: {}", board.getIdCard());
+            } 
+            // 如果没有身份证号，则使用设备ID
+            else if (hasDeviceId) {
+                whereClause.append("device_id='").append(board.getDeviceId()).append("'");
+                logger.debug("使用设备ID进行查询: {}", board.getDeviceId());
+            }
+            
+            // 添加时间条件
+            whereClause.append(" AND time >= '").append(startTimeStr).append("'");
+            whereClause.append(" AND time <= '").append(endTimeStr).append("'");
+            
+            // 查询MySQL中area_type=3的休闲区域ID列表
+            List<String> leisureAreaIds = findLeisureAreaIds();
+            if (leisureAreaIds.isEmpty()) {
+                logger.warn("未找到配置的休闲区域(area_type=3)");
+                return;
+            }
+            
+            // 构建休闲区ID的IN条件
+            StringBuilder areaIdsClause = new StringBuilder();
+            areaIdsClause.append("(");
+            for (int i = 0; i < leisureAreaIds.size(); i++) {
+                if (i > 0) {
+                    areaIdsClause.append(",");
+                }
+                areaIdsClause.append("'").append(leisureAreaIds.get(i)).append("'");
+            }
+            areaIdsClause.append(")");
+            
+            // 查询进入休闲区的次数
+            // 修改查询，不使用DISTINCT，改为查询所有area_id，然后在Java中去重
+            String countSql = String.format(
+                    "SELECT area_id FROM %s.area_fence_data WHERE %s AND area_id IN %s",
+                    dbname, whereClause.toString(), areaIdsClause.toString());
+            
+            logger.debug("查询休闲区进入次数SQL: {}", countSql);
+            
+            // 记录当前查询的身份标识，便于日志追踪
+            String personIdentifier = hasIdCard ? "id_card=" + board.getIdCard() : "device_id=" + board.getDeviceId();
+            logger.debug("开始查询休闲区统计, 人员: {}, ID: {}", board.getName(), personIdentifier);
+            
+            R<JSONObject> countResult = tdengineService.executeTDengineSQL(countSql);
+            
+            // 在Java中实现去重逻辑
+            Set<String> uniqueAreaIds = new HashSet<>();
+            if (countResult.getCode() == R.SUCCESS && countResult.getData() != null) {
+                JSONObject data = countResult.getData();
+                JSONArray rows = data.getJSONArray("data");
+                if (rows != null && rows.size() > 0) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() > 0) {
+                            String areaId = row.getStr(0);
+                            if (StringUtils.isNotBlank(areaId)) {
+                                uniqueAreaIds.add(areaId);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 休闲区进入次数为不同休闲区的数量
+            Integer distinctAreaCount = uniqueAreaIds.size();
+            
+            // 查询在休闲区的总时长（以分钟为单位）
+            // 简单查询在指定时间范围内进入休闲区的记录总数
+            String durationSql = String.format(
+                    "SELECT COUNT(*) FROM %s.area_fence_data WHERE %s AND area_id IN %s",
+                    dbname, whereClause.toString(), areaIdsClause.toString());
+            
+            logger.debug("查询休闲区进入总次数SQL: {}", durationSql);
+            R<JSONObject> durationResult = tdengineService.executeTDengineSQL(durationSql);
+            
+            // 计算总次数，每次20秒，转换为分钟
+            int totalEntryCount = 0;
+            if (durationResult.getCode() == R.SUCCESS && durationResult.getData() != null) {
+                JSONObject data = durationResult.getData();
+                JSONArray rows = data.getJSONArray("data");
+                if (rows != null && rows.size() > 0) {
+                    JSONArray row = rows.getJSONArray(0);
+                    if (row != null && row.size() > 0) {
+                        totalEntryCount = row.getInt(0);
+                    }
+                }
+            }
+            
+            // 将进入次数乘以20秒，再转换为分钟
+            Integer totalDurationMinutes = totalEntryCount * 20 / 60;
+            
+            logger.debug("人员ID: {}, 设备ID: {}, 休闲区进入次数(去重): {}, 进入总次数: {}, 总时长: {}分钟",
+                    board.getId(), board.getDeviceId(), distinctAreaCount, totalEntryCount, totalDurationMinutes);
+            
+            // 设置结果 - 使用真实的进入总次数而不是去重后的区域数量
+            board.setLeisureCount(totalEntryCount);
+            board.setLeisureDurationMin(totalDurationMinutes);
+            
+        } catch (Exception e) {
+            logger.error("计算休闲区统计数据失败，ID: {}, 错误: {}", board.getId(), e.getMessage(), e);
+            // 异常情况下设置为0
+            board.setLeisureCount(0);
+            board.setLeisureDurationMin(0);
+        }
+    }
+    
+    /**
+     * 查询休闲区域ID列表（area_type=3的区域）
+     * 
+     * @return 休闲区域ID列表
+     */
+    private List<String> findLeisureAreaIds() {
+        try {
+            // 使用DAO接口提供的方法
+            return this.dao.findLeisureAreaIds();
+        } catch (Exception e) {
+            logger.error("查询休闲区域ID失败: {}", e.getMessage(), e);
+            return new ArrayList<>();
         }
     }
 }
