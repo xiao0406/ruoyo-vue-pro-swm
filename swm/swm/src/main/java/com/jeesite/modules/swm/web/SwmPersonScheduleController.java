@@ -71,6 +71,19 @@ public class SwmPersonScheduleController extends BaseController {
     @ApiOperation("查询列表数据")
     public Map<String, Object> listData(SwmPersonSchedule swmPersonSchedule, HttpServletRequest request,
             HttpServletResponse response) {
+
+        // 从请求参数中获取四级查询条件 Author: Shawn Date: 2025/01/27
+        String organization = request.getParameter("organization");
+        String workshop = request.getParameter("workshop");
+        String process = request.getParameter("process");
+        String workGroupName = request.getParameter("workGroupName");
+
+        // 设置到查询对象
+        swmPersonSchedule.setOrganization(organization);
+        swmPersonSchedule.setWorkshop(workshop);
+        swmPersonSchedule.setProcess(process);
+        swmPersonSchedule.setWorkGroupName(workGroupName);
+
         Page<SwmPersonSchedule> page = swmPersonScheduleService.findPage(new Page<>(request, response),
                 swmPersonSchedule);
 
@@ -78,31 +91,7 @@ public class SwmPersonScheduleController extends BaseController {
         Map<String, Object> result = new HashMap<>();
         List<Map<String, Object>> enhancedList = new ArrayList<>();
 
-        // 获取前端传递的班组筛选参数
-        String workGroupNameFilter = request.getParameter("workGroupName");
-
-        // 收集所有需要查询班组的身份证号
-        List<String> idCards = new ArrayList<>();
-        for (SwmPersonSchedule schedule : page.getList()) {
-            if (schedule.getIdCard() != null && !schedule.getIdCard().isEmpty()) {
-                idCards.add(schedule.getIdCard());
-            }
-        }
-
-        // 批量查询班组信息
-        Map<String, String> workGroupMap = new HashMap<>();
-        if (!idCards.isEmpty()) {
-            List<Map<String, Object>> workGroupList = swmPersonScheduleService.batchGetWorkGroupNameByIdCards(idCards);
-            for (Map<String, Object> item : workGroupList) {
-                String idCard = (String) item.get("key");
-                String workGroupName = (String) item.get("value");
-                if (idCard != null) {
-                    workGroupMap.put(idCard, workGroupName != null ? workGroupName : "");
-                }
-            }
-        }
-
-        // 处理每个对象，添加枚举的文本显示
+        // 处理每个对象，添加枚举的文本显示（组织架构信息已通过SQL查询获得）
         for (SwmPersonSchedule schedule : page.getList()) {
             Map<String, Object> scheduleMap = new HashMap<>();
 
@@ -126,22 +115,11 @@ public class SwmPersonScheduleController extends BaseController {
             // 添加枚举文本显示值
             scheduleMap.put("classesText", schedule.getClassesText());
 
-            // 添加班组名称 - 从批量查询结果获取
-            String workGroupName = "";
-            if (schedule.getIdCard() != null && !schedule.getIdCard().isEmpty()) {
-                workGroupName = workGroupMap.getOrDefault(schedule.getIdCard(), "");
-                scheduleMap.put("workGroupName", workGroupName);
-            } else {
-                scheduleMap.put("workGroupName", "");
-            }
-
-            // 如果有班组筛选条件，检查当前记录是否符合条件
-            if (workGroupNameFilter != null && !workGroupNameFilter.isEmpty()) {
-                if (workGroupName == null || !workGroupName.contains(workGroupNameFilter)) {
-                    // 不符合班组筛选条件，跳过此记录
-                    continue;
-                }
-            }
+            // 添加组织架构信息（直接从SQL查询结果获取）Author: Shawn Date: 2025/01/27
+            scheduleMap.put("organization", schedule.getOrganization());
+            scheduleMap.put("workshop", schedule.getWorkshop());
+            scheduleMap.put("process", schedule.getProcess());
+            scheduleMap.put("workGroupName", schedule.getWorkGroupName());
 
             // 添加到列表
             enhancedList.add(scheduleMap);

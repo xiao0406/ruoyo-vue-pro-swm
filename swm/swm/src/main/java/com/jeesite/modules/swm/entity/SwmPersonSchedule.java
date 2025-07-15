@@ -39,6 +39,13 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
     private String workGroupName; // 班组名称（非数据库字段）
     private String personId; // 前端传入的personId（非数据库字段，用于设置employeeId）
 
+    // 组织架构查询字段（非数据库字段，用于查询条件）
+    // Author: Shawn
+    // Date: 2025/01/27
+    private String organization; // 所属单位（查询字段）
+    private String workshop; // 所属车间（查询字段）
+    private String process; // 所属产线（查询字段）
+
     public SwmPersonSchedule() {
         this(null);
     }
@@ -130,5 +137,44 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
 
     public void setPersonId(String personId) {
         this.personId = personId;
+    }
+
+    /**
+     * 获取所属单位（查询字段）
+     * Author: Shawn
+     * Date: 2025/01/27
+     */
+    public String getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
+    }
+
+    /**
+     * 获取所属车间（查询字段）
+     * Author: Shawn
+     * Date: 2025/01/27
+     */
+    public String getWorkshop() {
+        return workshop;
+    }
+
+    public void setWorkshop(String workshop) {
+        this.workshop = workshop;
+    }
+
+    /**
+     * 获取所属产线（查询字段）
+     * Author: Shawn
+     * Date: 2025/01/27
+     */
+    public String getProcess() {
+        return process;
+    }
+
+    public void setProcess(String process) {
+        this.process = process;
     }
 }
