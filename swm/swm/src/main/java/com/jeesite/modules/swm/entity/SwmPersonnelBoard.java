@@ -9,6 +9,7 @@ import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * 人员看板表实体类
@@ -36,29 +37,41 @@ import java.math.BigDecimal;
 public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
 
     private static final long serialVersionUID = 1L;
-    
+
     // 查询时间类型: day, week, month
     private String timeType;
-    
+
     // 查询时间值: YYYY-MM-DD, YYYY-WW, YYYY-MM
     private String timeValue;
-    
+
+    // 设备ID列表，用于工作状态查询过滤
+    private List<String> deviceIds;
+
     // Getter and Setter for timeType
     public String getTimeType() {
         return timeType;
     }
-    
+
     public void setTimeType(String timeType) {
         this.timeType = timeType;
     }
-    
+
     // Getter and Setter for timeValue
     public String getTimeValue() {
         return timeValue;
     }
-    
+
     public void setTimeValue(String timeValue) {
         this.timeValue = timeValue;
+    }
+
+    // Getter and Setter for deviceIds
+    public List<String> getDeviceIds() {
+        return deviceIds;
+    }
+
+    public void setDeviceIds(List<String> deviceIds) {
+        this.deviceIds = deviceIds;
     }
 
     /**
@@ -125,7 +138,7 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
     private BigDecimal workingHours; // 本月工作时长(小时)
     private BigDecimal idleHours; // 本月怠工时长(小时)
     private String idCard; // 身份证号码
-    
+
     // 新增字段：休闲区统计
     private Integer leisureCount; // 进入休闲次数
     private Integer leisureDurationMin; // 休闲区总逗留时长(分钟)
@@ -290,7 +303,7 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
     public void setIdleHours(BigDecimal idleHours) {
         this.idleHours = idleHours;
     }
-    
+
     @Length(min = 0, max = 20, message = "身份证号码不能超过20个字符")
     public String getIdCard() {
         return idCard;
@@ -299,7 +312,7 @@ public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
     public void setIdCard(String idCard) {
         this.idCard = idCard;
     }
-    
+
     public Integer getLeisureCount() {
         return leisureCount;
     }

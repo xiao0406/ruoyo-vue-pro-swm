@@ -118,8 +118,19 @@
             <if test="team != null and team != ''">
                 AND (wg.work_group_name LIKE CONCAT('%', #{team}, '%') OR backup_wg.work_group_name LIKE CONCAT('%', #{team}, '%'))
             </if>
-            <if test="workStatus != null and workStatus != ''">
-                AND a.personnel_status = #{workStatus}
+            <if test="deviceIds != null and deviceIds.size() > 0">
+                AND (
+                    hd.device_id IN 
+                    <foreach collection="deviceIds" item="deviceId" open="(" separator="," close=")">
+                        #{deviceId}
+                    </foreach>
+                    <if test="deviceIds.contains('')">
+                        OR hd.device_id IS NULL OR hd.device_id = ''
+                    </if>
+                )
+            </if>
+            <if test="personnelStatus != null and personnelStatus != ''">
+                AND a.personnel_status = #{personnelStatus}
             </if>
         </where>
         ORDER BY ${sqlMap.order.toSql()}
