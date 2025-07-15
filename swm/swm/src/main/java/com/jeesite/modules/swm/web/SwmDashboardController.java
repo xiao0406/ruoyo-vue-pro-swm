@@ -589,6 +589,12 @@ public class SwmDashboardController extends BaseController {
 
         // 查询符合条件的人员
         List<SwmPerson> swmPersonList = swmPersonService.listByOrgAndWorkType(queryParam);
+
+        // 如果没有查询到人员，返回空数据结构
+        if (swmPersonList == null || swmPersonList.isEmpty()) {
+            return getEmptyAttendanceDashboard();
+        }
+
         List<String> swmPersonIdList = swmPersonList.stream()
                 .map(SwmPerson::getId)
                 .collect(Collectors.toList());
@@ -1243,6 +1249,96 @@ public class SwmDashboardController extends BaseController {
         }
         // 从第一条记录获取人员类型（因为已经按类型分组了）
         return attendances.get(0).getPersonType();
+    }
+
+    /**
+     * 获取空的考勤大屏数据结构
+     * 当查询条件未匹配到人员时返回，保持数据结构完整性
+     * 
+     * @return 包含空数据的完整数据结构
+     * @author Shawn
+     * @date 2025/01/15
+     */
+    private Map<String, Object> getEmptyAttendanceDashboard() {
+        Map<String, Object> result = new HashMap<>();
+
+        // 获取当前月份
+        Date today = new Date();
+        String currentMonth = DateUtil.format(today, "yyyy-MM");
+
+        // 获取当前月份的所有日期
+        List<String> daysInMonth = getDaysInMonth(currentMonth);
+        int dayCount = daysInMonth.size();
+
+        // 1. 今日考勤统计 - 工人和管理员都为空
+        Map<String, Object> todayAttendance = new HashMap<>();
+        Map<String, Object> emptyStats = new HashMap<>();
+        emptyStats.put("totalCount", 0);
+        emptyStats.put("presentCount", 0);
+        emptyStats.put("attendanceRate", BigDecimal.ZERO);
+        emptyStats.put("onSiteCount", 0);
+        emptyStats.put("workingCount", 0);
+
+        todayAttendance.put("worker", new HashMap<>(emptyStats));
+        todayAttendance.put("manager", new HashMap<>(emptyStats));
+        result.put("todayAttendance", todayAttendance);
+
+        // 2. 本月平均功效统计
+        Map<String, Object> monthlyEfficiency = new HashMap<>();
+        monthlyEfficiency.put("avgEfficiency", BigDecimal.ZERO);
+        monthlyEfficiency.put("achievementRate", BigDecimal.ZERO);
+        result.put("monthlyEfficiency", monthlyEfficiency);
+
+        // 3. 本月每日出勤图表数据 - 生成完整的日期和0值数据
+        Map<String, Object> monthlyAttendanceChart = new HashMap<>();
+        monthlyAttendanceChart.put("dates", daysInMonth);
+        monthlyAttendanceChart.put("scheduled", createZeroArray(dayCount));
+        monthlyAttendanceChart.put("actual", createZeroArray(dayCount));
+        monthlyAttendanceChart.put("rate", createZeroBigDecimalArray(dayCount));
+        result.put("monthlyAttendanceChart", monthlyAttendanceChart);
+
+        // 4. 本月每日功效图表数据 - 生成完整的日期和0值数据
+        Map<String, Object> monthlyEfficiencyChart = new HashMap<>();
+        monthlyEfficiencyChart.put("dates", daysInMonth);
+        monthlyEfficiencyChart.put("scheduledHours", createZeroBigDecimalArray(dayCount));
+        monthlyEfficiencyChart.put("actualHours", createZeroBigDecimalArray(dayCount));
+        monthlyEfficiencyChart.put("rate", createZeroBigDecimalArray(dayCount));
+        result.put("monthlyEfficiencyChart", monthlyEfficiencyChart);
+
+        // 5. 排名和分布数据
+        result.put("todayTeamRanking", new ArrayList<>());
+        result.put("todayJobDistribution", new ArrayList<>());
+        result.put("monthlyTeamRanking", new ArrayList<>());
+
+        return result;
+    }
+
+    /**
+     * 创建指定长度的整数0值数组
+     * 
+     * @param size 数组长度
+     * @return 包含指定数量0值的整数数组
+     */
+    private List<Integer> createZeroArray(int size) {
+        List<Integer> zeroArray = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            zeroArray.add(0);
+        }
+        return zeroArray;
+    }
+
+    /**
+     * 创建指定长度的BigDecimal 0值数组
+     * 
+     * @param size 数组长度
+     * @return 包含指定数量BigDecimal.ZERO值的数组
+     */
+    private List<BigDecimal> createZeroBigDecimalArray(int size) {
+        List<BigDecimal> zeroArray = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            zeroArray.add(BigDecimal.ZERO);
+        }
+        return zeroArray;
     }
 
 }
