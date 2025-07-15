@@ -26,6 +26,8 @@ import java.util.Date;
         @Column(name = "responsible_person_id", attrName = "responsiblePersonId", label = "巡检负责人id"),
         @Column(name = "responsible_person", attrName = "responsiblePerson", label = "巡检负责人名称"),
         @Column(name = "first_inspection_time", attrName = "firstInspectionTime", label = "首次巡检时间"),
+        @Column(name = "hazard_source_id", attrName = "hazardSourceId", label = "关联的危险源ID"),
+        @Column(name = "hazard_source_name", attrName = "hazardSourceName", label = "关联的危险源名称"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.create_date DESC")
 public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
@@ -40,6 +42,8 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
     private String responsiblePerson; // 巡检负责人
     private Date firstInspectionTime; // 首次巡检时间
     private String inspectionTypeText; // 巡检类型文本
+    private String hazardSourceId; // 关联的危险源ID
+    private String hazardSourceName; // 关联的危险源名称
 
     public SwmInspectionPlan() {
         this(null);
@@ -121,5 +125,23 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 
     public void setInspectionTypeText(String inspectionTypeText) {
         this.inspectionTypeText = inspectionTypeText;
+    }
+
+    @Size(min = 0, max = 64, message = "关联危险源ID长度不能超过 64 个字符")
+    public String getHazardSourceId() {
+        return hazardSourceId;
+    }
+
+    public void setHazardSourceId(String hazardSourceId) {
+        this.hazardSourceId = hazardSourceId;
+    }
+
+    @Size(min = 0, max = 255, message = "关联危险源名称长度不能超过 255 个字符")
+    public String getHazardSourceName() {
+        return hazardSourceName;
+    }
+
+    public void setHazardSourceName(String hazardSourceName) {
+        this.hazardSourceName = hazardSourceName;
     }
 }

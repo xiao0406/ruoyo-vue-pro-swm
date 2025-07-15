@@ -1,6 +1,5 @@
 package com.jeesite.modules.job.task;
 
-import cn.hutool.core.date.DateUtil;
 import com.jeesite.modules.swm.entity.SwmInspectionList;
 import com.jeesite.modules.swm.entity.SwmInspectionPlan;
 import com.jeesite.modules.swm.service.SwmInspectionListService;
@@ -12,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -29,6 +28,8 @@ public class InspectionPlanTask {
     private SwmInspectionPlanService swmInspectionPlanService;
     @Autowired
     private SwmInspectionListService swmInspectionListService;
+    
+    private final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /**
      * 创建巡检任务(每日凌晨创建一个未来任务)
@@ -36,10 +37,20 @@ public class InspectionPlanTask {
     @XxlJob("createInspectTask")
     @Transactional(rollbackFor = Exception.class)
     public void createInspectTask() {
-        XxlJobHelper.log("开始创建巡检任务,时间:" + DateUtil.now());
+        Date startTime = new Date();
+        XxlJobHelper.log("========== 开始执行巡检任务生成定时任务 ==========");
+        XxlJobHelper.log("任务开始时间: " + dateTimeFormat.format(startTime));
+        log.info("========== 开始执行巡检任务生成定时任务 ==========");
+        log.info("任务开始时间: {}", dateTimeFormat.format(startTime));
 
         // 1. 查询所有有效的巡检计划
         List<SwmInspectionPlan> inspectionPlanList = swmInspectionPlanService.findList(new SwmInspectionPlan());
+        XxlJobHelper.log("查询到 " + inspectionPlanList.size() + " 个巡检计划");
+        log.info("查询到 {} 个巡检计划", inspectionPlanList.size());
+
+        int successCount = 0;
+        int skipCount = 0;
+        int errorCount = 0;
 
         // 2. 遍历每个巡检计划
         for (SwmInspectionPlan plan : inspectionPlanList) {
@@ -51,77 +62,174 @@ public class InspectionPlanTask {
                 String responsiblePersonId = plan.getResponsiblePersonId();
                 Date firstInspectionTime = plan.getFirstInspectionTime();
                 Integer frequencyDays = plan.getFrequencyDays();
-
+                String hazardSourceId = plan.getHazardSourceId();
+                String hazardSourceName = plan.getHazardSourceName();
+                
+                XxlJobHelper.log("处理计划: [" + planName + "], ID: [" + planId + "], 巡检频次: [" + frequencyDays + "天]");
+                XxlJobHelper.log("关联危险源: [" + (hazardSourceName != null ? hazardSourceName : "无") + "], 危险源ID: [" + (hazardSourceId != null ? hazardSourceId : "无") + "]");
+                log.info("处理计划: [{}], ID: [{}], 巡检频次: [{}天]", planName, planId, frequencyDays);
+                log.info("关联危险源: [{}], 危险源ID: [{}]", (hazardSourceName != null ? hazardSourceName : "无"), (hazardSourceId != null ? hazardSourceId : "无"));
+                
                 // 4. 检查必要字段是否为空
                 if (firstInspectionTime == null || frequencyDays == null) {
-                    XxlJobHelper.log("跳过计划[" + planName + "]，因为首次巡检时间或频次为空");
+                    String msg = "跳过计划[" + planName + "]，因为首次巡检时间或频次为空";
+                    XxlJobHelper.log(msg);
+                    log.warn(msg);
+                    skipCount++;
                     continue;
                 }
 
-                // 5. 计算需要生成的任务时间范围
+                // 5. 获取该计划最新的巡检任务
+                SwmInspectionList lastTask = getLastTaskByPlanId(planId);
                 Date now = new Date();
-                Date lastTaskDate = getLastTaskDate(planId); // 获取该计划最后一次任务的开始时间
-
-                // 如果是第一次生成任务，使用首次巡检时间作为基准
-                Date baseDate = (lastTaskDate != null) ? lastTaskDate : firstInspectionTime;
-
-                // 6. 计算需要生成的任务（包括补全和未来任务）
-                List<Date> taskDates = calculateTaskDates(baseDate, frequencyDays, now);
-
-                // 7. 为每个计算出的日期创建巡检任务（跳过已存在的）
-                for (Date taskDate : taskDates) {
+                
+                if (lastTask != null) {
+                    XxlJobHelper.log("该计划已有巡检任务，最新任务ID: [" + lastTask.getId() + "]");
+                    log.info("该计划已有巡检任务，最新任务ID: [{}]", lastTask.getId());
+                } else {
+                    XxlJobHelper.log("该计划无历史巡检任务");
+                    log.info("该计划无历史巡检任务");
+                }
+                
+                // 6. 确定是否需要创建新任务
+                boolean needCreateTask = false;
+                Date newTaskDate = null;
+                
+                if (lastTask == null) {
+                    // 如果没有上一次任务，则使用首次巡检时间作为基准
+                    XxlJobHelper.log("计划[" + planName + "]无历史任务，使用首次巡检时间作为基准");
+                    log.info("计划[{}]无历史任务，使用首次巡检时间作为基准", planName);
+                    needCreateTask = true;
+                    
+                    // 如果首次巡检时间未到，使用首次巡检时间
+                    // 如果首次巡检时间已过，则使用当前日期+首次巡检时间的时分秒
+                    if (firstInspectionTime.after(now)) {
+                        newTaskDate = firstInspectionTime;
+                        XxlJobHelper.log("首次巡检时间未到，使用原定时间: [" + dateTimeFormat.format(newTaskDate) + "]");
+                        log.info("首次巡检时间未到，使用原定时间: [{}]", dateTimeFormat.format(newTaskDate));
+                    } else {
+                        newTaskDate = combineDateAndTime(now, firstInspectionTime);
+                        XxlJobHelper.log("首次巡检时间已过，更新为当前日期+原时间: [" + dateTimeFormat.format(newTaskDate) + "]");
+                        log.info("首次巡检时间已过，更新为当前日期+原时间: [{}]", dateTimeFormat.format(newTaskDate));
+                    }
+                } else {
+                    // 有上一次任务，检查是否需要创建新任务
+                    Date lastTaskDate = lastTask.getStartTime();
+                    XxlJobHelper.log("计划[" + planName + "]最后任务时间: [" + dateTimeFormat.format(lastTaskDate) + "]");
+                    log.info("计划[{}]最后任务时间: [{}]", planName, dateTimeFormat.format(lastTaskDate));
+                    
+                    // 计算下一次任务日期
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(lastTaskDate);
+                    calendar.add(Calendar.DAY_OF_MONTH, frequencyDays);
+                    Date expectedNextDate = calendar.getTime();
+                    
+                    XxlJobHelper.log("计划[" + planName + "]下一次预期执行时间: [" + dateTimeFormat.format(expectedNextDate) + "]");
+                    log.info("计划[{}]下一次预期执行时间: [{}]", planName, dateTimeFormat.format(expectedNextDate));
+                    
+                    // 如果下一个预期日期已经到了或者过了，则需要创建新任务
+                    if (!expectedNextDate.after(now)) {
+                        needCreateTask = true;
+                        // 使用当前日期+上一次任务的时分秒
+                        newTaskDate = combineDateAndTime(now, lastTaskDate);
+                        XxlJobHelper.log("已到达或超过预期执行时间，需要创建新任务，时间为: [" + dateTimeFormat.format(newTaskDate) + "]");
+                        log.info("已到达或超过预期执行时间，需要创建新任务，时间为: [{}]", dateTimeFormat.format(newTaskDate));
+                    } else {
+                        XxlJobHelper.log("未到达预期执行时间，不需要创建新任务");
+                        log.info("未到达预期执行时间，不需要创建新任务");
+                    }
+                }
+                
+                // 7. 创建新任务
+                if (needCreateTask && newTaskDate != null) {
                     SwmInspectionList task = new SwmInspectionList();
                     task.setPlanId(planId);
                     task.setPlanName(planName);
                     task.setInspectionType(inspectionType);
                     task.setInspectorId(responsiblePersonId);
-                    task.setStartTime(taskDate);
+                    task.setStartTime(newTaskDate);
                     task.setInspectionListStatus(SwmInspectionList.InspectionListStatusEnum.WAIT);
 
                     // 保存巡检任务
                     swmInspectionListService.save(task);
-                    XxlJobHelper.log("成功创建巡检任务:计划[" + planName + "], 时间[" + DateUtil.formatDateTime(taskDate) + "]");
+                    String successMsg = "成功创建巡检任务: 计划[" + planName + "], 时间[" + dateTimeFormat.format(newTaskDate) + "], 新任务ID: [" + task.getId() + "]";
+                    XxlJobHelper.log(successMsg);
+                    log.info(successMsg);
+                    successCount++;
+                } else {
+                    String skipMsg = "计划[" + planName + "]不满足创建新任务的条件，跳过";
+                    XxlJobHelper.log(skipMsg);
+                    log.info(skipMsg);
+                    skipCount++;
                 }
 
+                XxlJobHelper.log("------------------------------------------------");
+                log.info("------------------------------------------------");
+
             } catch (Exception e) {
-                XxlJobHelper.log("处理计划[" + plan.getPlanName() + "]时出错:" + e.getMessage());
+                String errorMsg = "处理计划[" + plan.getPlanName() + "]时出错: " + e.getMessage();
+                XxlJobHelper.log(errorMsg);
+                log.error(errorMsg, e);
+                errorCount++;
             }
         }
 
-        XxlJobHelper.log("巡检任务生成完成");
+        Date endTime = new Date();
+        long executionTime = endTime.getTime() - startTime.getTime();
+        
+        XxlJobHelper.log("========== 巡检任务生成定时任务执行完成 ==========");
+        XxlJobHelper.log("任务结束时间: " + dateTimeFormat.format(endTime));
+        XxlJobHelper.log("任务执行时间: " + executionTime + "毫秒");
+        XxlJobHelper.log("处理结果: 共处理" + inspectionPlanList.size() + "个计划，成功创建" + successCount + "个任务，跳过" + skipCount + "个计划，失败" + errorCount + "个计划");
+        
+        log.info("========== 巡检任务生成定时任务执行完成 ==========");
+        log.info("任务结束时间: {}", dateTimeFormat.format(endTime));
+        log.info("任务执行时间: {}毫秒", executionTime);
+        log.info("处理结果: 共处理{}个计划，成功创建{}个任务，跳过{}个计划，失败{}个计划", 
+                inspectionPlanList.size(), successCount, skipCount, errorCount);
     }
 
     /**
-     * 获取指定计划的最后一次任务的开始时间
+     * 获取指定计划的最后一次任务
      */
-    private Date getLastTaskDate(String planId) {
+    private SwmInspectionList getLastTaskByPlanId(String planId) {
         SwmInspectionList lastTask = swmInspectionListService.getLastTaskByPlanId(planId);
-        return lastTask != null ? lastTask.getStartTime() : null;
+        if (lastTask != null) {
+            log.debug("获取到计划[{}]最后一次任务, ID: [{}], 开始时间: [{}]", 
+                    planId, lastTask.getId(), lastTask.getStartTime() != null ? dateTimeFormat.format(lastTask.getStartTime()) : "未设置");
+        } else {
+            log.debug("计划[{}]没有历史任务记录", planId);
+        }
+        return lastTask;
     }
-
+    
     /**
-     * 计算需要生成的巡检任务日期
-     * 保证：
-     * 1. 补全所有过去应生成但未生成的任务
-     * 2. 确保至少有一个未来的任务
+     * 合并日期和时间
+     * 使用date1的年月日和date2的时分秒
      */
-    private List<Date> calculateTaskDates(Date baseDate, int frequencyDays, Date endDate) {
-        List<Date> dates = new ArrayList<>();
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(baseDate);
-
-        // 先补全所有过去应生成的任务
-        while (calendar.getTime().before(endDate)) {
-            dates.add(calendar.getTime());
-            calendar.add(Calendar.DAY_OF_MONTH, frequencyDays);
-        }
-
-        // 确保至少有一个未来的任务
-        if (dates.isEmpty() || !dates.get(dates.size()-1).after(endDate)) {
-            dates.add(calendar.getTime());
-        }
-
-        return dates;
+    private Date combineDateAndTime(Date date1, Date date2) {
+        Calendar calendar1 = Calendar.getInstance();
+        calendar1.setTime(date1);
+        
+        Calendar calendar2 = Calendar.getInstance();
+        calendar2.setTime(date2);
+        
+        // 保留date1的年月日
+        int year = calendar1.get(Calendar.YEAR);
+        int month = calendar1.get(Calendar.MONTH);
+        int day = calendar1.get(Calendar.DAY_OF_MONTH);
+        
+        // 保留date2的时分秒
+        int hour = calendar2.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar2.get(Calendar.MINUTE);
+        int second = calendar2.get(Calendar.SECOND);
+        
+        Calendar resultCalendar = Calendar.getInstance();
+        resultCalendar.set(year, month, day, hour, minute, second);
+        
+        Date result = resultCalendar.getTime();
+        log.debug("合并日期和时间: 日期源[{}], 时间源[{}], 结果[{}]", 
+                dateTimeFormat.format(date1), dateTimeFormat.format(date2), dateTimeFormat.format(result));
+        return result;
     }
-
 }

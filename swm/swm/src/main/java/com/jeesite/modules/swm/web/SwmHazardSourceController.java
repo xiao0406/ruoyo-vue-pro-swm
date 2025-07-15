@@ -232,6 +232,9 @@ public class SwmHazardSourceController extends BaseController {
             swmInspectionPlan.setResponsiblePersonId(swmHazardSource.getResponsiblePersonId());
             swmInspectionPlan.setResponsiblePerson(swmHazardSource.getResponsiblePerson());
             swmInspectionPlan.setFirstInspectionTime(swmHazardSource.getFirstInspectionTime());
+            // 设置危险源ID和名称
+            swmInspectionPlan.setHazardSourceId(swmHazardSource.getId());
+            swmInspectionPlan.setHazardSourceName(swmHazardSource.getHazardName());
             swmInspectionPlanService.save(swmInspectionPlan);
         }
         return renderResult(Global.TRUE, text("保存危险源信息成功！"));
