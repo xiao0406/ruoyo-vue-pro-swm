@@ -21,6 +21,9 @@
             <if test="inspectionType != null and inspectionType != ''">
                 AND a.inspection_type = #{inspectionType}
             </if>
+            <if test="planStatus != null and planStatus != ''">
+                AND a.plan_status = #{planStatus}
+            </if>
             <if test="status != null and status != ''">
                 AND a.status = #{status}
             </if>

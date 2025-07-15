@@ -38,4 +38,11 @@ public interface SwmVoiceTemplateDao extends CrudDao<SwmVoiceTemplate> {
      * 更新状态
      */
     void updateStatus(@Param("id") String id, @Param("status") String status);
+    
+    /**
+     * 根据ID列表批量查询语音模板
+     * @param ids 语音模板ID列表
+     * @return 语音模板列表
+     */
+    List<SwmVoiceTemplate> findByIds(@Param("ids") List<String> ids);
 } 

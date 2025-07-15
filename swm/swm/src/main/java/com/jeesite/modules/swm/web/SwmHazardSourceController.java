@@ -12,10 +12,12 @@ import com.jeesite.modules.swm.entity.SwmHazardSource;
 import com.jeesite.modules.swm.entity.SwmInspectionPlan;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmVoiceTemplate;
+import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.SwmHazardSourceService;
 import com.jeesite.modules.swm.service.SwmInspectionPlanService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmVoiceTemplateService;
+import com.jeesite.modules.swm.service.SwmBeaconStationService;
 import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
 import io.swagger.annotations.Api;
@@ -50,6 +52,8 @@ public class SwmHazardSourceController extends BaseController {
     private SwmPersonService swmPersonService;
     @Autowired
     private SwmVoiceTemplateService swmVoiceTemplateService;
+    @Autowired
+    private SwmBeaconStationService swmBeaconStationService; // 注入信标服务
 
     /**
      * 获取数据
@@ -79,6 +83,57 @@ public class SwmHazardSourceController extends BaseController {
         swmHazardSource.setPage(new Page<>(request, response));
         Page<SwmHazardSource> page = swmHazardSourceService.findPage(swmHazardSource);
 
+        // 收集所有需要查询的ID
+        Set<String> voiceTemplateIds = new HashSet<>();
+        Set<String> beaconIds = new HashSet<>();
+        
+        // 第一次遍历，收集所有ID
+        for (SwmHazardSource item : page.getList()) {
+            // 收集语音模板ID
+            if (item.getVoiceTemplateId() != null && !item.getVoiceTemplateId().isEmpty()) {
+                voiceTemplateIds.add(item.getVoiceTemplateId());
+            }
+            
+            // 收集信标ID
+            if (item.getBeaconIdentifier() != null && !item.getBeaconIdentifier().isEmpty()) {
+                String[] ids = item.getBeaconIdentifier().split(",");
+                for (String id : ids) {
+                    if (!id.trim().isEmpty()) {
+                        beaconIds.add(id.trim());
+                    }
+                }
+            }
+        }
+        
+        // 批量查询语音模板
+        Map<String, SwmVoiceTemplate> voiceTemplateMap = new HashMap<>();
+        if (!voiceTemplateIds.isEmpty()) {
+            List<SwmVoiceTemplate> voiceTemplates = swmVoiceTemplateService.findByIds(new ArrayList<>(voiceTemplateIds));
+            for (SwmVoiceTemplate template : voiceTemplates) {
+                voiceTemplateMap.put(template.getId(), template);
+            }
+        }
+        
+        // 批量查询信标
+        Map<String, Map<String, Object>> beaconMap = new HashMap<>();
+        if (!beaconIds.isEmpty()) {
+            List<SwmBeaconStation> beacons = swmBeaconStationService.findByBeaconIds(new ArrayList<>(beaconIds));
+            for (SwmBeaconStation beacon : beacons) {
+                Map<String, Object> beaconInfo = new HashMap<>();
+                beaconInfo.put("id", beacon.getId());
+                beaconInfo.put("beaconId", beacon.getBeaconId());
+                
+                // 如果设备名称为空，则使用MAC地址作为设备名称
+                String deviceName = beacon.getDeviceName();
+                if (deviceName == null || deviceName.trim().isEmpty() || "null".equals(deviceName)) {
+                    deviceName = beacon.getBeaconId();
+                }
+                beaconInfo.put("deviceName", deviceName);
+                beaconInfo.put("location", beacon.getLocation());
+                beaconMap.put(beacon.getBeaconId(), beaconInfo);
+            }
+        }
+        
         // 手动处理字典数据
         for (SwmHazardSource item : page.getList()) {
             // 危险源类别
@@ -116,12 +171,52 @@ public class SwmHazardSourceController extends BaseController {
                 item.setHazardStatusText("已忽略");
             }
 
-            // 语音模板名称
+            // 语音模板名称 - 从Map中获取
             if (item.getVoiceTemplateId() != null && !item.getVoiceTemplateId().isEmpty()) {
-                SwmVoiceTemplate voiceTemplate = swmVoiceTemplateService.get(item.getVoiceTemplateId());
+                SwmVoiceTemplate voiceTemplate = voiceTemplateMap.get(item.getVoiceTemplateId());
                 if (voiceTemplate != null) {
                     item.setVoiceTemplateText(voiceTemplate.getTemplateName());
                 }
+            }
+            
+            // 处理多个信标显示 - 从Map中获取
+            if (item.getBeaconIdentifier() != null && !item.getBeaconIdentifier().isEmpty()) {
+                // 将逗号分隔的beaconIdentifier拆分为数组
+                String[] ids = item.getBeaconIdentifier().split(",");
+                StringBuilder beaconText = new StringBuilder();
+                
+                // 查询每个信标的名称
+                for (int i = 0; i < ids.length; i++) {
+                    String beaconId = ids[i].trim();
+                    if (beaconId.isEmpty()) continue;
+                    
+                    // 从Map中获取信标信息
+                    Map<String, Object> beacon = beaconMap.get(beaconId);
+                    if (beacon != null) {
+                        if (beaconText.length() > 0) {
+                            beaconText.append(", ");
+                        }
+                        // 使用之前缓存的deviceName
+                        String deviceName = (String) beacon.get("deviceName");
+                        beaconText.append(deviceName);
+                    } else {
+                        // 如果没有找到信标信息，直接使用MAC地址
+                        if (beaconText.length() > 0) {
+                            beaconText.append(", ");
+                        }
+                        beaconText.append(beaconId);
+                    }
+                }
+                
+                item.setBeaconIdentifierText(beaconText.toString());
+            } else {
+                // 如果没有信标ID，设置为"-"
+                item.setBeaconIdentifierText("-");
+            }
+
+            // 处理草稿状态，如果isDraft为null，默认设为0
+            if (item.getIsDraft() == null) {
+                item.setIsDraft("0");
             }
         }
 
@@ -151,6 +246,10 @@ public class SwmHazardSourceController extends BaseController {
             data.put("voiceTemplateId", swmHazardSource.getVoiceTemplateId());
             data.put("beaconTag", swmHazardSource.getBeaconTag());
             data.put("remarks", swmHazardSource.getRemarks());
+            data.put("frequencyDays", swmHazardSource.getFrequencyDays());
+            data.put("responsiblePersonId", swmHazardSource.getResponsiblePersonId());
+            data.put("firstInspectionTime", swmHazardSource.getFirstInspectionTime());
+            data.put("isDraft", swmHazardSource.getIsDraft());
 
             // 手动设置字典文本
             // 危险源类别
@@ -202,12 +301,17 @@ public class SwmHazardSourceController extends BaseController {
     }
 
     /**
-     * 保存危险源信息
+     * 保存危险源
      */
     @PostMapping(value = "save")
     @ResponseBody
     @ApiOperation(value = "保存危险源")
     public String save(@Validated SwmHazardSource swmHazardSource) {
+        // 如果不是暂存，则默认设置isDraft为0
+        if (swmHazardSource.getIsDraft() == null) {
+            swmHazardSource.setIsDraft("0");
+        }
+        
         if (swmHazardSource.getResponsiblePersonId() != null) {
             SwmPerson swmPerson = swmPersonService.get(swmHazardSource.getResponsiblePersonId());
             if (swmPerson == null) {
@@ -216,28 +320,42 @@ public class SwmHazardSourceController extends BaseController {
                 swmHazardSource.setResponsiblePerson(swmPerson.getName());
             }
         }
+
+        // 保存危险源信息
         swmHazardSourceService.save(swmHazardSource);
-        // 如果设置为加入巡检需要生成巡检计划
-        if ("1".equals(swmHazardSource.getIsPatrolIncluded())) {
+
+        // 如果设置为加入巡检且不是草稿状态
+        if ("1".equals(swmHazardSource.getIsPatrolIncluded()) && !"1".equals(swmHazardSource.getIsDraft())) {
             // 判断必要字段是否为空
             if (swmHazardSource.getFirstInspectionTime() == null || swmHazardSource.getFrequencyDays() == null
                     || swmHazardSource.getResponsiblePersonId() == null) {
-                return renderResult(Global.FALSE, text("加入巡检的危险源巡检负责人、巡检频次、首检时间不能为空"));
+                return renderResult(Global.TRUE, text("保存成功，但无法生成巡检计划，请补充巡检相关信息！"));
             }
+            
+            // 创建巡检计划
+            try {
             SwmInspectionPlan swmInspectionPlan = new SwmInspectionPlan();
             swmInspectionPlan.setPlanName(swmHazardSource.getHazardName());
             swmInspectionPlan.setFrequencyDays(swmHazardSource.getFrequencyDays());
             // 危险源巡检
             swmInspectionPlan.setInspectionType("3");
+                swmInspectionPlan.setHazardSourceId(swmHazardSource.getId());
+                swmInspectionPlan.setHazardSourceName(swmHazardSource.getHazardName());
+                swmInspectionPlan.setFirstInspectionTime(swmHazardSource.getFirstInspectionTime());
             swmInspectionPlan.setResponsiblePersonId(swmHazardSource.getResponsiblePersonId());
             swmInspectionPlan.setResponsiblePerson(swmHazardSource.getResponsiblePerson());
-            swmInspectionPlan.setFirstInspectionTime(swmHazardSource.getFirstInspectionTime());
-            // 设置危险源ID和名称
-            swmInspectionPlan.setHazardSourceId(swmHazardSource.getId());
-            swmInspectionPlan.setHazardSourceName(swmHazardSource.getHazardName());
+                swmInspectionPlan.setPlanStatus(SwmInspectionPlan.PlanStatusEnum.OPEN); // 默认为开启状态
+                
             swmInspectionPlanService.save(swmInspectionPlan);
+                
+                return renderResult(Global.TRUE, text("保存危险源并生成巡检计划成功"));
+            } catch (Exception e) {
+                logger.error("生成巡检计划失败", e);
+                return renderResult(Global.TRUE, text("保存危险源成功，但生成巡检计划失败：" + e.getMessage()));
+            }
         }
-        return renderResult(Global.TRUE, text("保存危险源信息成功！"));
+
+        return renderResult(Global.TRUE, text("保存危险源成功"));
     }
 
     /**
@@ -262,6 +380,23 @@ public class SwmHazardSourceController extends BaseController {
         hazardSource.setBeaconIdentifier(beaconIdentifier);
         return swmHazardSourceService.findList(hazardSource).isEmpty() ? null
                 : swmHazardSourceService.findList(hazardSource).get(0);
+    }
+
+    /**
+     * 暂存危险源
+     */
+    @PostMapping(value = "tempSave", consumes = "application/json")
+    @ResponseBody
+    @ApiOperation(value = "暂存危险源")
+    public String tempSave(@RequestBody SwmHazardSource swmHazardSource) {
+        // 标记为暂存状态
+        swmHazardSource.setHazardStatus(SwmHazardSource.HazardSourceStatusEnum.WAIT);
+        swmHazardSource.setIsDraft("1"); // 标记为草稿状态
+        
+        // 保存数据
+        swmHazardSourceService.save(swmHazardSource);
+        
+        return renderResult(Global.TRUE, text("危险源暂存成功"));
     }
 
     /**

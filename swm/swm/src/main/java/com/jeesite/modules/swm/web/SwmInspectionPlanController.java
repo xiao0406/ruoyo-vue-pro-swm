@@ -148,6 +148,38 @@ public class SwmInspectionPlanController extends BaseController {
         swmInspectionPlanService.delete(swmInspectionPlan);
         return renderResult(Global.TRUE, text("删除巡检计划成功！"));
     }
+    
+    /**
+     * 开启巡检计划
+     */
+    @RequestMapping(value = "openPlan")
+    @ResponseBody
+    public String openPlan(SwmInspectionPlan swmInspectionPlan) {
+        logger.info("开启巡检计划，ID: {}", swmInspectionPlan.getId());
+        SwmInspectionPlan entity = swmInspectionPlanService.get(swmInspectionPlan.getId());
+        if (entity == null) {
+            return renderResult(Global.FALSE, text("巡检计划不存在！"));
+        }
+        entity.setPlanStatus(SwmInspectionPlan.PlanStatusEnum.OPEN);
+        swmInspectionPlanService.save(entity);
+        return renderResult(Global.TRUE, text("巡检计划已开启！"));
+    }
+
+    /**
+     * 暂停巡检计划
+     */
+    @RequestMapping(value = "pausePlan")
+    @ResponseBody
+    public String pausePlan(SwmInspectionPlan swmInspectionPlan) {
+        logger.info("暂停巡检计划，ID: {}", swmInspectionPlan.getId());
+        SwmInspectionPlan entity = swmInspectionPlanService.get(swmInspectionPlan.getId());
+        if (entity == null) {
+            return renderResult(Global.FALSE, text("巡检计划不存在！"));
+        }
+        entity.setPlanStatus(SwmInspectionPlan.PlanStatusEnum.PAUSE);
+        swmInspectionPlanService.save(entity);
+        return renderResult(Global.TRUE, text("巡检计划已暂停！"));
+    }
 
     /**
      * 测试接口：手动触发巡检任务生成

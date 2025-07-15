@@ -23,6 +23,11 @@ public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
          * 根据MAC地址查询基站
          */
         SwmBeaconStation getByBeaconId(@Param("beaconId") String beaconId);
+        
+        /**
+         * 根据MAC地址列表批量查询基站
+         */
+        List<SwmBeaconStation> findByBeaconIds(@Param("beaconIds") List<String> beaconIds);
 
         /**
          * 检查是否存在相同MAC地址且状态为正常的记录（用于重复性校验）

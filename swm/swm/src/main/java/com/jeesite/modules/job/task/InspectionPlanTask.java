@@ -44,9 +44,11 @@ public class InspectionPlanTask {
         log.info("任务开始时间: {}", dateTimeFormat.format(startTime));
 
         // 1. 查询所有有效的巡检计划
-        List<SwmInspectionPlan> inspectionPlanList = swmInspectionPlanService.findList(new SwmInspectionPlan());
-        XxlJobHelper.log("查询到 " + inspectionPlanList.size() + " 个巡检计划");
-        log.info("查询到 {} 个巡检计划", inspectionPlanList.size());
+        SwmInspectionPlan queryPlan = new SwmInspectionPlan();
+        queryPlan.setPlanStatus(SwmInspectionPlan.PlanStatusEnum.OPEN);  // 只查询开启状态的计划
+        List<SwmInspectionPlan> inspectionPlanList = swmInspectionPlanService.findList(queryPlan);
+        XxlJobHelper.log("查询到 " + inspectionPlanList.size() + " 个开启状态的巡检计划");
+        log.info("查询到 {} 个开启状态的巡检计划", inspectionPlanList.size());
 
         int successCount = 0;
         int skipCount = 0;
@@ -82,6 +84,45 @@ public class InspectionPlanTask {
                 // 5. 获取该计划最新的巡检任务
                 SwmInspectionList lastTask = getLastTaskByPlanId(planId);
                 Date now = new Date();
+                
+                // 如果频次为0，表示只巡检一次
+                if (frequencyDays == 0) {
+                    if (lastTask != null) {
+                        // 已经有一次巡检任务了，跳过
+                        String skipMsg = "计划[" + planName + "]的巡检频次为0，表示只巡检一次，已有巡检任务，跳过";
+                        XxlJobHelper.log(skipMsg);
+                        log.info(skipMsg);
+                        skipCount++;
+                        continue;
+                    } else {
+                        // 还没有巡检任务，创建一次
+                        XxlJobHelper.log("计划[" + planName + "]的巡检频次为0，表示只巡检一次，创建首次巡检任务");
+                        log.info("计划[{}]的巡检频次为0，表示只巡检一次，创建首次巡检任务", planName);
+                        
+                        Date taskDate;
+                        if (firstInspectionTime.after(now)) {
+                            taskDate = firstInspectionTime;
+                        } else {
+                            taskDate = combineDateAndTime(now, firstInspectionTime);
+                        }
+                        
+                        SwmInspectionList task = new SwmInspectionList();
+                        task.setPlanId(planId);
+                        task.setPlanName(planName);
+                        task.setInspectionType(inspectionType);
+                        task.setInspectorId(responsiblePersonId);
+                        task.setStartTime(taskDate);
+                        task.setInspectionListStatus(SwmInspectionList.InspectionListStatusEnum.WAIT);
+
+                        // 保存巡检任务
+                        swmInspectionListService.save(task);
+                        String successMsg = "成功创建一次性巡检任务: 计划[" + planName + "], 时间[" + dateTimeFormat.format(taskDate) + "], 新任务ID: [" + task.getId() + "]";
+                        XxlJobHelper.log(successMsg);
+                        log.info(successMsg);
+                        successCount++;
+                        continue;
+                    }
+                }
                 
                 if (lastTask != null) {
                     XxlJobHelper.log("该计划已有巡检任务，最新任务ID: [" + lastTask.getId() + "]");

@@ -28,11 +28,22 @@ import java.util.Date;
         @Column(name = "first_inspection_time", attrName = "firstInspectionTime", label = "首次巡检时间"),
         @Column(name = "hazard_source_id", attrName = "hazardSourceId", label = "关联的危险源ID"),
         @Column(name = "hazard_source_name", attrName = "hazardSourceName", label = "关联的危险源名称"),
+        @Column(name = "plan_status", attrName = "planStatus", label = "巡检状态"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.create_date DESC")
 public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 
     private static final long serialVersionUID = 1L;
+    
+    /**
+     * 巡检计划状态常量
+     */
+    public static class PlanStatusEnum {
+        /** 开启 */
+        public static final String OPEN = "open";
+        /** 暂停 */
+        public static final String PAUSE = "pause";
+    }
 
     private String planCode; // 巡检计划编号
     private String planName; // 计划名称
@@ -44,13 +55,16 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
     private String inspectionTypeText; // 巡检类型文本
     private String hazardSourceId; // 关联的危险源ID
     private String hazardSourceName; // 关联的危险源名称
+    private String planStatus; // 巡检状态（open-开启, pause-暂停）
 
     public SwmInspectionPlan() {
         this(null);
+        this.planStatus = PlanStatusEnum.OPEN; // 默认为开启状态
     }
 
     public SwmInspectionPlan(String id) {
         super(id);
+        this.planStatus = PlanStatusEnum.OPEN; // 默认为开启状态
     }
 
     @Size(min = 0, max = 50, message = "巡检计划编号长度不能超过 50 个字符")
@@ -143,5 +157,14 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 
     public void setHazardSourceName(String hazardSourceName) {
         this.hazardSourceName = hazardSourceName;
+    }
+    
+    @Size(min = 0, max = 10, message = "巡检状态长度不能超过 10 个字符")
+    public String getPlanStatus() {
+        return planStatus;
+    }
+
+    public void setPlanStatus(String planStatus) {
+        this.planStatus = planStatus;
     }
 }

@@ -78,4 +78,10 @@ public interface SwmVoiceTemplateService {
      */
     void updateStatus(String id, String status);
     
+    /**
+     * 根据ID列表批量查询语音模板
+     * @param ids 语音模板ID列表
+     * @return 语音模板列表
+     */
+    List<SwmVoiceTemplate> findByIds(List<String> ids);
 } 

@@ -12,6 +12,7 @@
         SELECT 
             a.id,
             a.beacon_id,
+            a.device_name,
             a.beacon_type,
             a.beacon_color,
             a.control_type,
@@ -38,6 +39,40 @@
         LIMIT 1
     </select>
     
+    <!-- 根据信标编号列表批量查询基站 -->
+    <select id="findByBeaconIds" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+        SELECT 
+            a.id,
+            a.beacon_id,
+            a.device_name,
+            a.beacon_type,
+            a.beacon_color,
+            a.control_type,
+            a.location,
+            a.area,
+            a.map_coord,
+            a.pixel_x,
+            a.pixel_y,
+            a.real_x,
+            a.real_y,
+            a.gps_coord,
+            a.gps_longitude,
+            a.gps_latitude,
+            a.beacon_status,
+            a.deploy_status,
+            a.stream_url,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks
+        FROM swm_beacon_station a
+        WHERE a.beacon_id IN 
+        <foreach collection="beaconIds" item="beaconId" open="(" separator="," close=")">
+            #{beaconId}
+        </foreach>
+    </select>
+    
     <!-- 检查是否存在相同信标编号且状态为正常的记录（用于重复性校验） -->
     <select id="countByBeaconIdAndStatus" resultType="int">
         SELECT COUNT(1)
@@ -54,6 +89,7 @@
         SELECT 
             a.id,
             a.beacon_id,
+            a.device_name,
             a.beacon_type,
             a.control_type,
             a.location,
@@ -82,6 +118,7 @@
         SELECT 
             a.id,
             a.beacon_id,
+            a.device_name,
             a.beacon_type,
             a.control_type,
             a.location,
@@ -111,6 +148,7 @@
         SELECT 
             a.id,
             a.beacon_id,
+            a.device_name,
             a.beacon_type,
             a.control_type,
             a.location,
@@ -151,6 +189,7 @@
         SELECT 
             a.id,
             a.beacon_id,
+            a.device_name,
             a.beacon_type,
             a.control_type,
             a.location,
@@ -191,6 +230,7 @@
         SELECT 
             a.id,
             a.beacon_id,
+            a.device_name,
             a.beacon_type,
             a.beacon_color,
             a.control_type,
@@ -233,6 +273,7 @@
         SELECT 
             a.id,
             a.beacon_id,
+            a.device_name,
             a.beacon_type,
             a.beacon_color,
             a.control_type,

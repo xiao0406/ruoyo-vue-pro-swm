@@ -199,6 +199,19 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         }
         return dao.getByBeaconId(beaconId);
     }
+    
+    /**
+     * 根据MAC地址批量查询信标基站
+     * 
+     * @param beaconIds MAC地址列表
+     * @return 信标基站列表
+     */
+    public List<SwmBeaconStation> findByBeaconIds(List<String> beaconIds) {
+        if (beaconIds == null || beaconIds.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return dao.findByBeaconIds(beaconIds);
+    }
 
     /**
      * 查询指定位置的基站列表
@@ -350,5 +363,35 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             return 0;
         }
         return dao.clearAreaAndColorByIds(ids, updateBy, updateDate);
+    }
+
+    /**
+     * 根据信标ID获取信标名称
+     * 
+     * @param beaconId 信标ID
+     * @return 包含信标信息的Map，包含deviceName字段
+     */
+    public Map<String, Object> getBeaconNameById(String beaconId) {
+        if (beaconId == null || beaconId.trim().isEmpty()) {
+            return null;
+        }
+        
+        SwmBeaconStation beacon = dao.getByBeaconId(beaconId);
+        if (beacon == null) {
+            return null;
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", beacon.getId());
+        result.put("beaconId", beacon.getBeaconId());
+        // 如果设备名称为空，则使用MAC地址作为设备名称
+        String deviceName = beacon.getDeviceName();
+        if (deviceName == null || deviceName.trim().isEmpty() || "null".equals(deviceName)) {
+            deviceName = beacon.getBeaconId();
+        }
+        result.put("deviceName", deviceName);
+        result.put("location", beacon.getLocation());
+        
+        return result;
     }
 }

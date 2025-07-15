@@ -28,7 +28,7 @@ import java.util.Date;
         @Column(name = "hazard_category", attrName = "hazardCategory", label = "危险源类别"),
         @Column(includeEntity = DataEntity.class),
         @Column(name = "location", attrName = "location", label = "位置", queryType = QueryType.LIKE),
-        @Column(name = "beacon_identifier", attrName = "beaconIdentifier", label = "所属信标", queryType = QueryType.LIKE),
+        @Column(name = "beacon_identifier", attrName = "beaconIdentifier", label = "所属信标，多个ID用逗号分隔", queryType = QueryType.LIKE),
         @Column(name = "is_patrol_included", attrName = "isPatrolIncluded", label = "是否加入巡检"),
         @Column(name = "patrol_record_summary", attrName = "patrolRecordSummary", label = "巡检记录摘要"),
         @Column(name = "registration_time", attrName = "registrationTime", label = "登记时间"),
@@ -39,6 +39,7 @@ import java.util.Date;
         @Column(name = "first_inspection_time", attrName = "firstInspectionTime", label = "首次巡检时间"),
         @Column(name = "voice_template_id", attrName = "voiceTemplateId", label = "语音模板ID"),
         @Column(name = "beacon_tag", attrName = "beaconTag", label = "信标标记", queryType = QueryType.LIKE),
+        @Column(name = "is_draft", attrName = "isDraft", label = "是否草稿状态"),
 }, orderBy = "a.create_date DESC")
 public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 
@@ -62,7 +63,7 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
     private String hazardName; // 危险源名称
     private String hazardCategory; // 危险源类别
     private String location; // 位置
-    private String beaconIdentifier; // 所属信标
+    private String beaconIdentifier; // 所属信标，多个ID用逗号分隔
     private String isPatrolIncluded; // 是否加入巡检
     private String patrolRecordSummary; // 巡检记录摘要
     private Date registrationTime; // 登记时间
@@ -73,6 +74,11 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
     private Date firstInspectionTime; // 首次巡检时间
     private String voiceTemplateId; // 语音模板ID
     private String beaconTag; // 信标标记
+    private String isDraft; // 是否草稿状态 0:否 1:是
+
+    // 非持久化字段
+    private String[] beaconIdentifiers; // 所属信标数组，用于前端多选
+    private String beaconIdentifierText; // 所属信标显示文本
 
     // 非持久化的文本展示字段，不再由数据库JOIN查询获取，而是在Controller中手动设置
     private String hazardCategoryText; // 危险源类别文本
@@ -123,11 +129,47 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
     }
 
     public String getBeaconIdentifier() {
+        // 如果beaconIdentifiers已设置，则将其转换为逗号分隔的字符串
+        if (beaconIdentifiers != null && beaconIdentifiers.length > 0) {
+            return String.join(",", beaconIdentifiers);
+        }
         return beaconIdentifier;
     }
 
     public void setBeaconIdentifier(String beaconIdentifier) {
         this.beaconIdentifier = beaconIdentifier;
+        // 如果设置了beaconIdentifier，同时更新beaconIdentifiers数组
+        if (beaconIdentifier != null && !beaconIdentifier.isEmpty()) {
+            this.beaconIdentifiers = beaconIdentifier.split(",");
+        } else {
+            this.beaconIdentifiers = new String[0];
+        }
+    }
+    
+    public String[] getBeaconIdentifiers() {
+        // 如果beaconIdentifiers为null但beaconIdentifier不为空，则初始化
+        if (beaconIdentifiers == null && beaconIdentifier != null && !beaconIdentifier.isEmpty()) {
+            beaconIdentifiers = beaconIdentifier.split(",");
+        }
+        return beaconIdentifiers == null ? new String[0] : beaconIdentifiers;
+    }
+    
+    public void setBeaconIdentifiers(String[] beaconIdentifiers) {
+        this.beaconIdentifiers = beaconIdentifiers;
+        // 同步更新beaconIdentifier字段
+        if (beaconIdentifiers != null && beaconIdentifiers.length > 0) {
+            this.beaconIdentifier = String.join(",", beaconIdentifiers);
+        } else {
+            this.beaconIdentifier = "";
+        }
+    }
+    
+    public String getBeaconIdentifierText() {
+        return beaconIdentifierText;
+    }
+    
+    public void setBeaconIdentifierText(String beaconIdentifierText) {
+        this.beaconIdentifierText = beaconIdentifierText;
     }
 
     public String getIsPatrolIncluded() {
@@ -235,5 +277,13 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 
     public void setHazardStatusText(String hazardStatusText) {
         this.hazardStatusText = hazardStatusText;
+    }
+    
+    public String getIsDraft() {
+        return isDraft;
+    }
+    
+    public void setIsDraft(String isDraft) {
+        this.isDraft = isDraft;
     }
 }

@@ -40,6 +40,29 @@
 		ORDER BY a.update_date DESC
 	</select>
 	
+	<!-- 根据ID列表批量查询语音模板 -->
+	<select id="findByIds" resultType="SwmVoiceTemplate">
+		SELECT a.`id` AS "id",
+		       a.`template_name` AS "templateName",
+		       a.`template_code` AS "templateCode",
+		       a.`content` AS "content",
+		       a.`voice_text` AS "voiceText",
+		       a.`language` AS "language",
+		       a.`push_method` AS "pushMethod",
+		       a.`push_frequency` AS "pushFrequency",
+		       a.`status` AS "status",
+		       a.`create_by` AS "createBy",
+		       a.`create_date` AS "createDate",
+		       a.`update_by` AS "updateBy",
+		       a.`update_date` AS "updateDate",
+		       a.`remarks` AS "remarks"
+		FROM `swm_voice_template` a
+		WHERE a.id IN 
+		<foreach collection="ids" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+	
 	<!-- 查询状态为0的所有数据 -->
 	<select id="findListWithStatusZero" resultType="SwmVoiceTemplate">
 		SELECT a.`id` AS "id",

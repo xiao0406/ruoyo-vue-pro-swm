@@ -90,6 +90,19 @@ public class SwmVoiceTemplateServiceImpl extends CrudService<SwmVoiceTemplateDao
         return list.isEmpty() ? null : list.get(0);
     }
     
+    /**
+     * 根据ID列表批量查询语音模板
+     * @param ids 语音模板ID列表
+     * @return 语音模板列表
+     */
+    @Override
+    public List<SwmVoiceTemplate> findByIds(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return swmVoiceTemplateDao.findByIds(ids);
+    }
+    
     @Override
     public Page<SwmVoiceTemplate> findPageWithoutStatusFilter(Page<SwmVoiceTemplate> page, SwmVoiceTemplate voiceTemplate) {
         // 设置分页参数
