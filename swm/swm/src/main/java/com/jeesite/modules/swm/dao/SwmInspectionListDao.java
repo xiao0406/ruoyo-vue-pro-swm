@@ -6,6 +6,7 @@ import com.jeesite.modules.swm.entity.SwmInspectionList;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 巡检列表DAO接口
@@ -29,4 +30,11 @@ public interface SwmInspectionListDao extends CrudDao<SwmInspectionList> {
      * @return
      */
     List<SwmInspectionList> latestInspectionRecord(@Param("limit") int limit);
+    
+    /**
+     * 根据计划ID列表查询巡检记录
+     * @param planIds 计划ID列表
+     * @return 巡检记录列表
+     */
+    List<Map<String, Object>> findByPlanIds(@Param("planIds") List<String> planIds);
 }

@@ -97,4 +97,46 @@
         where a.status = '0'
         order by a.start_time desc limit #{limit}
     </select>
+    
+    <!-- 根据计划ID列表查询巡检记录 -->
+    <select id="findByPlanIds" resultType="java.util.HashMap">
+        SELECT 
+            a.id AS "id",
+            a.plan_id AS "planId",
+            a.plan_name AS "planName",
+            a.inspection_type AS "inspectionType",
+            (CASE a.inspection_type
+                WHEN '1' THEN '日常巡检'
+                WHEN '2' THEN '专项巡检'
+                WHEN '3' THEN '临时巡检'
+                WHEN '4' THEN '月度巡检'
+                ELSE a.inspection_type
+            END) AS "inspectionTypeText",
+            a.inspector_id AS "inspectorId",
+            p.name AS "inspector",
+            plan.plan_code AS "planCode",
+            a.start_time AS "startTime",
+            a.end_time AS "endTime",
+            a.inspection_list_status AS "inspectionListStatus",
+            (CASE a.inspection_list_status
+                WHEN '0' THEN '待处理'
+                WHEN '1' THEN '进行中'
+                WHEN '2' THEN '已完成'
+                WHEN '3' THEN '已取消'
+                ELSE a.inspection_list_status
+            END) AS "inspectionListStatusText",
+            a.attachment_path AS "attachmentPath",
+            a.remarks AS "remarks"
+        FROM swm_inspection_list a
+        LEFT JOIN swm_person p ON p.id = a.inspector_id
+        LEFT JOIN swm_inspection_plan plan ON plan.id = a.plan_id
+        WHERE a.status = '0'
+        <if test="planIds != null and planIds.size() > 0">
+            AND a.plan_id IN 
+            <foreach collection="planIds" item="planId" open="(" separator="," close=")">
+                #{planId}
+            </foreach>
+        </if>
+        ORDER BY a.start_time DESC
+    </select>
 </mapper>

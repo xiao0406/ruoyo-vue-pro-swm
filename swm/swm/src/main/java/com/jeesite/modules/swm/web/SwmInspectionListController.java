@@ -5,6 +5,8 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmInspectionList;
 import com.jeesite.modules.swm.service.SwmInspectionListService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -24,6 +27,8 @@ import java.util.List;
 @Controller
 @RequestMapping(value = "${adminPath}/swmInspectionList")
 public class SwmInspectionListController extends BaseController {
+
+    private static final Logger logger = LoggerFactory.getLogger(SwmInspectionListController.class);
 
     @Autowired
     private SwmInspectionListService swmInspectionListService;
@@ -95,4 +100,39 @@ public class SwmInspectionListController extends BaseController {
         return swmInspectionListService.latestInspectionRecord(10);
     }
 
+    /**
+     * 开始巡检任务
+     * 将任务状态从"待处理"改为"进行中"
+     */
+    @PostMapping(value = "startTask")
+    @ResponseBody
+    public String startTask(@RequestBody SwmInspectionList taskData) {
+        String id = taskData.getId();
+        logger.info("开始巡检任务，任务ID: {}", id);
+        
+        SwmInspectionList inspectionList = swmInspectionListService.startInspectionTask(id);
+        if (inspectionList == null) {
+            return renderResult(Global.FALSE, text("开始巡检任务失败，请检查任务状态"));
+        }
+
+        return renderResult(Global.TRUE, text("巡检任务已开始"));
+    }
+
+    /**
+     * 完成巡检任务
+     * 将任务状态从"进行中"改为"已完成"，并更新结束时间和附件
+     */
+    @PostMapping(value = "completeTask")
+    @ResponseBody
+    public String completeTask(@RequestBody SwmInspectionList completeData) {
+        String id = completeData.getId();
+        logger.info("完成巡检任务，任务ID: {}", id);
+        
+        SwmInspectionList inspectionList = swmInspectionListService.completeInspectionTask(completeData);
+        if (inspectionList == null) {
+            return renderResult(Global.FALSE, text("完成巡检任务失败，请检查任务状态"));
+        }
+
+        return renderResult(Global.TRUE, text("巡检任务已完成"));
+    }
 }

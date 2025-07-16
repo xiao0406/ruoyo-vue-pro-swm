@@ -27,6 +27,9 @@
             <if test="status != null and status != ''">
                 AND a.status = #{status}
             </if>
+            <if test="hazardSourceId != null and hazardSourceId != ''">
+                AND a.hazard_source_id = #{hazardSourceId}
+            </if>
         </where>
         ORDER BY a.create_date DESC
     </select>

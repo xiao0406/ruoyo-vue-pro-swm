@@ -676,4 +676,67 @@ public class SwmHazardSourceController extends BaseController {
         }
     }
 
+    @GetMapping("inspectionRecords")
+    @ResponseBody
+    @ApiOperation(value = "获取危险源的巡检记录")
+    public Map<String, Object> getInspectionRecords(@RequestParam String hazardSourceId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // 先获取危险源信息
+        SwmHazardSource hazardSource = swmHazardSourceService.get(hazardSourceId);
+        if (hazardSource == null) {
+            result.put("success", false);
+            result.put("message", "危险源不存在");
+            result.put("records", new ArrayList<>());
+            return result;
+        }
+        
+        // 组装所属信标显示文本（beaconIdentifierText）
+        if (hazardSource.getBeaconIdentifier() != null && !hazardSource.getBeaconIdentifier().isEmpty()) {
+            String[] ids = hazardSource.getBeaconIdentifier().split(",");
+            StringBuilder beaconText = new StringBuilder();
+            for (int i = 0; i < ids.length; i++) {
+                String beaconId = ids[i].trim();
+                if (beaconId.isEmpty()) continue;
+                SwmBeaconStation beacon = swmBeaconStationService.getByBeaconId(beaconId);
+                String deviceName = beacon != null && beacon.getDeviceName() != null && !beacon.getDeviceName().trim().isEmpty() && !"null".equals(beacon.getDeviceName())
+                        ? beacon.getDeviceName() : beaconId;
+                if (beaconText.length() > 0) beaconText.append(", ");
+                beaconText.append(deviceName);
+            }
+            hazardSource.setBeaconIdentifierText(beaconText.toString());
+        } else {
+            hazardSource.setBeaconIdentifierText("-");
+        }
+        
+        // 1. 根据危险源ID查询相关的巡检计划
+        SwmInspectionPlan queryPlan = new SwmInspectionPlan();
+        queryPlan.setHazardSourceId(hazardSourceId);
+        // 不再限制其他条件，只查询与该危险源相关的所有计划
+        List<SwmInspectionPlan> planList = swmInspectionPlanService.findList(queryPlan);
+        
+        if (planList.isEmpty()) {
+            result.put("success", true);
+            result.put("message", "没有找到相关的巡检计划");
+            result.put("records", new ArrayList<>());
+            result.put("hazardSource", hazardSource);
+            return result;
+        }
+        
+        // 2. 收集所有计划的ID
+        List<String> planIds = planList.stream()
+                .map(SwmInspectionPlan::getId)
+                .collect(Collectors.toList());
+        
+        // 3. 根据计划ID查询巡检记录
+        List<Map<String, Object>> recordsList = swmInspectionPlanService.findInspectionListByPlanIds(planIds);
+        
+        result.put("success", true);
+        result.put("message", "获取巡检记录成功");
+        result.put("records", recordsList);
+        result.put("hazardSource", hazardSource);
+        
+        return result;
+    }
+
 }

@@ -9,10 +9,14 @@ import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.entity.SwmInspectionPlan;
 import com.jeesite.modules.swm.dao.SwmInspectionPlanDao;
+import com.jeesite.modules.swm.dao.SwmInspectionListDao;
 import com.jeesite.modules.sys.utils.DictUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * 巡检计划Service
@@ -26,6 +30,9 @@ public class SwmInspectionPlanService extends CrudService<SwmInspectionPlanDao, 
 
     @Autowired
     private SwmInspectionPlanDao swmInspectionPlanDao;
+    
+    @Autowired
+    private SwmInspectionListDao swmInspectionListDao;
 
     /**
      * 获取单条数据
@@ -131,4 +138,16 @@ public class SwmInspectionPlanService extends CrudService<SwmInspectionPlanDao, 
         super.delete(swmInspectionPlan);
     }
 
+    /**
+     * 根据计划ID列表查询巡检记录
+     * 
+     * @param planIds 计划ID列表
+     * @return 巡检记录列表
+     */
+    public List<Map<String, Object>> findInspectionListByPlanIds(List<String> planIds) {
+        if (planIds == null || planIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return swmInspectionListDao.findByPlanIds(planIds);
+    }
 }
