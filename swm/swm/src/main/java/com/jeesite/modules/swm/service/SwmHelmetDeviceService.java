@@ -270,8 +270,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     private Page<SwmHelmetDevice> findPageNormal(SwmHelmetDevice device) {
         Page<SwmHelmetDevice> page = device.getPage();
 
-        // 先查询总数，使用自定义计数查询以支持复杂查询条件
-        long count = dao.findHelmetDeviceCountWithRelations(device);
+        // 使用框架原生的COUNT机制，避免自定义COUNT查询被错误添加分页参数
+        long count = super.findCount(device);
         page.setCount(count);
 
         // 如果总数为0，则直接返回空列表
@@ -280,7 +280,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             return page;
         }
 
-        // 查询数据列表
+        // 查询数据列表，仍使用自定义查询以支持复杂的LEFT JOIN
         List<SwmHelmetDevice> list = dao.findHelmetDeviceListWithRelations(device);
 
         // 为每个设备设置最新电量

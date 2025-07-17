@@ -74,7 +74,7 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * @author Shawn
      * @date 2025-01-13
      */
-    long findHelmetDeviceCountWithRelations(SwmHelmetDevice swmHelmetDevice);
+    Long findHelmetDeviceCountWithRelations(SwmHelmetDevice swmHelmetDevice);
 
     /**
      * 根据设备ID列表查询设备详情（带人员关联信息）

@@ -142,8 +142,8 @@
     </select>
     
     <!-- 带有人员关联信息的计数查询，用于替代框架默认的计数查询 -->
-    <select id="findHelmetDeviceCountWithRelations" resultType="long">
-        SELECT COUNT(DISTINCT a.id)
+    <select id="findHelmetDeviceCountWithRelations" resultType="Long">
+        SELECT COALESCE(COUNT(DISTINCT a.id), 0)
         FROM swm_helmet_device a
         LEFT JOIN fms_worker w ON a.assigned_person = w.identity_code COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id COLLATE utf8mb4_general_ci
