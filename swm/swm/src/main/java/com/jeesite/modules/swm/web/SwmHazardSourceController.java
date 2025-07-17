@@ -332,26 +332,46 @@ public class SwmHazardSourceController extends BaseController {
                 return renderResult(Global.TRUE, text("保存成功，但无法生成巡检计划，请补充巡检相关信息！"));
             }
             
-            // 创建巡检计划
+            // 先查询是否已存在该危险源关联的巡检计划
             try {
-            SwmInspectionPlan swmInspectionPlan = new SwmInspectionPlan();
-            swmInspectionPlan.setPlanName(swmHazardSource.getHazardName());
-            swmInspectionPlan.setFrequencyDays(swmHazardSource.getFrequencyDays());
-            // 危险源巡检
-            swmInspectionPlan.setInspectionType("3");
+                SwmInspectionPlan queryPlan = new SwmInspectionPlan();
+                queryPlan.setHazardSourceId(swmHazardSource.getId());
+                List<SwmInspectionPlan> existingPlans = swmInspectionPlanService.findList(queryPlan);
+                
+                SwmInspectionPlan swmInspectionPlan;
+                boolean isNewPlan = true;
+                
+                if (existingPlans != null && !existingPlans.isEmpty()) {
+                    // 如果已存在计划，则更新第一个找到的计划
+                    swmInspectionPlan = existingPlans.get(0);
+                    isNewPlan = false;
+                } else {
+                    // 不存在计划，创建新的
+                    swmInspectionPlan = new SwmInspectionPlan();
+                }
+                
+                // 设置或更新计划信息
+                swmInspectionPlan.setPlanName(swmHazardSource.getHazardName());
+                swmInspectionPlan.setFrequencyDays(swmHazardSource.getFrequencyDays());
+                // 危险源巡检
+                swmInspectionPlan.setInspectionType("3");
                 swmInspectionPlan.setHazardSourceId(swmHazardSource.getId());
                 swmInspectionPlan.setHazardSourceName(swmHazardSource.getHazardName());
                 swmInspectionPlan.setFirstInspectionTime(swmHazardSource.getFirstInspectionTime());
-            swmInspectionPlan.setResponsiblePersonId(swmHazardSource.getResponsiblePersonId());
-            swmInspectionPlan.setResponsiblePerson(swmHazardSource.getResponsiblePerson());
+                swmInspectionPlan.setResponsiblePersonId(swmHazardSource.getResponsiblePersonId());
+                swmInspectionPlan.setResponsiblePerson(swmHazardSource.getResponsiblePerson());
                 swmInspectionPlan.setPlanStatus(SwmInspectionPlan.PlanStatusEnum.OPEN); // 默认为开启状态
                 
-            swmInspectionPlanService.save(swmInspectionPlan);
+                swmInspectionPlanService.save(swmInspectionPlan);
                 
-                return renderResult(Global.TRUE, text("保存危险源并生成巡检计划成功"));
+                if (isNewPlan) {
+                    return renderResult(Global.TRUE, text("保存危险源并生成巡检计划成功"));
+                } else {
+                    return renderResult(Global.TRUE, text("保存危险源并更新巡检计划成功"));
+                }
             } catch (Exception e) {
-                logger.error("生成巡检计划失败", e);
-                return renderResult(Global.TRUE, text("保存危险源成功，但生成巡检计划失败：" + e.getMessage()));
+                logger.error("生成或更新巡检计划失败", e);
+                return renderResult(Global.TRUE, text("保存危险源成功，但生成或更新巡检计划失败：" + e.getMessage()));
             }
         }
 
@@ -735,6 +755,53 @@ public class SwmHazardSourceController extends BaseController {
         result.put("message", "获取巡检记录成功");
         result.put("records", recordsList);
         result.put("hazardSource", hazardSource);
+        
+        return result;
+    }
+    
+    /**
+     * 获取未加入巡检的危险源列表
+     */
+    @GetMapping("notPatrolledList")
+    @ResponseBody
+    @ApiOperation(value = "获取未加入巡检的危险源列表")
+    public List<Map<String, Object>> getNotPatrolledList() {
+        // 创建查询条件：未加入巡检的危险源
+        SwmHazardSource query = new SwmHazardSource();
+        query.setIsPatrolIncluded("0"); // 0表示未加入巡检
+        query.setStatus("0"); // 只查询正常状态的记录
+        
+        // 查询符合条件的危险源列表
+        List<SwmHazardSource> hazardList = swmHazardSourceService.findList(query);
+        
+        // 转换为前端需要的格式
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (SwmHazardSource hazard : hazardList) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("value", hazard.getId());
+            item.put("label", hazard.getHazardName());
+            item.put("location", hazard.getLocation());
+            item.put("hazardCategory", hazard.getHazardCategory());
+            
+            // 添加危险源类别文本
+            if ("0".equals(hazard.getHazardCategory())) {
+                item.put("hazardCategoryText", "气站");
+            } else if ("1".equals(hazard.getHazardCategory())) {
+                item.put("hazardCategoryText", "吊钩");
+            } else if ("2".equals(hazard.getHazardCategory())) {
+                item.put("hazardCategoryText", "油漆库");
+            } else if ("3".equals(hazard.getHazardCategory())) {
+                item.put("hazardCategoryText", "空压机房");
+            } else if ("4".equals(hazard.getHazardCategory())) {
+                item.put("hazardCategoryText", "机械伤害风险");
+            } else if ("5".equals(hazard.getHazardCategory())) {
+                item.put("hazardCategoryText", "化学品泄漏风险");
+            } else if ("99".equals(hazard.getHazardCategory())) {
+                item.put("hazardCategoryText", "其他风险");
+            }
+            
+            result.add(item);
+        }
         
         return result;
     }
