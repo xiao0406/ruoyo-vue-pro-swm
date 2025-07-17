@@ -28,6 +28,9 @@
             <if test="warningId != null and warningId != ''">
                 AND a.warning_id = #{warningId}
             </if>
+            <if test="warningRecord != null and warningRecord != ''">
+                AND a.warning_record LIKE concat('%', #{warningRecord}, '%')
+            </if>
             <if test="warningContent != null and warningContent != ''">
                 AND b.warning_content = #{warningContent}
             </if>

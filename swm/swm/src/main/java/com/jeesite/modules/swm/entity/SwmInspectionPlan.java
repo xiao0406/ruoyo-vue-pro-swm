@@ -59,6 +59,7 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
     
     // 非持久化字段
     private String[] hazardSourceIds; // 多个危险源ID，用于前端多选
+    private String[] hazardSourceNames; // 多个危险源名称，用于前端显示
 
     public SwmInspectionPlan() {
         this(null);
@@ -168,6 +169,14 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
     
     public void setHazardSourceIds(String[] hazardSourceIds) {
         this.hazardSourceIds = hazardSourceIds;
+    }
+    
+    public String[] getHazardSourceNames() {
+        return hazardSourceNames;
+    }
+    
+    public void setHazardSourceNames(String[] hazardSourceNames) {
+        this.hazardSourceNames = hazardSourceNames;
     }
     
     @Size(min = 0, max = 10, message = "巡检状态长度不能超过 10 个字符")

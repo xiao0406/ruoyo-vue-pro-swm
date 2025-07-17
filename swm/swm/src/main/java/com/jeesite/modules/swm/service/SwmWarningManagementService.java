@@ -142,6 +142,18 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             conditions.add("handle_status = '" + swmWarningManagement.getHandleStatus() + "'");
         }
 
+        // 添加位置条件
+        if (swmWarningManagement.getLocation() != null && !swmWarningManagement.getLocation().isEmpty()) {
+            conditions.add("location LIKE '%" + swmWarningManagement.getLocation() + "%'");
+            logger.info("添加位置查询条件: {}", swmWarningManagement.getLocation());
+        }
+
+        // 添加区域条件
+        if (swmWarningManagement.getArea() != null && !swmWarningManagement.getArea().isEmpty()) {
+            conditions.add("area LIKE '%" + swmWarningManagement.getArea() + "%'");
+            logger.info("添加区域查询条件: {}", swmWarningManagement.getArea());
+        }
+
         if (!conditions.isEmpty()) {
             sqlBuilder.append(" WHERE ");
             for (int i = 0; i < conditions.size(); i++) {

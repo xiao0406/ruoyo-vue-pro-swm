@@ -335,7 +335,22 @@ public class SwmInspectionPlanController extends BaseController {
             entity.getHazardSourceId().contains(",")) {
             
             // 将逗号分隔的hazardSourceId转换为hazardSourceIds数组
-            entity.setHazardSourceIds(entity.getHazardSourceId().split(","));
+            String[] hazardSourceIds = entity.getHazardSourceId().split(",");
+            entity.setHazardSourceIds(hazardSourceIds);
+            
+            // 添加: 根据ID查询危险源名称
+            if (StringUtils.isNotBlank(entity.getHazardSourceName())) {
+                // 如果已经有危险源名称，直接使用
+                entity.setHazardSourceNames(entity.getHazardSourceName().split(","));
+            } else {
+                // 如果没有名称，查询每个危险源的名称
+                String[] hazardSourceNames = new String[hazardSourceIds.length];
+                for (int i = 0; i < hazardSourceIds.length; i++) {
+                    SwmHazardSource hazardSource = swmHazardSourceService.get(hazardSourceIds[i]);
+                    hazardSourceNames[i] = hazardSource != null ? hazardSource.getHazardName() : hazardSourceIds[i];
+                }
+                entity.setHazardSourceNames(hazardSourceNames);
+            }
         }
         
         return entity;
