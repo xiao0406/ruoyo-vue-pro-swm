@@ -9,6 +9,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -111,5 +112,13 @@ public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {
 
     public void setPushFrequency(String pushFrequency) {
         this.pushFrequency = pushFrequency;
+    }
+
+    /**
+     * 获取模板代码对应的字典文本
+     * @return 模板代码文本
+     */
+    public String getTemplateCodeText() {
+        return DictUtils.getDictLabel("voice_template_type", templateCode, "");
     }
 }
