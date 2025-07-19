@@ -31,7 +31,7 @@
 	</select>
 	
 	<select id="findList" resultType="SwmAlarmLightConfig">
-		SELECT 
+		SELECT
 			<include refid="swmAlarmLightConfigColumns"/>,
 			b.alarm_name,
 			c.template_name
@@ -41,6 +41,9 @@
 			a.status = #{STATUS_NORMAL}
 			<if test="lightId != null and lightId != ''">
 				AND a.light_id = #{lightId}
+			</if>
+			<if test="alarmConfigId != null and alarmConfigId != ''">
+				AND a.alarm_config_id = #{alarmConfigId}
 			</if>
 		</where>
 		<choose>
