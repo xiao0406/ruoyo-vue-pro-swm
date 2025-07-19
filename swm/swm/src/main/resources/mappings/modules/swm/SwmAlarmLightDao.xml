@@ -27,9 +27,9 @@
 	</select>
 	
 	<select id="findList" resultType="SwmAlarmLight">
-		SELECT 
+		SELECT
 			<include refid="swmAlarmLightColumns"/>,
-			(SELECT COUNT(1) FROM swm_alarm_light_config c WHERE c.light_id = a.id AND c.status = '0') AS config_count
+			(SELECT COUNT(1) FROM swm_alarm_light_config c WHERE c.light_id = a.id AND c.status = '0') AS configCount
 		FROM swm_alarm_light a
 		<include refid="swmAlarmLightJoins"/>
 		<where>

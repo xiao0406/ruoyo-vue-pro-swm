@@ -109,4 +109,38 @@ public class SwmAlarmLightConfigService extends CrudService<SwmAlarmLightConfigD
 		dao.deleteByLightId(lightId, updateBy);
 	}
 	
+	/**
+	 * 检查报警灯配置是否已存在（只检查状态为正常的记录）
+	 * @param lightId 报警灯ID
+	 * @param alarmConfigId 报警配置ID
+	 * @param excludeId 排除的记录ID（编辑时使用）
+	 * @return 是否存在冲突的配置
+	 */
+	public boolean checkConfigExists(String lightId, String alarmConfigId, String excludeId) {
+		SwmAlarmLightConfig query = new SwmAlarmLightConfig();
+		query.setLightId(lightId);
+		query.setAlarmConfigId(alarmConfigId);
+		query.setStatus(DataEntity.STATUS_NORMAL); // 只检查状态为正常的记录
+		
+		List<SwmAlarmLightConfig> existingConfigs = findList(query);
+		
+		// 如果没有找到记录，返回false（不存在冲突）
+		if (existingConfigs == null || existingConfigs.isEmpty()) {
+			return false;
+		}
+		
+		// 如果是编辑操作，排除当前编辑的记录
+		if (StringUtils.isNotBlank(excludeId)) {
+			for (SwmAlarmLightConfig config : existingConfigs) {
+				if (!excludeId.equals(config.getId())) {
+					return true; // 存在其他冲突记录
+				}
+			}
+			return false; // 只找到当前编辑的记录，不冲突
+		}
+		
+		// 新增操作，存在记录就是冲突
+		return true;
+	}
+	
 }

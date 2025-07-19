@@ -191,9 +191,17 @@ public class SwmAlarmLightController extends BaseController {
 				return renderResult(Global.FALSE, "报警灯设备不存在");
 			}
 
-			// 确保新增时ID为空，让框架自动生成
-			if (StringUtils.isBlank(swmAlarmLightConfig.getId())) {
-				swmAlarmLightConfig.setId(null);
+			// 检查配置是否已存在（只对状态为正常的记录进行唯一性检查）
+			if ("0".equals(swmAlarmLightConfig.getStatus()) || StringUtils.isBlank(swmAlarmLightConfig.getStatus())) {
+				boolean configExists = swmAlarmLightConfigService.checkConfigExists(
+						swmAlarmLightConfig.getLightId(),
+						swmAlarmLightConfig.getAlarmConfigId(),
+						swmAlarmLightConfig.getId()
+				);
+				
+				if (configExists) {
+					return renderResult(Global.FALSE, "该报警灯已配置了相同的报警类型，请选择其他报警类型");
+				}
 			}
 
 			swmAlarmLightConfigService.save(swmAlarmLightConfig);
