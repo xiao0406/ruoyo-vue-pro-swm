@@ -29,7 +29,12 @@
 	<select id="findList" resultType="SwmAlarmLight">
 		SELECT
 			<include refid="swmAlarmLightColumns"/>,
-			(SELECT COUNT(1) FROM swm_alarm_light_config c WHERE c.light_id = a.id AND c.status = '0') AS configCount
+			(SELECT COUNT(1) FROM swm_alarm_light_config c WHERE c.light_id = a.id AND c.status = '0') AS configCount,
+			(SELECT GROUP_CONCAT(b.alarm_name SEPARATOR ',')
+			 FROM swm_alarm_light_config c
+			 LEFT JOIN swm_alarm_config b ON b.id = c.alarm_config_id AND b.status = '0'
+			 WHERE c.light_id = a.id AND c.status = '0'
+			 ORDER BY c.create_date ASC) AS alarmTypeNames
 		FROM swm_alarm_light a
 		<include refid="swmAlarmLightJoins"/>
 		<where>
@@ -42,6 +47,14 @@
 			</if>
 			<if test="enableAlarm != null and enableAlarm != ''">
 				AND a.enable_alarm = #{enableAlarm}
+			</if>
+			<if test="alarmTypeName != null and alarmTypeName != ''">
+				AND EXISTS (
+					SELECT 1 FROM swm_alarm_light_config c2
+					LEFT JOIN swm_alarm_config b2 ON b2.id = c2.alarm_config_id AND b2.status = '0'
+					WHERE c2.light_id = a.id AND c2.status = '0'
+					AND b2.alarm_name LIKE CONCAT('%', #{alarmTypeName}, '%')
+				)
 			</if>
 		</where>
 		<choose>
