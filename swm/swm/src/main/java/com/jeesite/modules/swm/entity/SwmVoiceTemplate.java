@@ -10,7 +10,6 @@ import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.sys.utils.DictUtils;
-import com.jeesite.common.mybatis.annotation.DictValue;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -29,8 +28,7 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "language", attrName = "language", label = "语言"),
         @Column(name = "push_method", attrName = "pushMethod", label = "推送方式"),
         @Column(name = "push_frequency", attrName = "pushFrequency", label = "推送频次"),
-        @Column(includeEntity = DataEntity.class),
-        @DictValue(type = "swm_voice_template_status", field = "status")
+        @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {
 

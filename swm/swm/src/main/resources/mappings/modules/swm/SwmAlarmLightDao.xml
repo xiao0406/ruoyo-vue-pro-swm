@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmAlarmLightDao">
+	
+	<sql id="swmAlarmLightColumns">
+		a.id,
+		a.light_name,
+		a.sn_code,
+		a.enable_alarm,
+		a.status,
+		a.create_by,
+		a.create_date,
+		a.update_by,
+		a.update_date,
+		a.remarks
+	</sql>
+	
+	<sql id="swmAlarmLightJoins">
+	</sql>
+	
+	<select id="get" resultType="SwmAlarmLight">
+		SELECT 
+			<include refid="swmAlarmLightColumns"/>
+		FROM swm_alarm_light a
+		<include refid="swmAlarmLightJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="SwmAlarmLight">
+		SELECT 
+			<include refid="swmAlarmLightColumns"/>,
+			(SELECT COUNT(1) FROM swm_alarm_light_config c WHERE c.light_id = a.id AND c.status = '0') AS config_count
+		FROM swm_alarm_light a
+		<include refid="swmAlarmLightJoins"/>
+		<where>
+			a.status = #{STATUS_NORMAL}
+			<if test="lightName != null and lightName != ''">
+				AND a.light_name LIKE CONCAT('%', #{lightName}, '%')
+			</if>
+			<if test="snCode != null and snCode != ''">
+				AND a.sn_code LIKE CONCAT('%', #{snCode}, '%')
+			</if>
+			<if test="enableAlarm != null and enableAlarm != ''">
+				AND a.enable_alarm = #{enableAlarm}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="SwmAlarmLight">
+		SELECT 
+			<include refid="swmAlarmLightColumns"/>
+		FROM swm_alarm_light a
+		<include refid="swmAlarmLightJoins"/>
+		<where>
+			a.status = #{STATUS_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO swm_alarm_light(
+			id,
+			light_name,
+			sn_code,
+			enable_alarm,
+			status,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks
+		) VALUES (
+			#{id},
+			#{lightName},
+			#{snCode},
+			#{enableAlarm},
+			#{status},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE swm_alarm_light SET 	
+			light_name = #{lightName},
+			sn_code = #{snCode},
+			enable_alarm = #{enableAlarm},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE swm_alarm_light SET 
+			status = #{STATUS_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+</mapper>
