@@ -164,7 +164,7 @@
         LEFT JOIN fms_work_group backup_wg ON sp.team = backup_wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line backup_fpl ON sp.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
         <where>
-            a.status = '0'
+            a.status = '0' and sp.status = '0'
             <if test="personName != null and personName != ''">
                 AND a.person_name LIKE CONCAT('%', #{personName}, '%')
             </if>
