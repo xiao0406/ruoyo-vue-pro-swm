@@ -159,6 +159,7 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     // 查询条件，不对应数据库字段
     private transient boolean excludeSOS; // 是否排除一键SOS预警
+    private transient boolean excludeAttendance; // 是否排除考勤打卡预警
 
     // 用于存储额外数据的Map
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -421,6 +422,15 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setExcludeSOS(boolean excludeSOS) {
         this.excludeSOS = excludeSOS;
+    }
+
+    // 新增 excludeAttendance 的 getter/setter
+    public boolean isExcludeAttendance() {
+        return excludeAttendance;
+    }
+
+    public void setExcludeAttendance(boolean excludeAttendance) {
+        this.excludeAttendance = excludeAttendance;
     }
 
     public String getAreaName() {

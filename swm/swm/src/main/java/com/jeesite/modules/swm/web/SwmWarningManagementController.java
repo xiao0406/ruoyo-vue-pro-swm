@@ -94,7 +94,11 @@ public class SwmWarningManagementController extends BaseController {
         // 添加排除一键SOS的条件
         swmWarningManagement.setExcludeSOS(true);
 
-        logger.info("查询参数: id={}, personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS=true",
+        // 添加排除考勤打卡的条件
+        swmWarningManagement.setExcludeAttendance(true);
+
+        logger.info(
+                "查询参数: id={}, personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS=true, excludeAttendance=true",
                 swmWarningManagement.getId(),
                 swmWarningManagement.getPersonName(),
                 swmWarningManagement.getWarningType(),

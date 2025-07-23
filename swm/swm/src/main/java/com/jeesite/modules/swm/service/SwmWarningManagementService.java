@@ -120,6 +120,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.info("添加排除一键SOS的查询条件");
         }
 
+        // 如果需要排除考勤打卡
+        if (swmWarningManagement.isExcludeAttendance()) {
+            conditions.add("warning_content != '考勤打卡'");
+            logger.info("添加排除考勤打卡的查询条件");
+        }
+
         // 添加预警单号(ID)查询条件
         if (swmWarningManagement.getId() != null && !swmWarningManagement.getId().isEmpty()) {
             conditions.add("id LIKE '%" + swmWarningManagement.getId() + "%'");
