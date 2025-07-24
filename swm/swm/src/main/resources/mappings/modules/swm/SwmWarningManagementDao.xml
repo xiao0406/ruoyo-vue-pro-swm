@@ -135,6 +135,10 @@
             <if test="excludeAttendance == true">
                 AND a.warning_content != '考勤打卡'
             </if>
+            <!-- 排除进入大门预警 -->
+            <if test="excludeGateEntry == true">
+                AND a.warning_content != '进入大门'
+            </if>
         ORDER BY
             a.warning_time DESC
     </select>
