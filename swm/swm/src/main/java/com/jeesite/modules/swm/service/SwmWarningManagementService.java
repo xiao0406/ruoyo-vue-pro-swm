@@ -1708,4 +1708,15 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             executorService.shutdown();
         }
     }
+    
+    /**
+     * 统计当日已处理的预警数（排除考勤打卡和进入大门）
+     * 
+     * @return 当日已处理的预警数量
+     * @author Shawn
+     * @date 2025-01-24
+     */
+    public long countTodayHandledWarnings() {
+        return dao.countTodayHandledWarnings();
+    }
 }

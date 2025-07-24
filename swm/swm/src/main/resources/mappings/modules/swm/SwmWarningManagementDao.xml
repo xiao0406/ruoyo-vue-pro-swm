@@ -464,4 +464,14 @@
         AND status = '0'
         AND warning_content != '危险源报警'
     </select>
+    
+    <!-- 统计当日已处理的预警数（排除考勤打卡和进入大门） -->
+    <select id="countTodayHandledWarnings" resultType="long">
+        SELECT COUNT(*)
+        FROM swm_warning_management
+        WHERE DATE(handle_time) = CURDATE()
+        AND handle_status = '1'
+        AND warning_content NOT IN ('考勤打卡', '进入大门')
+        AND status = '0'
+    </select>
 </mapper>

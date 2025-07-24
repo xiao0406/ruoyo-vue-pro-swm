@@ -94,8 +94,10 @@ public class SwmDashboardService {
             result.put("onSiteWorkers", onSiteStats.get("workers"));
             result.put("onSiteManagers", onSiteStats.get("managers"));
             
-            // 4. 获取触发报警数（主动报警）
-            Map<String, Object> alarmStats = getAlarmStats();
+            // 4. 获取触发报警数（主动报警）- 使用V2版本（当日数据，排除考勤打卡和进入大门）
+            Map<String, Object> alarmStats = getAlarmStatsV2();
+            // 如需使用原方法（当月数据），可以切换为：
+            // Map<String, Object> alarmStats = getAlarmStats();
             result.put("activeAlarms", alarmStats.get("activeAlarms"));
             
             // 5. 获取触发预警数（危险源报警/安全预警）
@@ -444,6 +446,127 @@ public class SwmDashboardService {
             
         } catch (Exception e) {
             e.printStackTrace();
+            result.put("hazardAlarms", 0);
+            result.put("activeAlarms", "0/0");
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 获取报警和预警统计V2版本（查询当日数据，排除考勤打卡和进入大门）
+     * 
+     * @return Map containing:
+     *   - activeAlarms: 主动报警 "已处置/总数"（当日，排除考勤打卡和进入大门）
+     *   - hazardAlarms: 危险源报警数量（保持原有逻辑，查询当月）
+     * @author Shawn
+     * @date 2025-01-24
+     */
+    private Map<String, Object> getAlarmStatsV2() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // TDengine数据库名
+            String dbname = "plb";
+            
+            // 获取当日开始和结束的时间戳
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            long todayStartTime = calendar.getTimeInMillis();
+            
+            calendar.set(Calendar.HOUR_OF_DAY, 23);
+            calendar.set(Calendar.MINUTE, 59);
+            calendar.set(Calendar.SECOND, 59);
+            calendar.set(Calendar.MILLISECOND, 999);
+            long todayEndTime = calendar.getTimeInMillis();
+            
+            // 1. 查询当日总数（从TDengine，排除考勤打卡和进入大门）
+            long totalCount = 0;
+            StringBuilder totalSql = new StringBuilder();
+            totalSql.append("SELECT COUNT(1) FROM ")
+                    .append(dbname).append(".swm_warning_management")
+                    .append(" WHERE warning_time >= ").append(todayStartTime)
+                    .append(" AND warning_time <= ").append(todayEndTime)
+                    .append(" AND warning_content NOT IN ('考勤打卡', '进入大门')")
+                    .append(" AND status = '0'");
+            
+            try {
+                R<JSONObject> totalResult = tdengineService.executeTDengineSQL(totalSql.toString());
+                
+                if (totalResult.getCode() == R.SUCCESS && totalResult.getData() != null) {
+                    JSONObject data = totalResult.getData();
+                    JSONArray rows = data.getJSONArray("data");
+                    
+                    if (rows != null && rows.size() > 0) {
+                        JSONArray row = rows.getJSONArray(0);
+                        if (row != null && row.size() > 0) {
+                            totalCount = row.getLong(0);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("查询TDengine当日预警总数失败", e);
+            }
+            
+            // 2. 查询当日已处理数（从MySQL，排除考勤打卡和进入大门）
+            long handledCount = 0;
+            try {
+                handledCount = swmWarningManagementService.countTodayHandledWarnings();
+            } catch (Exception e) {
+                logger.error("查询MySQL当日已处理预警数失败", e);
+            }
+            
+            // 3. 设置为"已处置/总数"格式
+            result.put("activeAlarms", handledCount + "/" + totalCount);
+            
+            // 4. 危险源报警数量（保持原有逻辑，查询当月）
+            long hazardAlarmCount = 0;
+            try {
+                // 获取当月开始和结束的时间戳
+                calendar = Calendar.getInstance();
+                calendar.set(Calendar.DAY_OF_MONTH, 1);
+                calendar.set(Calendar.HOUR_OF_DAY, 0);
+                calendar.set(Calendar.MINUTE, 0);
+                calendar.set(Calendar.SECOND, 0);
+                calendar.set(Calendar.MILLISECOND, 0);
+                long monthStartTime = calendar.getTimeInMillis();
+                
+                calendar.add(Calendar.MONTH, 1);
+                long nextMonthStartTime = calendar.getTimeInMillis();
+                
+                // 查询当月危险源报警数量
+                StringBuilder hazardSql = new StringBuilder();
+                hazardSql.append("SELECT COUNT(1) FROM ")
+                        .append(dbname).append(".swm_warning_management")
+                        .append(" WHERE warning_time >= ").append(monthStartTime)
+                        .append(" AND warning_time < ").append(nextMonthStartTime)
+                        .append(" AND warning_content = '危险源报警'")
+                        .append(" AND status = '0'");
+                
+                R<JSONObject> hazardResult = tdengineService.executeTDengineSQL(hazardSql.toString());
+                
+                if (hazardResult.getCode() == R.SUCCESS && hazardResult.getData() != null) {
+                    JSONObject data = hazardResult.getData();
+                    JSONArray rows = data.getJSONArray("data");
+                    
+                    if (rows != null && rows.size() > 0) {
+                        JSONArray row = rows.getJSONArray(0);
+                        if (row != null && row.size() > 0) {
+                            hazardAlarmCount = row.getLong(0);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("查询TDengine危险源报警数失败", e);
+            }
+            
+            result.put("hazardAlarms", hazardAlarmCount);
+            
+        } catch (Exception e) {
+            logger.error("获取报警统计信息V2失败", e);
             result.put("hazardAlarms", 0);
             result.put("activeAlarms", "0/0");
         }

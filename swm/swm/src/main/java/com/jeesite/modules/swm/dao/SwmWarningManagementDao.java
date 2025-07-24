@@ -197,4 +197,13 @@ public interface SwmWarningManagementDao extends CrudDao<SwmWarningManagement> {
      * @return 今日非危险源报警的数量
      */
     long countTodayNonHazardSource();
+    
+    /**
+     * 统计当日已处理的预警数（排除考勤打卡和进入大门）
+     * 
+     * @return 当日已处理的预警数量
+     * @author Shawn
+     * @date 2025-01-24
+     */
+    long countTodayHandledWarnings();
 }
