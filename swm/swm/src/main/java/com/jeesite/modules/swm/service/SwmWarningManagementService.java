@@ -1339,27 +1339,51 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // 0. 获取所有启用的告警配置
-            List<SwmAlarmConfig> allConfigs = alarmConfigDao.findAllEnabled();
+            // 1. 获取所有需要弹窗确认的告警配置
+            List<SwmAlarmConfig> needConfirmConfigs = alarmConfigDao.findAllNeedConfirm();
+            if (needConfirmConfigs == null || needConfirmConfigs.isEmpty()) {
+                logger.info("没有配置需要弹窗确认的告警类型");
+                result.put("confirmList", confirmList);
+                result.put("notificationList", notificationList);
+                return result;
+            }
+
+            // 构建alarm_key列表和配置映射
+            List<String> alarmKeyList = new ArrayList<>();
             Map<String, SwmAlarmConfig> configMap = new HashMap<>();
-            for (SwmAlarmConfig config : allConfigs) {
+            for (SwmAlarmConfig config : needConfirmConfigs) {
+                alarmKeyList.add(config.getAlarmKey());
                 configMap.put(config.getAlarmKey(), config);
             }
 
-            // 获取所有需要弹窗确认的告警配置
-            List<SwmAlarmConfig> needConfirmConfigs = alarmConfigDao.findAllNeedConfirm();
-            Set<String> needConfirmKeys = new HashSet<>();
-            for (SwmAlarmConfig config : needConfirmConfigs) {
-                needConfirmKeys.add(config.getAlarmKey());
-            }
+            logger.info("获取到{}个需要弹窗确认的告警配置: {}", 
+                    needConfirmConfigs.size(), alarmKeyList);
 
-            logger.info("获取到{}个启用的告警配置，其中{}个需要弹窗确认",
-                    allConfigs.size(), needConfirmKeys.size());
+            // 2. 构建查询当天数据的SQL
+            // 获取今天的开始时间（UTC时间，因为TDengine存储的是UTC时间）
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.HOUR_OF_DAY, -8); // 转换为UTC时间
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            long todayStartTime = cal.getTimeInMillis();
+            
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+            long todayEndTime = cal.getTimeInMillis();
 
-            // 1. 查询时序数据库中front_alarm=1的记录
+            // 构建IN条件
+            String inCondition = alarmKeyList.stream()
+                    .map(key -> "'" + key + "'")
+                    .collect(Collectors.joining(","));
+
             String sql = String.format(
-                    "SELECT * FROM %s.swm_warning_management WHERE front_alarm='1' ORDER BY warning_time DESC LIMIT 20",
-                    dbname);
+                    "SELECT * FROM %s.swm_warning_management WHERE type IN (%s) " +
+                    "AND warning_time >= %d AND warning_time < %d " +
+                    "ORDER BY warning_time DESC",
+                    dbname, inCondition, todayStartTime, todayEndTime);
+            
+            logger.info("执行TDengine查询: {}", sql);
             R<JSONObject> tdResult = tdengineService.executeTDengineSQL(sql);
 
             if (tdResult.getCode() == R.SUCCESS && tdResult.getData() != null) {
@@ -1397,59 +1421,34 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 continue;
                             }
 
-                            // 3. 根据预警类型检查告警配置
-                            // 时序数据库swm_warning_management的type字段与mysql的swm_alarm_config表的alarm_key匹配
+                            // 3. 根据type获取对应的告警配置
                             String warningType = tdEntity.getType();
                             SwmAlarmConfig alarmConfig = configMap.get(warningType);
 
-                            // 如果没有对应的配置或配置为不告警，则跳过
-                            if (alarmConfig == null || alarmConfig.getEnableAlarm() == 0) {
-                                logger.info("警告类型 {} 未配置或配置为不告警，跳过", warningType);
+                            // 由于我们查询时已经过滤了alarm_key，理论上都应该有对应配置
+                            if (alarmConfig == null) {
+                                logger.warn("告警类型 {} 没有找到对应的配置，跳过", warningType);
                                 continue;
                             }
 
                             // 添加配置信息到实体
                             tdEntity.setExtraData("alarmConfig", alarmConfig);
 
-                            // 4. 根据配置分类处理
-                            // 如果是否报警为1，是否弹窗确认为1，则添加到confirmList和notificationList
-                            if (alarmConfig.getEnableAlarm() == 1 && alarmConfig.getNeedConfirm() == 1) {
-                                // 添加到需要确认的列表
-                                if (confirmList.size() < 5) { // 最多5条需要确认的告警
-                                    confirmList.add(tdEntity);
-                                }
-
-                                // 同时也添加到通知列表，通知列表不自动确认
-                                if (notificationList.size() < 10) {
-                                    // 深拷贝一份，避免共享引用
-                                    SwmWarningManagement notificationEntity = new SwmWarningManagement();
-                                    BeanUtils.copyProperties(tdEntity, notificationEntity);
-                                    notificationEntity.setExtraData("alarmConfig", alarmConfig);
-                                    notificationEntity.setExtraData("needConfirm", true);
-                                    notificationList.add(notificationEntity);
-                                }
+                            // 4. 所有记录都需要弹窗确认（因为查询的都是need_confirm=1的）
+                            // 添加到需要确认的列表
+                            if (confirmList.size() < 5) { // 最多5条需要确认的告警
+                                confirmList.add(tdEntity);
                             }
-                            // 如果是否报警为1，是否弹窗确认为0，则只添加到notificationList
-                            else if (alarmConfig.getEnableAlarm() == 1 && alarmConfig.getNeedConfirm() == 0) {
-                                // 只添加到通知列表，并自动确认
-                                if (notificationList.size() < 10) { // 最多10条通知
-                                    tdEntity.setExtraData("needConfirm", false);
-                                    notificationList.add(tdEntity);
 
-                                    // 异步自动确认，使用线程池
-                                    final String warningId = tdEntity.getId();
-                                    executorService.submit(() -> {
-                                        try {
-                                            // 在新的线程中调用确认方法
-                                            confirmWarning(warningId);
-                                            logger.info("异步确认告警成功: {}", warningId);
-                                        } catch (Exception e) {
-                                            logger.error("异步确认告警失败: {}, 错误: {}", warningId, e.getMessage(), e);
-                                        }
-                                    });
-                                }
+                            // 同时也添加到通知列表
+                            if (notificationList.size() < 10) {
+                                // 深拷贝一份，避免共享引用
+                                SwmWarningManagement notificationEntity = new SwmWarningManagement();
+                                BeanUtils.copyProperties(tdEntity, notificationEntity);
+                                notificationEntity.setExtraData("alarmConfig", alarmConfig);
+                                notificationEntity.setExtraData("needConfirm", true);
+                                notificationList.add(notificationEntity);
                             }
-                            // 如果是否报警为0，则两个列表都不添加
                         } catch (Exception e) {
                             logger.error("处理告警数据异常: {}", e.getMessage());
                         }
