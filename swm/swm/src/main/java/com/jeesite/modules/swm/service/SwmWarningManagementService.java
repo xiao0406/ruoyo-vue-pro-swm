@@ -1298,6 +1298,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .and("warning_time", QueryType.LT, endDate);
 
         swmWarningManagement.setStatus("0"); // 状态为0的记录
+        
+        // 设置排除考勤打卡和进入大门的记录
+        swmWarningManagement.setExcludeAttendance(true);
+        swmWarningManagement.setExcludeGateEntry(true);
 
         // 调用混合查询方法
         Page<SwmWarningManagement> resultPage = hybridFindPage(page, swmWarningManagement);
