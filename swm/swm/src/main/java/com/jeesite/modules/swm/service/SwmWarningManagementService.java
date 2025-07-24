@@ -929,27 +929,35 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
         // 先添加时序数据库中未处置的数据
         for (SwmWarningManagement item : filteredTdEngineList) {
-            resultMap.put(item.getId(), item);
+            // 检查是否符合handleStatus查询条件
+            if (isMatchHandleStatus(item, swmWarningManagement.getHandleStatus())) {
+                resultMap.put(item.getId(), item);
+            }
         }
 
         // 再添加MySQL中已处置的数据
         for (SwmWarningManagement item : mysqlList) {
-            // 设置显示文本值
-            if (item.getWarningType() != null) {
-                // 修复warningType=1时显示为"主动报警"的问题
-                if ("1".equals(item.getWarningType())) {
-                    item.setWarningTypeText("主动报警");
-                } else {
-                    item.setWarningTypeText(
-                            DictUtils.getDictLabel("warning_type_enum", item.getWarningType(), item.getWarningType()));
+            // 检查是否符合handleStatus查询条件
+            if (isMatchHandleStatus(item, swmWarningManagement.getHandleStatus())) {
+                // 设置显示文本值
+                if (item.getWarningType() != null) {
+                    // 修复warningType=1时显示为"主动报警"的问题
+                    if ("1".equals(item.getWarningType())) {
+                        item.setWarningTypeText("主动报警");
+                    } else {
+                        item.setWarningTypeText(
+                                DictUtils.getDictLabel("warning_type_enum", item.getWarningType(),
+                                        item.getWarningType()));
+                    }
                 }
+                if (item.getHandleStatus() != null) {
+                    item.setHandleStatusText(
+                            DictUtils.getDictLabel("handle_status_enum", item.getHandleStatus(),
+                                    item.getHandleStatus()));
+                }
+                // 覆盖原有记录（如果有的话）
+                resultMap.put(item.getId(), item);
             }
-            if (item.getHandleStatus() != null) {
-                item.setHandleStatusText(
-                        DictUtils.getDictLabel("handle_status_enum", item.getHandleStatus(), item.getHandleStatus()));
-            }
-            // 覆盖原有记录（如果有的话）
-            resultMap.put(item.getId(), item);
         }
 
         // 6. 恢复原始排序
@@ -965,6 +973,31 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         tdEnginePage.setList(resultList);
         logger.info("混合查询完成，返回 {} 条记录", resultList.size());
         return tdEnginePage;
+    }
+
+    /**
+     * 检查记录的处置状态是否匹配查询条件
+     *
+     * @param item              预警记录
+     * @param queryHandleStatus 查询的处置状态条件
+     * @return 是否匹配
+     */
+    private boolean isMatchHandleStatus(SwmWarningManagement item, String queryHandleStatus) {
+        // 如果没有查询条件，则匹配所有记录
+        if (queryHandleStatus == null || queryHandleStatus.isEmpty()) {
+            return true;
+        }
+
+        // 获取记录的处置状态
+        String itemHandleStatus = item.getHandleStatus();
+
+        // 如果记录没有处置状态，默认为未处置(0)
+        if (itemHandleStatus == null || itemHandleStatus.isEmpty()) {
+            itemHandleStatus = "0";
+        }
+
+        // 比较处置状态
+        return queryHandleStatus.equals(itemHandleStatus);
     }
 
     /**
