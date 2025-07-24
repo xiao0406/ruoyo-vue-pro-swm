@@ -1011,7 +1011,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
     /**
      * 获取近七天预警数据（分页）
-     * 
+     *
      * @param swmWarningManagement 查询条件
      * @param page                 分页参数
      * @return 分页结果
@@ -1038,6 +1038,9 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .and("warning_time", QueryType.LT, endDate);
 
         swmWarningManagement.setStatus("0"); // 状态为0的记录
+
+        // 排除一键SOS预警，保持与统计接口的数据一致性
+        swmWarningManagement.setExcludeSOS(true);
 
         // 调用混合分页查询方法
         return hybridFindPage(page, swmWarningManagement);
@@ -1298,8 +1301,9 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .and("warning_time", QueryType.LT, endDate);
 
         swmWarningManagement.setStatus("0"); // 状态为0的记录
-        
-        // 设置排除考勤打卡和进入大门的记录
+
+        // 设置排除一键SOS、考勤打卡和进入大门的记录
+        swmWarningManagement.setExcludeSOS(true);
         swmWarningManagement.setExcludeAttendance(true);
         swmWarningManagement.setExcludeGateEntry(true);
 

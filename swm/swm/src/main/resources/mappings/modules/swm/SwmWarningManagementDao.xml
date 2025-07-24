@@ -172,7 +172,7 @@
             a.handle_status = '1'
     </select>
 
-    <!-- 查询近7天(包含今天)的预警，在SQL中添加8小时时区调整 -->
+    <!-- 查询近7天(包含今天)的预警，在SQL中添加8小时时区调整，排除一键SOS -->
     <select id="listPast7DaysWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
@@ -189,9 +189,10 @@
         WHERE warning_time &gt;= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
         AND status = '0'
+        AND warning_content != '一键SOS'
     </select>
 
-    <!-- 获取今日的预警，在SQL中添加8小时时区调整 -->
+    <!-- 获取今日的预警，在SQL中添加8小时时区调整，排除一键SOS -->
     <select id="listTodayWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
@@ -208,9 +209,10 @@
         WHERE warning_time &gt;= CURDATE()
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
         AND status = '0'
+        AND warning_content != '一键SOS'
     </select>
 
-    <!-- 获取当月的预警，在SQL中添加8小时时区调整 -->
+    <!-- 获取当月的预警，在SQL中添加8小时时区调整，排除一键SOS -->
     <select id="listCurrentMonthWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
@@ -227,9 +229,10 @@
         WHERE warning_time &gt;= DATE_FORMAT(CURDATE(), '%Y-%m-01')
         AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
         AND status = '0'
+        AND warning_content != '一键SOS'
     </select>
 
-    <!-- 获取当月已处理的预警，在SQL中添加8小时时区调整 -->
+    <!-- 获取当月已处理的预警，在SQL中添加8小时时区调整，排除一键SOS -->
     <select id="listCurrentMonthHandledWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
@@ -247,6 +250,7 @@
         AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
         AND handle_status = '1'
         AND status = '0'
+        AND warning_content != '一键SOS'
     </select>
 
     <!-- 根据身份证号列表批量查询班组名称 -->
