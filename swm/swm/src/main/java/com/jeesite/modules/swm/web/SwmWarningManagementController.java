@@ -580,7 +580,7 @@ public class SwmWarningManagementController extends BaseController {
         }
 
         // 添加SOS条件
-        swmWarningManagement.setWarningContent("一键SOS");
+        swmWarningManagement.setWarningContent("一键SOS报警");
 
         logger.info("SOS查询参数: personName={}, warningType={}, warningContent={}, handleStatus={}",
                 swmWarningManagement.getPersonName(),
