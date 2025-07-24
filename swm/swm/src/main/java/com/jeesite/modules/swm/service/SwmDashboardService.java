@@ -87,7 +87,10 @@ public class SwmDashboardService {
             result.put("scheduledPersons", getScheduledPersonCount());
             
             // 3. 获取在场人员统计
-            Map<String, Integer> onSiteStats = getOnSitePersonCount();
+            // 使用新方法查询（基于当天位置数据）
+            Map<String, Integer> onSiteStats = getOnSitePersonCountV2();
+            // 如需使用原方法（基于20分钟内位置数据），可以切换为：
+            // Map<String, Integer> onSiteStats = getOnSitePersonCount();
             result.put("onSiteWorkers", onSiteStats.get("workers"));
             result.put("onSiteManagers", onSiteStats.get("managers"));
             
@@ -210,6 +213,124 @@ public class SwmDashboardService {
         
         return result;
     }
+    
+    /**
+     * 获取在场人员统计（新方法：基于当天位置数据）
+     * 查询逻辑：
+     * 1. 先从TDengine查询当天所有有位置数据的身份证
+     * 2. 再从MySQL查询这些身份证对应的人员信息，只统计在职人员
+     * 
+     * @return 包含工人和管理人员在场数量的Map
+     * @author Shawn
+     * @date 2025-01-24
+     */
+    private Map<String, Integer> getOnSitePersonCountV2() {
+        Map<String, Integer> result = new HashMap<>();
+        result.put("workers", 0);
+        result.put("managers", 0);
+        
+        try {
+            // 1. 直接从TDengine查询当天所有有位置数据的身份证
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Calendar calendar = Calendar.getInstance();
+            
+            // 当天开始时间 00:00:00
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            String todayStartTime = sdf.format(calendar.getTime());
+            
+            // 当天结束时间 23:59:59
+            calendar.set(Calendar.HOUR_OF_DAY, 23);
+            calendar.set(Calendar.MINUTE, 59);
+            calendar.set(Calendar.SECOND, 59);
+            String todayEndTime = sdf.format(calendar.getTime());
+            
+            // 从TDengine获取当天所有有位置数据的身份证
+            Set<String> todayOnSiteIdCards = getTodayOnSiteIdCards(todayStartTime, todayEndTime);
+            
+            if (todayOnSiteIdCards.isEmpty()) {
+                return result;
+            }
+            
+            // 2. 根据这些身份证查询MySQL，获取在职人员信息并按类型统计
+            List<SwmPerson> onSitePersons = swmPersonService.findByIdCards(new ArrayList<>(todayOnSiteIdCards));
+            
+            int workerCount = 0;
+            int managerCount = 0;
+            
+            for (SwmPerson person : onSitePersons) {
+                // 只统计在职人员 (personnel_status='1' and status='0')
+                if ("0".equals(person.getStatus()) && 
+                    "1".equals(person.getPersonnelStatus())) {
+                    if ("0".equals(person.getPersonType())) {
+                        workerCount++;
+                    } else if ("1".equals(person.getPersonType())) {
+                        managerCount++;
+                    }
+                }
+            }
+            
+            result.put("workers", workerCount);
+            result.put("managers", managerCount);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 从TDengine获取当天所有有位置数据的身份证集合
+     * 
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 身份证集合
+     */
+    private Set<String> getTodayOnSiteIdCards(String startTime, String endTime) {
+        Set<String> idCards = new HashSet<>();
+        
+        try {
+            String dbname = "plb";
+            
+            // 查询当天有位置数据的所有身份证
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT DISTINCT id_card FROM ")
+                      .append(dbname).append(".external_coordinate_data")
+                      .append(" WHERE time >= '").append(startTime).append("'")
+                      .append(" AND time <= '").append(endTime).append("'")
+                      .append(" AND original_x > 0")
+                      .append(" AND original_y > 0")
+                      .append(" AND id_card IS NOT NULL")
+                      .append(" AND id_card != ''");
+            
+            R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+            
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                JSONObject data = queryResult.getData();
+                JSONArray rows = data.getJSONArray("data");
+                
+                if (rows != null) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() > 0) {
+                            String idCard = row.getStr(0);
+                            if (idCard != null && !idCard.isEmpty()) {
+                                idCards.add(idCard);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return idCards;
+    }
+    
     
     /**
      * 获取报警和预警统计

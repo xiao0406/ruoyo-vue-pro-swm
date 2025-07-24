@@ -224,6 +224,36 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
     public int countDistinctByIdentityCard() {
         return dao.countDistinctByIdentityCard();
     }
+    
+    /**
+     * 查询所有在职人员
+     * 条件：personnel_status='1' and status='0'
+     * 
+     * @return 在职人员列表
+     * @author Shawn
+     * @date 2025-01-24
+     */
+    public List<SwmPerson> findActivePersons() {
+        SwmPerson query = new SwmPerson();
+        query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // '1' - 在职
+        query.setStatus("0"); // 正常状态
+        return findList(query);
+    }
+    
+    /**
+     * 查询所有离职人员
+     * 条件：personnel_status='0' and status='0'
+     * 
+     * @return 离职人员列表
+     * @author Shawn
+     * @date 2025-01-24
+     */
+    public List<SwmPerson> findInactivePersons() {
+        SwmPerson query = new SwmPerson();
+        query.setPersonnelStatus(SwmPerson.PersonStatusEnum.INACTIVE); // '0' - 离职
+        query.setStatus("0"); // 正常状态
+        return findList(query);
+    }
 
     /**
      * 通过组织和工种查询人员
