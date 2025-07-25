@@ -69,8 +69,7 @@ public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {
     public void setTemplateCode(String templateCode) {
         this.templateCode = templateCode;
     }
-
-    @NotBlank(message = "语音内容不能为空")
+    
     public String getContent() {
         return content;
     }
