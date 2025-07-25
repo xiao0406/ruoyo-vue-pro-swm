@@ -81,7 +81,7 @@
 		       a.`remarks` AS "remarks"
 		FROM `swm_voice_template` a
 		<where>
-			a.`status` = '0'
+			a.`status` = '0' and content is not null and content != ''
 			<if test="templateName != null and templateName != ''">
 				AND a.`template_name` LIKE CONCAT('%', #{templateName}, '%')
 			</if>
