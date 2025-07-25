@@ -91,22 +91,16 @@ public class SwmWarningManagementController extends BaseController {
             swmWarningManagement = new SwmWarningManagement();
         }
 
-        // 添加排除一键SOS的条件
-        swmWarningManagement.setExcludeSOS(true);
-
-        // 添加排除考勤打卡的条件
-        swmWarningManagement.setExcludeAttendance(true);
-
-        // 添加排除进入大门的条件
-        swmWarningManagement.setExcludeGateEntry(true);
-
         logger.info(
-                "查询参数: id={}, personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS=true, excludeAttendance=true, excludeGateEntry=true",
+                "查询参数: id={}, personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS={}, excludeAttendance={}, excludeGateEntry={}",
                 swmWarningManagement.getId(),
                 swmWarningManagement.getPersonName(),
                 swmWarningManagement.getWarningType(),
                 swmWarningManagement.getWarningContent(),
-                swmWarningManagement.getHandleStatus());
+                swmWarningManagement.getHandleStatus(),
+                swmWarningManagement.isExcludeSOS(),
+                swmWarningManagement.isExcludeAttendance(),
+                swmWarningManagement.isExcludeGateEntry());
 
         // 调用服务层方法，使用混合查询获取数据（时序数据库 + MySQL）
         // 时区调整已在SQL查询中完成，无需再次调整
@@ -147,6 +141,40 @@ public class SwmWarningManagementController extends BaseController {
         } else {
             logger.info("返回数据为空或没有记录");
         }
+
+        return resultPage;
+    }
+
+    /**
+     * 查询分页数据（包含所有类型的预警，不过滤）
+     */
+    @RequestMapping(value = "listDataWithAll")
+    @ResponseBody
+    @ApiOperation("查询分页数据（包含所有类型）")
+    public Page<SwmWarningManagement> listDataWithAll(SwmWarningManagement swmWarningManagement, HttpServletRequest request, HttpServletResponse response) {
+        // 创建分页对象
+        Page<SwmWarningManagement> page = swmWarningManagement.getPage();
+        if (page == null) {
+            page = new Page<>(request, response);
+            swmWarningManagement.setPage(page);
+        }
+
+        // 显式设置不过滤任何类型的预警
+        swmWarningManagement.setExcludeSOS(false);
+        swmWarningManagement.setExcludeAttendance(false);
+        swmWarningManagement.setExcludeGateEntry(false);
+
+        logger.info(
+                "查询所有类型预警参数: id={}, personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS=false, excludeAttendance=false, excludeGateEntry=false",
+                swmWarningManagement.getId(),
+                swmWarningManagement.getPersonName(),
+                swmWarningManagement.getWarningType(),
+                swmWarningManagement.getWarningContent(),
+                swmWarningManagement.getHandleStatus());
+
+        // 调用服务层方法，使用混合查询获取数据（时序数据库 + MySQL）
+        Page<SwmWarningManagement> resultPage = swmWarningManagementService.hybridFindPage(page, swmWarningManagement);
+        logger.info("查询所有类型预警完成");
 
         return resultPage;
     }

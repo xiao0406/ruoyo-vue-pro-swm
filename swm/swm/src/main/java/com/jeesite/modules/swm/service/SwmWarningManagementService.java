@@ -49,15 +49,30 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     public SwmWarningManagement get(SwmWarningManagement swmWarningManagement) {
         // 使用TDengine查询单条数据
         if (swmWarningManagement != null && swmWarningManagement.getId() != null) {
-            // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
-            String sql = String.format("SELECT id, person_name, warning_type, warning_content, " +
-                    "CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, " +
-                    "alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, " +
-                    "trigger_reason, handler, handle_time, handle_process, handle_status, attachment, " +
-                    "create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, " +
-                    "front_alarm, type, x, y, hazard_category, location, area " +
-                    "FROM %s.swm_warning_management WHERE id='%s' LIMIT 1",
-                    dbname, swmWarningManagement.getId());
+            // 构建基础SQL
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
+                    .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
+                    .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
+                    .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+                    .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+                    .append("front_alarm, type, x, y, hazard_category, location, area ")
+                    .append("FROM ").append(dbname).append(".swm_warning_management")
+                    .append(" WHERE id='").append(swmWarningManagement.getId()).append("'");
+
+            // 添加过滤条件（如果需要过滤）
+            if (swmWarningManagement.isExcludeSOS()) {
+                sqlBuilder.append(" AND warning_content != '一键SOS'");
+            }
+            if (swmWarningManagement.isExcludeAttendance()) {
+                sqlBuilder.append(" AND warning_content != '考勤打卡'");
+            }
+            if (swmWarningManagement.isExcludeGateEntry()) {
+                sqlBuilder.append(" AND warning_content != '进入大门'");
+            }
+
+            sqlBuilder.append(" LIMIT 1");
+            String sql = sqlBuilder.toString();
 
             try {
                 logger.info("执行单条查询SQL: {}", sql);
@@ -87,6 +102,18 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
         // 如果TDengine查询失败，回退到原始查询
         return super.get(swmWarningManagement);
+    }
+
+    /**
+     * 根据ID获取单条数据（不应用过滤条件）
+     */
+    public SwmWarningManagement get(String id) {
+        SwmWarningManagement query = new SwmWarningManagement();
+        query.setId(id);
+        query.setExcludeSOS(false);
+        query.setExcludeAttendance(false);
+        query.setExcludeGateEntry(false);
+        return this.get(query);
     }
 
     /**
@@ -700,6 +727,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         logger.info("处理预警并向MySQL插入或更新完整记录，预警ID：{}", id);
 
         // 只查询时序数据库中的预警记录，不进行修改
+        // 使用不应用过滤条件的方法（处理预警时需要能获取所有类型的记录）
         SwmWarningManagement swmWarningManagement = this.get(id);
         if (swmWarningManagement == null) {
             logger.error("预警记录不存在，ID：{}", id);
@@ -1039,8 +1067,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
         swmWarningManagement.setStatus("0"); // 状态为0的记录
 
-        // 排除一键SOS预警，保持与统计接口的数据一致性
-        swmWarningManagement.setExcludeSOS(true);
+        // 注意：默认已经排除一键SOS、考勤打卡、进入大门预警
 
         // 调用混合分页查询方法
         return hybridFindPage(page, swmWarningManagement);
@@ -1302,10 +1329,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
         swmWarningManagement.setStatus("0"); // 状态为0的记录
 
-        // 设置排除一键SOS、考勤打卡和进入大门的记录
-        swmWarningManagement.setExcludeSOS(true);
-        swmWarningManagement.setExcludeAttendance(true);
-        swmWarningManagement.setExcludeGateEntry(true);
+        // 注意：默认已经排除一键SOS、考勤打卡、进入大门的记录
 
         // 调用混合查询方法
         Page<SwmWarningManagement> resultPage = hybridFindPage(page, swmWarningManagement);
@@ -1566,7 +1590,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
                 .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                 .append("front_alarm, type, x, y, hazard_category, location, area ")
-                .append("FROM ").append(dbname).append(".swm_warning_management");
+                .append("FROM ").append(dbname).append(".swm_warning_management")
+                .append(" WHERE warning_content != '一键SOS'")
+                .append(" AND warning_content != '考勤打卡'")
+                .append(" AND warning_content != '进入大门'");
 
         // 添加排序条件
         sqlBuilder.append(" ORDER BY warning_time DESC");

@@ -169,6 +169,10 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     public SwmWarningManagement() {
         this(null);
         this.handleStatus = HandleStatusEnum.UNHANDLED; // 默认未处置
+        // 默认过滤掉这三种类型的预警
+        this.excludeSOS = true;
+        this.excludeAttendance = true;
+        this.excludeGateEntry = true;
     }
 
     public SwmWarningManagement(String id) {
