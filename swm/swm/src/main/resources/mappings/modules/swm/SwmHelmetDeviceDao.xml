@@ -134,8 +134,10 @@
                 AND a.helmet_type = #{helmetType}
             </if>
             <if test="assignedPerson != null and assignedPerson != ''">
-                AND (a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%') 
-                     OR a.person_name LIKE CONCAT('%', #{assignedPerson}, '%'))
+                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+            </if>
+            <if test="personName != null and personName != ''">
+                AND a.person_name LIKE CONCAT('%', #{personName}, '%')
             </if>
         </where>
         ORDER BY a.update_date DESC
@@ -157,8 +159,10 @@
                 AND a.helmet_type = #{helmetType}
             </if>
             <if test="assignedPerson != null and assignedPerson != ''">
-                AND (a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%') 
-                     OR a.person_name LIKE CONCAT('%', #{assignedPerson}, '%'))
+                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+            </if>
+            <if test="personName != null and personName != ''">
+                AND a.person_name LIKE CONCAT('%', #{personName}, '%')
             </if>
         </where>
     </select>
@@ -210,8 +214,10 @@
                 AND a.helmet_type = #{helmetType}
             </if>
             <if test="assignedPerson != null and assignedPerson != ''">
-                AND (a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%') 
-                     OR a.person_name LIKE CONCAT('%', #{assignedPerson}, '%'))
+                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+            </if>
+            <if test="personName != null and personName != ''">
+                AND a.person_name LIKE CONCAT('%', #{personName}, '%')
             </if>
         </where>
         ORDER BY a.update_date DESC

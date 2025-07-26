@@ -29,7 +29,7 @@ import java.util.List;
         @Column(name = "ip", attrName = "ip", label = "IP地址"),
         @Column(name = "mac_address", attrName = "macAddress", label = "MAC地址"),
         @Column(name = "assigned_person", attrName = "assignedPerson", label = "绑定人员"),
-        @Column(name = "person_name", attrName = "personName", label = "人员姓名"),
+        @Column(name = "person_name", attrName = "personName", label = "人员姓名", queryType = QueryType.LIKE),
         @Column(name = "person_phone", attrName = "personPhone", label = "手机号码"),
         @Column(name = "assigned_workshop", attrName = "assignedWorkshop", label = "所属车间"),
         @Column(name = "assigned_process", attrName = "assignedProcess", label = "所属工序"),
