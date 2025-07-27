@@ -115,4 +115,14 @@ public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
          * @return 危险源信标列表
          */
         List<SwmBeaconStation> findDangerousSourceBeacons();
+
+        /**
+         * 查询危险源类型的信标列表（排除已使用的）
+         * 
+         * @author Shawn
+         * @date 2025-07-27
+         * @param excludeHazardSourceId 要排除的危险源ID（编辑时传入当前记录ID）
+         * @return 可用的危险源信标列表
+         */
+        List<SwmBeaconStation> findAvailableDangerousSourceBeacons(@Param("excludeHazardSourceId") String excludeHazardSourceId);
 }
