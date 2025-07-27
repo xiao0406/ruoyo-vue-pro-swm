@@ -113,6 +113,20 @@ public class SwmBeaconStationController extends BaseController {
     }
 
     /**
+     * 获取危险源类型的信标基站列表(用于下拉框选择)
+     * 
+     * @author Shawn
+     * @date 2025-07-27
+     */
+    @GetMapping(value = "listDangerousSourceForSelect")
+    @ResponseBody
+    @ApiOperation(value = "获取危险源类型的信标基站列表用于下拉框选择")
+    public List<Map<String, Object>> listDangerousSourceForSelect() {
+        // 调用Service方法获取危险源类型的信标列表
+        return swmBeaconStationService.getDangerousSourceBeaconSelectList();
+    }
+
+    /**
      * 查看编辑表单
      */
     @RequestMapping(value = "form")

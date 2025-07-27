@@ -106,4 +106,13 @@ public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
          */
         int clearAreaAndColorByIds(@Param("ids") List<String> ids, @Param("updateBy") String updateBy,
                         @Param("updateDate") java.util.Date updateDate);
+
+        /**
+         * 查询危险源类型的信标列表
+         * 
+         * @author Shawn
+         * @date 2025-07-27
+         * @return 危险源信标列表
+         */
+        List<SwmBeaconStation> findDangerousSourceBeacons();
 }

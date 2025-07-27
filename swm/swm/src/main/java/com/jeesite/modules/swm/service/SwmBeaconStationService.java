@@ -394,4 +394,35 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         
         return result;
     }
+
+    /**
+     * 获取危险源类型的信标列表用于下拉框选择
+     * 
+     * @author Shawn
+     * @date 2025-07-27
+     * @return 危险源信标下拉框数据列表
+     */
+    public List<Map<String, Object>> getDangerousSourceBeaconSelectList() {
+        // 查询危险源类型的信标
+        List<SwmBeaconStation> beaconList = dao.findDangerousSourceBeacons();
+        
+        // 转换为下拉框所需的格式，但label使用device_name
+        List<Map<String, Object>> resultList = new ArrayList<>();
+        if (beaconList != null && !beaconList.isEmpty()) {
+            for (SwmBeaconStation beacon : beaconList) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("value", beacon.getBeaconId()); // 值仍然使用MAC地址
+                
+                // 显示文本使用设备名称，如果设备名称为空则使用MAC地址
+                String deviceName = beacon.getDeviceName();
+                if (deviceName == null || deviceName.trim().isEmpty() || "null".equals(deviceName)) {
+                    deviceName = beacon.getBeaconId();
+                }
+                map.put("label", deviceName); // 显示设备名称
+                map.put("location", beacon.getLocation()); // 位置信息
+                resultList.add(map);
+            }
+        }
+        return resultList;
+    }
 }
