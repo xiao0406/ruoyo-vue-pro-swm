@@ -105,9 +105,9 @@
 			#{alarmConfigId},
 			#{voiceTemplateId},
 			#{status},
-			#{createBy.id},
+			#{createBy},
 			#{createDate},
-			#{updateBy.id},
+			#{updateBy},
 			#{updateDate},
 			#{remarks}
 		)
@@ -117,7 +117,7 @@
 		UPDATE swm_alarm_light_config SET 	
 			alarm_config_id = #{alarmConfigId},
 			voice_template_id = #{voiceTemplateId},
-			update_by = #{updateBy.id},
+			update_by = #{updateBy},
 			update_date = #{updateDate},
 			remarks = #{remarks}
 		WHERE id = #{id}

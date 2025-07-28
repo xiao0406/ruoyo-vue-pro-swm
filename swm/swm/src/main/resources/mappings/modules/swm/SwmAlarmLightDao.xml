@@ -103,20 +103,20 @@
 			#{snCode},
 			#{enableAlarm},
 			#{status},
-			#{createBy.id},
+			#{createBy},
 			#{createDate},
-			#{updateBy.id},
+			#{updateBy},
 			#{updateDate},
 			#{remarks}
 		)
 	</insert>
 	
 	<update id="update">
-		UPDATE swm_alarm_light SET 	
+		UPDATE swm_alarm_light SET
 			light_name = #{lightName},
 			sn_code = #{snCode},
 			enable_alarm = #{enableAlarm},
-			update_by = #{updateBy.id},
+			update_by = #{updateBy},
 			update_date = #{updateDate},
 			remarks = #{remarks}
 		WHERE id = #{id}
