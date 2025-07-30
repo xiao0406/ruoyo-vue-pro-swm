@@ -90,10 +90,10 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
 
                 for (Map<String, Object> row : rows) {
                     // 处理LAST_ROW函数返回的字段名
-                    String idCard = (String) row.get("last_row(id_card)");
-                    Object xObj = row.get("last_row(x)");
-                    Object yObj = row.get("last_row(y)");
-                    Object timeObj = row.get("last_row(time)");
+                    String idCard = (String) row.get("id_card");
+                    Object xObj = row.get("x");
+                    Object yObj = row.get("y");
+                    Object timeObj = row.get("time");
 
                     log.debug("external_coordinate_data原始数据 - idCard: {}, x: {}, y: {}, time: {}",
                             idCard, xObj, yObj, timeObj);
