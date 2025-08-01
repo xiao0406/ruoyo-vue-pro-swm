@@ -14,7 +14,7 @@
             COALESCE(p.position_name, backup_p.position_name) AS workShop,                -- 🏭 车间字段
             COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS prodLine,          -- 🏗️ 产线字段  
             COALESCE(wg.work_group_name, backup_wg.work_group_name) AS teamGroup,         -- 👥 班组字段
-            f.work_type AS workType,
+            COALESCE(f.work_type, backup_wt.work_type) AS workType,                       -- 工种字段
             a.safety_helmet_id AS safetyHelmetId,
             a.personnel_status AS personnelStatus,
             a.safety_education AS safetyEducation,
@@ -48,6 +48,7 @@
         LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
         LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
         WHERE a.personnel_status = '1' and a.status = '0'
         <if test="searchName != null and searchName != ''">
             AND a.name LIKE CONCAT('%', #{searchName}, '%')
@@ -70,6 +71,8 @@
                 OR a.department = #{organizationKey}                           -- 部门ID直接查询
                 OR a.prod_line = #{organizationKey}                            -- 产线ID直接查询
                 OR a.team = #{organizationKey}                                 -- 班组ID直接查询
+                OR a.job_type = #{organizationKey}                             -- 工种代码直接查询
+                OR backup_wt.work_type_code = #{organizationKey}               -- 备用工种代码查询
             )
         </if>
         LIMIT 50000
