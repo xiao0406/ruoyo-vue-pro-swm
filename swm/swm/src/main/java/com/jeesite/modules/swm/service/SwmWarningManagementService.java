@@ -75,7 +75,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             String sql = sqlBuilder.toString();
 
             try {
-                logger.info("执行单条查询SQL: {}", sql);
+//                logger.info("执行单条查询SQL: {}", sql);
                 R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
                 if (result.getCode() == R.SUCCESS && result.getData() != null) {
                     JSONObject data = result.getData();
@@ -464,15 +464,15 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "hazard_category":
                         entity.setHazardCategory(row.getStr(i));
-                        logger.debug("设置危险源类别: {}", row.getStr(i));
+//                        logger.debug("设置危险源类别: {}", row.getStr(i));
                         break;
                     case "location":
                         entity.setLocation(row.getStr(i));
-                        logger.debug("设置位置: {}", row.getStr(i));
+//                        logger.debug("设置位置: {}", row.getStr(i));
                         break;
                     case "area":
                         entity.setArea(row.getStr(i));
-                        logger.debug("设置区域: {}", row.getStr(i));
+//                        logger.debug("设置区域: {}", row.getStr(i));
                         break;
                 }
             }
