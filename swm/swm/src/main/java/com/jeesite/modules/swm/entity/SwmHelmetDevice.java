@@ -39,6 +39,20 @@ import java.util.List;
         @Column(name = "unbind_time", attrName = "unbindTime", label = "解绑时间"),
         @Column(name = "bind_duration_days", attrName = "bindDurationDays", label = "绑定时长(天)"),
         @Column(name = "usage_status", attrName = "usageStatus", label = "使用状态(0-已解绑, 1-使用中)"),
+        // 设备参数配置字段
+        @Column(name = "server_ip", attrName = "serverIp", label = "服务器IP"),
+        @Column(name = "server_port", attrName = "serverPort", label = "端口Port"),
+        @Column(name = "bluetooth_scan_window", attrName = "bluetoothScanWindow", label = "蓝牙扫描窗口(秒)"),
+        @Column(name = "group_duration", attrName = "groupDuration", label = "每组时长(秒)"),
+        @Column(name = "normal_beacon_cs", attrName = "normalBeaconCs", label = "普通信标CS"),
+        @Column(name = "special_beacon_cs", attrName = "specialBeaconCs", label = "特殊信标CS"),
+        @Column(name = "location_mode", attrName = "locationMode", label = "定位模式"),
+        @Column(name = "deep_sleep_duration", attrName = "deepSleepDuration", label = "深度休眠时长(分钟)"),
+        @Column(name = "bluetooth_scan_duration", attrName = "bluetoothScanDuration", label = "蓝牙扫描持续时间窗口(0.1秒为单位)"),
+        @Column(name = "send_interval", attrName = "sendInterval", label = "发送间隔(秒)"),
+        @Column(name = "hazard_retrigger_interval", attrName = "hazardRetriggerInterval", label = "危险源重新触发间隔(秒)"),
+        @Column(name = "sleep_wakeup_time", attrName = "sleepWakeupTime", label = "休眠唤醒时间(秒)"),
+        @Column(name = "beacon_filter_name", attrName = "beaconFilterName", label = "接收信标(名称)"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
@@ -98,6 +112,41 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
         }
     }
 
+    /**
+     * 定位模式枚举
+     */
+    public static class LocationModeEnum {
+        /** GPS/北斗模式 */
+        public static final String GPS_BEIDOU = "1";
+        /** GPS/北斗+BT模式 */
+        public static final String GPS_BEIDOU_BT = "2";
+        /** BT+GPS/北斗模式 */
+        public static final String BT_GPS_BEIDOU = "3";
+        /** BT模式 */
+        public static final String BT = "4";
+
+        /**
+         * 获取定位模式显示文本
+         */
+        public static String getText(String value) {
+            if (value == null) {
+                return "";
+            }
+            switch (value) {
+                case GPS_BEIDOU:
+                    return "GPS/北斗模式";
+                case GPS_BEIDOU_BT:
+                    return "GPS/北斗+BT模式";
+                case BT_GPS_BEIDOU:
+                    return "BT+GPS/北斗模式";
+                case BT:
+                    return "BT模式";
+                default:
+                    return "";
+            }
+        }
+    }
+
     private String deviceId; // 头盔编号
     private String helmetType; // 头盔类型(1:便携式 2:头箍式)
     private Integer batteryLevel; // 头盔电量 (0-100%)
@@ -114,6 +163,21 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     private Date unbindTime; // 解绑时间
     private Integer bindDurationDays; // 绑定时长(天)
     private String usageStatus; // 使用状态(0-已解绑, 1-使用中)
+
+    // 设备参数配置字段
+    private String serverIp; // 服务器IP
+    private String serverPort; // 端口Port
+    private Integer bluetoothScanWindow; // 蓝牙扫描窗口(秒)
+    private Integer groupDuration; // 每组时长(秒)
+    private Integer normalBeaconCs; // 普通信标CS
+    private Integer specialBeaconCs; // 特殊信标CS
+    private String locationMode; // 定位模式(1:GPS/北斗 2:GPS/北斗+BT 3:BT+GPS/北斗 4:BT)
+    private Integer deepSleepDuration; // 深度休眠时长(分钟)
+    private Integer bluetoothScanDuration; // 蓝牙扫描持续时间窗口(0.1秒为单位)
+    private Integer sendInterval; // 发送间隔(秒)
+    private Integer hazardRetriggerInterval; // 危险源重新触发间隔(秒)
+    private Integer sleepWakeupTime; // 休眠唤醒时间(秒)
+    private String beaconFilterName; // 接收信标(名称)
 
     // 非数据库字段，用于查询条件
     private List<String> deviceIdList; // 设备ID列表，用于批量查询
@@ -291,5 +355,122 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
 
     public void setDeviceIdList(List<String> deviceIdList) {
         this.deviceIdList = deviceIdList;
+    }
+
+    // 设备参数配置字段的 getter/setter 方法
+
+    @Length(min = 0, max = 20, message = "服务器IP长度不能超过20个字符")
+    public String getServerIp() {
+        return serverIp;
+    }
+
+    public void setServerIp(String serverIp) {
+        this.serverIp = serverIp;
+    }
+
+    @Length(min = 0, max = 10, message = "端口Port长度不能超过10个字符")
+    public String getServerPort() {
+        return serverPort;
+    }
+
+    public void setServerPort(String serverPort) {
+        this.serverPort = serverPort;
+    }
+
+    public Integer getBluetoothScanWindow() {
+        return bluetoothScanWindow;
+    }
+
+    public void setBluetoothScanWindow(Integer bluetoothScanWindow) {
+        this.bluetoothScanWindow = bluetoothScanWindow;
+    }
+
+    public Integer getGroupDuration() {
+        return groupDuration;
+    }
+
+    public void setGroupDuration(Integer groupDuration) {
+        this.groupDuration = groupDuration;
+    }
+
+    public Integer getNormalBeaconCs() {
+        return normalBeaconCs;
+    }
+
+    public void setNormalBeaconCs(Integer normalBeaconCs) {
+        this.normalBeaconCs = normalBeaconCs;
+    }
+
+    public Integer getSpecialBeaconCs() {
+        return specialBeaconCs;
+    }
+
+    public void setSpecialBeaconCs(Integer specialBeaconCs) {
+        this.specialBeaconCs = specialBeaconCs;
+    }
+
+    @Length(min = 0, max = 2, message = "定位模式长度不能超过2个字符")
+    public String getLocationMode() {
+        return locationMode;
+    }
+
+    /**
+     * 获取定位模式显示值
+     */
+    public String getLocationModeText() {
+        return LocationModeEnum.getText(locationMode);
+    }
+
+    public void setLocationMode(String locationMode) {
+        this.locationMode = locationMode;
+    }
+
+    public Integer getDeepSleepDuration() {
+        return deepSleepDuration;
+    }
+
+    public void setDeepSleepDuration(Integer deepSleepDuration) {
+        this.deepSleepDuration = deepSleepDuration;
+    }
+
+    public Integer getBluetoothScanDuration() {
+        return bluetoothScanDuration;
+    }
+
+    public void setBluetoothScanDuration(Integer bluetoothScanDuration) {
+        this.bluetoothScanDuration = bluetoothScanDuration;
+    }
+
+    public Integer getSendInterval() {
+        return sendInterval;
+    }
+
+    public void setSendInterval(Integer sendInterval) {
+        this.sendInterval = sendInterval;
+    }
+
+    public Integer getHazardRetriggerInterval() {
+        return hazardRetriggerInterval;
+    }
+
+    public void setHazardRetriggerInterval(Integer hazardRetriggerInterval) {
+        this.hazardRetriggerInterval = hazardRetriggerInterval;
+    }
+
+    public Integer getSleepWakeupTime() {
+        return sleepWakeupTime;
+    }
+
+    public void setSleepWakeupTime(Integer sleepWakeupTime) {
+        this.sleepWakeupTime = sleepWakeupTime;
+    }
+
+    @Length(min = 0, max = 10, message = "接收信标名称长度不能超过10个字符")
+    public String getBeaconFilterName() {
+        return beaconFilterName;
+    }
+
+    public void setBeaconFilterName(String beaconFilterName) {
+        this.beaconFilterName = beaconFilterName;
     }
 }

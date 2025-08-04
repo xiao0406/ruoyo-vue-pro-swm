@@ -421,4 +421,72 @@ public class SwmHelmetDeviceController extends BaseController {
         }
         return result;
     }
+
+    /**
+     * 保存设备参数配置
+     *
+     * @param device 设备参数配置数据
+     * @return 保存结果
+     * @author Shawn
+     * @date 2025-08-04
+     */
+    @PostMapping("saveDeviceConfig")
+    public Map<String, Object> saveDeviceConfig(@RequestBody SwmHelmetDevice device) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            if (device.getDeviceId() == null || device.getDeviceId().trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "设备编号不能为空");
+                return result;
+            }
+
+            // 根据设备编号查询现有设备
+            SwmHelmetDevice existingDevice = swmHelmetDeviceService.getByDeviceId(device.getDeviceId());
+            if (existingDevice == null) {
+                result.put("success", false);
+                result.put("message", "未找到对应的安全帽设备");
+                return result;
+            }
+
+            // 更新设备参数配置字段
+            existingDevice.setServerIp(device.getServerIp());
+            existingDevice.setServerPort(device.getServerPort());
+            existingDevice.setBluetoothScanWindow(device.getBluetoothScanWindow());
+            existingDevice.setGroupDuration(device.getGroupDuration());
+            existingDevice.setNormalBeaconCs(device.getNormalBeaconCs());
+            existingDevice.setSpecialBeaconCs(device.getSpecialBeaconCs());
+            existingDevice.setLocationMode(device.getLocationMode());
+            existingDevice.setDeepSleepDuration(device.getDeepSleepDuration());
+            existingDevice.setBluetoothScanDuration(device.getBluetoothScanDuration());
+            existingDevice.setSendInterval(device.getSendInterval());
+            existingDevice.setHazardRetriggerInterval(device.getHazardRetriggerInterval());
+            existingDevice.setSleepWakeupTime(device.getSleepWakeupTime());
+            existingDevice.setBeaconFilterName(device.getBeaconFilterName());
+
+            // 保存设备配置
+            swmHelmetDeviceService.save(existingDevice);
+
+            result.put("success", true);
+            result.put("message", "设备参数配置保存成功");
+            return result;
+        } catch (Exception e) {
+            logger.error("保存设备参数配置失败", e);
+            result.put("success", false);
+            result.put("message", "保存设备参数配置失败：" + e.getMessage());
+            return result;
+        }
+    }
+
+    /**
+     * 获取设备参数配置
+     *
+     * @param deviceId 设备编号
+     * @return 设备参数配置
+     * @author Shawn
+     * @date 2025-08-04
+     */
+    @GetMapping("getDeviceConfig")
+    public SwmHelmetDevice getDeviceConfig(@RequestParam String deviceId) {
+        return swmHelmetDeviceService.getByDeviceId(deviceId);
+    }
 }

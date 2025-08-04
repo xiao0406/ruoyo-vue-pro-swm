@@ -9,7 +9,7 @@
     
     <!-- 查询可用的安全帽列表（未绑定人员的） -->
     <select id="findAvailableHelmets" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
-        SELECT 
+        SELECT
             a.id,
             a.device_id,
             a.helmet_type,
@@ -27,6 +27,19 @@
             a.unbind_time,
             a.bind_duration_days,
             a.usage_status,
+            a.server_ip,
+            a.server_port,
+            a.bluetooth_scan_window,
+            a.group_duration,
+            a.normal_beacon_cs,
+            a.special_beacon_cs,
+            a.location_mode,
+            a.deep_sleep_duration,
+            a.bluetooth_scan_duration,
+            a.send_interval,
+            a.hazard_retrigger_interval,
+            a.sleep_wakeup_time,
+            a.beacon_filter_name,
             a.create_by,
             a.create_date,
             a.update_by,
@@ -43,7 +56,7 @@
     
     <!-- 根据头盔编号查询设备 -->
     <select id="getByDeviceId" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
-        SELECT 
+        SELECT
             a.id,
             a.device_id,
             a.helmet_type,
@@ -61,6 +74,19 @@
             a.unbind_time,
             a.bind_duration_days,
             a.usage_status,
+            a.server_ip,
+            a.server_port,
+            a.bluetooth_scan_window,
+            a.group_duration,
+            a.normal_beacon_cs,
+            a.special_beacon_cs,
+            a.location_mode,
+            a.deep_sleep_duration,
+            a.bluetooth_scan_duration,
+            a.send_interval,
+            a.hazard_retrigger_interval,
+            a.sleep_wakeup_time,
+            a.beacon_filter_name,
             a.create_by,
             a.create_date,
             a.update_by,
@@ -102,12 +128,12 @@
             a.assigned_person,
             a.person_name,
             a.person_phone,
-            CASE 
+            CASE
                 WHEN a.assigned_person IS NOT NULL AND a.assigned_person != '' THEN pa.position_name
                 ELSE a.assigned_workshop
             END AS assigned_workshop,
             a.assigned_process,
-            CASE 
+            CASE
                 WHEN a.assigned_person IS NOT NULL AND a.assigned_person != '' THEN wg.work_group_name
                 ELSE a.assigned_team
             END AS assigned_team,
@@ -116,6 +142,19 @@
             a.unbind_time,
             a.bind_duration_days,
             a.usage_status,
+            a.server_ip,
+            a.server_port,
+            a.bluetooth_scan_window,
+            a.group_duration,
+            a.normal_beacon_cs,
+            a.special_beacon_cs,
+            a.location_mode,
+            a.deep_sleep_duration,
+            a.bluetooth_scan_duration,
+            a.send_interval,
+            a.hazard_retrigger_interval,
+            a.sleep_wakeup_time,
+            a.beacon_filter_name,
             a.create_by,
             a.create_date,
             a.update_by,
@@ -179,12 +218,12 @@
             a.assigned_person,
             a.person_name,
             a.person_phone,
-            CASE 
+            CASE
                 WHEN a.assigned_person IS NOT NULL AND a.assigned_person != '' THEN pa.position_name
                 ELSE a.assigned_workshop
             END AS assigned_workshop,
             a.assigned_process,
-            CASE 
+            CASE
                 WHEN a.assigned_person IS NOT NULL AND a.assigned_person != '' THEN wg.work_group_name
                 ELSE a.assigned_team
             END AS assigned_team,
@@ -193,6 +232,19 @@
             a.unbind_time,
             a.bind_duration_days,
             a.usage_status,
+            a.server_ip,
+            a.server_port,
+            a.bluetooth_scan_window,
+            a.group_duration,
+            a.normal_beacon_cs,
+            a.special_beacon_cs,
+            a.location_mode,
+            a.deep_sleep_duration,
+            a.bluetooth_scan_duration,
+            a.send_interval,
+            a.hazard_retrigger_interval,
+            a.sleep_wakeup_time,
+            a.beacon_filter_name,
             a.create_by,
             a.create_date,
             a.update_by,
