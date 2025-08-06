@@ -221,7 +221,7 @@ public class SwmWarningManagementController extends BaseController {
                 }
 
                 // 新的personName格式：【idCard】某某触发warningContent
-                String formattedPersonName = "【" + idCard + "】" + originalPersonName + "触发" + warningContent;
+                String formattedPersonName = originalPersonName;
                 warningData.put("personName", formattedPersonName);
 
                 // 预警时间已在SQL中调整时区，这里直接使用
