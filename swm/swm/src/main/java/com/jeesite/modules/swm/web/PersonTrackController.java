@@ -567,10 +567,10 @@ public class PersonTrackController extends BaseController {
                                 }
 
                                 if (!trajectoryPoints.isEmpty()) {
-                                    // 对轨迹点进行10分钟间隔抽样，减少数据量
+                                    // 对轨迹点进行1分钟间隔抽样，减少数据量
                                     List<Map<String, Object>> sampledPoints = sampleTrajectoryPoints(trajectoryPoints,
-                                            10);
-                                    logger.info("身份证 {} ({}) 原始轨迹点: {} 个，10分钟间隔抽样后: {} 个",
+                                            1);
+                                    logger.info("身份证 {} ({}) 原始轨迹点: {} 个，1分钟间隔抽样后: {} 个",
                                             idCard, personName, trajectoryPoints.size(), sampledPoints.size());
                                     return sampledPoints;
                                 }
