@@ -142,19 +142,20 @@ public class SwmInspectionPlanController extends BaseController {
         } else {
             swmInspectionPlan.setResponsiblePerson(swmPerson.getName());
         }
-        
+
         // 处理危险源巡检类型的特殊情况（多选危险源）
-        if ("3".equals(swmInspectionPlan.getInspectionType()) && swmInspectionPlan.getHazardSourceIds() != null && swmInspectionPlan.getHazardSourceIds().length > 0) {
+        if ("3".equals(swmInspectionPlan.getInspectionType()) && swmInspectionPlan.getHazardSourceIds() != null
+                && swmInspectionPlan.getHazardSourceIds().length > 0) {
             // 获取选中的危险源ID数组
             String[] hazardSourceIds = swmInspectionPlan.getHazardSourceIds();
-            
+
             // 创建一个包含所有危险源名称的列表，用于生成计划名称
             List<String> hazardSourceNames = new ArrayList<>();
-            
+
             // 将所有选中的危险源ID拼接为逗号分隔的字符串
             String combinedHazardSourceIds = String.join(",", hazardSourceIds);
             swmInspectionPlan.setHazardSourceId(combinedHazardSourceIds);
-            
+
             // 收集所有危险源名称
             for (String hazardSourceId : hazardSourceIds) {
                 SwmHazardSource hazardSource = swmHazardSourceService.get(hazardSourceId);
@@ -164,12 +165,12 @@ public class SwmInspectionPlanController extends BaseController {
                     updateHazardSourcePatrolStatus(hazardSourceId, "1", swmInspectionPlan);
                 }
             }
-            
+
             // 将所有危险源名称以逗号分隔存储
             if (!hazardSourceNames.isEmpty()) {
                 String combinedHazardSourceNames = String.join(",", hazardSourceNames);
                 swmInspectionPlan.setHazardSourceName(combinedHazardSourceNames);
-                
+
                 // 如果用户没有指定计划名称，使用多个危险源的组合名称或数量描述
                 if (StringUtils.isBlank(swmInspectionPlan.getPlanName())) {
                     if (hazardSourceNames.size() <= 2) {
@@ -181,36 +182,38 @@ public class SwmInspectionPlanController extends BaseController {
                     }
                 }
             }
-            
+
             // 保存巡检计划
             swmInspectionPlanService.save(swmInspectionPlan);
-            
+
             return renderResult(Global.TRUE, text("创建巡检计划成功！"));
         } else {
             // 常规单个巡检计划保存
             swmInspectionPlanService.save(swmInspectionPlan);
-            
+
             // 如果是危险源巡检且有关联的危险源，更新危险源的巡检状态
-            if ("3".equals(swmInspectionPlan.getInspectionType()) && StringUtils.isNotBlank(swmInspectionPlan.getHazardSourceId())) {
+            if ("3".equals(swmInspectionPlan.getInspectionType())
+                    && StringUtils.isNotBlank(swmInspectionPlan.getHazardSourceId())) {
                 updateHazardSourcePatrolStatus(swmInspectionPlan.getHazardSourceId(), "1", swmInspectionPlan);
             }
-            
+
             return renderResult(Global.TRUE, text("保存巡检计划成功！"));
         }
     }
-    
+
     /**
      * 更新危险源的巡检状态
      * 
-     * @param hazardSourceId 危险源ID
+     * @param hazardSourceId   危险源ID
      * @param isPatrolIncluded 是否加入巡检（1-是，0-否）
-     * @param plan 巡检计划信息
+     * @param plan             巡检计划信息
      */
-    private void updateHazardSourcePatrolStatus(String hazardSourceId, String isPatrolIncluded, SwmInspectionPlan plan) {
+    private void updateHazardSourcePatrolStatus(String hazardSourceId, String isPatrolIncluded,
+            SwmInspectionPlan plan) {
         SwmHazardSource hazardSource = swmHazardSourceService.get(hazardSourceId);
         if (hazardSource != null) {
             hazardSource.setIsPatrolIncluded(isPatrolIncluded);
-            
+
             // 如果加入巡检，同步巡检相关信息
             if ("1".equals(isPatrolIncluded)) {
                 hazardSource.setFrequencyDays(plan.getFrequencyDays());
@@ -224,13 +227,13 @@ public class SwmInspectionPlanController extends BaseController {
                 hazardSource.setResponsiblePerson(null);
                 hazardSource.setFirstInspectionTime(null);
             }
-            
+
             // 保存更新后的危险源信息
             swmHazardSourceService.save(hazardSource);
             logger.info("已更新危险源ID: {} 的巡检状态为: {}", hazardSourceId, isPatrolIncluded);
         }
     }
-    
+
     /**
      * 删除巡检计划
      */
@@ -239,13 +242,13 @@ public class SwmInspectionPlanController extends BaseController {
     public String delete(SwmInspectionPlan swmInspectionPlan) {
         // 获取完整的巡检计划信息
         SwmInspectionPlan plan = swmInspectionPlanService.get(swmInspectionPlan.getId());
-        
+
         // 检查是否有关联的危险源
         if (plan != null && StringUtils.isNotBlank(plan.getHazardSourceId())) {
             // 检查是否包含多个危险源ID（逗号分隔）
             String hazardSourceId = plan.getHazardSourceId();
             String[] hazardSourceIds = hazardSourceId.split(",");
-            
+
             // 遍历所有关联的危险源ID
             for (String id : hazardSourceIds) {
                 if (StringUtils.isNotBlank(id)) {
@@ -265,12 +268,12 @@ public class SwmInspectionPlanController extends BaseController {
                 }
             }
         }
-        
+
         // 删除巡检计划
         swmInspectionPlanService.delete(swmInspectionPlan);
         return renderResult(Global.TRUE, text("删除巡检计划成功！"));
     }
-    
+
     /**
      * 开启巡检计划
      */
@@ -328,17 +331,16 @@ public class SwmInspectionPlanController extends BaseController {
     @ResponseBody
     public SwmInspectionPlan getInspectionPlan(SwmInspectionPlan swmInspectionPlan) {
         SwmInspectionPlan entity = swmInspectionPlanService.get(swmInspectionPlan);
-        
-        // 如果是危险源巡检类型且hazardSourceId包含逗号，说明是多个危险源
-        if (entity != null && "3".equals(entity.getInspectionType()) && 
-            StringUtils.isNotBlank(entity.getHazardSourceId()) && 
-            entity.getHazardSourceId().contains(",")) {
-            
-            // 将逗号分隔的hazardSourceId转换为hazardSourceIds数组
+
+        // 如果是危险源巡检类型且有关联的危险源ID
+        if (entity != null && "3".equals(entity.getInspectionType()) &&
+                StringUtils.isNotBlank(entity.getHazardSourceId())) {
+
+            // 将hazardSourceId转换为hazardSourceIds数组（支持单个或多个危险源）
             String[] hazardSourceIds = entity.getHazardSourceId().split(",");
             entity.setHazardSourceIds(hazardSourceIds);
-            
-            // 添加: 根据ID查询危险源名称
+
+            // 处理危险源名称
             if (StringUtils.isNotBlank(entity.getHazardSourceName())) {
                 // 如果已经有危险源名称，直接使用
                 entity.setHazardSourceNames(entity.getHazardSourceName().split(","));
@@ -352,7 +354,7 @@ public class SwmInspectionPlanController extends BaseController {
                 entity.setHazardSourceNames(hazardSourceNames);
             }
         }
-        
+
         return entity;
     }
 
