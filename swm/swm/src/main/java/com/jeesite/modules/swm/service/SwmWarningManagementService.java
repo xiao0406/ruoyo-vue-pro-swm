@@ -11,8 +11,10 @@ import com.jeesite.modules.swm.dao.SwmAlarmConfigDao;
 import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.swm.entity.SwmAlarmConfig;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
+import com.jeesite.modules.swm.service.SwmPersonScheduleService;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
+import com.jeesite.common.utils.SpringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -75,7 +77,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             String sql = sqlBuilder.toString();
 
             try {
-//                logger.info("执行单条查询SQL: {}", sql);
+                // logger.info("执行单条查询SQL: {}", sql);
                 R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
                 if (result.getCode() == R.SUCCESS && result.getData() != null) {
                     JSONObject data = result.getData();
@@ -464,15 +466,15 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "hazard_category":
                         entity.setHazardCategory(row.getStr(i));
-//                        logger.debug("设置危险源类别: {}", row.getStr(i));
+                        // logger.debug("设置危险源类别: {}", row.getStr(i));
                         break;
                     case "location":
                         entity.setLocation(row.getStr(i));
-//                        logger.debug("设置位置: {}", row.getStr(i));
+                        // logger.debug("设置位置: {}", row.getStr(i));
                         break;
                     case "area":
                         entity.setArea(row.getStr(i));
-//                        logger.debug("设置区域: {}", row.getStr(i));
+                        // logger.debug("设置区域: {}", row.getStr(i));
                         break;
                 }
             }
@@ -1109,7 +1111,9 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
     /**
      * 为预警记录列表填充班组信息
-     * 通过身份证号从fms_worker和fms_work_group表中获取班组名称
+     * 通过身份证号从fms_worker和fms_work_group表中获取班组名称，支持备用查询方案
+     * 主查询：fms_worker → fms_work_group
+     * 备用查询：swm_person.team → fms_work_group
      *
      * @param warningList 预警记录列表
      */
@@ -1137,7 +1141,37 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             // 将查询结果转换为idCard -> workGroupName的映射
             for (Map<String, String> map : workGroupInfoList) {
                 if (map.containsKey("idCard") && map.containsKey("value")) {
-                    idCardToWorkGroupMap.put(map.get("idCard"), map.get("value"));
+                    String idCard = map.get("idCard");
+                    String workGroupName = map.get("value");
+                    // 只有当班组名称不为空时才认为查询成功
+                    if (idCard != null && workGroupName != null && !workGroupName.isEmpty()) {
+                        idCardToWorkGroupMap.put(idCard, workGroupName);
+                    }
+                }
+            }
+
+            // 对于没有查询到班组信息的身份证号，使用备用查询方案
+            List<String> missingIdCards = idCards.stream()
+                    .filter(idCard -> !idCardToWorkGroupMap.containsKey(idCard))
+                    .collect(Collectors.toList());
+
+            if (!missingIdCards.isEmpty()) {
+                logger.info("使用备用方案查询 {} 个身份证号的班组信息", missingIdCards.size());
+
+                // 使用SwmPersonScheduleService的备用查询方法
+                SwmPersonScheduleService personScheduleService = SpringUtils.getBean(SwmPersonScheduleService.class);
+                List<Map<String, Object>> backupWorkGroupInfoList = personScheduleService
+                        .batchGetWorkGroupNameByIdCards(missingIdCards);
+
+                // 将备用查询结果添加到映射中
+                for (Map<String, Object> map : backupWorkGroupInfoList) {
+                    if (map.containsKey("key") && map.containsKey("value")) {
+                        String idCard = (String) map.get("key");
+                        String workGroupName = (String) map.get("value");
+                        if (idCard != null && workGroupName != null && !workGroupName.isEmpty()) {
+                            idCardToWorkGroupMap.put(idCard, workGroupName);
+                        }
+                    }
                 }
             }
 
@@ -1147,6 +1181,11 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     warning.setWorkGroupName(idCardToWorkGroupMap.get(warning.getIdCard()));
                 }
             }
+
+            logger.info("成功填充 {} 条预警记录的班组信息，主查询成功 {} 个，备用查询处理 {} 个",
+                    idCardToWorkGroupMap.size(),
+                    idCards.size() - missingIdCards.size(),
+                    missingIdCards.size());
         } catch (Exception e) {
             logger.error("填充班组信息失败", e);
         }
@@ -1384,7 +1423,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 configMap.put(config.getAlarmKey(), config);
             }
 
-            logger.info("获取到{}个需要弹窗确认的告警配置: {}", 
+            logger.info("获取到{}个需要弹窗确认的告警配置: {}",
                     needConfirmConfigs.size(), alarmKeyList);
 
             // 2. 构建查询当天数据的SQL
@@ -1396,7 +1435,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             cal.set(Calendar.SECOND, 0);
             cal.set(Calendar.MILLISECOND, 0);
             long todayStartTime = cal.getTimeInMillis();
-            
+
             cal.add(Calendar.DAY_OF_MONTH, 1);
             long todayEndTime = cal.getTimeInMillis();
 
@@ -1407,10 +1446,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
             String sql = String.format(
                     "SELECT * FROM %s.swm_warning_management WHERE type IN (%s) " +
-                    "AND warning_time >= %d AND warning_time < %d " +
-                    "ORDER BY warning_time DESC",
+                            "AND warning_time >= %d AND warning_time < %d " +
+                            "ORDER BY warning_time DESC",
                     dbname, inCondition, todayStartTime, todayEndTime);
-            
+
             logger.info("执行TDengine查询: {}", sql);
             R<JSONObject> tdResult = tdengineService.executeTDengineSQL(sql);
 
@@ -1738,7 +1777,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             executorService.shutdown();
         }
     }
-    
+
     /**
      * 统计当日已处理的预警数（排除考勤打卡和进入大门）
      * 
