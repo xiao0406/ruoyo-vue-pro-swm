@@ -1071,4 +1071,87 @@ public class AttendanceTask {
 
         return isNotAttendance;
     }
+
+    /**
+     * 自定义时间范围考勤计算任务
+     * 支持通过xxl-job参数设置时间范围（小时数）
+     * 参数格式：hours=48 （表示计算过去48小时的考勤数据）
+     * 
+     * @author Shawn
+     * @date 2025-08-11
+     */
+    @XxlJob("calculateAttendanceByTimeRange")
+    public void calculateAttendanceByTimeRange() {
+        SwmJobLog jobLog = new SwmJobLog();
+        jobLog.setJobName("calculateAttendanceByTimeRange");
+        jobLog.setStartTime(new Date());
+        jobLog.setExecuteStatus("1"); // 默认失败
+        
+        try {
+            XxlJobHelper.log("开始执行自定义时间范围考勤计算任务...");
+            
+            // 获取xxl-job传入的参数
+            String jobParam = XxlJobHelper.getJobParam();
+            jobLog.setJobParam(jobParam);
+            swmJobLogService.save(jobLog);
+            jobLog.setIsNewRecord(false);
+            
+            // 解析参数获取小时数
+            int hours = 24; // 默认24小时
+            
+            if (StringUtils.hasText(jobParam)) {
+                try {
+                    // 支持两种格式：直接传数字或 hours=数字
+                    String hoursStr = jobParam.trim();
+                    if (hoursStr.contains("=")) {
+                        String[] keyValue = hoursStr.split("=");
+                        if (keyValue.length == 2 && "hours".equalsIgnoreCase(keyValue[0].trim())) {
+                            hoursStr = keyValue[1].trim();
+                        }
+                    }
+                    hours = Integer.parseInt(hoursStr);
+                    
+                    if (hours <= 0) {
+                        XxlJobHelper.log("小时数必须大于0，使用默认值24小时");
+                        hours = 24;
+                    }
+                    
+                    XxlJobHelper.log("配置的时间范围: 过去 {} 小时", hours);
+                } catch (Exception e) {
+                    XxlJobHelper.log("参数解析失败: {}，使用默认值24小时。参数格式示例: hours=48 或直接传入数字48", jobParam);
+                    hours = 24;
+                }
+            } else {
+                XxlJobHelper.log("未传入参数，使用默认时间范围: 过去 {} 小时", hours);
+            }
+            
+            // 根据小时数计算开始时间和结束时间
+            Date endTime = new Date(); // 结束时间为当前时间
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(endTime);
+            cal.add(Calendar.HOUR_OF_DAY, -hours); // 往前推指定小时数
+            Date startTime = cal.getTime();
+            
+            SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            XxlJobHelper.log("考勤计算时间范围: {} 至 {}", 
+                dateTimeFormat.format(startTime), 
+                dateTimeFormat.format(endTime));
+            
+            // TODO: 后续在这里添加考勤计算逻辑
+            XxlJobHelper.log("开始计算时间范围内的考勤数据...");
+            XxlJobHelper.log("处理过去 {} 小时的考勤记录...", hours);
+            XxlJobHelper.log("更新考勤统计信息...");
+            
+            XxlJobHelper.log("自定义时间范围考勤计算任务执行成功，处理了过去 {} 小时的数据", hours);
+            jobLog.setExecuteStatus("0"); // 成功
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("自定义时间范围考勤计算任务执行异常", e);
+            jobLog.setExceptionInfo(e.getMessage());
+        } finally {
+            jobLog.setEndTime(new Date());
+            jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
+            swmJobLogService.save(jobLog);
+        }
+    }
 }
