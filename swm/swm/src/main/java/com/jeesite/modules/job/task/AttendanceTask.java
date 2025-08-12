@@ -1129,11 +1129,19 @@ public class AttendanceTask {
     /**
      * 自定义时间范围考勤计算任务
      * 支持通过xxl-job参数设置时间范围和身份证列表
-     * 参数格式示例：
-     * - hours=48                                    计算过去48小时所有人的考勤
-     * - idCards=110101199001011234                  计算默认24小时指定身份证的考勤
-     * - idCards=110101199001011234,110101199001015678  计算默认24小时多个身份证的考勤
-     * - hours=48;idCards=110101199001011234         计算过去48小时指定身份证的考勤
+     * 
+     * 支持两种时间模式：
+     * 1. 小时数模式（向后兼容）：
+     *    - hours=48                                    计算过去48小时所有人的考勤
+     *    - hours=48;idCards=110101199001011234         计算过去48小时指定身份证的考勤
+     * 
+     * 2. 时间范围模式（推荐）：
+     *    - startTime=2025-01-01 00:00:00;endTime=2025-01-31 23:59:59
+     *      计算指定时间范围所有人的考勤
+     *    - startTime=2025-01-01 00:00:00;endTime=2025-01-31 23:59:59;idCards=110101199001011234
+     *      计算指定时间范围指定身份证的考勤
+     *    - startTime=2025-01-01 00:00:00;endTime=2025-01-31 23:59:59;idCards=110101199001011234,110101199001015678
+     *      计算指定时间范围多个身份证的考勤
      * 
      * @author Shawn
      * @date 2025-08-11
@@ -1192,10 +1200,18 @@ public class AttendanceTask {
      * @date 2025-08-12
      */
     private static class AttendanceParams {
+        // 模式标识：true-使用时间范围模式，false-使用小时数模式
+        boolean useTimeRange = false;
+        
+        // 小时数模式参数
         int hours = 24; // 默认24小时
-        List<String> idCardList = new ArrayList<>();
+        
+        // 时间范围模式参数
         Date startTime;
         Date endTime;
+        
+        // 公共参数
+        List<String> idCardList = new ArrayList<>();
     }
 
     /**
@@ -1213,6 +1229,9 @@ public class AttendanceTask {
 
     /**
      * 解析任务参数
+     * 支持两种模式：
+     * 1. 小时数模式：hours=48 或直接传数字
+     * 2. 时间范围模式：startTime=2025-01-01 00:00:00;endTime=2025-01-31 23:59:59
      * 
      * @return 解析后的参数对象
      * @author Shawn
@@ -1221,6 +1240,7 @@ public class AttendanceTask {
     private AttendanceParams parseAttendanceParams() {
         AttendanceParams params = new AttendanceParams();
         String jobParam = XxlJobHelper.getJobParam();
+        SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         
         if (StringUtils.hasText(jobParam)) {
             try {
@@ -1229,8 +1249,34 @@ public class AttendanceTask {
                 for (String param : paramArray) {
                     param = param.trim();
                     
-                    // 解析小时数参数
-                    if (param.startsWith("hours=") || param.matches("\\d+")) {
+                    // 解析开始时间（时间范围模式）
+                    if (param.startsWith("startTime=")) {
+                        String timeStr = param.substring("startTime=".length()).trim();
+                        try {
+                            params.startTime = dateTimeFormat.parse(timeStr);
+                            params.useTimeRange = true;
+                            XxlJobHelper.log("解析开始时间: {}", timeStr);
+                        } catch (Exception e) {
+                            XxlJobHelper.log("开始时间格式错误: {}，正确格式: yyyy-MM-dd HH:mm:ss", timeStr);
+                            throw new IllegalArgumentException("开始时间格式错误: " + timeStr);
+                        }
+                    }
+                    
+                    // 解析结束时间（时间范围模式）
+                    else if (param.startsWith("endTime=")) {
+                        String timeStr = param.substring("endTime=".length()).trim();
+                        try {
+                            params.endTime = dateTimeFormat.parse(timeStr);
+                            params.useTimeRange = true;
+                            XxlJobHelper.log("解析结束时间: {}", timeStr);
+                        } catch (Exception e) {
+                            XxlJobHelper.log("结束时间格式错误: {}，正确格式: yyyy-MM-dd HH:mm:ss", timeStr);
+                            throw new IllegalArgumentException("结束时间格式错误: " + timeStr);
+                        }
+                    }
+                    
+                    // 解析小时数参数（仅在非时间范围模式下生效）
+                    else if (!params.useTimeRange && (param.startsWith("hours=") || param.matches("\\d+"))) {
                         String hoursStr = param;
                         if (param.contains("=")) {
                             String[] keyValue = param.split("=");
@@ -1249,8 +1295,8 @@ public class AttendanceTask {
                         }
                     }
                     
-                    // 解析身份证参数
-                    if (param.startsWith("idCards=")) {
+                    // 解析身份证参数（两种模式都支持）
+                    else if (param.startsWith("idCards=")) {
                         String idCardsStr = param.substring("idCards=".length()).trim();
                         if (!idCardsStr.isEmpty()) {
                             String[] idCards = idCardsStr.split(",");
@@ -1266,27 +1312,59 @@ public class AttendanceTask {
                         }
                     }
                 }
+                
+                // 验证时间范围模式的参数完整性
+                if (params.useTimeRange) {
+                    if (params.startTime == null || params.endTime == null) {
+                        throw new IllegalArgumentException("使用时间范围模式时，startTime和endTime都必须提供");
+                    }
+                    if (params.startTime.after(params.endTime)) {
+                        throw new IllegalArgumentException("开始时间不能晚于结束时间");
+                    }
+                    // 限制时间范围不超过1年
+                    long diffDays = (params.endTime.getTime() - params.startTime.getTime()) / (1000 * 60 * 60 * 24);
+                    if (diffDays > 365) {
+                        throw new IllegalArgumentException("时间范围不能超过365天");
+                    }
+                }
+                
+            } catch (IllegalArgumentException e) {
+                XxlJobHelper.log("参数验证失败: {}", e.getMessage());
+                throw e;
             } catch (Exception e) {
-                XxlJobHelper.log("参数解析失败: {}，使用默认值。错误: {}", jobParam, e.getMessage());
+                XxlJobHelper.log("参数解析失败: {}，错误: {}", jobParam, e.getMessage());
+                XxlJobHelper.log("参数格式示例：");
+                XxlJobHelper.log("  小时数模式: hours=48;idCards=110101199001011234");
+                XxlJobHelper.log("  时间范围模式: startTime=2025-01-01 00:00:00;endTime=2025-01-31 23:59:59;idCards=110101199001011234");
                 params.hours = 24;
+                params.useTimeRange = false;
             }
         }
         
-        // 计算时间范围
-        params.endTime = new Date();
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(params.endTime);
-        cal.add(Calendar.HOUR_OF_DAY, -params.hours);
-        params.startTime = cal.getTime();
+        // 根据模式计算最终的时间范围
+        if (params.useTimeRange) {
+            // 时间范围模式：直接使用提供的时间
+            XxlJobHelper.log("使用时间范围模式");
+        } else {
+            // 小时数模式：根据小时数计算时间范围
+            params.endTime = new Date();
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(params.endTime);
+            cal.add(Calendar.HOUR_OF_DAY, -params.hours);
+            params.startTime = cal.getTime();
+            XxlJobHelper.log("使用小时数模式，过去 {} 小时", params.hours);
+        }
         
-        // 记录解析结果
-        SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        XxlJobHelper.log("时间范围: {} 至 {}", 
+        // 记录最终的时间范围
+        XxlJobHelper.log("最终时间范围: {} 至 {}", 
             dateTimeFormat.format(params.startTime), 
             dateTimeFormat.format(params.endTime));
-        XxlJobHelper.log("小时数: {}", params.hours);
+        
         if (!params.idCardList.isEmpty()) {
             XxlJobHelper.log("指定身份证数量: {}个", params.idCardList.size());
+            if (params.idCardList.size() <= 10) {
+                XxlJobHelper.log("身份证列表: {}", String.join(", ", params.idCardList));
+            }
         } else {
             XxlJobHelper.log("处理所有人员");
         }
