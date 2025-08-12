@@ -381,6 +381,23 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     }
 
     /**
+     * 根据身份证和日期查询考勤记录
+     * @param identityCard 身份证号
+     * @param attendanceDate 考勤日期
+     * @return 考勤记录
+     * @author Shawn
+     * @date 2025-08-12
+     */
+    public SwmDailyAttendance findByIdentityCardAndDate(String identityCard, Date attendanceDate) {
+        if (StringUtils.isBlank(identityCard)) {
+            return null;
+        }
+        // 处理日期，去除时间部分
+        attendanceDate = truncateTime(attendanceDate);
+        return dao.findByIdentityCardAndDate(identityCard, attendanceDate);
+    }
+
+    /**
      * 根据员工ID和月份查询考勤记录
      *
      * @param employeeId 员工ID

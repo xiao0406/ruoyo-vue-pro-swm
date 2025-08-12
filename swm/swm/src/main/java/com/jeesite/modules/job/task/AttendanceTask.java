@@ -14,8 +14,10 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1153,5 +1155,246 @@ public class AttendanceTask {
             jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
             swmJobLogService.save(jobLog);
         }
+    }
+
+    /**
+     * 创建每日考勤数据V2版本
+     * 支持参数化生成考勤记录
+     * 默认生成明天的考勤数据
+     * 参数格式：
+     * - 无参数 - 生成明天所有在职人员的考勤
+     * - date=2025-08-12 - 生成指定日期的考勤
+     * - idCard=412825197709304513 - 生成指定身份证明天的考勤
+     * - date=2025-08-12,idCard=412825197709304513 - 生成指定日期和身份证的考勤
+     * 
+     * @author Shawn
+     * @date 2025-08-12
+     */
+    @XxlJob("createDailyAttendanceV2")
+    public void createDailyAttendanceV2() {
+        SwmJobLog jobLog = new SwmJobLog();
+        jobLog.setJobName("createDailyAttendanceV2");
+        jobLog.setStartTime(new Date());
+        jobLog.setExecuteStatus("1"); // 默认失败
+        
+        try {
+            String jobParam = XxlJobHelper.getJobParam();
+            jobLog.setJobParam(jobParam);
+            swmJobLogService.save(jobLog);
+            jobLog.setIsNewRecord(false);
+
+            XxlJobHelper.log("开始执行每日考勤数据创建任务V2...");
+            XxlJobHelper.log("任务参数: {}", jobParam);
+
+            // 1. 解析参数
+            // 默认生成明天的考勤数据
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DAY_OF_MONTH, 1); // 加一天
+            Date targetDate = cal.getTime();
+            String idCard = null;
+            
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            XxlJobHelper.log("默认生成日期: {} (明天)", dateFormat.format(targetDate));
+            
+            if (StringUtils.hasText(jobParam)) {
+                Map<String, String> params = parseJobParams(jobParam);
+                
+                // 解析日期参数
+                String dateStr = params.get("date");
+                if (StringUtils.hasText(dateStr)) {
+                    try {
+                        targetDate = dateFormat.parse(dateStr);
+                        XxlJobHelper.log("使用指定日期: {}", dateStr);
+                    } catch (Exception e) {
+                        XxlJobHelper.log("日期参数格式错误: {}，使用默认日期（明天）", dateStr);
+                        // 重置为明天
+                        cal = Calendar.getInstance();
+                        cal.add(Calendar.DAY_OF_MONTH, 1);
+                        targetDate = cal.getTime();
+                    }
+                }
+                
+                // 解析身份证参数
+                idCard = params.get("idCard");
+                if (StringUtils.hasText(idCard)) {
+                    XxlJobHelper.log("使用指定身份证: {}", idCard);
+                }
+            }
+
+            // 2. 查询目标人员
+            List<SwmPerson> targetPersons = new ArrayList<>();
+            
+            if (StringUtils.hasText(idCard)) {
+                // 根据身份证查询单个人员
+                SwmPerson person = swmPersonService.getByIdentityCard(idCard);
+                
+                // 重要：必须验证是在职人员
+                if (person != null 
+                    && SwmPerson.PersonStatusEnum.ACTIVE.equals(person.getPersonnelStatus())
+                    && "0".equals(person.getStatus())) {
+                    targetPersons.add(person);
+                    XxlJobHelper.log("找到在职人员：{}, 身份证：{}", person.getName(), idCard);
+                } else {
+                    if (person == null) {
+                        XxlJobHelper.log("未找到身份证为 {} 的人员", idCard);
+                    } else if (!SwmPerson.PersonStatusEnum.ACTIVE.equals(person.getPersonnelStatus())) {
+                        XxlJobHelper.log("身份证 {} 对应的人员 {} 不是在职状态", idCard, person.getName());
+                    } else {
+                        XxlJobHelper.log("身份证 {} 对应的人员 {} 状态异常", idCard, person.getName());
+                    }
+                    jobLog.setExecuteStatus("0");
+                    return;
+                }
+            } else {
+                // 查询所有在职人员
+                SwmPerson query = new SwmPerson();
+                query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
+                query.setStatus("0");
+                targetPersons = swmPersonService.findList(query);
+                XxlJobHelper.log("查询到 {} 名在职人员", targetPersons.size());
+            }
+
+            if (targetPersons.isEmpty()) {
+                XxlJobHelper.log("没有需要处理的在职人员");
+                jobLog.setExecuteStatus("0");
+                return;
+            }
+
+            // 3. 统计变量
+            int createdCount = 0;
+            int updatedCount = 0;
+            int skippedCount = 0;
+            int failCount = 0;
+            String dateStr = dateFormat.format(targetDate);
+
+            // 4. 为每个人员生成考勤记录
+            for (SwmPerson person : targetPersons) {
+                try {
+                    // 身份证为空的人员跳过
+                    if (StringUtils.isEmpty(person.getIdentityCard())) {
+                        XxlJobHelper.log("员工[{}]{}没有身份证信息，跳过创建考勤记录", 
+                            person.getId(), person.getName());
+                        failCount++;
+                        continue;
+                    }
+                    
+                    // 基于身份证和日期进行排重检查
+                    SwmDailyAttendance existingAttendance = swmDailyAttendanceService
+                        .findByIdentityCardAndDate(person.getIdentityCard(), targetDate);
+                    
+                    if (existingAttendance != null) {
+                        // 如果已存在记录，检查是否需要更新
+                        XxlJobHelper.log("身份证 {} 在 {} 已有考勤记录，检查是否需要更新", 
+                            person.getIdentityCard(), dateStr);
+                        
+                        boolean needUpdate = false;
+                        
+                        // 如果员工ID不同，说明可能是同一人的不同记录，保留原记录
+                        if (!person.getId().equals(existingAttendance.getEmployeeId())) {
+                            XxlJobHelper.log("发现同一身份证的不同员工记录，保留原记录，员工ID: {} -> {}", 
+                                existingAttendance.getEmployeeId(), person.getId());
+                        }
+                        
+                        // 尝试获取并更新排班信息（如果原记录没有）
+                        if (StringUtils.isEmpty(existingAttendance.getWorkTimeRange())) {
+                            SwmScheduleTime scheduleTime = getScheduleTimeForPerson(person, targetDate);
+                            if (scheduleTime != null) {
+                                String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
+                                existingAttendance.setWorkTimeRange(workTimeRange);
+                                existingAttendance.setScheduledHours(BigDecimal.ZERO); // 应考勤时长设为0
+                                needUpdate = true;
+                                XxlJobHelper.log("更新排班信息：{}", workTimeRange);
+                            }
+                        }
+                        
+                        if (needUpdate) {
+                            swmDailyAttendanceService.update(existingAttendance);
+                            updatedCount++;
+                        } else {
+                            skippedCount++;
+                        }
+                        continue;
+                    }
+                    
+                    // 创建新的考勤记录
+                    SwmDailyAttendance newAttendance = new SwmDailyAttendance();
+                    newAttendance.setEmployeeId(person.getId());
+                    newAttendance.setEmployeeName(person.getName());
+                    newAttendance.setIdentityCard(person.getIdentityCard()); // 保存身份证
+                    newAttendance.setPersonType(person.getPersonType());
+                    newAttendance.setAttendanceDate(targetDate);
+                    
+                    // 尝试获取排班信息（可选）
+                    SwmScheduleTime scheduleTime = getScheduleTimeForPerson(person, targetDate);
+                    if (scheduleTime != null) {
+                        String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
+                        newAttendance.setWorkTimeRange(workTimeRange);
+                        newAttendance.setScheduledHours(BigDecimal.ZERO); // 应考勤时长统一设为0
+                        XxlJobHelper.log("员工[{}]{}有排班信息：{}", 
+                            person.getId(), person.getName(), workTimeRange);
+                    } else {
+                        // 无排班信息，字段保持为空
+                        newAttendance.setWorkTimeRange(null);
+                        newAttendance.setScheduledHours(BigDecimal.ZERO);
+                        XxlJobHelper.log("员工[{}]{}没有排班信息", person.getId(), person.getName());
+                    }
+                    
+                    // 设置其他默认值
+                    newAttendance.setActualHours(BigDecimal.ZERO);
+                    newAttendance.setIdleHours(BigDecimal.ZERO);
+                    newAttendance.setEffectiveWorkHours(BigDecimal.ZERO);
+                    newAttendance.setDailyEfficiency(BigDecimal.ZERO);
+                    newAttendance.setDailyAchievementRate(BigDecimal.ZERO);
+                    newAttendance.setAttendanceNormal("3"); // 未考勤
+                    newAttendance.setCurrentPosition("3"); // 未知
+                    
+                    swmDailyAttendanceService.save(newAttendance);
+                    createdCount++;
+                    XxlJobHelper.log("为员工[{}]{}创建考勤记录成功", person.getId(), person.getName());
+                    
+                } catch (Exception e) {
+                    XxlJobHelper.log("为员工[{}]{}创建考勤记录失败：{}", 
+                        person.getId(), person.getName(), e.getMessage());
+                    failCount++;
+                }
+            }
+
+            // 5. 输出统计结果
+            XxlJobHelper.log("每日考勤数据创建任务V2完成。");
+            XxlJobHelper.log("共处理 {} 名在职人员", targetPersons.size());
+            XxlJobHelper.log("创建：{} 条", createdCount);
+            XxlJobHelper.log("更新：{} 条（补充排班信息）", updatedCount);
+            XxlJobHelper.log("跳过：{} 条（已存在）", skippedCount);
+            XxlJobHelper.log("失败：{} 条", failCount);
+            
+            jobLog.setExecuteStatus("0"); // 成功
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("创建每日考勤数据V2时发生异常", e);
+            jobLog.setExceptionInfo(e.getMessage());
+        } finally {
+            jobLog.setEndTime(new Date());
+            jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
+            swmJobLogService.save(jobLog);
+        }
+    }
+
+    /**
+     * 解析任务参数
+     * @param jobParam 参数字符串，格式：key1=value1,key2=value2
+     * @return 参数Map
+     */
+    private Map<String, String> parseJobParams(String jobParam) {
+        Map<String, String> params = new HashMap<>();
+        if (StringUtils.hasText(jobParam)) {
+            String[] pairs = jobParam.split(",");
+            for (String pair : pairs) {
+                String[] keyValue = pair.trim().split("=");
+                if (keyValue.length == 2) {
+                    params.put(keyValue[0].trim(), keyValue[1].trim());
+                }
+            }
+        }
+        return params;
     }
 }

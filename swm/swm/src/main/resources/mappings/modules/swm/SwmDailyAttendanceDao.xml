@@ -7,6 +7,8 @@
         <id property="id" column="id"/>
         <result property="employeeId" column="employee_id"/>
         <result property="employeeName" column="employee_name"/>
+        <result property="identityCard" column="identity_card"/>
+        <result property="personType" column="person_type"/>
         <result property="attendanceDate" column="attendance_date"/>
         <result property="workTimeRange" column="work_time_range"/>
         <result property="clockInTime" column="clock_in_time"/>
@@ -108,6 +110,8 @@
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
             a.attendance_date AS "attendanceDate",
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
@@ -137,6 +141,8 @@
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
             a.attendance_date AS "attendanceDate",
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
@@ -166,6 +172,8 @@
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
             a.attendance_date AS "attendanceDate",
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
@@ -196,6 +204,8 @@
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
             a.attendance_date AS "attendanceDate",
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
@@ -226,6 +236,8 @@
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
             a.attendance_date AS "attendanceDate",
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
@@ -255,6 +267,8 @@
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
             a.attendance_date AS "attendanceDate",
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
@@ -286,6 +300,8 @@
             a.id AS "id",
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
             a.attendance_date AS "attendanceDate",
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
@@ -317,6 +333,8 @@
         a.id,
         a.employee_id,
         a.employee_name,
+        a.identity_card,
+        a.person_type,
         a.attendance_date,
         a.work_time_range,
         a.clock_in_time,
@@ -355,6 +373,8 @@
         UPDATE `swm_daily_attendance` SET
             `employee_id` = #{employeeId},
             `employee_name` = #{employeeName},
+            `identity_card` = #{identityCard},
+            `person_type` = #{personType},
             `attendance_date` = #{attendanceDate},
             `work_time_range` = #{workTimeRange},
             `clock_in_time` = #{clockInTime},
@@ -372,5 +392,37 @@
             `remarks` = #{remarks}
         WHERE `id` = #{id}
     </update>
+
+    <!-- 根据身份证和日期查询考勤记录 -->
+    <select id="findByIdentityCardAndDate" resultType="SwmDailyAttendance">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_out_time AS "clockOutTime",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.attendance_normal AS "attendanceNormal",
+            a.current_position AS "currentPosition",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        WHERE a.identity_card = #{identityCard}
+          AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+        LIMIT 1
+    </select>
 
 </mapper>

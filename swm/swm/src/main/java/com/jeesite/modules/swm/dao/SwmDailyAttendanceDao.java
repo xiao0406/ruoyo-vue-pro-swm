@@ -89,4 +89,14 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
      * @return 日考勤记录列表
      */
     List<SwmDailyAttendance> findByMonth(@Param("employeeIds") List<String> employeeIds, @Param("month") String month);
+
+    /**
+     * 根据身份证和日期查询考勤记录
+     * @param identityCard 身份证号
+     * @param attendanceDate 考勤日期
+     * @return 考勤记录
+     * @author Shawn
+     * @date 2025-08-12
+     */
+    SwmDailyAttendance findByIdentityCardAndDate(@Param("identityCard") String identityCard, @Param("attendanceDate") Date attendanceDate);
 }
