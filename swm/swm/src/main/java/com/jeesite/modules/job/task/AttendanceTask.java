@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 /**
  * 考勤统计定时任务
@@ -1076,8 +1077,12 @@ public class AttendanceTask {
 
     /**
      * 自定义时间范围考勤计算任务
-     * 支持通过xxl-job参数设置时间范围（小时数）
-     * 参数格式：hours=48 （表示计算过去48小时的考勤数据）
+     * 支持通过xxl-job参数设置时间范围和身份证列表
+     * 参数格式示例：
+     * - hours=48                                    计算过去48小时所有人的考勤
+     * - idCards=110101199001011234                  计算默认24小时指定身份证的考勤
+     * - idCards=110101199001011234,110101199001015678  计算默认24小时多个身份证的考勤
+     * - hours=48;idCards=110101199001011234         计算过去48小时指定身份证的考勤
      * 
      * @author Shawn
      * @date 2025-08-11
@@ -1098,33 +1103,71 @@ public class AttendanceTask {
             swmJobLogService.save(jobLog);
             jobLog.setIsNewRecord(false);
             
-            // 解析参数获取小时数
+            // 解析参数
             int hours = 24; // 默认24小时
+            List<String> idCardList = new ArrayList<>(); // 身份证列表
             
             if (StringUtils.hasText(jobParam)) {
                 try {
-                    // 支持两种格式：直接传数字或 hours=数字
-                    String hoursStr = jobParam.trim();
-                    if (hoursStr.contains("=")) {
-                        String[] keyValue = hoursStr.split("=");
-                        if (keyValue.length == 2 && "hours".equalsIgnoreCase(keyValue[0].trim())) {
-                            hoursStr = keyValue[1].trim();
+                    // 支持分号分隔的多个参数
+                    String[] params = jobParam.split(";");
+                    for (String param : params) {
+                        param = param.trim();
+                        
+                        // 解析小时数参数
+                        if (param.startsWith("hours=") || param.matches("\\d+")) {
+                            String hoursStr = param;
+                            if (param.contains("=")) {
+                                String[] keyValue = param.split("=");
+                                if (keyValue.length == 2 && "hours".equalsIgnoreCase(keyValue[0].trim())) {
+                                    hoursStr = keyValue[1].trim();
+                                }
+                            }
+                            hours = Integer.parseInt(hoursStr);
+                            
+                            if (hours <= 0) {
+                                XxlJobHelper.log("小时数必须大于0，使用默认值24小时");
+                                hours = 24;
+                            } else if (hours > 720) { // 限制最大30天
+                                XxlJobHelper.log("小时数超过最大限制（720小时/30天），设置为720小时");
+                                hours = 720;
+                            }
+                        }
+                        
+                        // 解析身份证参数
+                        if (param.startsWith("idCards=")) {
+                            String idCardsStr = param.substring("idCards=".length()).trim();
+                            if (!idCardsStr.isEmpty()) {
+                                String[] idCards = idCardsStr.split(",");
+                                for (String idCard : idCards) {
+                                    idCard = idCard.trim();
+                                    // 验证身份证格式（15位或18位）
+                                    if (idCard.matches("\\d{15}|\\d{17}[\\dXx]")) {
+                                        idCardList.add(idCard);
+                                    } else {
+                                        XxlJobHelper.log("身份证格式不正确，跳过: {}", idCard);
+                                    }
+                                }
+                            }
                         }
                     }
-                    hours = Integer.parseInt(hoursStr);
                     
-                    if (hours <= 0) {
-                        XxlJobHelper.log("小时数必须大于0，使用默认值24小时");
-                        hours = 24;
+                    // 记录解析结果
+                    XxlJobHelper.log("配置的时间范围: 过去 {} 小时", hours);
+                    if (!idCardList.isEmpty()) {
+                        XxlJobHelper.log("指定处理的身份证数量: {}个", idCardList.size());
+                        XxlJobHelper.log("身份证列表: {}", String.join(", ", idCardList));
+                    } else {
+                        XxlJobHelper.log("未指定身份证，将处理所有人员");
                     }
                     
-                    XxlJobHelper.log("配置的时间范围: 过去 {} 小时", hours);
                 } catch (Exception e) {
-                    XxlJobHelper.log("参数解析失败: {}，使用默认值24小时。参数格式示例: hours=48 或直接传入数字48", jobParam);
+                    XxlJobHelper.log("参数解析失败: {}，使用默认值。错误: {}", jobParam, e.getMessage());
+                    XxlJobHelper.log("参数格式示例: hours=48;idCards=110101199001011234,110101199001015678");
                     hours = 24;
                 }
             } else {
-                XxlJobHelper.log("未传入参数，使用默认时间范围: 过去 {} 小时", hours);
+                XxlJobHelper.log("未传入参数，使用默认时间范围: 过去 {} 小时，处理所有人员", hours);
             }
             
             // 根据小时数计算开始时间和结束时间
@@ -1141,7 +1184,12 @@ public class AttendanceTask {
             
             // TODO: 后续在这里添加考勤计算逻辑
             XxlJobHelper.log("开始计算时间范围内的考勤数据...");
-            XxlJobHelper.log("处理过去 {} 小时的考勤记录...", hours);
+            if (!idCardList.isEmpty()) {
+                XxlJobHelper.log("处理指定的 {} 个身份证在过去 {} 小时的考勤记录...", idCardList.size(), hours);
+                // TODO: 根据身份证列表过滤需要处理的人员
+            } else {
+                XxlJobHelper.log("处理所有人员在过去 {} 小时的考勤记录...", hours);
+            }
             XxlJobHelper.log("更新考勤统计信息...");
             
             XxlJobHelper.log("自定义时间范围考勤计算任务执行成功，处理了过去 {} 小时的数据", hours);
