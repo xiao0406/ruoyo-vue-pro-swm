@@ -113,14 +113,6 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
      * 根据头盔编号获取头盔设备
      */
     public SwmHelmetDevice getByDeviceId(String deviceId) {
-        // 优先从内存缓存中查找
-        SwmHelmetDevice cachedDevice = helmetCache.get(deviceId);
-        if (cachedDevice != null) {
-            logger.debug("从内存缓存中获取安全帽: {}", deviceId);
-            return cachedDevice;
-        }
-
-        // 缓存中没有，从数据库查询
         SwmHelmetDevice result = dao.getByDeviceId(deviceId);
         if (result != null) {
             // 放入内存缓存
