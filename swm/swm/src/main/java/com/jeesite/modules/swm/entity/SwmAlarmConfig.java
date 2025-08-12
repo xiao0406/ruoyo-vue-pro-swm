@@ -19,6 +19,7 @@ import org.hibernate.validator.constraints.Length;
         @Column(name = "enable_alarm", attrName = "enableAlarm", label = "是否报警"),
         @Column(name = "need_confirm", attrName = "needConfirm", label = "是否弹窗确认"),
         @Column(name = "dialog_position", attrName = "dialogPosition", label = "弹窗位置"),
+        @Column(name = "is_send_zjt", attrName = "isSendZjt", label = "是否推送中建通（1是，0否）"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmAlarmConfig extends DataEntity<SwmAlarmConfig> {
@@ -30,6 +31,16 @@ public class SwmAlarmConfig extends DataEntity<SwmAlarmConfig> {
     private Integer enableAlarm; // 是否报警（0否 1是）
     private Integer needConfirm; // 是否弹窗确认（0否 1是）
     private String dialogPosition; // 弹窗位置
+    /**是否推送中建通（1是，0否）*/
+    private Integer isSendZjt;
+
+    public Integer getIsSendZjt() {
+        return isSendZjt;
+    }
+
+    public void setIsSendZjt(Integer isSendZjt) {
+        this.isSendZjt = isSendZjt;
+    }
 
     public SwmAlarmConfig() {
         this(null);

@@ -45,7 +45,12 @@
 			<artifactId>jeesite-cloud-module-bpm-client</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
-
+		<!--·中建通消息推送-->
+		<dependency>
+			<groupId>com.jeesite</groupId>
+			<artifactId>jeesite-cloud-module-tpi-client</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
 		<!-- 文件上传 -->
 		<dependency>
 			<groupId>com.jeesite</groupId>
