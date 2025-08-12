@@ -72,6 +72,7 @@
             enable_alarm = #{enableAlarm},
             need_confirm = #{needConfirm},
             dialog_position = #{dialogPosition},
+            is_send_zjt = #{isSendZjt},
             update_by = #{updateBy},
             update_date = #{updateDate}
         WHERE id = #{id}
