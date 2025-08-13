@@ -1806,9 +1806,13 @@ public class AttendanceTask {
             if (scheduleTime != null) {
                 String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
                 existing.setWorkTimeRange(workTimeRange);
-                existing.setScheduledHours(BigDecimal.ZERO);
+                
+                // 计算应考勤时长
+                BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
+                existing.setScheduledHours(scheduledHours);
+                
                 needUpdate = true;
-                XxlJobHelper.log("更新排班信息：{}", workTimeRange);
+                XxlJobHelper.log("更新排班信息：{}，应考勤时长：{} 小时", workTimeRange, scheduledHours);
             }
         }
         
@@ -1846,6 +1850,59 @@ public class AttendanceTask {
     }
 
     /**
+     * 根据工作时间范围计算应考勤时长（用于createDailyAttendanceV2）
+     * @param workTimeRange 工作时间范围，格式如 "07:00-18:00"
+     * @return 应考勤时长（小时）
+     * @author Shawn
+     * @date 2025-08-13
+     */
+    private BigDecimal calculateScheduledHoursFromWorkTimeRange(String workTimeRange) {
+        if (StringUtils.isBlank(workTimeRange)) {
+            return BigDecimal.ZERO;
+        }
+        
+        try {
+            String[] times = workTimeRange.split("-");
+            if (times.length != 2) {
+                XxlJobHelper.log("工作时间范围格式错误: {}", workTimeRange);
+                return BigDecimal.ZERO;
+            }
+            
+            String startTimeStr = times[0].trim();
+            String endTimeStr = times[1].trim();
+            
+            // 解析时间
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+            Date startTime = sdf.parse(startTimeStr);
+            Date endTime = sdf.parse(endTimeStr);
+            
+            // 计算时间差(毫秒)
+            long diffMillis = endTime.getTime() - startTime.getTime();
+            
+            // 转换为小时
+            double hours = diffMillis / (1000.0 * 60 * 60);
+            
+            // 处理跨日班次的情况(如夜班20:00-05:00)
+            if (hours < 0) {
+                hours += 24;
+                XxlJobHelper.log("检测到跨日班次: {}，计算后的应考勤时长: {} 小时", workTimeRange, hours);
+            }
+            
+            // 确保时长在合理范围内
+            if (hours > 24) {
+                XxlJobHelper.log("工作时间范围 {} 计算出的时长超过24小时: {} 小时，可能存在配置错误", workTimeRange, hours);
+                return BigDecimal.ZERO;
+            }
+            
+            return BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("计算应考勤时长时发生异常，workTimeRange: {}, 错误: {}", workTimeRange, e.getMessage());
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
      * 设置排班信息
      */
     private void setScheduleInfo(SwmDailyAttendance attendance, SwmPerson person, Date targetDate) {
@@ -1853,10 +1910,16 @@ public class AttendanceTask {
         if (scheduleTime != null) {
             String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
             attendance.setWorkTimeRange(workTimeRange);
-            XxlJobHelper.log("员工[{}]{}有排班信息：{}", 
-                person.getId(), person.getName(), workTimeRange);
+            
+            // 计算应考勤时长
+            BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
+            attendance.setScheduledHours(scheduledHours);
+            
+            XxlJobHelper.log("员工[{}]{}有排班信息：{}，应考勤时长：{} 小时", 
+                person.getId(), person.getName(), workTimeRange, scheduledHours);
         } else {
             attendance.setWorkTimeRange(null);
+            attendance.setScheduledHours(BigDecimal.ZERO);
             XxlJobHelper.log("员工[{}]{}没有排班信息", person.getId(), person.getName());
         }
     }
@@ -1865,7 +1928,7 @@ public class AttendanceTask {
      * 设置默认值
      */
     private void setDefaultValues(SwmDailyAttendance attendance) {
-        attendance.setScheduledHours(BigDecimal.ZERO);
+        // scheduledHours 已在 setScheduleInfo 中设置，这里不再设置
         attendance.setActualHours(BigDecimal.ZERO);
         attendance.setIdleHours(BigDecimal.ZERO);
         attendance.setEffectiveWorkHours(BigDecimal.ZERO);
