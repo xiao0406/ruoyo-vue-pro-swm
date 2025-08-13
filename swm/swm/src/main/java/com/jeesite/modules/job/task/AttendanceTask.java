@@ -1,6 +1,9 @@
 package com.jeesite.modules.job.task;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.utils.R;
@@ -8,12 +11,13 @@ import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -22,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 /**
  * 考勤统计定时任务
@@ -47,6 +50,15 @@ public class AttendanceTask {
     private HelmetRundeCaReportLocationTdEnginService helmetTdengineService;
     @Autowired
     private SwmJobLogService swmJobLogService;
+    @Autowired
+    private TDengineService tdengineService;
+    
+    @Value("${tdengine.dbname:swm_db}")
+    private String dbname;
+    
+    // 定义常量
+    private static final long CONTINUITY_THRESHOLD_MS = 20 * 60 * 1000; // 20分钟连续性阈值
+    private static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /**
      * 计算怠工时长定时任务，工作时长定时任务
@@ -71,7 +83,7 @@ public class AttendanceTask {
             Date targetDate;
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-            if (StringUtils.hasText(jobParam)) {
+            if (StringUtils.isNotBlank(jobParam)) {
                 try {
                     targetDate = dateFormat.parse(jobParam);
                 } catch (Exception e) {
@@ -1242,7 +1254,7 @@ public class AttendanceTask {
         String jobParam = XxlJobHelper.getJobParam();
         SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         
-        if (StringUtils.hasText(jobParam)) {
+        if (StringUtils.isNotBlank(jobParam)) {
             try {
                 // 支持分号分隔的多个参数
                 String[] paramArray = jobParam.split(";");
@@ -1451,6 +1463,17 @@ public class AttendanceTask {
             updated = true;
         }
         
+        // 计算实际工作时长
+        if (shouldCalculateWorkHours(record)) {
+            BigDecimal workHours = calculateWorkAreaHours(record);
+            if (workHours != null) {
+                record.setEffectiveWorkHours(workHours);
+                updated = true;
+                XxlJobHelper.log("员工[{}]{}实际工作时长更新为: {} 小时",
+                    record.getEmployeeId(), record.getEmployeeName(), workHours);
+            }
+        }
+        
         // 后续可以添加其他计算
         // if (shouldCalculateIdleHours(record)) {
         //     calculateAndUpdateIdleHours(record);
@@ -1603,7 +1626,7 @@ public class AttendanceTask {
      */
     private Map<String, String> parseJobParams(String jobParam) {
         Map<String, String> params = new HashMap<>();
-        if (StringUtils.hasText(jobParam)) {
+        if (StringUtils.isNotBlank(jobParam)) {
             String[] pairs = jobParam.split(",");
             for (String pair : pairs) {
                 String[] keyValue = pair.trim().split("=");
@@ -1633,12 +1656,12 @@ public class AttendanceTask {
         XxlJobHelper.log("默认生成日期: {} (明天)", dateFormat.format(params.targetDate));
         
         String jobParam = XxlJobHelper.getJobParam();
-        if (StringUtils.hasText(jobParam)) {
+        if (StringUtils.isNotBlank(jobParam)) {
             Map<String, String> paramMap = parseJobParams(jobParam);
             
             // 解析日期参数
             String dateStr = paramMap.get("date");
-            if (StringUtils.hasText(dateStr)) {
+            if (StringUtils.isNotBlank(dateStr)) {
                 try {
                     params.targetDate = dateFormat.parse(dateStr);
                     XxlJobHelper.log("使用指定日期: {}", dateStr);
@@ -1652,7 +1675,7 @@ public class AttendanceTask {
             
             // 解析身份证参数
             params.idCard = paramMap.get("idCard");
-            if (StringUtils.hasText(params.idCard)) {
+            if (StringUtils.isNotBlank(params.idCard)) {
                 XxlJobHelper.log("使用指定身份证: {}", params.idCard);
             }
         }
@@ -1664,7 +1687,7 @@ public class AttendanceTask {
      * 查询目标人员
      */
     private List<SwmPerson> queryTargetPersons(AttendanceGenerationParams params) {
-        if (StringUtils.hasText(params.idCard)) {
+        if (StringUtils.isNotBlank(params.idCard)) {
             return querySinglePerson(params.idCard);
         } else {
             return queryAllActivePersons();
@@ -1914,5 +1937,379 @@ public class AttendanceTask {
         jobLog.setEndTime(new Date());
         jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
         swmJobLogService.save(jobLog);
+    }
+    
+    /**
+     * 工作段实体类
+     * @author Shawn
+     * @date 2025-08-13
+     */
+    private static class WorkSegment {
+        Date startTime;
+        Date endTime;
+        long durationMs;
+        
+        WorkSegment(Date start, Date end) {
+            this.startTime = start;
+            this.endTime = end;
+            this.durationMs = end.getTime() - start.getTime();
+        }
+    }
+    
+    /**
+     * 判断是否需要计算实际工作时长
+     * @param record 考勤记录
+     * @return 是否需要计算
+     * @author Shawn
+     * @date 2025-08-13
+     */
+    private boolean shouldCalculateWorkHours(SwmDailyAttendance record) {
+        // 必须有身份证号
+        if (StringUtils.isBlank(record.getIdentityCard())) {
+            return false;
+        }
+        
+        // 必须有时间信息（打卡时间或应考勤时间）
+        return record.getClockInTime() != null || 
+               record.getClockOutTime() != null || 
+               StringUtils.isNotBlank(record.getWorkTimeRange());
+    }
+    
+    /**
+     * 计算工作区域活动时长
+     * @param record 考勤记录
+     * @return 工作时长（小时）
+     * @author Shawn
+     * @date 2025-08-13
+     */
+    private BigDecimal calculateWorkAreaHours(SwmDailyAttendance record) {
+        try {
+            // 1. 确定查询时间范围
+            String[] timeRange = determineQueryTimeRange(record);
+            if (timeRange == null) {
+                XxlJobHelper.log("员工[{}]{}无法确定时间范围，跳过工作时长计算", 
+                    record.getEmployeeId(), record.getEmployeeName());
+                return null;
+            }
+            
+            // 2. 查询工作区域的连续段
+            List<WorkSegment> workSegments = queryWorkSegments(
+                record.getIdentityCard(), 
+                timeRange[0], 
+                timeRange[1]
+            );
+            
+            if (workSegments.isEmpty()) {
+                XxlJobHelper.log("员工[{}]{}在时间范围内无工作区活动数据", 
+                    record.getEmployeeId(), record.getEmployeeName());
+                return BigDecimal.ZERO;
+            }
+            
+            // 3. 计算总工作时长
+            double totalHours = calculateTotalHours(workSegments);
+            
+            // 4. 计算打卡时间范围的上限
+            double maxHours = calculateMaxWorkHours(timeRange[0], timeRange[1]);
+            
+            // 5. 如果计算的工作时长超过上限，使用上限值
+            if (totalHours > maxHours) {
+                XxlJobHelper.log("员工[{}]{}计算的工作时长{}小时超过打卡时长{}小时，使用打卡时长", 
+                    record.getEmployeeId(), record.getEmployeeName(), 
+                    String.format("%.2f", totalHours), String.format("%.2f", maxHours));
+                totalHours = maxHours;
+            }
+            
+            XxlJobHelper.log("员工[{}]{}工作段数: {}, 总时长: {}小时", 
+                record.getEmployeeId(), record.getEmployeeName(), 
+                workSegments.size(), String.format("%.2f", totalHours));
+            
+            return BigDecimal.valueOf(totalHours).setScale(2, RoundingMode.HALF_UP);
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("计算员工[{}]{}工作时长失败: {}", 
+                record.getEmployeeId(), record.getEmployeeName(), e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * 确定查询时间范围
+     * @param record 考勤记录
+     * @return 时间范围数组 [开始时间, 结束时间]，如果无法确定返回null
+     * @author Shawn
+     * @date 2025-08-13
+     */
+    private String[] determineQueryTimeRange(SwmDailyAttendance record) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+        String attendanceDate = dateFormat.format(record.getAttendanceDate());
+        
+        // 优先级1：使用实际打卡时间
+        if (record.getClockInTime() != null && record.getClockOutTime() != null) {
+            String startTime = attendanceDate + " " + timeFormat.format(record.getClockInTime());
+            String endTime = attendanceDate + " " + timeFormat.format(record.getClockOutTime());
+            
+            // 处理跨天情况
+            if (record.getClockOutTime().before(record.getClockInTime())) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(record.getAttendanceDate());
+                cal.add(Calendar.DAY_OF_MONTH, 1);
+                String nextDay = dateFormat.format(cal.getTime());
+                endTime = nextDay + " " + timeFormat.format(record.getClockOutTime());
+            }
+            
+            return new String[]{startTime, endTime};
+        }
+        
+        // 优先级2：只有上班打卡时间 + 应考勤时间的下班时间
+        if (record.getClockInTime() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
+            String[] times = record.getWorkTimeRange().split("-");
+            if (times.length == 2) {
+                String startTime = attendanceDate + " " + timeFormat.format(record.getClockInTime());
+                String endTime = attendanceDate + " " + times[1].trim() + ":00";
+                
+                // 处理跨天
+                if (times[1].trim().compareTo(times[0].trim()) < 0) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(record.getAttendanceDate());
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                    endTime = dateFormat.format(cal.getTime()) + " " + times[1].trim() + ":00";
+                }
+                
+                return new String[]{startTime, endTime};
+            }
+        }
+        
+        // 优先级3：只有下班打卡时间 + 应考勤时间的上班时间
+        if (record.getClockOutTime() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
+            String[] times = record.getWorkTimeRange().split("-");
+            if (times.length == 2) {
+                String startTime = attendanceDate + " " + times[0].trim() + ":00";
+                String endTime = attendanceDate + " " + timeFormat.format(record.getClockOutTime());
+                
+                // 处理跨天
+                if (timeFormat.format(record.getClockOutTime()).compareTo(times[0].trim()) < 0) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(record.getAttendanceDate());
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                    endTime = dateFormat.format(cal.getTime()) + " " + timeFormat.format(record.getClockOutTime());
+                }
+                
+                return new String[]{startTime, endTime};
+            }
+        }
+        
+        // 优先级4：只有应考勤时间范围
+        if (StringUtils.isNotBlank(record.getWorkTimeRange())) {
+            String[] times = record.getWorkTimeRange().split("-");
+            if (times.length == 2) {
+                String startTime = attendanceDate + " " + times[0].trim() + ":00";
+                String endTime = attendanceDate + " " + times[1].trim() + ":00";
+                
+                // 处理跨天班次
+                if (times[1].trim().compareTo(times[0].trim()) < 0) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(record.getAttendanceDate());
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                    endTime = dateFormat.format(cal.getTime()) + " " + times[1].trim() + ":00";
+                }
+                
+                return new String[]{startTime, endTime};
+            }
+        }
+        
+        // 无法确定时间范围
+        return null;
+    }
+    
+    /**
+     * 查询工作段
+     * @param idCard 身份证号
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 工作段列表
+     * @author Shawn
+     * @date 2025-08-13
+     */
+    private List<WorkSegment> queryWorkSegments(String idCard, String startTime, String endTime) {
+        List<WorkSegment> segments = new ArrayList<>();
+        
+        try {
+            // 查询所有工作区的时间戳
+            String sql = String.format(
+                "SELECT time FROM %s.area_fence_data " +
+                "WHERE id_card = '%s' " +
+                "AND area_type = '0' " +
+                "AND time >= '%s' " +
+                "AND time <= '%s' " +
+                "ORDER BY time ASC",
+                dbname, idCard, startTime, endTime
+            );
+            
+            XxlJobHelper.log("查询工作区数据SQL: {}", sql);
+            
+            R<JSONObject> response = tdengineService.executeTDengineSQL(sql);
+            if (response.getCode() != R.SUCCESS || response.getData() == null) {
+                XxlJobHelper.log("查询失败或无数据");
+                return segments;
+            }
+            
+            JSONArray rows = response.getData().getJSONArray("data");
+            if (rows == null || rows.isEmpty()) {
+                return segments;
+            }
+            
+            // 解析时间戳并识别连续段
+            List<Date> timestamps = new ArrayList<>();
+            for (int i = 0; i < rows.size(); i++) {
+                JSONArray row = rows.getJSONArray(i);
+                Date timestamp = parseTimestamp(row.get(0).toString());
+                if (timestamp != null) {
+                    timestamps.add(timestamp);
+                }
+            }
+            
+            // 边界补充逻辑：处理打卡时间与实际数据的差异
+            if (!timestamps.isEmpty()) {
+                try {
+                    Date queryStart = DATETIME_FORMAT.parse(startTime);
+                    Date queryEnd = DATETIME_FORMAT.parse(endTime);
+                    Date firstData = timestamps.get(0);
+                    Date lastData = timestamps.get(timestamps.size() - 1);
+                    
+                    // 补充开始时间：如果第一条数据晚于查询开始时间且在30分钟内
+                    long startGap = firstData.getTime() - queryStart.getTime();
+                    if (startGap > 0 && startGap <= CONTINUITY_THRESHOLD_MS) {
+                        timestamps.add(0, queryStart);
+                        XxlJobHelper.log("第一条数据晚于打卡时间{}分钟，补充打卡时间作为开始", 
+                            startGap / (60 * 1000));
+                    }
+                    
+                    // 补充结束时间：如果最后一条数据早于查询结束时间且在30分钟内
+                    long endGap = queryEnd.getTime() - lastData.getTime();
+                    if (endGap > 0 && endGap <= CONTINUITY_THRESHOLD_MS) {
+                        timestamps.add(queryEnd);
+                        XxlJobHelper.log("最后一条数据早于打卡时间{}分钟，补充打卡时间作为结束", 
+                            endGap / (60 * 1000));
+                    }
+                } catch (Exception e) {
+                    XxlJobHelper.log("边界补充处理失败: {}", e.getMessage());
+                }
+            }
+            
+            // 构建连续工作段
+            Date segmentStart = null;
+            Date lastTime = null;
+            
+            for (Date currentTime : timestamps) {
+                if (segmentStart == null) {
+                    // 开始新段
+                    segmentStart = currentTime;
+                    lastTime = currentTime;
+                } else {
+                    long gap = currentTime.getTime() - lastTime.getTime();
+                    
+                    if (gap <= CONTINUITY_THRESHOLD_MS) {
+                        // 连续，更新最后时间
+                        lastTime = currentTime;
+                    } else {
+                        // 间隔太大，结束当前段
+                        segments.add(new WorkSegment(segmentStart, lastTime));
+                        
+                        // 开始新段
+                        segmentStart = currentTime;
+                        lastTime = currentTime;
+                    }
+                }
+            }
+            
+            // 处理最后一段
+            if (segmentStart != null) {
+                segments.add(new WorkSegment(segmentStart, lastTime));
+            }
+            
+            XxlJobHelper.log("识别到{}个连续工作段", segments.size());
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("查询工作段失败: {}", e.getMessage());
+        }
+        
+        return segments;
+    }
+    
+    /**
+     * 计算总时长
+     * @param segments 工作段列表
+     * @return 总时长（小时）
+     * @author Shawn
+     * @date 2025-08-13
+     */
+    private double calculateTotalHours(List<WorkSegment> segments) {
+        long totalMs = 0;
+        
+        for (WorkSegment segment : segments) {
+            // 每个段的时长 = 结束时间 - 开始时间
+            totalMs += segment.durationMs;
+            
+            XxlJobHelper.log("工作段: {} 到 {}, 时长: {}分钟",
+                DATETIME_FORMAT.format(segment.startTime),
+                DATETIME_FORMAT.format(segment.endTime),
+                segment.durationMs / (60 * 1000));
+        }
+        
+        // 转换为小时
+        double hours = totalMs / (1000.0 * 60 * 60);
+        
+        return hours;
+    }
+    
+    /**
+     * 计算最大工作时长（打卡时间范围）
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 最大工作时长（小时）
+     * @author Shawn
+     * @date 2025-08-13
+     */
+    private double calculateMaxWorkHours(String startTime, String endTime) {
+        try {
+            Date start = DATETIME_FORMAT.parse(startTime);
+            Date end = DATETIME_FORMAT.parse(endTime);
+            long diffMs = end.getTime() - start.getTime();
+            
+            // 如果是负数，说明跨天了，需要加24小时
+            if (diffMs < 0) {
+                diffMs += 24 * 60 * 60 * 1000;
+            }
+            
+            double hours = diffMs / (1000.0 * 60 * 60);
+            XxlJobHelper.log("打卡时间范围: {} 到 {}，最大工作时长: {}小时", 
+                startTime, endTime, String.format("%.2f", hours));
+            return hours;
+        } catch (Exception e) {
+            XxlJobHelper.log("计算最大工作时长失败: {}", e.getMessage());
+            return 24.0; // 默认最大24小时
+        }
+    }
+    
+    /**
+     * 解析时间戳
+     * @param timeStr 时间字符串
+     * @return Date对象
+     * @author Shawn
+     * @date 2025-08-13
+     */
+    private Date parseTimestamp(String timeStr) {
+        try {
+            // 处理TDengine的ISO格式时间
+            if (timeStr.contains("T")) {
+                return Date.from(Instant.parse(timeStr));
+            } else {
+                return DATETIME_FORMAT.parse(timeStr);
+            }
+        } catch (Exception e) {
+            XxlJobHelper.log("解析时间戳失败: {}", timeStr);
+            return null;
+        }
     }
 }
