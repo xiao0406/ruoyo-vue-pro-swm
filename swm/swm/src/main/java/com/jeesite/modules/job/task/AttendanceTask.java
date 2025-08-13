@@ -1491,6 +1491,41 @@ public class AttendanceTask {
         
         // 如果有更新，标记为已处理并保存
         if (updated) {
+            // 计算应考勤时长（如果还没有值）
+            if (record.getScheduledHours() == null || record.getScheduledHours().compareTo(BigDecimal.ZERO) <= 0) {
+                if (StringUtils.isNotBlank(record.getWorkTimeRange())) {
+                    BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(record.getWorkTimeRange());
+                    record.setScheduledHours(scheduledHours);
+                    XxlJobHelper.log("员工[{}]{}应考勤时长计算为: {} 小时",
+                        record.getEmployeeId(), record.getEmployeeName(), scheduledHours);
+                }
+            }
+            
+            // 计算日考勤功效
+            // 功效 = 1 - 怠工时长/实际考勤时长
+            // @author: Shawn
+            // @date: 2025/01/13
+            BigDecimal dailyEfficiency = calculateDailyEfficiency(record.getIdleHours(), record.getActualHours());
+            record.setDailyEfficiency(dailyEfficiency);
+            XxlJobHelper.log("员工[{}]{}日考勤功效计算: 1 - {}小时/{}小时 = {}",
+                record.getEmployeeId(), record.getEmployeeName(),
+                record.getIdleHours(), record.getActualHours(), dailyEfficiency);
+            
+            // 计算日达成率
+            // 达成率 = 实际工作时长 / 应考勤时长
+            // @author: Shawn
+            // @date: 2025/01/13
+            BigDecimal dailyAchievementRate = calculateDailyAchievementRate(record.getEffectiveWorkHours(), record.getScheduledHours());
+            record.setDailyAchievementRate(dailyAchievementRate);
+            XxlJobHelper.log("员工[{}]{}日达成率计算: {}小时 / {}小时 = {}",
+                record.getEmployeeId(), record.getEmployeeName(),
+                record.getEffectiveWorkHours(), record.getScheduledHours(), dailyAchievementRate);
+            
+            // 更新考勤状态逻辑 - 使用新的业务规则
+            // @author: Shawn
+            // @date: 2025/01/13
+            updateAttendanceStatusByNewRule(record);
+            
             markAsProcessed(record);
             swmDailyAttendanceService.update(record);
             return true;
