@@ -57,7 +57,7 @@ public class AttendanceTask {
     private String dbname;
     
     // 定义常量
-    private static final long CONTINUITY_THRESHOLD_MS = 20 * 60 * 1000; // 20分钟连续性阈值
+    private static final long CONTINUITY_THRESHOLD_MS = 10 * 60 * 1000; // 10分钟连续性阈值
     private static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /**
@@ -2310,7 +2310,7 @@ public class AttendanceTask {
                     Date firstData = timestamps.get(0);
                     Date lastData = timestamps.get(timestamps.size() - 1);
                     
-                    // 补充开始时间：如果第一条数据晚于查询开始时间且在30分钟内
+                    // 补充开始时间：如果第一条数据晚于查询开始时间且在10分钟内
                     long startGap = firstData.getTime() - queryStart.getTime();
                     if (startGap > 0 && startGap <= CONTINUITY_THRESHOLD_MS) {
                         timestamps.add(0, queryStart);
@@ -2318,7 +2318,7 @@ public class AttendanceTask {
                             startGap / (60 * 1000));
                     }
                     
-                    // 补充结束时间：如果最后一条数据早于查询结束时间且在30分钟内
+                    // 补充结束时间：如果最后一条数据早于查询结束时间且在10分钟内
                     long endGap = queryEnd.getTime() - lastData.getTime();
                     if (endGap > 0 && endGap <= CONTINUITY_THRESHOLD_MS) {
                         timestamps.add(queryEnd);
