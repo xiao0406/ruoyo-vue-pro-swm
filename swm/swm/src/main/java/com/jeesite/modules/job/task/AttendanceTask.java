@@ -1457,9 +1457,9 @@ public class AttendanceTask {
     private boolean processAttendanceRecord(SwmDailyAttendance record) {
         boolean updated = false;
         
-        // 计算应考勤时长
-        if (shouldCalculateScheduledHours(record)) {
-            calculateAndUpdateScheduledHours(record);
+        // 计算实际考勤时长
+        if (shouldCalculateActualHours(record)) {
+            calculateAndUpdateActualHours(record);
             updated = true;
         }
         
@@ -1502,30 +1502,30 @@ public class AttendanceTask {
     }
 
     /**
-     * 判断是否需要计算应考勤时长
+     * 判断是否需要计算实际考勤时长
      * 
      * @param record 考勤记录
      * @return 是否需要计算
      * @author Shawn
      * @date 2025-08-12
      */
-    private boolean shouldCalculateScheduledHours(SwmDailyAttendance record) {
+    private boolean shouldCalculateActualHours(SwmDailyAttendance record) {
         return record.getClockInTime() != null && record.getClockOutTime() != null;
     }
 
     /**
-     * 计算并更新应考勤时长
+     * 计算并更新实际考勤时长
      * 
      * @param record 考勤记录
      * @author Shawn
      * @date 2025-08-12
      */
-    private void calculateAndUpdateScheduledHours(SwmDailyAttendance record) {
-        BigDecimal scheduledHours = calculateScheduledHoursByClockTime(
+    private void calculateAndUpdateActualHours(SwmDailyAttendance record) {
+        BigDecimal actualHours = calculateScheduledHoursByClockTime(
             record.getClockInTime(), record.getClockOutTime());
-        record.setScheduledHours(scheduledHours);
-        XxlJobHelper.log("员工[{}]{}应考勤时长更新为: {} 小时",
-            record.getEmployeeId(), record.getEmployeeName(), scheduledHours);
+        record.setActualHours(actualHours);
+        XxlJobHelper.log("员工[{}]{}实际考勤时长更新为: {} 小时",
+            record.getEmployeeId(), record.getEmployeeName(), actualHours);
     }
 
     /**
