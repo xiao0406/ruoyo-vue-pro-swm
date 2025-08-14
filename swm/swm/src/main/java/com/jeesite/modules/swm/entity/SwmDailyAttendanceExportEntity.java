@@ -45,8 +45,8 @@ public class SwmDailyAttendanceExportEntity {
             @ExcelField(title = "实际工作时长(h)", attrName = "effectiveWorkHours", align = ExcelField.Align.CENTER, sort = 110),
             @ExcelField(title = "今日功效", attrName = "dailyEfficiency", align = ExcelField.Align.CENTER, sort = 120),
             @ExcelField(title = "今日达成率", attrName = "dailyAchievementRate", align = ExcelField.Align.CENTER, sort = 130),
-            @ExcelField(title = "考勤状态", attrName = "attendanceNormal", align = ExcelField.Align.CENTER, sort = 140),
-            @ExcelField(title = "当前位置", attrName = "currentPosition", align = ExcelField.Align.CENTER, sort = 150),
+            @ExcelField(title = "考勤状态", attrName = "attendanceNormal", align = ExcelField.Align.CENTER, sort = 140, dictType = "swm_attendance_status"),
+            @ExcelField(title = "当前位置", attrName = "currentPosition", align = ExcelField.Align.CENTER, sort = 150, dictType = "swm_current_position"),
             @ExcelField(title = "备注", attrName = "remarks", align = ExcelField.Align.LEFT, sort = 160)
     })
     public SwmDailyAttendanceExportEntity() {

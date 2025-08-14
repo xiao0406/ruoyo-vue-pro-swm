@@ -740,12 +740,43 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             exportEntity.setDailyEfficiency(attendance.getDailyEfficiency());
             exportEntity.setDailyAchievementRate(attendance.getDailyAchievementRate());
             exportEntity.setAttendanceNormal(attendance.getAttendanceNormal());
-            exportEntity.setCurrentPosition(attendance.getCurrentPosition());
+            
+            // 获取实时位置而不是使用数据库中的旧数据
+            String realTimePosition = getRealTimePosition(attendance.getEmployeeId());
+            exportEntity.setCurrentPosition(realTimePosition);
+            
             exportEntity.setRemarks(attendance.getRemarks());
 
             exportList.add(exportEntity);
         }
 
         return exportList;
+    }
+    
+    /**
+     * 获取员工的实时位置
+     *
+     * @param employeeId 员工ID
+     * @return "0"-工作区, "1"-休息区, "3"-未知
+     * @author Shawn
+     * @date 2025-01-28
+     */
+    private String getRealTimePosition(String employeeId) {
+        if (StringUtils.isBlank(employeeId)) {
+            return "3";
+        }
+        try {
+            // 1. 获取员工身份证号
+            String idCard = getIdCardByEmployeeId(employeeId);
+            if (idCard == null) {
+                logger.warn("无法根据员工ID {} 找到身份证号", employeeId);
+                return "3";
+            }
+            // 2. 调用服务查询实时位置
+            return areaFenceDataService.getCurrentLocationByIdCard(idCard);
+        } catch (Exception e) {
+            logger.error("获取员工 {} 实时位置失败", employeeId, e);
+            return "3";
+        }
     }
 }
