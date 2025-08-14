@@ -1938,10 +1938,55 @@ public class AttendanceTask {
     }
 
     /**
+     * 判断指定日期是否为休息日
+     * @param scheduleTime 排班时间配置
+     * @param targetDate 目标日期
+     * @return true-是休息日，false-不是休息日
+     * @author Shawn
+     * @date 2025-08-14
+     */
+    private boolean isRestDay(SwmScheduleTime scheduleTime, Date targetDate) {
+        if (scheduleTime == null || StringUtils.isBlank(scheduleTime.getRestDays())) {
+            return false;
+        }
+        
+        // 获取星期几（1-7对应周一到周日）
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(targetDate);
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+        // Calendar.SUNDAY = 1, Calendar.MONDAY = 2, ... Calendar.SATURDAY = 7
+        // 转换为 1-7 代表周一到周日
+        int weekDay = dayOfWeek == Calendar.SUNDAY ? 7 : dayOfWeek - 1;
+        
+        // 解析休息日配置
+        String[] restDays = scheduleTime.getRestDays().split(",");
+        for (String restDay : restDays) {
+            if (String.valueOf(weekDay).equals(restDay.trim())) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * 设置排班信息
      */
     private void setScheduleInfo(SwmDailyAttendance attendance, SwmPerson person, Date targetDate) {
         SwmScheduleTime scheduleTime = getScheduleTimeForPerson(person, targetDate);
+        
+        // 判断是否为休息日
+        if (scheduleTime != null && isRestDay(scheduleTime, targetDate)) {
+            attendance.setAttendanceNormal("2"); // 设置为休息日
+            attendance.setWorkTimeRange(null);
+            attendance.setScheduledHours(BigDecimal.ZERO);
+            XxlJobHelper.log("员工[{}]{} {}是休息日", 
+                person.getId(), person.getName(), 
+                new SimpleDateFormat("yyyy-MM-dd").format(targetDate));
+            return;
+        }
+        
+        // 原有的排班逻辑
         if (scheduleTime != null) {
             String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
             attendance.setWorkTimeRange(workTimeRange);
@@ -1969,7 +2014,12 @@ public class AttendanceTask {
         attendance.setEffectiveWorkHours(BigDecimal.ZERO);
         attendance.setDailyEfficiency(BigDecimal.ZERO);
         attendance.setDailyAchievementRate(BigDecimal.ZERO);
-        attendance.setAttendanceNormal("3"); // 未考勤
+        
+        // 如果不是休息日，设置为未考勤
+        if (!"2".equals(attendance.getAttendanceNormal())) {
+            attendance.setAttendanceNormal("3"); // 未考勤
+        }
+        
         attendance.setCurrentPosition("3"); // 未知
     }
 
