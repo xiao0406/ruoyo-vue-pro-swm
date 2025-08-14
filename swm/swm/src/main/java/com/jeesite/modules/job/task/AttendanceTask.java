@@ -951,6 +951,13 @@ public class AttendanceTask {
      */
     private void updateAttendanceStatusByNewRule(SwmDailyAttendance record) {
         String originalStatus = record.getAttendanceNormal();
+        
+        // 如果是休息日，保持状态不变
+        if ("2".equals(originalStatus)) {
+            XxlJobHelper.log("员工[{}]{} 是休息日，保持考勤状态不变",
+                record.getEmployeeId(), record.getEmployeeName());
+            return;
+        }
 
         // 1. 优先判断正常条件
         if (isNormalAttendanceCondition(record)) {
