@@ -21,6 +21,7 @@ import javax.validation.constraints.Pattern;
         @Column(name = "start_time", attrName = "startTime", label = "开始时间"),
         @Column(name = "end_time", attrName = "endTime", label = "结束时间"),
         @Column(name = "rest_time", attrName = "restTime", label = "休息时长"),
+        @Column(name = "rest_days", attrName = "restDays", label = "休息日"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
 public class SwmScheduleTime extends DataEntity<SwmScheduleTime> {
@@ -57,9 +58,11 @@ public class SwmScheduleTime extends DataEntity<SwmScheduleTime> {
     private String startTime; // 开始时间
     private String endTime; // 结束时间
     private Double restTime; // 休息时长
+    private String restDays; // 休息日（逗号分隔，1-7代表周一到周日）
 
     // 用于显示的文本属性，不对应数据库字段
     private String shiftTypeText; // 班次类型显示文本
+    private String restDaysText; // 休息日显示文本
 
     public SwmScheduleTime() {
         this(null);
@@ -121,5 +124,58 @@ public class SwmScheduleTime extends DataEntity<SwmScheduleTime> {
 
     public void setRestTime(Double restTime) {
         this.restTime = restTime;
+    }
+
+    @Length(min = 0, max = 100, message = "休息日不能超过100个字符")
+    public String getRestDays() {
+        return restDays;
+    }
+
+    public void setRestDays(String restDays) {
+        this.restDays = restDays;
+    }
+
+    /**
+     * 获取休息日显示文本
+     */
+    public String getRestDaysText() {
+        if (this.restDaysText == null && this.restDays != null && !this.restDays.isEmpty()) {
+            String[] days = this.restDays.split(",");
+            StringBuilder sb = new StringBuilder();
+            for (String day : days) {
+                if (sb.length() > 0) {
+                    sb.append(",");
+                }
+                switch (day.trim()) {
+                    case "1":
+                        sb.append("周一");
+                        break;
+                    case "2":
+                        sb.append("周二");
+                        break;
+                    case "3":
+                        sb.append("周三");
+                        break;
+                    case "4":
+                        sb.append("周四");
+                        break;
+                    case "5":
+                        sb.append("周五");
+                        break;
+                    case "6":
+                        sb.append("周六");
+                        break;
+                    case "7":
+                        sb.append("周日");
+                        break;
+                }
+            }
+            this.restDaysText = sb.toString();
+        }
+        return this.restDaysText;
+    }
+
+    public void setRestDaysText(String restDaysText) {
+        this.restDaysText = restDaysText;
     }
 }

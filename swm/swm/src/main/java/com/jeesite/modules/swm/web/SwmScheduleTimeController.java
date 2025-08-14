@@ -84,10 +84,12 @@ public class SwmScheduleTimeController extends BaseController {
             scheduleMap.put("startTime", schedule.getStartTime());
             scheduleMap.put("endTime", schedule.getEndTime());
             scheduleMap.put("restTime", schedule.getRestTime());
+            scheduleMap.put("restDays", schedule.getRestDays());
             scheduleMap.put("isNewRecord", schedule.getIsNewRecord());
 
             // 添加枚举文本显示值
             scheduleMap.put("shiftTypeText", schedule.getShiftTypeText());
+            scheduleMap.put("restDaysText", schedule.getRestDaysText());
 
             // 添加到列表
             enhancedList.add(scheduleMap);
@@ -119,10 +121,12 @@ public class SwmScheduleTimeController extends BaseController {
             scheduleData.put("startTime", swmScheduleTime.getStartTime());
             scheduleData.put("endTime", swmScheduleTime.getEndTime());
             scheduleData.put("restTime", swmScheduleTime.getRestTime());
+            scheduleData.put("restDays", swmScheduleTime.getRestDays());
             scheduleData.put("remarks", swmScheduleTime.getRemarks());
 
             // 处理枚举值
             scheduleData.put("shiftTypeText", swmScheduleTime.getShiftTypeText());
+            scheduleData.put("restDaysText", swmScheduleTime.getRestDaysText());
 
             result.putAll(scheduleData);
         }
