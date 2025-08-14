@@ -1985,11 +1985,14 @@ public class AttendanceTask {
         // 判断是否为休息日
         if (scheduleTime != null && isRestDay(scheduleTime, targetDate)) {
             attendance.setAttendanceNormal("2"); // 设置为休息日
-            attendance.setWorkTimeRange(null);
-            attendance.setScheduledHours(BigDecimal.ZERO);
-            XxlJobHelper.log("员工[{}]{} {}是休息日", 
+            // 休息日也要设置工作时间范围，显示原本的排班
+            String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
+            attendance.setWorkTimeRange(workTimeRange);
+            attendance.setScheduledHours(BigDecimal.ZERO); // 休息日应考勤时长为0
+            XxlJobHelper.log("员工[{}]{} {}是休息日，排班时间：{}", 
                 person.getId(), person.getName(), 
-                new SimpleDateFormat("yyyy-MM-dd").format(targetDate));
+                new SimpleDateFormat("yyyy-MM-dd").format(targetDate),
+                workTimeRange);
             return;
         }
         
