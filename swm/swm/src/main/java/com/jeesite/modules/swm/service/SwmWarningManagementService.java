@@ -738,6 +738,180 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         }
 
         try {
+            // ========== 第一步：TDengine INSERT 覆盖操作 ==========
+            try {
+                // 查询原始记录（不带时区转换）
+                String rawQuerySql = "SELECT * FROM " + dbname + ".swm_warning_management WHERE id='" + id + "' LIMIT 1";
+                logger.info("查询 TDengine 原始记录用于覆盖处置信息，ID: {}", id);
+                
+                R<JSONObject> rawResult = tdengineService.executeTDengineSQL(rawQuerySql);
+                
+                if (rawResult.getCode() == R.SUCCESS && rawResult.getData() != null) {
+                    JSONObject rawData = rawResult.getData();
+                    JSONArray rawRows = rawData.getJSONArray("data");
+                    JSONArray columnMeta = rawData.getJSONArray("column_meta");
+                    
+                    if (rawRows != null && rawRows.size() > 0) {
+                        JSONArray rawRow = rawRows.getJSONArray(0);
+                        
+                        // 构建列名到索引的映射
+                        Map<String, Integer> columnIndexMap = new HashMap<>();
+                        for (int i = 0; i < columnMeta.size(); i++) {
+                            JSONArray meta = columnMeta.getJSONArray(i);
+                            String columnName = meta.getStr(0);
+                            columnIndexMap.put(columnName, i);
+                        }
+                        
+                        // 获取原始时间戳（第一列是 create_date，是 ISO 8601 字符串格式）
+                        long originalTimestamp;
+                        Object timestampObj = rawRow.get(0);
+                        if (timestampObj instanceof String) {
+                            // TDengine 返回 ISO 8601 格式的字符串
+                            String dateStr = (String) timestampObj;
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                            Date date = sdf.parse(dateStr);
+                            originalTimestamp = date.getTime();
+                        } else if (timestampObj instanceof Long) {
+                            originalTimestamp = (Long) timestampObj;
+                        } else {
+                            originalTimestamp = System.currentTimeMillis();
+                        }
+                        
+                        // 获取 create_date 的原始值（和时间戳一样）
+                        long originalCreateDate = originalTimestamp;
+                        
+                        // 获取子表名（使用设备ID和身份证号组合）
+                        String deviceId = swmWarningManagement.getDeviceId();
+                        String idCard = swmWarningManagement.getIdCard();
+                        if (deviceId == null) deviceId = "unknown";
+                        if (idCard == null) idCard = "unknown";
+                        String subTableName = "swm_warning_management_" + 
+                            deviceId.replaceAll("[^a-zA-Z0-9]", "_") + "_" + 
+                            idCard.replaceAll("[^a-zA-Z0-9]", "_");
+                        
+                        // 构建 INSERT 语句（直接向子表插入，不使用 USING TAGS）
+                        StringBuilder insertSql = new StringBuilder();
+                        insertSql.append("INSERT INTO ").append(dbname).append(".").append(subTableName);
+                        
+                        // 构建字段列表
+                        StringBuilder columnList = new StringBuilder();
+                        StringBuilder valueList = new StringBuilder();
+                        columnList.append(" (");
+                        valueList.append(" VALUES (");
+                        
+                        // 添加第一个字段 create_date（时间戳）
+                        columnList.append("create_date");
+                        valueList.append(originalTimestamp);
+                        
+                        // 处理其他字段
+                        for (int i = 1; i < columnMeta.size(); i++) {
+                            JSONArray meta = columnMeta.getJSONArray(i);
+                            String columnName = meta.getStr(0);
+                            
+                            // 跳过 device_id 和 id_card，它们是 TAGS
+                            if ("device_id".equals(columnName) || "id_card".equals(columnName)) {
+                                continue;
+                            }
+                            
+                            columnList.append(", ").append(columnName);
+                            valueList.append(", ");
+                            
+                            // 处置相关字段使用新值
+                            if ("handler".equals(columnName)) {
+                                if (handler != null && !"null".equals(handler)) {
+                                    valueList.append("'").append(handler.replace("'", "\\'")).append("'");
+                                } else {
+                                    valueList.append("NULL");
+                                }
+                            } else if ("handle_time".equals(columnName)) {
+                                if (handleTime != null) {
+                                    // 转换为 UTC 时间戳
+                                    long utcTimestamp = handleTime.getTime() - 8 * 3600 * 1000;
+                                    valueList.append(utcTimestamp);
+                                } else {
+                                    valueList.append("NULL");
+                                }
+                            } else if ("handle_process".equals(columnName)) {
+                                if (handleProcess != null && !"null".equals(handleProcess)) {
+                                    valueList.append("'").append(handleProcess.replace("'", "\\'")).append("'");
+                                } else {
+                                    valueList.append("NULL");
+                                }
+                            } else if ("handle_status".equals(columnName)) {
+                                if (handleStatus != null && !"null".equals(handleStatus)) {
+                                    valueList.append("'").append(handleStatus.replace("'", "\\'")).append("'");
+                                } else {
+                                    valueList.append("NULL");
+                                }
+                            } else if ("attachment".equals(columnName)) {
+                                if (attachment != null && !"null".equals(attachment)) {
+                                    // attachment 可能包含 JSON，需要更复杂的转义
+                                    String escapedAttachment = attachment
+                                        .replace("\\", "\\\\")  // 先转义反斜杠
+                                        .replace("'", "\\'");    // 再转义单引号
+                                    valueList.append("'").append(escapedAttachment).append("'");
+                                } else {
+                                    valueList.append("NULL");
+                                }
+                            } else if ("update_date".equals(columnName)) {
+                                // 使用当前时间（转换为 UTC）
+                                long currentUtcTimestamp = System.currentTimeMillis() - 8 * 3600 * 1000;
+                                valueList.append(currentUtcTimestamp);
+                            } else if ("update_by".equals(columnName)) {
+                                // 设置为 system
+                                valueList.append("'system'");
+                            } else if ("create_date".equals(columnName)) {
+                                // 跳过，已经在开始处理了
+                                continue;
+                            } else {
+                                // 其他字段保留原值
+                                Object value = rawRow.get(i);
+                                if (value == null) {
+                                    valueList.append("NULL");
+                                } else if (value instanceof String) {
+                                    String strValue = (String) value;
+                                    // 检查是否为 null 字符串
+                                    if ("null".equals(strValue)) {
+                                        valueList.append("NULL");
+                                    } else {
+                                        valueList.append("'").append(strValue.replace("'", "\\'")).append("'");
+                                    }
+                                } else if (value instanceof Number) {
+                                    valueList.append(value);
+                                } else {
+                                    String strValue = String.valueOf(value);
+                                    // 检查是否为 null 字符串
+                                    if ("null".equals(strValue)) {
+                                        valueList.append("NULL");
+                                    } else {
+                                        valueList.append("'").append(strValue.replace("'", "\\'")).append("'");
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 完成 SQL 语句
+                        columnList.append(")");
+                        valueList.append(")");
+                        insertSql.append(columnList).append(valueList);
+                        
+                        // 执行 INSERT 覆盖
+                        logger.info("执行 TDengine INSERT 覆盖，子表: {}, 处置信息将被更新", subTableName);
+                        R<JSONObject> insertResult = tdengineService.executeTDengineSQL(insertSql.toString());
+                        
+                        if (insertResult.getCode() == R.SUCCESS) {
+                            logger.info("TDengine INSERT 覆盖成功，处置信息已更新, ID: {}", id);
+                        } else {
+                            logger.warn("TDengine INSERT 覆盖失败: {}，将继续执行 MySQL 操作", insertResult.getMsg());
+                        }
+                    }
+                }
+            } catch (Exception tdException) {
+                logger.error("TDengine INSERT 覆盖操作异常，将继续执行 MySQL 操作", tdException);
+            }
+            
+            // ========== 第二步：原有的 MySQL 逻辑（保持不变）==========
             // 先查询MySQL中是否已存在该记录
             SwmWarningManagement query = new SwmWarningManagement();
             query.setId(id);
