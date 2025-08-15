@@ -56,15 +56,15 @@
         )
     </insert>
 
-    <!-- 根据ID集合批量查询MySQL数据库中的预警记录，在SQL中添加8小时时区调整 -->
+    <!-- 根据ID集合批量查询MySQL数据库中的预警记录 -->
     <select id="findInMySqlByIds" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             a.id, a.create_by AS createBy, a.create_date AS createDate,
             a.update_by AS updateBy, a.update_date AS updateDate,
             a.remarks, a.status, a.person_name AS personName,
             a.warning_type AS warningType, a.warning_content AS warningContent,
-            DATE_ADD(a.warning_time, INTERVAL 8 HOUR) AS warningTime, a.alarm_record AS alarmRecord,
-            DATE_ADD(a.alarm_time, INTERVAL 8 HOUR) AS alarmTime, a.trigger_reason AS triggerReason,
+            a.warning_time AS warningTime, a.alarm_record AS alarmRecord,
+            a.alarm_time AS alarmTime, a.trigger_reason AS triggerReason,
             a.handler, a.handle_time AS handleTime,
             a.handle_process AS handleProcess, a.handle_status AS handleStatus,
             a.attachment, a.device_id AS deviceId, a.id_card AS idCard,
@@ -78,15 +78,15 @@
             </foreach>
     </select>
 
-    <!-- 根据ID和身份证号查询MySQL数据库中的预警记录，在SQL中添加8小时时区调整 -->
+    <!-- 根据ID和身份证号查询MySQL数据库中的预警记录 -->
     <select id="findInMySqlByIdAndIdCard" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             a.id, a.create_by AS createBy, a.create_date AS createDate,
             a.update_by AS updateBy, a.update_date AS updateDate,
             a.remarks, a.status, a.person_name AS personName,
             a.warning_type AS warningType, a.warning_content AS warningContent,
-            DATE_ADD(a.warning_time, INTERVAL 8 HOUR) AS warningTime, a.alarm_record AS alarmRecord,
-            DATE_ADD(a.alarm_time, INTERVAL 8 HOUR) AS alarmTime, a.trigger_reason AS triggerReason,
+            a.warning_time AS warningTime, a.alarm_record AS alarmRecord,
+            a.alarm_time AS alarmTime, a.trigger_reason AS triggerReason,
             a.handler, a.handle_time AS handleTime,
             a.handle_process AS handleProcess, a.handle_status AS handleStatus,
             a.attachment, a.device_id AS deviceId, a.id_card AS idCard,
@@ -101,15 +101,15 @@
         LIMIT 1
     </select>
 
-    <!-- 在MySQL中按条件查询已处置的预警数据，在SQL中添加8小时时区调整 -->
+    <!-- 在MySQL中按条件查询已处置的预警数据 -->
     <select id="findProcessedInMySql" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             a.id, a.create_by AS createBy, a.create_date AS createDate,
             a.update_by AS updateBy, a.update_date AS updateDate,
             a.remarks, a.status, a.person_name AS personName,
             a.warning_type AS warningType, a.warning_content AS warningContent,
-            DATE_ADD(a.warning_time, INTERVAL 8 HOUR) AS warningTime, a.alarm_record AS alarmRecord,
-            DATE_ADD(a.alarm_time, INTERVAL 8 HOUR) AS alarmTime, a.trigger_reason AS triggerReason,
+            a.warning_time AS warningTime, a.alarm_record AS alarmRecord,
+            a.alarm_time AS alarmTime, a.trigger_reason AS triggerReason,
             a.handler, a.handle_time AS handleTime,
             a.handle_process AS handleProcess, a.handle_status AS handleStatus,
             a.attachment, a.device_id AS deviceId, a.id_card AS idCard,
@@ -153,15 +153,15 @@
             a.handle_status = '1'
     </select>
 
-    <!-- 获取所有已处置的记录（handle_status为1），在SQL中添加8小时时区调整 -->
+    <!-- 获取所有已处置的记录（handle_status为1） -->
     <select id="findAllProcessedWarnings" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             a.id, a.create_by AS createBy, a.create_date AS createDate,
             a.update_by AS updateBy, a.update_date AS updateDate,
             a.remarks, a.status, a.person_name AS personName,
             a.warning_type AS warningType, a.warning_content AS warningContent,
-            DATE_ADD(a.warning_time, INTERVAL 8 HOUR) AS warningTime, a.alarm_record AS alarmRecord,
-            DATE_ADD(a.alarm_time, INTERVAL 8 HOUR) AS alarmTime, a.trigger_reason AS triggerReason,
+            a.warning_time AS warningTime, a.alarm_record AS alarmRecord,
+            a.alarm_time AS alarmTime, a.trigger_reason AS triggerReason,
             a.handler, a.handle_time AS handleTime,
             a.handle_process AS handleProcess, a.handle_status AS handleStatus,
             a.attachment, a.device_id AS deviceId, a.id_card AS idCard,
@@ -172,15 +172,15 @@
             a.handle_status = '1'
     </select>
 
-    <!-- 查询近7天(包含今天)的预警，在SQL中添加8小时时区调整，排除一键SOS -->
+    <!-- 查询近7天(包含今天)的预警，排除一键SOS -->
     <select id="listPast7DaysWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
             update_by AS updateBy, update_date AS updateDate,
             remarks, status, person_name AS personName,
             warning_type AS warningType, warning_content AS warningContent,
-            DATE_ADD(warning_time, INTERVAL 8 HOUR) AS warningTime, alarm_record AS alarmRecord,
-            DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
+            warning_time AS warningTime, alarm_record AS alarmRecord,
+            alarm_time AS alarmTime, trigger_reason AS triggerReason,
             handler, handle_time AS handleTime,
             handle_process AS handleProcess, handle_status AS handleStatus,
             attachment, device_id AS deviceId, id_card AS idCard,
@@ -192,15 +192,15 @@
         AND warning_content != '一键SOS'
     </select>
 
-    <!-- 获取今日的预警，在SQL中添加8小时时区调整，排除一键SOS -->
+    <!-- 获取今日的预警，排除一键SOS -->
     <select id="listTodayWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
             update_by AS updateBy, update_date AS updateDate,
             remarks, status, person_name AS personName,
             warning_type AS warningType, warning_content AS warningContent,
-            DATE_ADD(warning_time, INTERVAL 8 HOUR) AS warningTime, alarm_record AS alarmRecord,
-            DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
+            warning_time AS warningTime, alarm_record AS alarmRecord,
+            alarm_time AS alarmTime, trigger_reason AS triggerReason,
             handler, handle_time AS handleTime,
             handle_process AS handleProcess, handle_status AS handleStatus,
             attachment, device_id AS deviceId, id_card AS idCard,
@@ -214,15 +214,15 @@
         AND warning_content != '进入大门'
     </select>
 
-    <!-- 获取当月的预警，在SQL中添加8小时时区调整，排除一键SOS -->
+    <!-- 获取当月的预警，排除一键SOS -->
     <select id="listCurrentMonthWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
             update_by AS updateBy, update_date AS updateDate,
             remarks, status, person_name AS personName,
             warning_type AS warningType, warning_content AS warningContent,
-            DATE_ADD(warning_time, INTERVAL 8 HOUR) AS warningTime, alarm_record AS alarmRecord,
-            DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
+            warning_time AS warningTime, alarm_record AS alarmRecord,
+            alarm_time AS alarmTime, trigger_reason AS triggerReason,
             handler, handle_time AS handleTime,
             handle_process AS handleProcess, handle_status AS handleStatus,
             attachment, device_id AS deviceId, id_card AS idCard,
@@ -236,15 +236,15 @@
         AND warning_content != '进入大门'
     </select>
 
-    <!-- 获取当月已处理的预警，在SQL中添加8小时时区调整，排除一键SOS -->
+    <!-- 获取当月已处理的预警，排除一键SOS -->
     <select id="listCurrentMonthHandledWarning" resultType="com.jeesite.modules.swm.entity.SwmWarningManagement">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
             update_by AS updateBy, update_date AS updateDate,
             remarks, status, person_name AS personName,
             warning_type AS warningType, warning_content AS warningContent,
-            DATE_ADD(warning_time, INTERVAL 8 HOUR) AS warningTime, alarm_record AS alarmRecord,
-            DATE_ADD(alarm_time, INTERVAL 8 HOUR) AS alarmTime, trigger_reason AS triggerReason,
+            warning_time AS warningTime, alarm_record AS alarmRecord,
+            alarm_time AS alarmTime, trigger_reason AS triggerReason,
             handler, handle_time AS handleTime,
             handle_process AS handleProcess, handle_status AS handleStatus,
             attachment, device_id AS deviceId, id_card AS idCard,

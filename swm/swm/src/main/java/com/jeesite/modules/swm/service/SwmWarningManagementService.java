@@ -57,7 +57,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
                     .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                     .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
-                    .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+                    .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                     .append("front_alarm, type, x, y, hazard_category, location, area ")
                     .append("FROM ").append(dbname).append(".swm_warning_management")
                     .append(" WHERE id='").append(swmWarningManagement.getId()).append("'");
@@ -136,7 +136,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
                 .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                 .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
-                .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+                .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                 .append("front_alarm, type, x, y, hazard_category, location, area ")
                 .append("FROM ").append(dbname).append(".swm_warning_management");
 
@@ -397,7 +397,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "create_date":
                         try {
-                            // 移除8小时时区调整
+                            // 时间已在SQL中+8小时，可以直接使用
                             Date createDate = new Date(row.getLong(i));
                             entity.setCreateDate(createDate);
                         } catch (Exception e) {
@@ -407,7 +407,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 if (timeStr != null && !timeStr.isEmpty()) {
                                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
                                     Date parsedTime = sdf.parse(timeStr);
-                                    // 移除8小时时区调整
+                                    // 时间已在SQL中+8小时，可以直接使用
                                     entity.setCreateDate(parsedTime);
                                 }
                             } catch (ParseException pe) {
@@ -1551,7 +1551,17 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
         try {
             // 1. 从时序数据库获取完整记录
-            String sql = String.format("SELECT * FROM %s.swm_warning_management WHERE id='%s' LIMIT 1", dbname, id);
+            String sql = String.format(
+                "SELECT id, person_name, warning_type, warning_content, " +
+                "CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, " +
+                "alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, " +
+                "trigger_reason, handler, handle_time, handle_process, handle_status, attachment, " +
+                "create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, " +
+                "update_by, update_date, remarks, status, device_id, id_card, " +
+                "front_alarm, type, x, y, hazard_category, location, area " +
+                "FROM %s.swm_warning_management WHERE id='%s' LIMIT 1", 
+                dbname, id
+            );
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
 
             if (result.getCode() != R.SUCCESS || result.getData() == null) {
@@ -1627,7 +1637,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
                 .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                 .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
-                .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+                .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                 .append("front_alarm, type, x, y, hazard_category, location, area ")
                 .append("FROM ").append(dbname).append(".swm_warning_management")
                 .append(" WHERE warning_content != '一键SOS'")
