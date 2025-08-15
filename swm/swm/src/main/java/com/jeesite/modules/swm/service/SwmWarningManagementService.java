@@ -24,6 +24,7 @@ import javax.annotation.PreDestroy;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -1537,10 +1538,13 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
     /**
      * 处理告警确认
-     * 如果MySQL中不存在该记录，则插入；如果存在，则更新front_alarm为0
+     * 1. 在 TDengine 中使用 INSERT 覆盖更新 front_alarm 字段
+     * 2. 如果MySQL中不存在该记录，则插入；如果存在，则更新front_alarm为0
      * 
      * @param id 告警ID
      * @return 处理结果
+     * @author Shawn
+     * @date 2025-01-15
      */
     @Transactional(readOnly = false)
     public boolean confirmWarning(String id) {
@@ -1550,7 +1554,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         }
 
         try {
-            // 1. 从时序数据库获取完整记录
+            // ========== 第一步：从 TDengine 查询完整记录（用于后续操作）==========
             String sql = String.format(
                 "SELECT id, person_name, warning_type, warning_content, " +
                 "CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, " +
@@ -1576,19 +1580,159 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 return false;
             }
 
-            // 2. 转换为实体
+            // 转换为实体（用于MySQL操作）
             SwmWarningManagement entity = convertToEntity(rows.getJSONArray(0), data.getJSONArray("column_meta"));
             if (entity == null) {
                 logger.error("告警数据转换失败，ID: {}", id);
                 return false;
             }
 
-            // 3. 查询MySQL中是否存在
+            // ========== 第二步：TDengine INSERT 覆盖逻辑 ==========
+            try {
+                // 重新查询获取原始数据（不带时区转换）
+                String rawDataSql = String.format(
+                    "SELECT * FROM %s.swm_warning_management WHERE id='%s' LIMIT 1",
+                    dbname, id
+                );
+                R<JSONObject> rawResult = tdengineService.executeTDengineSQL(rawDataSql);
+                
+                if (rawResult.getCode() == R.SUCCESS && rawResult.getData() != null) {
+                    JSONObject rawData = rawResult.getData();
+                    JSONArray rawRows = rawData.getJSONArray("data");
+                    JSONArray columnMeta = rawData.getJSONArray("column_meta");
+                    
+                    if (rawRows != null && rawRows.size() > 0) {
+                        JSONArray rawRow = rawRows.getJSONArray(0);
+                        
+                        // 找到各字段的索引
+                        Map<String, Integer> columnIndexMap = new HashMap<>();
+                        for (int i = 0; i < columnMeta.size(); i++) {
+                            JSONArray colMeta = columnMeta.getJSONArray(i);
+                            String columnName = colMeta.getStr(0);
+                            columnIndexMap.put(columnName, i);
+                        }
+                        
+                        // 获取关键信息
+                        Integer createDateIdx = columnIndexMap.get("create_date");
+                        Integer deviceIdIdx = columnIndexMap.get("device_id");
+                        Integer idCardIdx = columnIndexMap.get("id_card");
+                        
+                        if (createDateIdx == null) {
+                            logger.error("未找到 create_date 字段索引");
+                            throw new RuntimeException("未找到 create_date 字段");
+                        }
+                        
+                        // 获取 create_date，可能是字符串或时间戳
+                        Object createDateObj = rawRow.get(createDateIdx);
+                        long originalCreateDate;
+                        
+                        if (createDateObj instanceof String) {
+                            // 处理字符串格式的时间，如 "2025-08-15T07:40:36.482Z"
+                            String dateStr = (String) createDateObj;
+                            try {
+                                // 解析 ISO 8601 格式
+                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                                Date date = sdf.parse(dateStr);
+                                originalCreateDate = date.getTime();
+                            } catch (ParseException e) {
+                                logger.error("解析 create_date 失败: {}", dateStr);
+                                throw new RuntimeException("解析 create_date 失败", e);
+                            }
+                        } else if (createDateObj instanceof Long) {
+                            originalCreateDate = (Long) createDateObj;
+                        } else if (createDateObj instanceof Number) {
+                            originalCreateDate = ((Number) createDateObj).longValue();
+                        } else {
+                            logger.error("create_date 类型不支持: {}", createDateObj != null ? createDateObj.getClass() : "null");
+                            throw new RuntimeException("create_date 类型不支持");
+                        }
+                        
+                        String deviceId = deviceIdIdx != null ? rawRow.getStr(deviceIdIdx) : null;
+                        String idCard = idCardIdx != null ? rawRow.getStr(idCardIdx) : null;
+                        
+                        // 构造子表名
+                        if (deviceId == null) deviceId = "unknown";
+                        if (idCard == null) idCard = "unknown";
+                        String subTableName = "swm_warning_management_" + 
+                            deviceId.replaceAll("[^a-zA-Z0-9]", "_") + "_" + 
+                            idCard.replaceAll("[^a-zA-Z0-9]", "_");
+                        
+                        // 构造 INSERT 覆盖语句
+                        StringBuilder insertSql = new StringBuilder();
+                        insertSql.append("INSERT INTO ").append(dbname).append(".").append(subTableName).append(" (");
+                        
+                        // 列出所有需要插入的字段（根据表结构）
+                        List<String> columns = Arrays.asList(
+                            "create_date", "id", "create_by", "update_by", "update_date",
+                            "remarks", "status", "person_name", "warning_type", "warning_content",
+                            "warning_time", "alarm_record", "alarm_time", "trigger_reason",
+                            "handler", "handle_time", "handle_process", "attachment", "handle_status",
+                            "front_alarm", "type", "x", "y", "hazard_category", "location", "area"
+                        );
+                        
+                        insertSql.append(String.join(", ", columns));
+                        insertSql.append(") VALUES (");
+                        
+                        // 填充值
+                        for (int i = 0; i < columns.size(); i++) {
+                            String column = columns.get(i);
+                            
+                            if (i > 0) insertSql.append(", ");
+                            
+                            // 特殊处理的字段
+                            if ("update_by".equals(column)) {
+                                insertSql.append("'system'");
+                            } else if ("update_date".equals(column)) {
+                                insertSql.append(System.currentTimeMillis());
+                            } else if ("front_alarm".equals(column)) {
+                                insertSql.append("'0'");  // 关键修改：设置为已确认
+                            } else {
+                                // 其他字段保持原值
+                                Integer idx = columnIndexMap.get(column);
+                                if (idx != null && idx < rawRow.size()) {
+                                    Object value = rawRow.get(idx);
+                                    if (value == null) {
+                                        insertSql.append("NULL");
+                                    } else if (value instanceof Number) {
+                                        insertSql.append(value);
+                                    } else {
+                                        String strValue = String.valueOf(value);
+                                        // 检查是否为 null 字符串
+                                        if ("null".equals(strValue)) {
+                                            insertSql.append("NULL");
+                                        } else {
+                                            insertSql.append("'").append(strValue.replace("'", "\\'")).append("'");
+                                        }
+                                    }
+                                } else {
+                                    insertSql.append("NULL");
+                                }
+                            }
+                        }
+                        
+                        insertSql.append(")");
+                        
+                        // 执行 INSERT 覆盖
+                        logger.info("执行 TDengine INSERT 覆盖，子表: {}, front_alarm 将更新为 0", subTableName);
+                        R<JSONObject> insertResult = tdengineService.executeTDengineSQL(insertSql.toString());
+                        
+                        if (insertResult.getCode() == R.SUCCESS) {
+                            logger.info("TDengine INSERT 覆盖成功，front_alarm 已更新为 0, ID: {}", id);
+                        } else {
+                            logger.warn("TDengine INSERT 覆盖失败: {}，将继续执行 MySQL 操作", insertResult.getMsg());
+                        }
+                    }
+                }
+            } catch (Exception tdException) {
+                logger.error("TDengine INSERT 覆盖操作异常，将继续执行 MySQL 操作", tdException);
+            }
+
+            // ========== 第三步：原有的 MySQL 逻辑（保持不变）==========
             SwmWarningManagement query = new SwmWarningManagement();
             query.setId(id);
             SwmWarningManagement mysqlEntity = super.get(query);
 
-            // 4. 根据查询结果决定插入或更新
             if (mysqlEntity == null) {
                 // MySQL中不存在，需要插入
                 entity.setFrontAlarm("0"); // 设置为已确认
