@@ -818,24 +818,13 @@ public class PersonTrackController extends BaseController {
 
             logger.info("身份证 {} 对应的设备ID: {}", idCard, deviceId);
 
-            // 2. 获取设备ID的后8位用于匹配
-            String deviceIdLast8 = getLastEightDigits(deviceId);
-            if (deviceIdLast8 == null) {
-                result.put("success", false);
-                result.put("message", "设备ID格式不正确，无法提取后8位数字");
-                return result;
-            }
-
-            logger.info("设备ID {} 的后8位: {}", deviceId, deviceIdLast8);
-
-            // 3. 查询area_fence_data表，匹配device_id的后8位
-            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8, startDate, endDate,
+            // 2. 查询area_fence_data表，使用完整的device_id进行匹配
+            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceId, startDate, endDate,
                     startTime, endTime);
 
             result.put("success", true);
             result.put("data", areaFenceData);
             result.put("deviceId", deviceId);
-            result.put("deviceIdLast8", deviceIdLast8);
             result.put("total", areaFenceData.size());
             result.put("message", "查询区域围栏数据成功");
 
@@ -873,25 +862,25 @@ public class PersonTrackController extends BaseController {
     }
 
     /**
-     * 查询area_fence_data表，根据设备ID后8位匹配并按area_name分组找出最早记录
+     * 查询area_fence_data表，根据完整设备ID匹配并按area_name分组找出最早记录
      * 
-     * @param deviceIdLast8 设备ID后8位
+     * @param deviceId      完整的设备ID
      * @param startDate     开始日期 (可选，格式：yyyy-MM-dd)
      * @param endDate       结束日期 (可选，格式：yyyy-MM-dd)
      * @param startTime     开始时间（秒，可选）
      * @param endTime       结束时间（秒，可选）
      * @return 区域围栏数据列表
      */
-    private List<Map<String, Object>> queryAreaFenceDataByDeviceId(String deviceIdLast8, String startDate,
+    private List<Map<String, Object>> queryAreaFenceDataByDeviceId(String deviceId, String startDate,
             String endDate, Integer startTime, Integer endTime) {
         List<Map<String, Object>> resultList = new ArrayList<>();
 
         try {
             // 构建SQL查询语句
-            // device_id格式为 B0:8E:22:31:03:39，需要去掉冒号后匹配后8位
+            // device_id格式为 B0:8E:22:31:03:39，直接进行完全匹配
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT time, area_name FROM ").append(dbname).append(".area_fence_data ");
-            sqlBuilder.append("WHERE REPLACE(device_id, ':', '') LIKE '%").append(deviceIdLast8).append("' ");
+            sqlBuilder.append("WHERE device_id = '").append(deviceId).append("' ");
 
             // 构建时间条件
             String timeCondition = buildTimeCondition(startDate, endDate, startTime, endTime);
@@ -957,14 +946,14 @@ public class PersonTrackController extends BaseController {
 
                     logger.info("处理后得到 {} 个区域的最早记录", resultList.size());
                 } else {
-                    logger.info("未找到匹配的区域围栏数据，设备ID后8位: {}", deviceIdLast8);
+                    logger.info("未找到匹配的区域围栏数据，设备ID: {}", deviceId);
                 }
             } else {
                 logger.error("查询area_fence_data失败: {}", queryResult.getMsg());
             }
 
         } catch (Exception e) {
-            logger.error("查询area_fence_data异常，设备ID后8位: {}", deviceIdLast8, e);
+            logger.error("查询area_fence_data异常，设备ID: {}", deviceId, e);
         }
 
         return resultList;
@@ -1092,25 +1081,14 @@ public class PersonTrackController extends BaseController {
 
             logger.info("身份证 {} 对应的设备ID: {}", idCard, deviceId);
 
-            // 2. 获取设备ID的后8位用于匹配
-            String deviceIdLast8 = getLastEightDigits(deviceId);
-            if (deviceIdLast8 == null) {
-                result.put("success", false);
-                result.put("message", "设备ID格式不正确，无法提取后8位数字");
-                return result;
-            }
-
-            logger.info("设备ID {} 的后8位: {}", deviceId, deviceIdLast8);
-
-            // 3. 查询area_fence_data表，匹配device_id的后8位
-            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceIdLast8, parsedStartDate,
+            // 2. 查询area_fence_data表，使用完整的device_id进行匹配
+            List<Map<String, Object>> areaFenceData = queryAreaFenceDataByDeviceId(deviceId, parsedStartDate,
                     parsedEndDate,
                     startTime, endTime);
 
             result.put("success", true);
             result.put("data", areaFenceData);
             result.put("deviceId", deviceId);
-            result.put("deviceIdLast8", deviceIdLast8);
             result.put("total", areaFenceData.size());
             result.put("message", "查询区域围栏数据成功");
 
