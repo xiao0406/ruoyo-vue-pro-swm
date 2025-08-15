@@ -287,17 +287,41 @@ public class SwmAttendanceSummaryController extends BaseController {
      * 轨迹信息-个人考勤记录明细
      *
      * @param employeeId 员工ID
+     * @param month 月份（可选，格式：yyyy-MM）
      */
     @GetMapping(value = "attendanceDetails")
     @ResponseBody
     @ApiOperation("轨迹信息-个人考勤记录明细")
-    public Map<String, Object> attendanceDetails(String employeeId) {
+    public Map<String, Object> attendanceDetails(String employeeId, String month) {
         Map<String, Object> result = new HashMap<>();
+        
+        // 如果没有传入月份参数，使用当前月份（保持向后兼容）
+        String queryMonth = StringUtils.isNotBlank(month) ? month : DateUtil.format(new Date(), "yyyy-MM");
+        
+        // 解析月份获取年和月
+        int year;
+        int monthValue;
+        try {
+            if (StringUtils.isNotBlank(month)) {
+                String[] parts = month.split("-");
+                year = Integer.parseInt(parts[0]);
+                monthValue = Integer.parseInt(parts[1]);
+            } else {
+                year = DateUtil.year(new Date());
+                monthValue = DateUtil.month(new Date()) + 1;
+            }
+        } catch (Exception e) {
+            // 如果解析失败，使用当前年月
+            year = DateUtil.year(new Date());
+            monthValue = DateUtil.month(new Date()) + 1;
+            queryMonth = DateUtil.format(new Date(), "yyyy-MM");
+        }
+        
         SwmPerson swmPerson = swmPersonService.get(employeeId);
         if (swmPerson != null) {
             SwmPersonSchedule queryPersonSchedule = new SwmPersonSchedule();
             queryPersonSchedule.setIdCard(swmPerson.getIdentityCard());
-            queryPersonSchedule.setMonth(DateUtil.format(new Date(), "yyyy-MM"));
+            queryPersonSchedule.setMonth(queryMonth);
 
             SwmPersonSchedule swmPersonSchedule = swmPersonScheduleService.getByEntity(queryPersonSchedule);
             if (swmPersonSchedule != null) {
@@ -306,22 +330,23 @@ public class SwmAttendanceSummaryController extends BaseController {
             result.put("person", swmPerson);
 
             // 查询日考勤 - 使用格式化方法处理时间字段
+            // 注意：日考勤仍然查询当天的数据
             SwmDailyAttendance dailyAttendance = swmDailyAttendanceService.findByEmployeeIdAndDate(employeeId,
                     DateUtil.date());
             result.put("dailyAttendance", formatAttendanceTime(dailyAttendance));
 
-            // 查询月考勤
+            // 查询月考勤 - 使用传入的月份
             SwmAttendanceSummary queryAttendanceSummary = new SwmAttendanceSummary();
             queryAttendanceSummary.setEmployeeId(employeeId);
-            queryAttendanceSummary.setMonth(DateUtil.format(new Date(), "yyyy-MM"));
+            queryAttendanceSummary.setMonth(queryMonth);
             SwmAttendanceSummary attendanceSummary = swmAttendanceSummaryService.getByEntity(queryAttendanceSummary);
             result.put("attendanceSummary", attendanceSummary);
 
-            // 本月考勤时间和功效统计
+            // 考勤时间和功效统计 - 使用传入的月份
             result.put("attendanceChartData", swmDailyAttendanceService.getMonthlyAttendanceData(employeeId,
-                    DateUtil.year(new Date()), DateUtil.month(new Date()) + 1));
+                    year, monthValue));
             result.put("efficiencyChartData", swmDailyAttendanceService.getMonthlyChartData(employeeId,
-                    DateUtil.year(new Date()), DateUtil.month(new Date()) + 1));
+                    year, monthValue));
         }
 
         return result;
