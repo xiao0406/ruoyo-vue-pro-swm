@@ -317,7 +317,12 @@ public class SwmAttendanceSummaryController extends BaseController {
             queryMonth = DateUtil.format(new Date(), "yyyy-MM");
         }
         
-        SwmPerson swmPerson = swmPersonService.get(employeeId);
+        // 使用findList方法获取包含关联表翻译后的完整人员信息
+        SwmPerson queryPerson = new SwmPerson();
+        queryPerson.setId(employeeId);
+        List<SwmPerson> personList = swmPersonService.findList(queryPerson);
+        SwmPerson swmPerson = personList.isEmpty() ? null : personList.get(0);
+        
         if (swmPerson != null) {
             SwmPersonSchedule queryPersonSchedule = new SwmPersonSchedule();
             queryPersonSchedule.setIdCard(swmPerson.getIdentityCard());
