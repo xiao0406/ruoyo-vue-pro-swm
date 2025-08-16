@@ -1135,6 +1135,65 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     }
 
     /**
+     * 仅从 TDengine 查询分页数据
+     * 所有数据直接从 TDengine 获取，不再查询 MySQL
+     * 
+     * @param page                 分页对象
+     * @param swmWarningManagement 查询条件
+     * @return TDengine 数据的分页结果
+     * @author Shawn
+     * @date 2025-01-16
+     */
+    public Page<SwmWarningManagement> tdEngineFindPage(Page<SwmWarningManagement> page,
+            SwmWarningManagement swmWarningManagement) {
+        
+        logger.info("从 TDengine 查询分页数据");
+        
+        // 直接调用现有的 findPage 方法从 TDengine 获取数据
+        // 该方法会处理所有查询条件，包括排除条件、筛选条件等
+        Page<SwmWarningManagement> tdEnginePage = this.findPage(page, swmWarningManagement);
+        List<SwmWarningManagement> tdEngineList = tdEnginePage.getList();
+        
+        if (tdEngineList == null || tdEngineList.isEmpty()) {
+            logger.info("查询结果为空");
+            return tdEnginePage;
+        }
+        
+        // 为每条记录设置显示文本值（字典转换）
+        for (SwmWarningManagement item : tdEngineList) {
+            // 设置预警类型文本
+            if (item.getWarningType() != null) {
+                if ("1".equals(item.getWarningType())) {
+                    item.setWarningTypeText("主动报警");
+                } else if ("2".equals(item.getWarningType())) {
+                    item.setWarningTypeText("被动报警");
+                } else {
+                    item.setWarningTypeText(
+                        DictUtils.getDictLabel("warning_type_enum", 
+                            item.getWarningType(), item.getWarningType()));
+                }
+            }
+            
+            // 设置处置状态文本
+            if (item.getHandleStatus() != null) {
+                item.setHandleStatusText(
+                    DictUtils.getDictLabel("handle_status_enum", 
+                        item.getHandleStatus(), item.getHandleStatus()));
+            }
+            
+            // 预警内容不需要单独设置文本属性，前端会直接使用原值或进行字典转换
+            
+            // 确保处置时长字段即使为0也返回
+            if (item.getDisposalDuration() == null) {
+                item.setDisposalDuration(0L);
+            }
+        }
+        
+        logger.info("查询完成，返回 {} 条记录", tdEngineList.size());
+        return tdEnginePage;
+    }
+
+    /**
      * 获取近七天预警数据
      * 
      * @return

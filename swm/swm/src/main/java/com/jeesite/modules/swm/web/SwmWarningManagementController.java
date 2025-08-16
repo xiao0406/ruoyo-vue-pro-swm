@@ -102,9 +102,9 @@ public class SwmWarningManagementController extends BaseController {
                 swmWarningManagement.isExcludeAttendance(),
                 swmWarningManagement.isExcludeGateEntry());
 
-        // 调用服务层方法，使用混合查询获取数据（时序数据库 + MySQL）
+        // 调用服务层方法，仅从 TDengine 查询数据
         // 时区调整已在SQL查询中完成，无需再次调整
-        Page<SwmWarningManagement> resultPage = swmWarningManagementService.hybridFindPage(page, swmWarningManagement);
+        Page<SwmWarningManagement> resultPage = swmWarningManagementService.tdEngineFindPage(page, swmWarningManagement);
         logger.info("查询完成，数据中的时区调整已在SQL中进行");
 
         // 添加日志检查返回的数据
@@ -172,8 +172,8 @@ public class SwmWarningManagementController extends BaseController {
                 swmWarningManagement.getWarningContent(),
                 swmWarningManagement.getHandleStatus());
 
-        // 调用服务层方法，使用混合查询获取数据（时序数据库 + MySQL）
-        Page<SwmWarningManagement> resultPage = swmWarningManagementService.hybridFindPage(page, swmWarningManagement);
+        // 调用服务层方法，仅从 TDengine 查询数据
+        Page<SwmWarningManagement> resultPage = swmWarningManagementService.tdEngineFindPage(page, swmWarningManagement);
         logger.info("查询所有类型预警完成");
 
         return resultPage;
@@ -616,8 +616,8 @@ public class SwmWarningManagementController extends BaseController {
                 swmWarningManagement.getWarningContent(),
                 swmWarningManagement.getHandleStatus());
 
-        // 调用服务层方法，使用混合查询获取数据（时序数据库 + MySQL）
-        Page<SwmWarningManagement> resultPage = swmWarningManagementService.hybridFindPage(page, swmWarningManagement);
+        // 调用服务层方法，仅从 TDengine 查询数据
+        Page<SwmWarningManagement> resultPage = swmWarningManagementService.tdEngineFindPage(page, swmWarningManagement);
 
         // 确保处置时长即使为0也返回，并记录坐标信息
         if (resultPage != null && resultPage.getList() != null && !resultPage.getList().isEmpty()) {
