@@ -243,6 +243,10 @@ public class SwmWarningManagementController extends BaseController {
                 warningData.put("x", mysqlRecord.getX());
                 warningData.put("y", mysqlRecord.getY());
 
+                // 确保返回位置和区域信息
+                warningData.put("location", mysqlRecord.getLocation());
+                warningData.put("area", mysqlRecord.getArea());
+
                 // 确保返回危险源类别信息
                 warningData.put("hazardCategory", mysqlRecord.getHazardCategory());
                 logger.debug("表单查询 ID: {}, 危险源类别: {}", mysqlRecord.getId(), mysqlRecord.getHazardCategory());

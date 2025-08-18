@@ -90,7 +90,8 @@
             a.handler, a.handle_time AS handleTime,
             a.handle_process AS handleProcess, a.handle_status AS handleStatus,
             a.attachment, a.device_id AS deviceId, a.id_card AS idCard,
-            a.disposal_duration AS disposalDuration, a.x AS x, a.y AS y
+            a.disposal_duration AS disposalDuration, a.x AS x, a.y AS y,
+            a.location AS location, a.area AS area
         FROM
             swm_warning_management a
         WHERE

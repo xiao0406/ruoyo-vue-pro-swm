@@ -399,7 +399,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         try {
                             Long duration = row.getLong(i);
                             entity.setDisposalDuration(duration != null ? duration : 0L);
-                            logger.debug("设置处置时长: {} 分钟", duration);
+//                            logger.debug("设置处置时长: {} 分钟", duration);
                         } catch (Exception e) {
 //                            logger.warn("解析disposal_duration失败: {}", e.getMessage());
                             entity.setDisposalDuration(0L);
