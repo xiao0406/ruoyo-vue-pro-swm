@@ -189,18 +189,9 @@ public class SwmWarningManagementController extends BaseController {
         Map<String, Object> result = new HashMap<>();
 
         if (swmWarningManagement != null && swmWarningManagement.getId() != null) {
-            // 先从MySQL数据库查询
-            logger.info("从MySQL数据库查询预警记录，ID: {}", swmWarningManagement.getId());
-            SwmWarningManagement mysqlRecord = swmWarningManagementDao
-                    .findInMySqlByIdAndIdCard(swmWarningManagement.getId(), null);
-
-            // 如果MySQL中没有找到，再从时序数据库查询
-            if (mysqlRecord == null) {
-                logger.info("MySQL中未找到记录，尝试从时序数据库查询");
-                mysqlRecord = swmWarningManagementService.get(swmWarningManagement.getId());
-            } else {
-                logger.info("在MySQL中找到预警记录");
-            }
+            // 直接从时序数据库查询
+            logger.info("从时序数据库查询预警记录，ID: {}", swmWarningManagement.getId());
+            SwmWarningManagement mysqlRecord = swmWarningManagementService.get(swmWarningManagement.getId());
 
             // 如果找到了记录
             if (mysqlRecord != null) {
@@ -234,7 +225,17 @@ public class SwmWarningManagementController extends BaseController {
 
                 warningData.put("triggerReason", mysqlRecord.getTriggerReason());
                 warningData.put("handler", mysqlRecord.getHandler());
-                warningData.put("handleTime", mysqlRecord.getHandleTime());
+                
+                // 处理 handle_time，手动添加8小时时区调整（因为TDengine查询时未调整）
+                if (mysqlRecord.getHandleTime() != null) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(mysqlRecord.getHandleTime());
+                    cal.add(Calendar.HOUR_OF_DAY, 8);
+                    warningData.put("handleTime", cal.getTime());
+                } else {
+                    warningData.put("handleTime", mysqlRecord.getHandleTime());
+                }
+                
                 warningData.put("handleProcess", mysqlRecord.getHandleProcess());
                 warningData.put("deviceId", mysqlRecord.getDeviceId());
                 warningData.put("idCard", mysqlRecord.getIdCard());
