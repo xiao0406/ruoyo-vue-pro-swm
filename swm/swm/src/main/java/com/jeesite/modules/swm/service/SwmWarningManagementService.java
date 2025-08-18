@@ -58,6 +58,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
                     .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                     .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+                    .append("disposal_duration, ")
                     .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                     .append("front_alarm, type, x, y, hazard_category, location, area ")
                     .append("FROM ").append(dbname).append(".swm_warning_management")
@@ -137,6 +138,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
                 .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                 .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+                .append("disposal_duration, ")
                 .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                 .append("front_alarm, type, x, y, hazard_category, location, area ")
                 .append("FROM ").append(dbname).append(".swm_warning_management");
@@ -392,6 +394,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         break;
                     case "attachment":
                         entity.setAttachment(row.getStr(i));
+                        break;
+                    case "disposal_duration":
+                        try {
+                            Long duration = row.getLong(i);
+                            entity.setDisposalDuration(duration != null ? duration : 0L);
+                            logger.debug("设置处置时长: {} 分钟", duration);
+                        } catch (Exception e) {
+//                            logger.warn("解析disposal_duration失败: {}", e.getMessage());
+                            entity.setDisposalDuration(0L);
+                        }
                         break;
                     case "create_by":
                         entity.setCreateBy(row.getStr(i));
@@ -819,6 +831,25 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                         values.append(", '").append(attachment.replace("'", "\\'")).append("'");
                     }
                     
+                    // 计算并添加处置时长
+                    if (handleStatus != null && handleStatus.equals("1") && handleTime != null 
+                            && swmWarningManagement.getAlarmTime() != null) {
+                        // alarm_time 从 TDengine 查询时已经是北京时间，直接计算即可
+                        long durationMillis = handleTime.getTime() - swmWarningManagement.getAlarmTime().getTime();
+                        long durationMinutes = durationMillis / (60 * 1000);
+                        long finalDuration = durationMinutes > 0 ? durationMinutes : 0;
+                        
+                        updateSql.append(", disposal_duration");
+                        values.append(", ").append(finalDuration);
+                        
+                        logger.info("TDengine - 计算处置时长：报警时间 {}，处置时间 {}，处置时长 {} 分钟", 
+                                swmWarningManagement.getAlarmTime(), handleTime, finalDuration);
+                    } else {
+                        // 如果不满足计算条件，设置为0
+                        updateSql.append(", disposal_duration");
+                        values.append(", 0");
+                    }
+                    
                     // 添加更新时间
                     updateSql.append(", update_date");
                     values.append(", ").append(System.currentTimeMillis());
@@ -887,17 +918,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 // 计算处置时长（处置时间减去报警时间，单位：分钟）
                 if (handleStatus != null && handleStatus.equals("1") && handleTime != null
                         && mysqlWarning.getAlarmTime() != null) {
-                    // 报警时间需要加上8小时再计算，因为存储的是UTC时间
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.setTime(mysqlWarning.getAlarmTime());
-                    calendar.add(Calendar.HOUR_OF_DAY, 8); // 直接加上8小时
-                    Date adjustedAlarmTime = calendar.getTime();
-
-                    long durationMillis = handleTime.getTime() - adjustedAlarmTime.getTime();
+                    // alarm_time 从 TDengine 查询时已经是北京时间，直接计算即可
+                    long durationMillis = handleTime.getTime() - mysqlWarning.getAlarmTime().getTime();
                     long durationMinutes = durationMillis / (60 * 1000);
                     mysqlWarning.setDisposalDuration(durationMinutes > 0 ? durationMinutes : 0);
-                    logger.info("计算处置时长：报警时间 {} + 8小时调整为 {}，处置时间 {}，处置时长 {} 分钟",
-                            mysqlWarning.getAlarmTime(), adjustedAlarmTime, handleTime, durationMinutes);
+                    logger.info("计算处置时长：报警时间 {}，处置时间 {}，处置时长 {} 分钟",
+                            mysqlWarning.getAlarmTime(), handleTime, durationMinutes);
                 } else {
                     mysqlWarning.setDisposalDuration(0L);
                 }
@@ -919,17 +945,12 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 // 计算处置时长（处置时间减去报警时间，单位：分钟）
                 if (handleStatus != null && handleStatus.equals("1") && handleTime != null
                         && existingRecord.getAlarmTime() != null) {
-                    // 报警时间需要加上8小时再计算，因为存储的是UTC时间
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.setTime(existingRecord.getAlarmTime());
-                    calendar.add(Calendar.HOUR_OF_DAY, 8); // 直接加上8小时
-                    Date adjustedAlarmTime = calendar.getTime();
-
-                    long durationMillis = handleTime.getTime() - adjustedAlarmTime.getTime();
+                    // alarm_time 已经是北京时间，直接计算即可
+                    long durationMillis = handleTime.getTime() - existingRecord.getAlarmTime().getTime();
                     long durationMinutes = durationMillis / (60 * 1000);
                     existingRecord.setDisposalDuration(durationMinutes > 0 ? durationMinutes : 0);
-                    logger.info("计算处置时长：报警时间 {} + 8小时调整为 {}，处置时间 {}，处置时长 {} 分钟",
-                            existingRecord.getAlarmTime(), adjustedAlarmTime, handleTime, durationMinutes);
+                    logger.info("计算处置时长：报警时间 {}，处置时间 {}，处置时长 {} 分钟",
+                            existingRecord.getAlarmTime(), handleTime, durationMinutes);
                 } else {
                     existingRecord.setDisposalDuration(0L);
                 }
@@ -1842,6 +1863,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
                 .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
                 .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+                .append("disposal_duration, ")
                 .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                 .append("front_alarm, type, x, y, hazard_category, location, area ")
                 .append("FROM ").append(dbname).append(".swm_warning_management")
