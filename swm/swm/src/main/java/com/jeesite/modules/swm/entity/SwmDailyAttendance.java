@@ -26,7 +26,9 @@ import java.util.Date;
         @Column(name = "attendance_date", attrName = "attendanceDate", label = "考勤日期"),
         @Column(name = "work_time_range", attrName = "workTimeRange", label = "应考勤时间范围", queryType = QueryType.LIKE),
         @Column(name = "clock_in_time", attrName = "clockInTime", label = "上班打卡时间"),
+        @Column(name = "clock_in_date", attrName = "clockInDate", label = "上班打卡完整时间"),
         @Column(name = "clock_out_time", attrName = "clockOutTime", label = "下班打卡时间"),
+        @Column(name = "clock_out_date", attrName = "clockOutDate", label = "下班打卡完整时间"),
         @Column(name = "scheduled_hours", attrName = "scheduledHours", label = "应考勤时长(h)"),
         @Column(name = "actual_hours", attrName = "actualHours", label = "实际考勤时长(h)"),
         @Column(name = "idle_hours", attrName = "idleHours", label = "怠工时长(h)"),
@@ -48,7 +50,9 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private Date attendanceDate; // 考勤日期
     private String workTimeRange; // 应考勤时间范围(如08:00-17:00)
     private Date clockInTime; // 上班打卡时间
+    private Date clockInDate; // 上班打卡完整时间
     private Date clockOutTime; // 下班打卡时间
+    private Date clockOutDate; // 下班打卡完整时间
     private BigDecimal scheduledHours; // 应考勤时长(h)
     private BigDecimal actualHours; // 实际考勤时长(h)
     private BigDecimal idleHours; // 怠工时长(h)
@@ -133,12 +137,28 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
         this.clockInTime = clockInTime;
     }
 
+    public Date getClockInDate() {
+        return clockInDate;
+    }
+
+    public void setClockInDate(Date clockInDate) {
+        this.clockInDate = clockInDate;
+    }
+
     public Date getClockOutTime() {
         return clockOutTime;
     }
 
     public void setClockOutTime(Date clockOutTime) {
         this.clockOutTime = clockOutTime;
+    }
+
+    public Date getClockOutDate() {
+        return clockOutDate;
+    }
+
+    public void setClockOutDate(Date clockOutDate) {
+        this.clockOutDate = clockOutDate;
     }
 
     public BigDecimal getScheduledHours() {

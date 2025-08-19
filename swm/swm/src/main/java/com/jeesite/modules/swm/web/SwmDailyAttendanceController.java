@@ -102,6 +102,10 @@ public class SwmDailyAttendanceController extends BaseController {
                 if ("clockInTime".equals(fieldName) || "clockOutTime".equals(fieldName)) {
                     SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
                     jsonGenerator.writeString(timeFormat.format(date));
+                } else if ("clockInDate".equals(fieldName) || "clockOutDate".equals(fieldName)) {
+                    // 完整的打卡日期时间字段使用完整格式
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    jsonGenerator.writeString(dateFormat.format(date));
                 } else {
                     // 其他日期字段使用标准格式
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -241,7 +245,10 @@ public class SwmDailyAttendanceController extends BaseController {
                 try {
                     // 先尝试解析完整的日期时间格式
                     SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    swmDailyAttendance.setClockInTime(fullDateFormat.parse(clockInTimeStr));
+                    Date fullDateTime = fullDateFormat.parse(clockInTimeStr);
+                    swmDailyAttendance.setClockInTime(fullDateTime);
+                    // 同时设置完整的打卡日期时间
+                    swmDailyAttendance.setClockInDate(fullDateTime);
                 } catch (Exception e1) {
                     try {
                         // 如果失败，尝试解析只有时间部分的格式
@@ -259,6 +266,8 @@ public class SwmDailyAttendanceController extends BaseController {
                         calendar.set(Calendar.SECOND, timeCal.get(Calendar.SECOND));
 
                         swmDailyAttendance.setClockInTime(calendar.getTime());
+                        // 同时设置完整的打卡日期时间
+                        swmDailyAttendance.setClockInDate(calendar.getTime());
                     } catch (Exception e2) {
                         logger.error("解析上班打卡时间失败: {}", e2.getMessage());
                     }
@@ -273,7 +282,10 @@ public class SwmDailyAttendanceController extends BaseController {
                 try {
                     // 先尝试解析完整的日期时间格式
                     SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    swmDailyAttendance.setClockOutTime(fullDateFormat.parse(clockOutTimeStr));
+                    Date fullDateTime = fullDateFormat.parse(clockOutTimeStr);
+                    swmDailyAttendance.setClockOutTime(fullDateTime);
+                    // 同时设置完整的打卡日期时间
+                    swmDailyAttendance.setClockOutDate(fullDateTime);
                 } catch (Exception e1) {
                     try {
                         // 如果失败，尝试解析只有时间部分的格式
@@ -291,6 +303,8 @@ public class SwmDailyAttendanceController extends BaseController {
                         calendar.set(Calendar.SECOND, timeCal.get(Calendar.SECOND));
 
                         swmDailyAttendance.setClockOutTime(calendar.getTime());
+                        // 同时设置完整的打卡日期时间
+                        swmDailyAttendance.setClockOutDate(calendar.getTime());
                     } catch (Exception e2) {
                         logger.error("解析下班打卡时间失败: {}", e2.getMessage());
                     }
