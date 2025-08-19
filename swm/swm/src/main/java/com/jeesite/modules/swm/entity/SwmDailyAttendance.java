@@ -25,6 +25,7 @@ import java.util.Date;
         @Column(name = "person_type", attrName = "personType", label = "人员类型"),
         @Column(name = "attendance_date", attrName = "attendanceDate", label = "考勤日期"),
         @Column(name = "work_time_range", attrName = "workTimeRange", label = "应考勤时间范围", queryType = QueryType.LIKE),
+        @Column(name = "classes", attrName = "classes", label = "班次"),
         @Column(name = "clock_in_time", attrName = "clockInTime", label = "上班打卡时间"),
         @Column(name = "clock_in_date", attrName = "clockInDate", label = "上班打卡完整时间"),
         @Column(name = "clock_out_time", attrName = "clockOutTime", label = "下班打卡时间"),
@@ -49,6 +50,7 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private String personType; // 人员类型
     private Date attendanceDate; // 考勤日期
     private String workTimeRange; // 应考勤时间范围(如08:00-17:00)
+    private String classes; // 班次(早班/中班/晚班)
     private Date clockInTime; // 上班打卡时间
     private Date clockInDate; // 上班打卡完整时间
     private Date clockOutTime; // 下班打卡时间
@@ -143,6 +145,15 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     public void setClockInDate(Date clockInDate) {
         this.clockInDate = clockInDate;
+    }
+
+    @Length(min = 0, max = 20, message = "班次长度不能超过 20 个字符")
+    public String getClasses() {
+        return classes;
+    }
+
+    public void setClasses(String classes) {
+        this.classes = classes;
     }
 
     public Date getClockOutTime() {

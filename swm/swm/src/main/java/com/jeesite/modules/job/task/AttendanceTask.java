@@ -487,11 +487,12 @@ public class AttendanceTask {
                         .findByEmployeeIdAndDate(person.getId(), today);
 
                 // 3.2 获取员工的排班信息
-                SwmScheduleTime scheduleTime = getScheduleTimeForPerson(person, today);
-                if (scheduleTime == null) {
+                ScheduleInfo scheduleInfo = getScheduleTimeForPerson(person, today);
+                if (scheduleInfo == null) {
                     XxlJobHelper.log("员工[{}]{}没有排班信息，跳过创建考勤记录", person.getId(), person.getName());
                     continue;
                 }
+                SwmScheduleTime scheduleTime = scheduleInfo.scheduleTime;
                 String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
 
                 // 3.3 计算应考勤时长
@@ -506,6 +507,7 @@ public class AttendanceTask {
                     newAttendance.setPersonType(person.getPersonType());
                     newAttendance.setAttendanceDate(today);
                     newAttendance.setWorkTimeRange(workTimeRange);
+                    newAttendance.setClasses(scheduleInfo.classes); // 设置班次
                     newAttendance.setScheduledHours(scheduledHours);
                     newAttendance.setActualHours(BigDecimal.ZERO); // 默认实际考勤时长为0
                     newAttendance.setIdleHours(BigDecimal.ZERO); // 默认怠工时长为0
@@ -520,6 +522,7 @@ public class AttendanceTask {
                 } else {
                     // 更新现有记录
                     existingAttendance.setWorkTimeRange(workTimeRange);
+                    existingAttendance.setClasses(scheduleInfo.classes); // 设置班次
                     existingAttendance.setScheduledHours(scheduledHours);
                     existingAttendance.setPersonType(person.getPersonType());
                     // todo 调用接口获取怠工时长、考勤是否正常等
@@ -547,9 +550,9 @@ public class AttendanceTask {
      * 
      * @param person 员工信息
      * @param date   考勤日期
-     * @return SwmScheduleTime 排班时间信息
+     * @return ScheduleInfo 包含排班时间信息和班次名称
      */
-    private SwmScheduleTime getScheduleTimeForPerson(SwmPerson person, Date date) {
+    private ScheduleInfo getScheduleTimeForPerson(SwmPerson person, Date date) {
         // 1. 获取当前月份
         String month = DateUtil.format(date, "yyyy-MM");
 
@@ -572,7 +575,9 @@ public class AttendanceTask {
         if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
             return null;
         }
-        return scheduleTimeList.get(0);
+        
+        // 返回包含班次信息的对象
+        return new ScheduleInfo(scheduleTimeList.get(0), personSchedule.getClasses());
     }
 
     /**
@@ -1603,6 +1608,21 @@ public class AttendanceTask {
         Date targetDate;
         String idCard;
     }
+    
+    /**
+     * 排班信息包装类
+     * @author Shawn
+     * @date 2025-08-19
+     */
+    private static class ScheduleInfo {
+        SwmScheduleTime scheduleTime;
+        String classes; // 班次名称
+        
+        ScheduleInfo(SwmScheduleTime scheduleTime, String classes) {
+            this.scheduleTime = scheduleTime;
+            this.classes = classes;
+        }
+    }
 
     /**
      * 考勤生成结果类
@@ -1843,18 +1863,21 @@ public class AttendanceTask {
         }
         
         // 尝试更新排班信息（如果原记录没有）
-        if (StringUtils.isEmpty(existing.getWorkTimeRange())) {
-            SwmScheduleTime scheduleTime = getScheduleTimeForPerson(person, targetDate);
-            if (scheduleTime != null) {
+        if (StringUtils.isEmpty(existing.getWorkTimeRange()) || StringUtils.isEmpty(existing.getClasses())) {
+            ScheduleInfo scheduleInfo = getScheduleTimeForPerson(person, targetDate);
+            if (scheduleInfo != null) {
+                SwmScheduleTime scheduleTime = scheduleInfo.scheduleTime;
                 String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
                 existing.setWorkTimeRange(workTimeRange);
+                existing.setClasses(scheduleInfo.classes); // 设置班次
                 
                 // 计算应考勤时长
                 BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
                 existing.setScheduledHours(scheduledHours);
                 
                 needUpdate = true;
-                XxlJobHelper.log("更新排班信息：{}，应考勤时长：{} 小时", workTimeRange, scheduledHours);
+                XxlJobHelper.log("更新排班信息：{}，班次：{}，应考勤时长：{} 小时", 
+                    workTimeRange, scheduleInfo.classes, scheduledHours);
             }
         }
         
@@ -1980,38 +2003,40 @@ public class AttendanceTask {
      * 设置排班信息
      */
     private void setScheduleInfo(SwmDailyAttendance attendance, SwmPerson person, Date targetDate) {
-        SwmScheduleTime scheduleTime = getScheduleTimeForPerson(person, targetDate);
+        ScheduleInfo scheduleInfo = getScheduleTimeForPerson(person, targetDate);
         
-        // 判断是否为休息日
-        if (scheduleTime != null && isRestDay(scheduleTime, targetDate)) {
-            attendance.setAttendanceNormal("2"); // 设置为休息日
-            // 休息日也要设置工作时间范围，显示原本的排班
-            String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
-            attendance.setWorkTimeRange(workTimeRange);
-            attendance.setScheduledHours(BigDecimal.ZERO); // 休息日应考勤时长为0
-            XxlJobHelper.log("员工[{}]{} {}是休息日，排班时间：{}", 
-                person.getId(), person.getName(), 
-                new SimpleDateFormat("yyyy-MM-dd").format(targetDate),
-                workTimeRange);
+        if (scheduleInfo == null) {
+            attendance.setWorkTimeRange(null);
+            attendance.setClasses(null);
+            attendance.setScheduledHours(BigDecimal.ZERO);
+            XxlJobHelper.log("员工[{}]{}没有排班信息", person.getId(), person.getName());
             return;
         }
         
-        // 原有的排班逻辑
-        if (scheduleTime != null) {
-            String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
-            attendance.setWorkTimeRange(workTimeRange);
-            
-            // 计算应考勤时长
-            BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
-            attendance.setScheduledHours(scheduledHours);
-            
-            XxlJobHelper.log("员工[{}]{}有排班信息：{}，应考勤时长：{} 小时", 
-                person.getId(), person.getName(), workTimeRange, scheduledHours);
-        } else {
-            attendance.setWorkTimeRange(null);
-            attendance.setScheduledHours(BigDecimal.ZERO);
-            XxlJobHelper.log("员工[{}]{}没有排班信息", person.getId(), person.getName());
+        SwmScheduleTime scheduleTime = scheduleInfo.scheduleTime;
+        String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
+        
+        // 设置班次信息
+        attendance.setClasses(scheduleInfo.classes);
+        attendance.setWorkTimeRange(workTimeRange);
+        
+        // 判断是否为休息日
+        if (isRestDay(scheduleTime, targetDate)) {
+            attendance.setAttendanceNormal("2"); // 设置为休息日
+            attendance.setScheduledHours(BigDecimal.ZERO); // 休息日应考勤时长为0
+            XxlJobHelper.log("员工[{}]{} {}是休息日，班次：{}，排班时间：{}", 
+                person.getId(), person.getName(), 
+                new SimpleDateFormat("yyyy-MM-dd").format(targetDate),
+                scheduleInfo.classes, workTimeRange);
+            return;
         }
+        
+        // 计算应考勤时长
+        BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
+        attendance.setScheduledHours(scheduledHours);
+        
+        XxlJobHelper.log("员工[{}]{}有排班信息：班次：{}，时间：{}，应考勤时长：{} 小时", 
+            person.getId(), person.getName(), scheduleInfo.classes, workTimeRange, scheduledHours);
     }
 
     /**

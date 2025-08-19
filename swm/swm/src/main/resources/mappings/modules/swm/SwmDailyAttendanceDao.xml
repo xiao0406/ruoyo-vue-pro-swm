@@ -11,6 +11,7 @@
         <result property="personType" column="person_type"/>
         <result property="attendanceDate" column="attendance_date"/>
         <result property="workTimeRange" column="work_time_range"/>
+        <result property="classes" column="classes"/>
         <result property="clockInTime" column="clock_in_time"/>
         <result property="clockInDate" column="clock_in_date"/>
         <result property="clockOutTime" column="clock_out_time"/>
