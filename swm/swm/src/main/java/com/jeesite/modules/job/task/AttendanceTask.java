@@ -1483,14 +1483,27 @@ public class AttendanceTask {
             }
         }
         
-        // 计算实际工作时长
+        // 计算实际工作时长（使用当天24小时工作区域时长）
         if (shouldCalculateWorkHours(record)) {
-            BigDecimal workHours = calculateWorkAreaHours(record);
+            BigDecimal workHours = calculateWorkAreaHours24h(record);
             if (workHours != null) {
-                record.setEffectiveWorkHours(workHours);
+                // 兜底逻辑：如果24小时工作区域时长小于实际考勤时长，使用实际考勤时长作为兜底
+                if (record.getActualHours() != null && 
+                    workHours.compareTo(record.getActualHours()) < 0) {
+                    
+                    XxlJobHelper.log("员工[{}]{}计算的24小时工作区域时长{}小时小于实际考勤时长{}小时，使用实际考勤时长作为兜底", 
+                        record.getEmployeeId(), record.getEmployeeName(), 
+                        workHours, record.getActualHours());
+                    
+                    record.setEffectiveWorkHours(record.getActualHours());
+                } else {
+                    record.setEffectiveWorkHours(workHours);
+                }
+                
                 updated = true;
-                XxlJobHelper.log("员工[{}]{}实际工作时长更新为: {} 小时",
-                    record.getEmployeeId(), record.getEmployeeName(), workHours);
+                XxlJobHelper.log("员工[{}]{}最终实际工作时长: {} 小时",
+                    record.getEmployeeId(), record.getEmployeeName(), 
+                    record.getEffectiveWorkHours());
             }
             
             // 计算怠工时长
@@ -2258,6 +2271,49 @@ public class AttendanceTask {
      */
     private BigDecimal calculateIdleAreaHours(SwmDailyAttendance record) {
         return calculateAreaHours(record, "1", "休息区");
+    }
+    
+    /**
+     * 计算当天24小时工作区域活动时长（专用方法）
+     * 时间范围：当天00:00:00到23:59:59
+     * @param record 考勤记录
+     * @return 24小时工作区域时长（小时）
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private BigDecimal calculateWorkAreaHours24h(SwmDailyAttendance record) {
+        try {
+            // 直接使用当天24小时范围
+            String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(record.getAttendanceDate());
+            String startTime = dateStr + " 00:00:00";
+            String endTime = dateStr + " 23:59:59";
+            
+            XxlJobHelper.log("员工[{}]{}使用24小时时间范围: {} 到 {}", 
+                record.getEmployeeId(), record.getEmployeeName(), startTime, endTime);
+            
+            // 查询工作区域的连续段
+            List<WorkSegment> workSegments = queryAreaSegments(
+                record.getIdentityCard(), startTime, endTime, "0");
+            
+            if (workSegments.isEmpty()) {
+                XxlJobHelper.log("员工[{}]{}在当天24小时内无工作区域活动数据", 
+                    record.getEmployeeId(), record.getEmployeeName());
+                return BigDecimal.ZERO;
+            }
+            
+            // 计算总时长
+            double totalHours = calculateTotalHours(workSegments);
+            
+            XxlJobHelper.log("员工[{}]{}24小时工作区域活动段数: {}, 总时长: {}小时", 
+                record.getEmployeeId(), record.getEmployeeName(), 
+                workSegments.size(), String.format("%.2f", totalHours));
+            
+            return BigDecimal.valueOf(totalHours).setScale(2, RoundingMode.HALF_UP);
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("计算24小时工作区域时长失败: {}", e.getMessage());
+            return BigDecimal.ZERO;
+        }
     }
     
     /**
