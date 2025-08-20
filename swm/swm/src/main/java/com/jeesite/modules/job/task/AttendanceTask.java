@@ -1652,8 +1652,8 @@ public class AttendanceTask {
      * 参数格式：
      * - 无参数 - 生成明天所有在职人员的考勤
      * - date=2025-08-12 - 生成指定日期的考勤
-     * - idCard=412825197709304513 - 生成指定身份证明天的考勤
-     * - date=2025-08-12,idCard=412825197709304513 - 生成指定日期和身份证的考勤
+     * - idCard=450422199502070018 - 生成指定身份证明天的考勤
+     * - date=2025-08-12,idCard=450422199502070018 - 生成指定日期和身份证的考勤
      * 
      * @author Shawn
      * @date 2025-08-12
@@ -2034,6 +2034,9 @@ public class AttendanceTask {
         // 计算应考勤时长
         BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
         attendance.setScheduledHours(scheduledHours);
+        
+        // 计算打卡时间范围
+        calculateAndSetClockTimeRange(attendance, targetDate, workTimeRange);
         
         XxlJobHelper.log("员工[{}]{}有排班信息：班次：{}，时间：{}，应考勤时长：{} 小时", 
             person.getId(), person.getName(), scheduleInfo.classes, workTimeRange, scheduledHours);
@@ -2528,6 +2531,69 @@ public class AttendanceTask {
         } catch (Exception e) {
             XxlJobHelper.log("解析时间戳失败: {}", timeStr);
             return null;
+        }
+    }
+
+    /**
+     * 计算并设置打卡时间范围
+     * 基于考勤日期和工作时间范围，计算有效的打卡时间窗口
+     * 
+     * @param attendance 考勤记录
+     * @param targetDate 考勤日期
+     * @param workTimeRange 工作时间范围（格式：HH:mm-HH:mm）
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private void calculateAndSetClockTimeRange(SwmDailyAttendance attendance, Date targetDate, String workTimeRange) {
+        if (StringUtils.isBlank(workTimeRange) || !workTimeRange.contains("-")) {
+            XxlJobHelper.log("工作时间范围格式无效: {}, 跳过打卡时间范围计算", workTimeRange);
+            return;
+        }
+        
+        try {
+            // 解析工作时间范围
+            String[] times = workTimeRange.split("-");
+            if (times.length != 2) {
+                XxlJobHelper.log("工作时间范围格式错误: {}", workTimeRange);
+                return;
+            }
+            
+            String startTimeStr = times[0].trim();
+            String endTimeStr = times[1].trim();
+            
+            // 构建工作开始时间的完整日期时间
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+            SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            
+            String targetDateStr = dateFormat.format(targetDate);
+            String workStartDateTimeStr = targetDateStr + " " + startTimeStr + ":00";
+            Date workStartDateTime = dateTimeFormat.parse(workStartDateTimeStr);
+            
+            // 计算打卡开始时间：工作开始时间减去4小时
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(workStartDateTime);
+            calendar.add(Calendar.HOUR_OF_DAY, -4);
+            Date clockStartTime = calendar.getTime();
+            
+            // 计算打卡结束时间：打卡开始时间加24小时
+            calendar.setTime(clockStartTime);
+            calendar.add(Calendar.HOUR_OF_DAY, 24);
+            Date clockEndTime = calendar.getTime();
+            
+            // 设置到考勤记录中
+            attendance.setClockStartTime(clockStartTime);
+            attendance.setClockEndTime(clockEndTime);
+            
+            // 记录日志
+            SimpleDateFormat logFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            XxlJobHelper.log("员工[{}]{}打卡时间范围计算完成: {} 到 {} (工作时间: {})", 
+                attendance.getEmployeeId(), attendance.getEmployeeName(),
+                logFormat.format(clockStartTime), logFormat.format(clockEndTime), workTimeRange);
+                
+        } catch (Exception e) {
+            XxlJobHelper.log("计算打卡时间范围时发生异常，targetDate: {}, workTimeRange: {}, 错误: {}", 
+                targetDate, workTimeRange, e.getMessage());
         }
     }
 }

@@ -30,6 +30,8 @@ import java.util.Date;
         @Column(name = "clock_in_date", attrName = "clockInDate", label = "上班打卡完整时间"),
         @Column(name = "clock_out_time", attrName = "clockOutTime", label = "下班打卡时间"),
         @Column(name = "clock_out_date", attrName = "clockOutDate", label = "下班打卡完整时间"),
+        @Column(name = "clock_start_time", attrName = "clockStartTime", label = "打卡开始时间"),
+        @Column(name = "clock_end_time", attrName = "clockEndTime", label = "打卡结束时间"),
         @Column(name = "scheduled_hours", attrName = "scheduledHours", label = "应考勤时长(h)"),
         @Column(name = "actual_hours", attrName = "actualHours", label = "实际考勤时长(h)"),
         @Column(name = "idle_hours", attrName = "idleHours", label = "怠工时长(h)"),
@@ -55,6 +57,8 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private Date clockInDate; // 上班打卡完整时间
     private Date clockOutTime; // 下班打卡时间
     private Date clockOutDate; // 下班打卡完整时间
+    private Date clockStartTime; // 打卡开始时间
+    private Date clockEndTime; // 打卡结束时间
     private BigDecimal scheduledHours; // 应考勤时长(h)
     private BigDecimal actualHours; // 实际考勤时长(h)
     private BigDecimal idleHours; // 怠工时长(h)
@@ -250,5 +254,21 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     public void setCurrentPosition(String currentPosition) {
         this.currentPosition = currentPosition;
+    }
+
+    public Date getClockStartTime() {
+        return clockStartTime;
+    }
+
+    public void setClockStartTime(Date clockStartTime) {
+        this.clockStartTime = clockStartTime;
+    }
+
+    public Date getClockEndTime() {
+        return clockEndTime;
+    }
+
+    public void setClockEndTime(Date clockEndTime) {
+        this.clockEndTime = clockEndTime;
     }
 }
