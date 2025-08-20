@@ -1162,7 +1162,7 @@ public class AttendanceTask {
      * 2. 时间范围模式（推荐）：
      *    - startTime=2025-01-01 00:00:00;endTime=2025-01-31 23:59:59
      *      计算指定时间范围所有人的考勤
-     *    - startTime=2025-01-01 00:00:00;endTime=2025-01-31 23:59:59;idCards=110101199001011234
+     *    - startTime=2025-01-01 00:00:00;endTime=2025-01-31 23:59:59;idCards=450422199502070018
      *      计算指定时间范围指定身份证的考勤
      *    - startTime=2025-01-01 00:00:00;endTime=2025-01-31 23:59:59;idCards=110101199001011234,110101199001015678
      *      计算指定时间范围多个身份证的考勤
@@ -1469,10 +1469,18 @@ public class AttendanceTask {
     private boolean processAttendanceRecord(SwmDailyAttendance record) {
         boolean updated = false;
         
-        // 计算实际考勤时长
+        // 计算实际考勤时长 - 修改为工作区域时长
+        // 新逻辑：实际考勤时长 = 上下班打卡时间范围内的工作区域活动时长
+        // @author: Shawn
+        // @date: 2025-08-20
         if (shouldCalculateActualHours(record)) {
-            calculateAndUpdateActualHours(record);
-            updated = true;
+            BigDecimal workAreaHours = calculateWorkAreaHours(record);
+            if (workAreaHours != null) {
+                record.setActualHours(workAreaHours);
+                updated = true;
+                XxlJobHelper.log("员工[{}]{}实际考勤时长更新为工作区域时长: {} 小时",
+                    record.getEmployeeId(), record.getEmployeeName(), workAreaHours);
+            }
         }
         
         // 计算实际工作时长
@@ -1557,7 +1565,7 @@ public class AttendanceTask {
      * @date 2025-08-12
      */
     private boolean shouldCalculateActualHours(SwmDailyAttendance record) {
-        return record.getClockInTime() != null && record.getClockOutTime() != null;
+        return record.getClockInDate() != null && record.getClockOutDate() != null;
     }
 
     /**
@@ -2165,8 +2173,8 @@ public class AttendanceTask {
         }
         
         // 必须有时间信息（打卡时间或应考勤时间）
-        return record.getClockInTime() != null || 
-               record.getClockOutTime() != null || 
+        return record.getClockInDate() != null || 
+               record.getClockOutDate() != null || 
                StringUtils.isNotBlank(record.getWorkTimeRange());
     }
     
@@ -2264,28 +2272,19 @@ public class AttendanceTask {
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
         String attendanceDate = dateFormat.format(record.getAttendanceDate());
         
-        // 优先级1：使用实际打卡时间
-        if (record.getClockInTime() != null && record.getClockOutTime() != null) {
-            String startTime = attendanceDate + " " + timeFormat.format(record.getClockInTime());
-            String endTime = attendanceDate + " " + timeFormat.format(record.getClockOutTime());
-            
-            // 处理跨天情况
-            if (record.getClockOutTime().before(record.getClockInTime())) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(record.getAttendanceDate());
-                cal.add(Calendar.DAY_OF_MONTH, 1);
-                String nextDay = dateFormat.format(cal.getTime());
-                endTime = nextDay + " " + timeFormat.format(record.getClockOutTime());
-            }
+        // 优先级1：使用实际打卡完整时间
+        if (record.getClockInDate() != null && record.getClockOutDate() != null) {
+            String startTime = DATETIME_FORMAT.format(record.getClockInDate());
+            String endTime = DATETIME_FORMAT.format(record.getClockOutDate());
             
             return new String[]{startTime, endTime};
         }
         
-        // 优先级2：只有上班打卡时间 + 应考勤时间的下班时间
-        if (record.getClockInTime() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
+        // 优先级2：只有上班打卡完整时间 + 应考勤时间的下班时间
+        if (record.getClockInDate() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
             String[] times = record.getWorkTimeRange().split("-");
             if (times.length == 2) {
-                String startTime = attendanceDate + " " + timeFormat.format(record.getClockInTime());
+                String startTime = DATETIME_FORMAT.format(record.getClockInDate());
                 String endTime = attendanceDate + " " + times[1].trim() + ":00";
                 
                 // 处理跨天
@@ -2300,20 +2299,12 @@ public class AttendanceTask {
             }
         }
         
-        // 优先级3：只有下班打卡时间 + 应考勤时间的上班时间
-        if (record.getClockOutTime() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
+        // 优先级3：只有下班打卡完整时间 + 应考勤时间的上班时间
+        if (record.getClockOutDate() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
             String[] times = record.getWorkTimeRange().split("-");
             if (times.length == 2) {
                 String startTime = attendanceDate + " " + times[0].trim() + ":00";
-                String endTime = attendanceDate + " " + timeFormat.format(record.getClockOutTime());
-                
-                // 处理跨天
-                if (timeFormat.format(record.getClockOutTime()).compareTo(times[0].trim()) < 0) {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(record.getAttendanceDate());
-                    cal.add(Calendar.DAY_OF_MONTH, 1);
-                    endTime = dateFormat.format(cal.getTime()) + " " + timeFormat.format(record.getClockOutTime());
-                }
+                String endTime = DATETIME_FORMAT.format(record.getClockOutDate());
                 
                 return new String[]{startTime, endTime};
             }
