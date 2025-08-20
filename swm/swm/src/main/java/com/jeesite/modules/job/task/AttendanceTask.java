@@ -1032,9 +1032,10 @@ public class AttendanceTask {
     /**
      * 判断是否满足异常考勤条件
      * 条件：满足任一即为异常
-     * 条件A：clockInTime != null OR clockOutTime != null
-     * 条件B：effectiveWorkHours != null AND effectiveWorkHours > 0
-     * 条件C：actualHours != null AND actualHours > 0
+     * 条件A：没有上班打卡 (clockInTime == null)
+     * 条件B：没有下班打卡 (clockOutTime == null)
+     * 条件C：没有实际工作时长 (effectiveWorkHours == null || effectiveWorkHours <= 0)
+     * 条件D：没有实际考勤时长 (actualHours == null || actualHours <= 0)
      * 
      * @param record 考勤记录
      * @return true-满足异常条件，false-不满足
@@ -1048,18 +1049,19 @@ public class AttendanceTask {
         BigDecimal actualHours = record.getActualHours();
 
         // 满足任一条件即为异常
-        boolean hasPartialClockRecord = (clockInTime != null || clockOutTime != null);
-        boolean hasEffectiveWorkHours = (effectiveWorkHours != null
-                && effectiveWorkHours.compareTo(BigDecimal.ZERO) > 0);
-        boolean hasActualHours = (actualHours != null && actualHours.compareTo(BigDecimal.ZERO) > 0);
+        boolean noClockInTime = (clockInTime == null);
+        boolean noClockOutTime = (clockOutTime == null);
+        boolean noEffectiveWorkHours = (effectiveWorkHours == null 
+                || effectiveWorkHours.compareTo(BigDecimal.ZERO) <= 0);
+        boolean noActualHours = (actualHours == null || actualHours.compareTo(BigDecimal.ZERO) <= 0);
 
-        boolean isAbnormal = hasPartialClockRecord || hasEffectiveWorkHours || hasActualHours;
+        boolean isAbnormal = noClockInTime || noClockOutTime || noEffectiveWorkHours || noActualHours;
 
         // 详细日志记录（DEBUG级别）
         if (log.isDebugEnabled()) {
-            log.debug("员工[{}]{} 异常条件判断详情: 部分打卡记录={}, 实际工作时长有值={}, 实际考勤时长有值={}, 结果={}",
+            log.debug("员工[{}]{} 异常条件判断详情: 无上班打卡={}, 无下班打卡={}, 无实际工作时长={}, 无实际考勤时长={}, 结果={}",
                     record.getEmployeeId(), record.getEmployeeName(),
-                    hasPartialClockRecord, hasEffectiveWorkHours, hasActualHours, isAbnormal);
+                    noClockInTime, noClockOutTime, noEffectiveWorkHours, noActualHours, isAbnormal);
         }
 
         return isAbnormal;
