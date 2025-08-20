@@ -1004,13 +1004,13 @@ public class AttendanceTask {
      * @date 2025/01/27
      */
     private boolean isNormalAttendanceCondition(SwmDailyAttendance record) {
-        Date clockInTime = record.getClockInTime();
-        Date clockOutTime = record.getClockOutTime();
+        Date clockInDate = record.getClockInDate();
+        Date clockOutDate = record.getClockOutDate();
         BigDecimal scheduledHours = record.getScheduledHours();
         BigDecimal actualHours = record.getActualHours();
 
         // 5个条件必须全部满足
-        boolean hasCompleteClockTimes = (clockInTime != null && clockOutTime != null);
+        boolean hasCompleteClockTimes = (clockInDate != null && clockOutDate != null);
         boolean hasScheduledHours = (scheduledHours != null);
         boolean hasActualHours = (actualHours != null);
         boolean scheduledGEActual = (scheduledHours != null && actualHours != null &&
@@ -1020,9 +1020,9 @@ public class AttendanceTask {
 
         // 详细日志记录（DEBUG级别）
         if (log.isDebugEnabled()) {
-            log.debug("员工[{}]{} 正常条件判断详情: clockIn={}, clockOut={}, scheduled={}, actual={}, 结果={}",
+            log.debug("员工[{}]{} 正常条件判断详情: clockInDate={}, clockOutDate={}, scheduled={}, actual={}, 结果={}",
                     record.getEmployeeId(), record.getEmployeeName(),
-                    clockInTime != null, clockOutTime != null,
+                    clockInDate != null, clockOutDate != null,
                     scheduledHours, actualHours, isNormal);
         }
 
@@ -1032,8 +1032,8 @@ public class AttendanceTask {
     /**
      * 判断是否满足异常考勤条件
      * 条件：满足任一即为异常
-     * 条件A：没有上班打卡 (clockInTime == null)
-     * 条件B：没有下班打卡 (clockOutTime == null)
+     * 条件A：没有上班打卡 (clockInDate == null)
+     * 条件B：没有下班打卡 (clockOutDate == null)
      * 条件C：没有实际工作时长 (effectiveWorkHours == null || effectiveWorkHours <= 0)
      * 条件D：没有实际考勤时长 (actualHours == null || actualHours <= 0)
      * 
@@ -1043,25 +1043,25 @@ public class AttendanceTask {
      * @date 2025/01/27
      */
     private boolean isAbnormalAttendanceCondition(SwmDailyAttendance record) {
-        Date clockInTime = record.getClockInTime();
-        Date clockOutTime = record.getClockOutTime();
+        Date clockInDate = record.getClockInDate();
+        Date clockOutDate = record.getClockOutDate();
         BigDecimal effectiveWorkHours = record.getEffectiveWorkHours();
         BigDecimal actualHours = record.getActualHours();
 
         // 满足任一条件即为异常
-        boolean noClockInTime = (clockInTime == null);
-        boolean noClockOutTime = (clockOutTime == null);
+        boolean noClockInDate = (clockInDate == null);
+        boolean noClockOutDate = (clockOutDate == null);
         boolean noEffectiveWorkHours = (effectiveWorkHours == null 
                 || effectiveWorkHours.compareTo(BigDecimal.ZERO) <= 0);
         boolean noActualHours = (actualHours == null || actualHours.compareTo(BigDecimal.ZERO) <= 0);
 
-        boolean isAbnormal = noClockInTime || noClockOutTime || noEffectiveWorkHours || noActualHours;
+        boolean isAbnormal = noClockInDate || noClockOutDate || noEffectiveWorkHours || noActualHours;
 
         // 详细日志记录（DEBUG级别）
         if (log.isDebugEnabled()) {
-            log.debug("员工[{}]{} 异常条件判断详情: 无上班打卡={}, 无下班打卡={}, 无实际工作时长={}, 无实际考勤时长={}, 结果={}",
+            log.debug("员工[{}]{} 异常条件判断详情: 无上班打卡完整时间={}, 无下班打卡完整时间={}, 无实际工作时长={}, 无实际考勤时长={}, 结果={}",
                     record.getEmployeeId(), record.getEmployeeName(),
-                    noClockInTime, noClockOutTime, noEffectiveWorkHours, noActualHours, isAbnormal);
+                    noClockInDate, noClockOutDate, noEffectiveWorkHours, noActualHours, isAbnormal);
         }
 
         return isAbnormal;
@@ -1069,7 +1069,7 @@ public class AttendanceTask {
 
     /**
      * 判断是否满足未考勤条件
-     * 条件：clockInTime == null AND clockOutTime == null AND effectiveWorkHours ==
+     * 条件：clockInDate == null AND clockOutDate == null AND effectiveWorkHours ==
      * null AND actualHours == null
      * 
      * @param record 考勤记录
@@ -1078,13 +1078,13 @@ public class AttendanceTask {
      * @date 2025/01/27
      */
     private boolean isNotAttendanceCondition(SwmDailyAttendance record) {
-        Date clockInTime = record.getClockInTime();
-        Date clockOutTime = record.getClockOutTime();
+        Date clockInDate = record.getClockInDate();
+        Date clockOutDate = record.getClockOutDate();
         BigDecimal effectiveWorkHours = record.getEffectiveWorkHours();
         BigDecimal actualHours = record.getActualHours();
 
         // 4个条件必须全部满足
-        boolean noClockRecord = (clockInTime == null && clockOutTime == null);
+        boolean noClockRecord = (clockInDate == null && clockOutDate == null);
         boolean noEffectiveWorkHours = (effectiveWorkHours == null
                 || effectiveWorkHours.compareTo(BigDecimal.ZERO) <= 0);
         boolean noActualHours = (actualHours == null || actualHours.compareTo(BigDecimal.ZERO) <= 0);
@@ -1093,7 +1093,7 @@ public class AttendanceTask {
 
         // 详细日志记录（DEBUG级别）
         if (log.isDebugEnabled()) {
-            log.debug("员工[{}]{} 未考勤条件判断详情: 无打卡记录={}, 无实际工作时长={}, 无实际考勤时长={}, 结果={}",
+            log.debug("员工[{}]{} 未考勤条件判断详情: 无打卡完整时间记录={}, 无实际工作时长={}, 无实际考勤时长={}, 结果={}",
                     record.getEmployeeId(), record.getEmployeeName(),
                     noClockRecord, noEffectiveWorkHours, noActualHours, isNotAttendance);
         }
