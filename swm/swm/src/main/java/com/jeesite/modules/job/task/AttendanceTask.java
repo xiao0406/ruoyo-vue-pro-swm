@@ -431,6 +431,64 @@ public class AttendanceTask {
     }
 
     /**
+     * 月度考勤统计任务V2版本
+     * 支持传参数进行灵活统计
+     * 
+     * 参数格式：
+     * 1. 无参数 - 统计本月所有人员的考勤
+     * 2. month=2025-08 - 统计指定月份所有人员的考勤
+     * 3. month=2025-08;idCard=412825197709304513 - 统计指定月份和单个身份证号人员的考勤
+     * 4. month=2025-08;idCards=412825197709304513,110101199001011234 - 统计指定月份和多个身份证号人员的考勤
+     * 5. idCards=412825197709304513,110101199001011234 - 统计本月多个身份证号人员的考勤
+     * 
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    @XxlJob("calculateMonthlyAttendanceV2")
+    public void calculateMonthlyAttendanceV2() {
+        SwmJobLog jobLog = new SwmJobLog();
+        jobLog.setJobName("calculateMonthlyAttendanceV2");
+        jobLog.setStartTime(new Date());
+        jobLog.setExecuteStatus("1"); // 默认失败
+        
+        try {
+            XxlJobHelper.log("开始执行月度考勤统计任务V2...");
+            
+            // 保存任务参数
+            String jobParam = XxlJobHelper.getJobParam();
+            jobLog.setJobParam(jobParam);
+            swmJobLogService.save(jobLog);
+            jobLog.setIsNewRecord(false);
+            
+            // TODO: 1. 解析参数（月份、身份证号列表）
+            MonthlyAttendanceParams params = parseMonthlyAttendanceParams(jobParam);
+            XxlJobHelper.log("解析参数完成 - 月份: {}, 身份证数量: {}", 
+                params.targetMonth, params.idCardList.size());
+            
+            // TODO: 2. 根据参数确定查询条件
+            
+            // TODO: 3. 查询日考勤记录
+            
+            // TODO: 4. 按员工分组并统计
+            
+            // TODO: 5. 计算月度统计数据
+            
+            // TODO: 6. 保存或更新月度统计记录
+            
+            XxlJobHelper.log("月度考勤统计任务V2执行成功");
+            jobLog.setExecuteStatus("0"); // 成功
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("月度考勤统计任务V2执行异常", e);
+            jobLog.setExceptionInfo(e.getMessage());
+        } finally {
+            jobLog.setEndTime(new Date());
+            jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
+            swmJobLogService.save(jobLog);
+        }
+    }
+
+    /**
      * 创建每日考勤数据
      */
     @XxlJob("createDailyAttendance")
@@ -2644,5 +2702,184 @@ public class AttendanceTask {
             XxlJobHelper.log("计算打卡时间范围时发生异常，targetDate: {}, workTimeRange: {}, 错误: {}", 
                 targetDate, workTimeRange, e.getMessage());
         }
+    }
+
+    /**
+     * 月度考勤统计参数类
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private static class MonthlyAttendanceParams {
+        /** 目标月份（格式：yyyy-MM） */
+        String targetMonth;
+        /** 身份证号列表 */
+        List<String> idCardList = new ArrayList<>();
+    }
+
+    /**
+     * 解析月度考勤统计参数
+     * 支持多种参数格式的解析
+     * 
+     * @param jobParam xxl-job传入的参数字符串
+     * @return 解析后的参数对象
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private MonthlyAttendanceParams parseMonthlyAttendanceParams(String jobParam) {
+        MonthlyAttendanceParams params = new MonthlyAttendanceParams();
+        
+        // 默认使用当前月份
+        SimpleDateFormat monthFormat = new SimpleDateFormat("yyyy-MM");
+        params.targetMonth = monthFormat.format(new Date());
+        
+        if (StringUtils.isBlank(jobParam)) {
+            logParseResult(params);
+            return params;
+        }
+        
+        try {
+            // 支持分号分隔的多个参数
+            String[] paramArray = jobParam.split(";");
+            for (String param : paramArray) {
+                parseParameter(param.trim(), params);
+            }
+        } catch (Exception e) {
+            XxlJobHelper.log("参数解析失败: {}，使用默认参数。错误: {}", jobParam, e.getMessage());
+            logParameterExamples();
+        }
+        
+        logParseResult(params);
+        return params;
+    }
+
+    /**
+     * 解析单个参数
+     * @param param 单个参数字符串
+     * @param params 参数对象
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private void parseParameter(String param, MonthlyAttendanceParams params) {
+        if (param.startsWith("month=")) {
+            parseMonthParameter(param, params);
+        } else if (param.startsWith("idCard=")) {
+            parseSingleIdCardParameter(param, params);
+        } else if (param.startsWith("idCards=")) {
+            parseMultipleIdCardsParameter(param, params);
+        }
+    }
+
+    /**
+     * 解析月份参数
+     * @param param 月份参数字符串
+     * @param params 参数对象
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private void parseMonthParameter(String param, MonthlyAttendanceParams params) {
+        String monthStr = param.substring("month=".length()).trim();
+        if (monthStr.matches("\\d{4}-\\d{2}")) {
+            params.targetMonth = monthStr;
+            XxlJobHelper.log("解析月份参数: {}", monthStr);
+        } else {
+            XxlJobHelper.log("月份格式错误: {}，使用默认当前月份: {}", monthStr, params.targetMonth);
+        }
+    }
+
+    /**
+     * 解析单个身份证参数
+     * @param param 身份证参数字符串
+     * @param params 参数对象
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private void parseSingleIdCardParameter(String param, MonthlyAttendanceParams params) {
+        String idCard = param.substring("idCard=".length()).trim();
+        if (isValidIdCard(idCard)) {
+            params.idCardList.add(idCard);
+            XxlJobHelper.log("解析单个身份证参数: {}", idCard);
+        } else {
+            XxlJobHelper.log("身份证格式不正确，跳过: {}", idCard);
+        }
+    }
+
+    /**
+     * 解析多个身份证参数
+     * @param param 多个身份证参数字符串
+     * @param params 参数对象
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private void parseMultipleIdCardsParameter(String param, MonthlyAttendanceParams params) {
+        String idCardsStr = param.substring("idCards=".length()).trim();
+        if (StringUtils.isBlank(idCardsStr)) {
+            return;
+        }
+        
+        String[] idCards = idCardsStr.split(",");
+        int validCount = 0;
+        
+        for (String idCard : idCards) {
+            String trimmedIdCard = idCard.trim();
+            if (isValidIdCard(trimmedIdCard)) {
+                params.idCardList.add(trimmedIdCard);
+                validCount++;
+            } else {
+                XxlJobHelper.log("身份证格式不正确，跳过: {}", trimmedIdCard);
+            }
+        }
+        
+        XxlJobHelper.log("解析多个身份证参数: 总数{}, 有效{}", idCards.length, validCount);
+    }
+
+    /**
+     * 记录解析结果
+     * @param params 参数对象
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private void logParseResult(MonthlyAttendanceParams params) {
+        XxlJobHelper.log("参数解析完成 - 目标月份: {}", params.targetMonth);
+        
+        if (params.idCardList.isEmpty()) {
+            XxlJobHelper.log("处理所有人员");
+            return;
+        }
+        
+        XxlJobHelper.log("指定身份证数量: {}个", params.idCardList.size());
+        if (params.idCardList.size() <= 10) {
+            XxlJobHelper.log("身份证列表: {}", String.join(", ", params.idCardList));
+        } else {
+            XxlJobHelper.log("身份证列表（前10个）: {}", 
+                String.join(", ", params.idCardList.subList(0, 10)));
+        }
+    }
+
+    /**
+     * 记录参数格式示例
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private void logParameterExamples() {
+        XxlJobHelper.log("参数格式示例:");
+        XxlJobHelper.log("  month=2025-08");
+        XxlJobHelper.log("  month=2025-08;idCard=412825197709304513");
+        XxlJobHelper.log("  month=2025-08;idCards=412825197709304513,110101199001011234");
+        XxlJobHelper.log("  idCards=412825197709304513,110101199001011234");
+    }
+
+    /**
+     * 验证身份证号格式
+     * @param idCard 身份证号
+     * @return true-格式正确，false-格式错误
+     * @author Shawn
+     * @date 2025-08-20
+     */
+    private boolean isValidIdCard(String idCard) {
+        if (StringUtils.isBlank(idCard)) {
+            return false;
+        }
+        // 验证身份证格式（15位或18位，18位最后一位可以是X）
+        return idCard.matches("\\d{15}|\\d{17}[\\dXx]");
     }
 }
