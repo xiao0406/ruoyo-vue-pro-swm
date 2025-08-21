@@ -1058,20 +1058,22 @@ public class AttendanceTask {
             return;
         }
 
-        // 2. 判断异常条件
-        if (isAbnormalAttendanceCondition(record)) {
-            record.setAttendanceNormal("1");
-            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [异常] - 满足异常条件",
-                    record.getEmployeeId(), record.getEmployeeName());
-            return;
-        }
+//        // 2. 判断异常条件
+//        if (isAbnormalAttendanceCondition(record)) {
+//            record.setAttendanceNormal("1");
+//            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [异常] - 满足异常条件",
+//                    record.getEmployeeId(), record.getEmployeeName());
+//            return;
+//        }
 
-        // 3. 判断未考勤条件
+        // 2. 判断未考勤条件
         if (isNotAttendanceCondition(record)) {
             record.setAttendanceNormal("3");
             XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [未考勤] - 没有打卡且无工作时长数据",
                     record.getEmployeeId(), record.getEmployeeName());
             return;
+        } else {
+            record.setAttendanceNormal("1");
         }
 
         // 4. 其他情况保持原状态
