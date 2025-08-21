@@ -76,6 +76,9 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
             if (swmAttendanceSummary.getIdleHours() == null) {
                 swmAttendanceSummary.setIdleHours(BigDecimal.ZERO);
             }
+            if (swmAttendanceSummary.getActualAttendanceDays() == null) {
+                swmAttendanceSummary.setActualAttendanceDays(BigDecimal.ZERO);
+            }
         }
 
         // 计算出勤率 = 实际出勤天数 / 应出勤天数

@@ -27,7 +27,9 @@ import java.math.BigDecimal;
         @Column(name = "month", attrName = "month", label = "统计月份(YYYY-MM)", queryType = QueryType.LIKE),
         @Column(name = "scheduled_days", attrName = "scheduledDays", label = "应出勤天数(天)"),
         @Column(name = "actual_days", attrName = "actualDays", label = "实际出勤天数(天)"),
+        @Column(name = "actual_attendance_days", attrName = "actualAttendanceDays", label = "实际考勤天数(天)"),
         @Column(name = "attendance_rate", attrName = "attendanceRate", label = "出勤率"),
+        @Column(name = "monthly_attendance_rate", attrName = "monthlyAttendanceRate", label = "本月考勤率"),
         @Column(name = "scheduled_hours", attrName = "scheduledHours", label = "应考勤时间(h)"),
         @Column(name = "actual_hours", attrName = "actualHours", label = "实际工作时间(h)"),
         @Column(name = "attendance_achievement_rate", attrName = "attendanceAchievementRate", label = "考勤达成率"),
@@ -50,7 +52,9 @@ public class SwmAttendanceSummary extends DataEntity<SwmAttendanceSummary> {
     private String month;               // 统计月份(YYYY-MM)
     private BigDecimal scheduledDays;   // 应出勤天数(天)
     private BigDecimal actualDays;      // 实际出勤天数(天)
+    private BigDecimal actualAttendanceDays;  // 实际考勤天数(天)
     private BigDecimal attendanceRate;  // 出勤率
+    private BigDecimal monthlyAttendanceRate;  // 本月考勤率
     private BigDecimal scheduledHours;  // 应考勤时间(h)
     private BigDecimal actualHours;     // 实际工作时间(h)
     private BigDecimal attendanceAchievementRate;  // 考勤达成率
@@ -170,6 +174,22 @@ public class SwmAttendanceSummary extends DataEntity<SwmAttendanceSummary> {
 
     public void setAttendanceRate(BigDecimal attendanceRate) {
         this.attendanceRate = attendanceRate;
+    }
+
+    public BigDecimal getActualAttendanceDays() {
+        return actualAttendanceDays;
+    }
+
+    public void setActualAttendanceDays(BigDecimal actualAttendanceDays) {
+        this.actualAttendanceDays = actualAttendanceDays;
+    }
+
+    public BigDecimal getMonthlyAttendanceRate() {
+        return monthlyAttendanceRate;
+    }
+
+    public void setMonthlyAttendanceRate(BigDecimal monthlyAttendanceRate) {
+        this.monthlyAttendanceRate = monthlyAttendanceRate;
     }
 
     public BigDecimal getScheduledHours() {
