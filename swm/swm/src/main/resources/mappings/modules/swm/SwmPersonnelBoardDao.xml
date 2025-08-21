@@ -74,14 +74,12 @@
             SELECT
                 da.employee_id,
                 COUNT(CASE
-                    WHEN da.clock_in_time IS NOT NULL
-                         OR da.clock_out_time IS NOT NULL
-                         OR da.actual_hours > 0
-                         OR da.effective_work_hours > 0
+                    WHEN da.clock_in_date IS NOT NULL
+                         OR da.clock_out_date IS NOT NULL
                     THEN 1
-                END) AS attendance_count,
-                COALESCE(SUM(da.effective_work_hours), 0) AS working_hours,
-                COALESCE(SUM(da.idle_hours), 0) AS idle_hours
+                END) AS attendance_count, -- 本月出勤次数 - 实际出勤次数 实际出勤天数=本月有上班打卡的天数
+                COALESCE(SUM(da.effective_work_hours), 0) AS working_hours, -- 本月工作时长 - 每日实际工作时长
+                COALESCE(SUM(da.idle_hours), 0) AS idle_hours -- 本月怠工时长 - 每日怠工时长总和
             FROM swm_daily_attendance da
             WHERE da.status = '0'
                 <if test="timeType != null and timeValue != null">
