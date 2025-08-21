@@ -4,6 +4,7 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmAttendanceSummaryDao;
 import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
+import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.entity.SwmScheduleTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,9 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     @Autowired
     private SwmScheduleTimeService swmScheduleTimeService;
+
+    @Autowired
+    private SwmDailyAttendanceService swmDailyAttendanceService;
 
     /**
      * 获取单条数据
@@ -240,9 +244,12 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal scheduledDays = calculateScheduledDays(identityCard, month);
         summary.setScheduledDays(scheduledDays);
 
+        // 计算实际出勤天数
+        BigDecimal actualDays = calculateActualDays(identityCard, month);
+        summary.setActualDays(actualDays);
+
         // TODO: 后续添加其他指标的计算
         // 初始化其他字段为0
-        summary.setActualDays(BigDecimal.ZERO);
         summary.setActualAttendanceDays(BigDecimal.ZERO);
         summary.setScheduledHours(BigDecimal.ZERO);
         summary.setActualHours(BigDecimal.ZERO);
@@ -356,5 +363,39 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         }
 
         return restDayCount;
+    }
+
+    /**
+     * 计算实际出勤天数
+     * 只要有上班打卡时间或下班打卡时间就算出勤一天
+     * 
+     * @param identityCard 身份证号
+     * @param month        月份(格式:yyyy-MM)
+     * @return 实际出勤天数
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateActualDays(String identityCard, String month) {
+        try {
+            // 根据身份证号和月份查询该月所有日考勤记录
+            List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService
+                    .findByIdentityCardAndMonth(identityCard, month);
+
+            if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
+                // 没有考勤记录，实际出勤天数为0
+                return BigDecimal.ZERO;
+            }
+
+            // 统计有打卡记录的天数
+            long actualDayCount = dailyAttendanceList.stream()
+                    .filter(attendance -> attendance.getClockInDate() != null || attendance.getClockOutDate() != null)
+                    .count();
+
+            return new BigDecimal(actualDayCount);
+
+        } catch (Exception e) {
+            // 发生异常时返回0
+            return BigDecimal.ZERO;
+        }
     }
 }

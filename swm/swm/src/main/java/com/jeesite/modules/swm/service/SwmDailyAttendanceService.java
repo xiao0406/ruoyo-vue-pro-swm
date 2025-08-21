@@ -382,7 +382,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     /**
      * 根据身份证和日期查询考勤记录
-     * @param identityCard 身份证号
+     * 
+     * @param identityCard   身份证号
      * @param attendanceDate 考勤日期
      * @return 考勤记录
      * @author Shawn
@@ -395,6 +396,22 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         // 处理日期，去除时间部分
         attendanceDate = truncateTime(attendanceDate);
         return dao.findByIdentityCardAndDate(identityCard, attendanceDate);
+    }
+
+    /**
+     * 根据身份证号和月份查询考勤记录
+     * 
+     * @param identityCard 身份证号
+     * @param month        月份(格式: yyyy-MM)
+     * @return 考勤记录列表
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    public List<SwmDailyAttendance> findByIdentityCardAndMonth(String identityCard, String month) {
+        if (StringUtils.isBlank(identityCard) || StringUtils.isBlank(month)) {
+            return new ArrayList<>();
+        }
+        return dao.findByIdentityCardAndMonth(identityCard, month);
     }
 
     /**
@@ -752,11 +769,11 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             exportEntity.setDailyEfficiency(attendance.getDailyEfficiency());
             exportEntity.setDailyAchievementRate(attendance.getDailyAchievementRate());
             exportEntity.setAttendanceNormal(attendance.getAttendanceNormal());
-            
+
             // 获取实时位置而不是使用数据库中的旧数据
             String realTimePosition = getRealTimePosition(attendance.getEmployeeId());
             exportEntity.setCurrentPosition(realTimePosition);
-            
+
             exportEntity.setRemarks(attendance.getRemarks());
 
             exportList.add(exportEntity);
@@ -764,7 +781,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
         return exportList;
     }
-    
+
     /**
      * 获取员工的实时位置
      *

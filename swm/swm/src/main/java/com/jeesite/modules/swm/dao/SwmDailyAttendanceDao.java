@@ -10,7 +10,8 @@ import java.util.List;
 
 /**
  * 日考勤统计表DAO接口
- * @author  zwf
+ * 
+ * @author zwf
  * @version 2025-05-20
  */
 @MyBatisDao
@@ -18,6 +19,7 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
 
     /**
      * 自定义更新方法，确保包含打卡时间字段
+     * 
      * @param swmDailyAttendance 日考勤记录
      * @return 影响的行数
      */
@@ -25,7 +27,8 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
 
     /**
      * 根据员工ID和日期查询考勤记录
-     * @param employeeId 员工ID
+     * 
+     * @param employeeId     员工ID
      * @param attendanceDate 考勤日期
      * @return 考勤记录
      */
@@ -33,7 +36,8 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
 
     /**
      * 根据员工姓名和日期查询考勤记录
-     * @param employeeName 员工姓名
+     * 
+     * @param employeeName   员工姓名
      * @param attendanceDate 考勤日期
      * @return 考勤记录
      */
@@ -41,24 +45,27 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
 
     /**
      * 根据员工ID和日期范围查询考勤记录
+     * 
      * @param employeeId 员工ID
-     * @param beginDate 开始日期
-     * @param endDate 结束日期
+     * @param beginDate  开始日期
+     * @param endDate    结束日期
      * @return 考勤记录列表
      */
     List<SwmDailyAttendance> findByEmployeeIdAndDateRange(String employeeId, Date beginDate, Date endDate);
 
     /**
      * 根据员工姓名和日期范围查询考勤记录
+     * 
      * @param employeeName 员工姓名
-     * @param beginDate 开始日期
-     * @param endDate 结束日期
+     * @param beginDate    开始日期
+     * @param endDate      结束日期
      * @return 考勤记录列表
      */
     List<SwmDailyAttendance> findByEmployeeAndDateRange(String employeeName, Date beginDate, Date endDate);
 
     /**
      * 根据日期查询所有考勤记录
+     * 
      * @param attendanceDate 考勤日期
      * @return 考勤记录列表
      */
@@ -66,37 +73,54 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
 
     /**
      * 根据员工ID和月份查询考勤记录
+     * 
      * @param employeeId 员工ID
-     * @param year 年份
-     * @param month 月份 (1-12)
+     * @param year       年份
+     * @param month      月份 (1-12)
      * @return 考勤记录列表
      */
     List<SwmDailyAttendance> findByEmployeeIdAndMonth(String employeeId, int year, int month);
 
     /**
      * 根据员工姓名和月份查询考勤记录
+     * 
      * @param employeeName 员工姓名
-     * @param year 年份
-     * @param month 月份 (1-12)
+     * @param year         年份
+     * @param month        月份 (1-12)
      * @return 考勤记录列表
      */
     List<SwmDailyAttendance> findByEmployeeAndMonth(String employeeName, int year, int month);
 
     /**
      * 查询指定月份的日考勤记录
+     * 
      * @param employeeIds 员工ID(可选)
-     * @param month 月份(格式: yyyy-MM)
+     * @param month       月份(格式: yyyy-MM)
      * @return 日考勤记录列表
      */
     List<SwmDailyAttendance> findByMonth(@Param("employeeIds") List<String> employeeIds, @Param("month") String month);
 
     /**
      * 根据身份证和日期查询考勤记录
-     * @param identityCard 身份证号
+     * 
+     * @param identityCard   身份证号
      * @param attendanceDate 考勤日期
      * @return 考勤记录
      * @author Shawn
      * @date 2025-08-12
      */
-    SwmDailyAttendance findByIdentityCardAndDate(@Param("identityCard") String identityCard, @Param("attendanceDate") Date attendanceDate);
+    SwmDailyAttendance findByIdentityCardAndDate(@Param("identityCard") String identityCard,
+            @Param("attendanceDate") Date attendanceDate);
+
+    /**
+     * 根据身份证号和月份查询考勤记录
+     * 
+     * @param identityCard 身份证号
+     * @param month        月份(格式: yyyy-MM)
+     * @return 考勤记录列表
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    List<SwmDailyAttendance> findByIdentityCardAndMonth(@Param("identityCard") String identityCard,
+            @Param("month") String month);
 }
