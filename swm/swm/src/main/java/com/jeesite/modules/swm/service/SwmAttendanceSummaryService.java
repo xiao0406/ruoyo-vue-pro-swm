@@ -240,20 +240,22 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         summary.setIdentityCard(identityCard);
         summary.setMonth(month);
 
-        // 计算应出勤天数
+        // 一次查询该月所有日考勤记录，避免重复查询
+        List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService
+                .findByIdentityCardAndMonth(identityCard, month);
+
+        // 计算应出勤天数（基于排班配置）
         BigDecimal scheduledDays = calculateScheduledDays(identityCard, month);
         summary.setScheduledDays(scheduledDays);
 
-        // 计算实际出勤天数
-        BigDecimal actualDays = calculateActualDays(identityCard, month);
+        // 基于查询结果计算各项指标
+        BigDecimal actualDays = calculateActualDaysFromList(dailyAttendanceList);
         summary.setActualDays(actualDays);
 
-        // 计算怠工时长
-        BigDecimal idleHours = calculateIdleHours(identityCard, month);
+        BigDecimal idleHours = calculateIdleHoursFromList(dailyAttendanceList);
         summary.setIdleHours(idleHours);
 
-        // 计算应考勤时长
-        BigDecimal scheduledHours = calculateScheduledHours(identityCard, month);
+        BigDecimal scheduledHours = calculateScheduledHoursFromList(dailyAttendanceList);
         summary.setScheduledHours(scheduledHours);
 
         // TODO: 后续添加其他指标的计算
@@ -372,106 +374,67 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
     }
 
     /**
-     * 计算实际出勤天数
+     * 基于日考勤记录列表计算实际出勤天数
      * 只要有上班打卡时间或下班打卡时间就算出勤一天
      * 
-     * @param identityCard 身份证号
-     * @param month        月份(格式:yyyy-MM)
+     * @param dailyAttendanceList 日考勤记录列表
      * @return 实际出勤天数
      * @author Shawn
      * @date 2025-08-21
      */
-    private BigDecimal calculateActualDays(String identityCard, String month) {
-        try {
-            // 根据身份证号和月份查询该月所有日考勤记录
-            List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService
-                    .findByIdentityCardAndMonth(identityCard, month);
-
-            if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
-                // 没有考勤记录，实际出勤天数为0
-                return BigDecimal.ZERO;
-            }
-
-            // 统计有打卡记录的天数
-            long actualDayCount = dailyAttendanceList.stream()
-                    .filter(attendance -> attendance.getClockInDate() != null || attendance.getClockOutDate() != null)
-                    .count();
-
-            return new BigDecimal(actualDayCount);
-
-        } catch (Exception e) {
-            // 发生异常时返回0
+    private BigDecimal calculateActualDaysFromList(List<SwmDailyAttendance> dailyAttendanceList) {
+        if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
             return BigDecimal.ZERO;
         }
+
+        // 统计有打卡记录的天数
+        long actualDayCount = dailyAttendanceList.stream()
+                .filter(attendance -> attendance.getClockInDate() != null || attendance.getClockOutDate() != null)
+                .count();
+
+        return new BigDecimal(actualDayCount);
     }
 
     /**
-     * 计算怠工时长
-     * 累加该员工指定月份内所有日考勤记录的怠工时长
+     * 基于日考勤记录列表计算怠工时长
+     * 累加所有日考勤记录的怠工时长
      * 
-     * @param identityCard 身份证号
-     * @param month        月份(格式:yyyy-MM)
+     * @param dailyAttendanceList 日考勤记录列表
      * @return 怠工时长(小时)
      * @author Shawn
      * @date 2025-08-21
      */
-    private BigDecimal calculateIdleHours(String identityCard, String month) {
-        try {
-            // 根据身份证号和月份查询该月所有日考勤记录
-            List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService
-                    .findByIdentityCardAndMonth(identityCard, month);
-
-            if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
-                // 没有考勤记录，怠工时长为0
-                return BigDecimal.ZERO;
-            }
-
-            // 累加所有日考勤记录的怠工时长
-            BigDecimal totalIdleHours = dailyAttendanceList.stream()
-                    .map(SwmDailyAttendance::getIdleHours)
-                    .filter(idleHours -> idleHours != null) // 过滤null值
-                    .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
-
-            return totalIdleHours;
-
-        } catch (Exception e) {
-            // 发生异常时返回0
+    private BigDecimal calculateIdleHoursFromList(List<SwmDailyAttendance> dailyAttendanceList) {
+        if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
             return BigDecimal.ZERO;
         }
+
+        // 累加所有日考勤记录的怠工时长
+        return dailyAttendanceList.stream()
+                .map(SwmDailyAttendance::getIdleHours)
+                .filter(idleHours -> idleHours != null) // 过滤null值
+                .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
     }
 
     /**
-     * 计算应考勤时长
-     * 累加该员工指定月份内所有日考勤记录的应考勤时长
+     * 基于日考勤记录列表计算应考勤时长
+     * 累加所有日考勤记录的应考勤时长
      * 
-     * @param identityCard 身份证号
-     * @param month        月份(格式:yyyy-MM)
+     * @param dailyAttendanceList 日考勤记录列表
      * @return 应考勤时长(小时)
      * @author Shawn
      * @date 2025-08-21
      */
-    private BigDecimal calculateScheduledHours(String identityCard, String month) {
-        try {
-            // 根据身份证号和月份查询该月所有日考勤记录
-            List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService
-                    .findByIdentityCardAndMonth(identityCard, month);
-
-            if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
-                // 没有考勤记录，应考勤时长为0
-                return BigDecimal.ZERO;
-            }
-
-            // 累加所有日考勤记录的应考勤时长
-            BigDecimal totalScheduledHours = dailyAttendanceList.stream()
-                    .map(SwmDailyAttendance::getScheduledHours)
-                    .filter(scheduledHours -> scheduledHours != null) // 过滤null值
-                    .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
-
-            return totalScheduledHours;
-
-        } catch (Exception e) {
-            // 发生异常时返回0
+    private BigDecimal calculateScheduledHoursFromList(List<SwmDailyAttendance> dailyAttendanceList) {
+        if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
             return BigDecimal.ZERO;
         }
+
+        // 累加所有日考勤记录的应考勤时长
+        return dailyAttendanceList.stream()
+                .map(SwmDailyAttendance::getScheduledHours)
+                .filter(scheduledHours -> scheduledHours != null) // 过滤null值
+                .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
     }
+
 }
