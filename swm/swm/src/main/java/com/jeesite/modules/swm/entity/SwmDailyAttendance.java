@@ -33,6 +33,7 @@ import java.util.Date;
         @Column(name = "clock_start_time", attrName = "clockStartTime", label = "打卡开始时间"),
         @Column(name = "clock_end_time", attrName = "clockEndTime", label = "打卡结束时间"),
         @Column(name = "scheduled_hours", attrName = "scheduledHours", label = "应考勤时长(h)"),
+        @Column(name = "rest_time", attrName = "restTime", label = "休息时长(h)"),
         @Column(name = "actual_hours", attrName = "actualHours", label = "实际考勤时长(h)"),
         @Column(name = "idle_hours", attrName = "idleHours", label = "怠工时长(h)"),
         @Column(name = "effective_work_hours", attrName = "effectiveWorkHours", label = "实际工作时长(h)"),
@@ -60,6 +61,7 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private Date clockStartTime; // 打卡开始时间
     private Date clockEndTime; // 打卡结束时间
     private BigDecimal scheduledHours; // 应考勤时长(h)
+    private BigDecimal restTime; // 休息时长(h)
     private BigDecimal actualHours; // 实际考勤时长(h)
     private BigDecimal idleHours; // 怠工时长(h)
     private BigDecimal effectiveWorkHours; // 实际工作时长(h)
@@ -182,6 +184,14 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     public void setScheduledHours(BigDecimal scheduledHours) {
         this.scheduledHours = scheduledHours;
+    }
+
+    public BigDecimal getRestTime() {
+        return restTime;
+    }
+
+    public void setRestTime(BigDecimal restTime) {
+        this.restTime = restTime;
     }
 
     public BigDecimal getActualHours() {

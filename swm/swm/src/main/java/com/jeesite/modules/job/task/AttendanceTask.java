@@ -1053,7 +1053,7 @@ public class AttendanceTask {
         // 1. 优先判断正常条件
         if (isNormalAttendanceCondition(record)) {
             record.setAttendanceNormal("0");
-            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [正常] - 完整打卡且应考勤时长>=实际考勤时长",
+            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [正常] - 完整打卡且实际考勤时长>=有效应考勤时长(应考勤时长-休息时长)",
                     record.getEmployeeId(), record.getEmployeeName());
             return;
         }
@@ -1081,38 +1081,57 @@ public class AttendanceTask {
 
     /**
      * 判断是否满足正常考勤条件
-     * 条件：clockInTime != null AND clockOutTime != null AND scheduledHours != null
-     * AND actualHours != null AND scheduledHours >= actualHours
+     * 条件：clockInDate != null AND clockOutDate != null 
+     * AND actualHours >= scheduledHours - restTime
      * 
      * @param record 考勤记录
      * @return true-满足正常条件，false-不满足
      * @author Shawn
-     * @date 2025/01/27
+     * @date 2025/08/21
      */
     private boolean isNormalAttendanceCondition(SwmDailyAttendance record) {
         Date clockInDate = record.getClockInDate();
         Date clockOutDate = record.getClockOutDate();
         BigDecimal scheduledHours = record.getScheduledHours();
         BigDecimal actualHours = record.getActualHours();
+        BigDecimal restTime = record.getRestTime();
 
-        // 5个条件必须全部满足
+        // 必须有完整的打卡时间
         boolean hasCompleteClockTimes = (clockInDate != null && clockOutDate != null);
-        boolean hasScheduledHours = (scheduledHours != null);
-        boolean hasActualHours = (actualHours != null);
-        boolean scheduledGEActual = (scheduledHours != null && actualHours != null &&
-                scheduledHours.compareTo(actualHours) >= 0);
+        if (!hasCompleteClockTimes) {
+            return false;
+        }
 
-        boolean isNormal = hasCompleteClockTimes && hasScheduledHours && hasActualHours && scheduledGEActual;
+        // 必须有应考勤时长和实际考勤时长
+        if (scheduledHours == null || actualHours == null) {
+            return false;
+        }
+
+        // 如果没有休息时长，默认为0
+        if (restTime == null) {
+            restTime = BigDecimal.ZERO;
+        }
+
+        // 计算有效应考勤时长 = 应考勤时长 - 休息时长
+        BigDecimal effectiveScheduledHours = scheduledHours.subtract(restTime);
+        
+        // 确保有效应考勤时长不为负数
+        if (effectiveScheduledHours.compareTo(BigDecimal.ZERO) < 0) {
+            effectiveScheduledHours = BigDecimal.ZERO;
+        }
+
+        // 实际考勤时长 >= 有效应考勤时长
+        boolean actualGEEffectiveScheduled = actualHours.compareTo(effectiveScheduledHours) >= 0;
 
         // 详细日志记录（DEBUG级别）
         if (log.isDebugEnabled()) {
-            log.debug("员工[{}]{} 正常条件判断详情: clockInDate={}, clockOutDate={}, scheduled={}, actual={}, 结果={}",
+            log.debug("员工[{}]{} 正常条件判断详情: clockInDate={}, clockOutDate={}, scheduledHours={}, restTime={}, effectiveScheduledHours={}, actualHours={}, 结果={}",
                     record.getEmployeeId(), record.getEmployeeName(),
                     clockInDate != null, clockOutDate != null,
-                    scheduledHours, actualHours, isNormal);
+                    scheduledHours, restTime, effectiveScheduledHours, actualHours, actualGEEffectiveScheduled);
         }
 
-        return isNormal;
+        return actualGEEffectiveScheduled;
     }
 
     /**
@@ -2144,11 +2163,20 @@ public class AttendanceTask {
         BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
         attendance.setScheduledHours(scheduledHours);
         
+        // 设置休息时长
+        Double restTime = scheduleTime.getRestTime();
+        if (restTime != null) {
+            attendance.setRestTime(BigDecimal.valueOf(restTime).setScale(1, RoundingMode.HALF_UP));
+        } else {
+            attendance.setRestTime(BigDecimal.ZERO);
+        }
+        
         // 计算打卡时间范围
         calculateAndSetClockTimeRange(attendance, targetDate, workTimeRange);
         
-        XxlJobHelper.log("员工[{}]{}有排班信息：班次：{}，时间：{}，应考勤时长：{} 小时", 
-            person.getId(), person.getName(), scheduleInfo.classes, workTimeRange, scheduledHours);
+        XxlJobHelper.log("员工[{}]{}有排班信息：班次：{}，时间：{}，应考勤时长：{} 小时，休息时长：{} 小时", 
+            person.getId(), person.getName(), scheduleInfo.classes, workTimeRange, scheduledHours, 
+            attendance.getRestTime());
     }
 
     /**
@@ -2161,6 +2189,11 @@ public class AttendanceTask {
         attendance.setEffectiveWorkHours(BigDecimal.ZERO);
         attendance.setDailyEfficiency(BigDecimal.ZERO);
         attendance.setDailyAchievementRate(BigDecimal.ZERO);
+        
+        // 设置默认休息时长（如果还没有设置的话）
+        if (attendance.getRestTime() == null) {
+            attendance.setRestTime(BigDecimal.ZERO);
+        }
         
         // 如果不是休息日，设置为未考勤
         if (!"2".equals(attendance.getAttendanceNormal())) {
