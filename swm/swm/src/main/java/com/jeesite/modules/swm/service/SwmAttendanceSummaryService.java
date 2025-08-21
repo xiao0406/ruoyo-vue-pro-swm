@@ -265,12 +265,15 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal attendanceRate = calculateAttendanceRate(actualDays, scheduledDays);
         summary.setAttendanceRate(attendanceRate);
 
+        // 计算考勤达成率
+        BigDecimal attendanceAchievementRate = calculateAttendanceAchievementRate(actualHours, scheduledHours);
+        summary.setAttendanceAchievementRate(attendanceAchievementRate);
+
         // TODO: 后续添加其他指标的计算
         // 初始化其他字段为0
         summary.setActualAttendanceDays(BigDecimal.ZERO);
         summary.setEfficiency(BigDecimal.ZERO);
         summary.setMonthlyAttendanceRate(BigDecimal.ZERO);
-        summary.setAttendanceAchievementRate(BigDecimal.ZERO);
 
         return summary;
     }
@@ -487,6 +490,37 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
             // 计算出勤率：实际出勤天数 ÷ 应出勤天数（返回小数形式）
             return actualDays.divide(scheduledDays, 4, RoundingMode.HALF_UP);
+
+        } catch (Exception e) {
+            // 发生异常时返回0
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * 计算考勤达成率
+     * 考勤达成率 = 实际工作时长 ÷ 应考勤时长（返回小数形式）
+     *
+     * @param actualHours    实际工作时长
+     * @param scheduledHours 应考勤时长
+     * @return 考勤达成率(小数形式，保留4位小数)
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateAttendanceAchievementRate(BigDecimal actualHours, BigDecimal scheduledHours) {
+        try {
+            // 应考勤时长为0或null时，考勤达成率为0
+            if (scheduledHours == null || scheduledHours.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO;
+            }
+
+            // 实际工作时长为null时，按0处理
+            if (actualHours == null) {
+                return BigDecimal.ZERO;
+            }
+
+            // 计算考勤达成率：实际工作时长 ÷ 应考勤时长（返回小数形式）
+            return actualHours.divide(scheduledHours, 4, RoundingMode.HALF_UP);
 
         } catch (Exception e) {
             // 发生异常时返回0
