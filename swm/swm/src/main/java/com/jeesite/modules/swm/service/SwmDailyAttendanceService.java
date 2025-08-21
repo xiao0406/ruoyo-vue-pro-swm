@@ -616,6 +616,18 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     }
 
     /**
+     * 根据月份查询所有员工的日考勤记录（用于月度数据批量加载）
+     * 
+     * @param month 月份(格式: yyyy-MM)
+     * @return 日考勤记录列表
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    public List<SwmDailyAttendance> findByMonth(String month) {
+        return this.findByMonth(null, month);
+    }
+
+    /**
      * 根据身份证号计算怠工时长
      *
      * @param idCard        身份证号

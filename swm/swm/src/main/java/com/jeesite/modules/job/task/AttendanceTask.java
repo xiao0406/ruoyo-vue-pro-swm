@@ -470,15 +470,30 @@ public class AttendanceTask {
             // TODO: 2. 应出勤天数scheduled_days
             calculateAndUpdateScheduledDays(params);
             
-            // TODO: 3. 实际出勤天数actual_days
+            // 统一预加载月度日考勤数据缓存（一次性加载，后续多个指标复用）
+            XxlJobHelper.log("开始预加载{}月的日考勤数据缓存，供后续指标计算复用", params.targetMonth);
+            Map<String, List<SwmDailyAttendance>> monthlyDataCache = 
+                loadMonthlyAttendanceDataCache(params.targetMonth);
             
-            // TODO: 4. 工效
+            // 检查缓存加载结果
+            if (monthlyDataCache.isEmpty()) {
+                XxlJobHelper.log("{}月日考勤数据缓存为空，跳过后续需要日考勤数据的指标计算", params.targetMonth);
+            } else {
+                XxlJobHelper.log("{}月日考勤数据缓存加载成功，覆盖{}个员工", params.targetMonth, monthlyDataCache.size());
+                
+                // TODO: 3. 实际出勤天数actual_days
+                calculateAndUpdateActualDays(params, monthlyDataCache);
+                
+                // TODO: 4. 工效（将来复用缓存） efficiency
+                // calculateAndUpdateEfficiency(params, monthlyDataCache);
+                
+                // TODO: 5. 怠工时长（将来复用缓存）idle_hours
+                // calculateAndUpdateIdleHours(params, monthlyDataCache);
+            }
             
-            // TODO: 5. 怠工时长
-            
-            // TODO: 6. 应考勤时长
+            // TODO: 6. 应考勤时长 scheduled_hours
 
-            // TODO: 7. 实际工作时长
+            // TODO: 7. 实际工作时长 actual_hours
 
             // TODO: 8. 实际考勤天数
 
@@ -2897,6 +2912,131 @@ public class AttendanceTask {
     }
 
     /**
+     * 计算并更新实际出勤天数
+     * 根据参数中的身份证列表或从缓存中提取，计算实际出勤天数并更新到考勤统计表
+     * 
+     * @param params 月度考勤统计参数
+     * @param monthlyDataCache 月度日考勤数据缓存
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private void calculateAndUpdateActualDays(MonthlyAttendanceParams params, 
+                                             Map<String, List<SwmDailyAttendance>> monthlyDataCache) {
+        try {
+            XxlJobHelper.log("开始计算并更新实际出勤天数 - 目标月份: {}", params.targetMonth);
+            
+            // 检查缓存是否可用
+            if (monthlyDataCache.isEmpty()) {
+                XxlJobHelper.log("{}月没有日考勤数据缓存，跳过实际出勤天数计算", params.targetMonth);
+                return;
+            }
+            
+            // 1. 获取目标身份证列表
+            List<String> targetIdCards = getTargetIdCardsFromCache(params, monthlyDataCache);
+            
+            if (targetIdCards.isEmpty()) {
+                XxlJobHelper.log("没有需要处理的人员身份证");
+                return;
+            }
+            
+            XxlJobHelper.log("共需要处理 {} 个身份证号的实际出勤天数", targetIdCards.size());
+            
+            int successCount = 0;
+            int failCount = 0;
+            
+            // 2. 逐个计算并更新实际出勤天数
+            for (String identityCard : targetIdCards) {
+                try {
+                    // 从缓存计算实际出勤天数
+                    BigDecimal actualDays = calculateActualDaysFromCache(identityCard, monthlyDataCache);
+                    
+                    // 更新到考勤统计表
+                    boolean updateResult = updateActualDaysToSummary(identityCard, params.targetMonth, actualDays);
+                    
+                    if (updateResult) {
+                        successCount++;
+                        XxlJobHelper.log("身份证号[{}]实际出勤天数更新成功: {}天", identityCard, actualDays);
+                    } else {
+                        failCount++;
+                        XxlJobHelper.log("身份证号[{}]实际出勤天数更新失败", identityCard);
+                    }
+                    
+                } catch (Exception e) {
+                    failCount++;
+                    XxlJobHelper.log("处理身份证号[{}]时发生异常: {}", identityCard, e.getMessage());
+                }
+            }
+            
+            XxlJobHelper.log("实际出勤天数计算完成 - 成功: {}个, 失败: {}个", successCount, failCount);
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("计算并更新实际出勤天数时发生异常: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 从缓存或参数中获取目标身份证列表
+     * 优先使用参数中指定的身份证列表，否则从缓存中提取所有身份证号
+     * 
+     * @param params 月度考勤统计参数
+     * @param dataCache 月度日考勤数据缓存
+     * @return 身份证列表
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private List<String> getTargetIdCardsFromCache(MonthlyAttendanceParams params, 
+                                                  Map<String, List<SwmDailyAttendance>> dataCache) {
+        if (!params.idCardList.isEmpty()) {
+            XxlJobHelper.log("使用参数指定的身份证列表，共{}个", params.idCardList.size());
+            return params.idCardList;
+        }
+        
+        // 从缓存中提取所有身份证号
+        List<String> idCardList = new ArrayList<>(dataCache.keySet());
+        XxlJobHelper.log("从日考勤数据缓存中提取身份证列表，共{}个", idCardList.size());
+        
+        return idCardList;
+    }
+
+    /**
+     * 更新实际出勤天数到考勤统计表
+     * 根据身份证号查询现有记录并更新actual_days字段
+     * 
+     * @param identityCard 身份证号
+     * @param targetMonth 目标月份
+     * @param actualDays 实际出勤天数
+     * @return 更新是否成功
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private boolean updateActualDaysToSummary(String identityCard, String targetMonth, BigDecimal actualDays) {
+        try {
+            // 查询现有记录
+            List<SwmAttendanceSummary> existingRecords = swmAttendanceSummaryService
+                .findByIdentityCardAndMonth(identityCard, targetMonth);
+            
+            if (!existingRecords.isEmpty()) {
+                // 更新现有记录的实际出勤天数
+                for (SwmAttendanceSummary record : existingRecords) {
+                    record.setActualDays(actualDays);
+                    swmAttendanceSummaryService.update(record);
+                }
+                XxlJobHelper.log("身份证号[{}]在{}月已有{}条考勤统计记录，已批量更新实际出勤天数", 
+                    identityCard, targetMonth, existingRecords.size());
+                return true;
+            } else {
+                XxlJobHelper.log("身份证号[{}]在{}月没有考勤统计记录，跳过实际出勤天数更新", 
+                    identityCard, targetMonth);
+                return false;
+            }
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("更新身份证号[{}]的实际出勤天数到考勤统计表失败: {}", identityCard, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * 计算并更新应出勤天数
      * 根据参数中的身份证列表或查询所有有排班的人员，计算应出勤天数并更新到考勤统计表
      * 
@@ -3092,6 +3232,82 @@ public class AttendanceTask {
         } catch (Exception e) {
             XxlJobHelper.log("为身份证号[{}]创建考勤统计记录失败: {}", identityCard, e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * 预加载月度日考勤数据到内存缓存
+     * 一次性查询整个月的所有日考勤记录，按身份证号分组存储
+     * 
+     * @param targetMonth 目标月份（格式：yyyy-MM）
+     * @return 按身份证号分组的日考勤数据缓存
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private Map<String, List<SwmDailyAttendance>> loadMonthlyAttendanceDataCache(String targetMonth) {
+        try {
+            XxlJobHelper.log("开始预加载{}月的日考勤数据到内存缓存", targetMonth);
+            
+            // 一次性查询整个月的所有日考勤记录
+            List<SwmDailyAttendance> allRecords = swmDailyAttendanceService.findByMonth(targetMonth);
+            
+            if (allRecords == null || allRecords.isEmpty()) {
+                XxlJobHelper.log("{}月没有找到任何日考勤记录", targetMonth);
+                return new HashMap<>();
+            }
+            
+            // 按身份证号分组，过滤掉身份证号为空的记录
+            Map<String, List<SwmDailyAttendance>> dataCache = allRecords.stream()
+                .filter(record -> StringUtils.isNotBlank(record.getIdentityCard()))
+                .collect(Collectors.groupingBy(SwmDailyAttendance::getIdentityCard));
+            
+            XxlJobHelper.log("{}月日考勤数据预加载完成 - 总记录数: {}, 员工数: {}", 
+                targetMonth, allRecords.size(), dataCache.size());
+            
+            return dataCache;
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("预加载{}月日考勤数据失败: {}", targetMonth, e.getMessage());
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * 从缓存中计算实际出勤天数
+     * 统计日考勤记录中有打卡记录的天数（clock_in_date 或 clock_out_date 不为空）
+     * 
+     * @param identityCard 身份证号
+     * @param dataCache 月度日考勤数据缓存
+     * @return 实际出勤天数
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateActualDaysFromCache(String identityCard, 
+                                                   Map<String, List<SwmDailyAttendance>> dataCache) {
+        try {
+            XxlJobHelper.log("开始从缓存计算身份证号[{}]的实际出勤天数", identityCard);
+            
+            // 从缓存中获取该身份证号的所有日考勤记录
+            List<SwmDailyAttendance> records = dataCache.get(identityCard);
+            
+            if (records == null || records.isEmpty()) {
+                XxlJobHelper.log("身份证号[{}]在缓存中没有找到日考勤记录，实际出勤天数为0", identityCard);
+                return BigDecimal.ZERO;
+            }
+            
+            // 统计有打卡记录的天数（clock_in_date 或 clock_out_date 不为空）
+            long actualDays = records.stream()
+                .filter(record -> record.getClockInDate() != null || record.getClockOutDate() != null)
+                .count();
+            
+            XxlJobHelper.log("身份证号[{}]实际出勤天数计算完成: 总记录{}条, 有打卡记录{}天", 
+                identityCard, records.size(), actualDays);
+            
+            return BigDecimal.valueOf(actualDays);
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("从缓存计算身份证号[{}]的实际出勤天数失败: {}", identityCard, e.getMessage());
+            return BigDecimal.ZERO;
         }
     }
 
