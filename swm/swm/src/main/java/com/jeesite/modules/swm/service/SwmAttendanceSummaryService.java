@@ -258,10 +258,12 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal scheduledHours = calculateScheduledHoursFromList(dailyAttendanceList);
         summary.setScheduledHours(scheduledHours);
 
+        BigDecimal actualHours = calculateActualHoursFromList(dailyAttendanceList);
+        summary.setActualHours(actualHours);
+
         // TODO: 后续添加其他指标的计算
         // 初始化其他字段为0
         summary.setActualAttendanceDays(BigDecimal.ZERO);
-        summary.setActualHours(BigDecimal.ZERO);
         summary.setEfficiency(BigDecimal.ZERO);
         summary.setAttendanceRate(BigDecimal.ZERO);
         summary.setMonthlyAttendanceRate(BigDecimal.ZERO);
@@ -419,7 +421,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
     /**
      * 基于日考勤记录列表计算应考勤时长
      * 累加所有日考勤记录的应考勤时长
-     * 
+     *
      * @param dailyAttendanceList 日考勤记录列表
      * @return 应考勤时长(小时)
      * @author Shawn
@@ -434,6 +436,27 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         return dailyAttendanceList.stream()
                 .map(SwmDailyAttendance::getScheduledHours)
                 .filter(scheduledHours -> scheduledHours != null) // 过滤null值
+                .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
+    }
+
+    /**
+     * 基于日考勤记录列表计算实际工作时长
+     * 累加所有日考勤记录的实际工作时长
+     * 
+     * @param dailyAttendanceList 日考勤记录列表
+     * @return 实际工作时长(小时)
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateActualHoursFromList(List<SwmDailyAttendance> dailyAttendanceList) {
+        if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        // 累加所有日考勤记录的实际工作时长
+        return dailyAttendanceList.stream()
+                .map(SwmDailyAttendance::getEffectiveWorkHours)
+                .filter(effectiveWorkHours -> effectiveWorkHours != null) // 过滤null值
                 .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
     }
 
