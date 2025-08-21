@@ -495,9 +495,9 @@ public class AttendanceTask {
 
             // TODO: 7. 实际工作时长 actual_hours
 
-            // TODO: 8. 实际考勤天数
+            // TODO: 8. 实际考勤天数，先不存入表
 
-            // TODO: 9. 本月考勤率
+            // TODO: 9. 本月考勤率，先不存入数据库
 
             // TODO: 10. 出勤率
 
