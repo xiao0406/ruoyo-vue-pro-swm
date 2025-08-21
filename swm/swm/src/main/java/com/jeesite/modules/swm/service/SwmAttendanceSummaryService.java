@@ -170,4 +170,19 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
     public SwmAttendanceSummary getByEntity(SwmAttendanceSummary entity) {
         return dao.getByEntity(entity);
     }
+
+    /**
+     * 根据身份证号和月份查询考勤统计记录
+     * @param identityCard 身份证号
+     * @param month 统计月份 格式(YYYY-MM)
+     * @return 考勤统计记录列表
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    public List<SwmAttendanceSummary> findByIdentityCardAndMonth(String identityCard, String month) {
+        SwmAttendanceSummary query = new SwmAttendanceSummary();
+        query.setIdentityCard(identityCard);
+        query.setMonth(month);
+        return this.findList(query);
+    }
 }

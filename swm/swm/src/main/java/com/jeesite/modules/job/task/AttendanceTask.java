@@ -22,9 +22,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -465,15 +467,26 @@ public class AttendanceTask {
             XxlJobHelper.log("解析参数完成 - 月份: {}, 身份证数量: {}", 
                 params.targetMonth, params.idCardList.size());
             
-            // TODO: 2. 根据参数确定查询条件
+            // TODO: 2. 应出勤天数scheduled_days
+            calculateAndUpdateScheduledDays(params);
             
-            // TODO: 3. 查询日考勤记录
+            // TODO: 3. 实际出勤天数actual_days
             
-            // TODO: 4. 按员工分组并统计
+            // TODO: 4. 工效
             
-            // TODO: 5. 计算月度统计数据
+            // TODO: 5. 怠工时长
             
-            // TODO: 6. 保存或更新月度统计记录
+            // TODO: 6. 应考勤时长
+
+            // TODO: 7. 实际工作时长
+
+            // TODO: 8. 实际考勤天数
+
+            // TODO: 9. 本月考勤率
+
+            // TODO: 10. 出勤率
+
+            // TODO: 11. 考勤达成率
             
             XxlJobHelper.log("月度考勤统计任务V2执行成功");
             jobLog.setExecuteStatus("0"); // 成功
@@ -2881,5 +2894,376 @@ public class AttendanceTask {
         }
         // 验证身份证格式（15位或18位，18位最后一位可以是X）
         return idCard.matches("\\d{15}|\\d{17}[\\dXx]");
+    }
+
+    /**
+     * 计算并更新应出勤天数
+     * 根据参数中的身份证列表或查询所有有排班的人员，计算应出勤天数并更新到考勤统计表
+     * 
+     * @param params 月度考勤统计参数
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private void calculateAndUpdateScheduledDays(MonthlyAttendanceParams params) {
+        try {
+            XxlJobHelper.log("开始计算并更新应出勤天数 - 目标月份: {}", params.targetMonth);
+            
+            // 1. 获取目标身份证列表
+            List<String> targetIdCards = getTargetIdCards(params);
+            
+            if (targetIdCards.isEmpty()) {
+                XxlJobHelper.log("没有需要处理的人员身份证");
+                return;
+            }
+            
+            XxlJobHelper.log("共需要处理 {} 个身份证号的应出勤天数", targetIdCards.size());
+            
+            int successCount = 0;
+            int failCount = 0;
+            
+            // 2. 逐个计算并更新应出勤天数
+            for (String identityCard : targetIdCards) {
+                try {
+                    // 计算应出勤天数
+                    BigDecimal scheduledDays = calculateScheduledDays(identityCard, params.targetMonth);
+                    
+                    if (scheduledDays == null) {
+                        XxlJobHelper.log("身份证号[{}]应出勤天数计算失败，跳过更新", identityCard);
+                        failCount++;
+                        continue;
+                    }
+                    
+                    // 更新到考勤统计表
+                    boolean updateResult = updateScheduledDaysToSummary(identityCard, params.targetMonth, scheduledDays);
+                    
+                    if (updateResult) {
+                        successCount++;
+                        XxlJobHelper.log("身份证号[{}]应出勤天数更新成功: {}天", identityCard, scheduledDays);
+                    } else {
+                        failCount++;
+                        XxlJobHelper.log("身份证号[{}]应出勤天数更新失败", identityCard);
+                    }
+                    
+                } catch (Exception e) {
+                    failCount++;
+                    XxlJobHelper.log("处理身份证号[{}]时发生异常: {}", identityCard, e.getMessage());
+                }
+            }
+            
+            XxlJobHelper.log("应出勤天数计算完成 - 成功: {}个, 失败: {}个", successCount, failCount);
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("计算并更新应出勤天数时发生异常: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 获取目标身份证列表
+     * 如果参数中指定了身份证列表，则使用指定的；否则查询所有有排班的人员
+     * 
+     * @param params 月度考勤统计参数
+     * @return 身份证列表
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private List<String> getTargetIdCards(MonthlyAttendanceParams params) {
+        if (!params.idCardList.isEmpty()) {
+            XxlJobHelper.log("使用参数指定的身份证列表，共{}个", params.idCardList.size());
+            return params.idCardList;
+        }
+        
+        // 查询指定月份所有有排班的人员身份证号
+        try {
+            SwmPersonSchedule query = new SwmPersonSchedule();
+            query.setMonth(params.targetMonth);
+            List<SwmPersonSchedule> scheduleList = swmPersonScheduleService.findList(query);
+            
+            List<String> idCardList = new ArrayList<>();
+            Set<String> idCardSet = new HashSet<>(); // 用于去重
+            
+            for (SwmPersonSchedule schedule : scheduleList) {
+                if (StringUtils.isNotBlank(schedule.getIdCard()) && !idCardSet.contains(schedule.getIdCard())) {
+                    idCardList.add(schedule.getIdCard());
+                    idCardSet.add(schedule.getIdCard());
+                }
+            }
+            
+            XxlJobHelper.log("查询到{}月有排班的人员共{}个", params.targetMonth, idCardList.size());
+            return idCardList;
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("查询{}月排班人员失败: {}", params.targetMonth, e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 更新应出勤天数到考勤统计表
+     * 根据身份证号查询现有记录，存在则更新，不存在则创建新记录
+     * 
+     * @param identityCard 身份证号
+     * @param targetMonth 目标月份
+     * @param scheduledDays 应出勤天数
+     * @return 更新是否成功
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private boolean updateScheduledDaysToSummary(String identityCard, String targetMonth, BigDecimal scheduledDays) {
+        try {
+            // 1. 查询现有记录
+            List<SwmAttendanceSummary> existingRecords = swmAttendanceSummaryService
+                .findByIdentityCardAndMonth(identityCard, targetMonth);
+            
+            if (!existingRecords.isEmpty()) {
+                // 2. 更新现有记录
+                for (SwmAttendanceSummary record : existingRecords) {
+                    record.setScheduledDays(scheduledDays);
+                    swmAttendanceSummaryService.update(record);
+                }
+                XxlJobHelper.log("身份证号[{}]在{}月已有{}条考勤统计记录，已批量更新应出勤天数", 
+                    identityCard, targetMonth, existingRecords.size());
+                return true;
+            } else {
+                // 3. 创建新记录
+                return createNewAttendanceSummaryRecord(identityCard, targetMonth, scheduledDays);
+            }
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("更新身份证号[{}]的应出勤天数到考勤统计表失败: {}", identityCard, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 创建新的考勤统计记录
+     * 
+     * @param identityCard 身份证号
+     * @param targetMonth 目标月份
+     * @param scheduledDays 应出勤天数
+     * @return 创建是否成功
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private boolean createNewAttendanceSummaryRecord(String identityCard, String targetMonth, BigDecimal scheduledDays) {
+        try {
+            // 1. 查询人员基本信息
+            SwmPerson person = swmPersonService.getByIdentityCard(identityCard);
+            if (person == null) {
+                XxlJobHelper.log("身份证号[{}]没有找到对应的人员信息，无法创建考勤统计记录", identityCard);
+                return false;
+            }
+            
+            // 2. 查询排班信息获取班次
+            List<SwmPersonSchedule> scheduleList = swmPersonScheduleService
+                .findByIdCardAndMonth(identityCard, targetMonth);
+            String workShift = null;
+            if (!scheduleList.isEmpty()) {
+                workShift = scheduleList.get(0).getClasses();
+            }
+            
+            // 3. 创建新的考勤统计记录
+            SwmAttendanceSummary summary = new SwmAttendanceSummary();
+            summary.setEmployeeId(person.getId());
+            summary.setEmployeeName(person.getName());
+            summary.setIdentityCard(identityCard);
+            summary.setDepartment(person.getDepartment());
+            summary.setWorkProcess(person.getWorkProcess());
+            summary.setTeam(person.getTeam());
+            summary.setJobType(person.getJobType());
+            summary.setWorkShift(workShift);
+            summary.setMonth(targetMonth);
+            summary.setScheduledDays(scheduledDays);
+            
+            // 设置其他字段的默认值
+            summary.setActualDays(BigDecimal.ZERO);
+            summary.setAttendanceRate(BigDecimal.ZERO);
+            summary.setScheduledHours(BigDecimal.ZERO);
+            summary.setActualHours(BigDecimal.ZERO);
+            summary.setAttendanceAchievementRate(BigDecimal.ZERO);
+            summary.setIdleHours(BigDecimal.ZERO);
+            summary.setEfficiency(BigDecimal.ZERO);
+            
+            swmAttendanceSummaryService.save(summary);
+            
+            XxlJobHelper.log("为身份证号[{}]({})创建{}月考勤统计记录成功，应出勤天数: {}天", 
+                identityCard, person.getName(), targetMonth, scheduledDays);
+            return true;
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("为身份证号[{}]创建考勤统计记录失败: {}", identityCard, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 计算应出勤天数
+     * 应出勤天数 = 指定月份总天数 - 该月休息日天数
+     * 
+     * @param identityCard 身份证号
+     * @param targetMonth 目标月份（格式：yyyy-MM）
+     * @return 应出勤天数，如果计算失败返回null
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateScheduledDays(String identityCard, String targetMonth) {
+        try {
+            XxlJobHelper.log("开始计算身份证号[{}]在{}月的应出勤天数", identityCard, targetMonth);
+            
+            // 1. 查询员工排班信息
+            List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService
+                .findByIdCardAndMonth(identityCard, targetMonth);
+            
+            if (personScheduleList == null || personScheduleList.isEmpty()) {
+                XxlJobHelper.log("身份证号[{}]在{}月没有排班信息，应出勤天数为0", identityCard, targetMonth);
+                return BigDecimal.ZERO;
+            }
+            
+            // 取第一条排班记录（一般一个月一个人只有一个班次）
+            SwmPersonSchedule personSchedule = personScheduleList.get(0);
+            String classes = personSchedule.getClasses();
+            
+            if (StringUtils.isBlank(classes)) {
+                XxlJobHelper.log("身份证号[{}]在{}月的排班信息中班次为空，应出勤天数为0", identityCard, targetMonth);
+                return BigDecimal.ZERO;
+            }
+            
+            // 2. 根据班次查询休息日配置
+            SwmScheduleTime scheduleTimeQuery = new SwmScheduleTime();
+            scheduleTimeQuery.setShiftType(classes);
+            List<SwmScheduleTime> scheduleTimeList = swmScheduleTimeService.findList(scheduleTimeQuery);
+            
+            if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
+                XxlJobHelper.log("班次[{}]没有找到时间配置，应出勤天数为0", classes);
+                return BigDecimal.ZERO;
+            }
+            
+            SwmScheduleTime scheduleTime = scheduleTimeList.get(0);
+            String restDays = scheduleTime.getRestDays();
+            
+            XxlJobHelper.log("身份证号[{}]，班次[{}]，休息日配置：{}", identityCard, classes, restDays);
+            
+            // 3. 计算目标月份的总天数
+            int totalDaysInMonth = calculateTotalDaysInMonth(targetMonth);
+            
+            // 4. 计算该月的休息日天数
+            int restDaysCount = calculateRestDaysInMonth(targetMonth, restDays);
+            
+            // 5. 计算应出勤天数
+            int scheduledDays = totalDaysInMonth - restDaysCount;
+            
+            // 确保应出勤天数不为负数
+            if (scheduledDays < 0) {
+                scheduledDays = 0;
+            }
+            
+            XxlJobHelper.log("身份证号[{}]在{}月：总天数{}天，休息日{}天，应出勤{}天", 
+                identityCard, targetMonth, totalDaysInMonth, restDaysCount, scheduledDays);
+            
+            return BigDecimal.valueOf(scheduledDays);
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("计算身份证号[{}]在{}月的应出勤天数失败：{}", identityCard, targetMonth, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 计算指定月份的总天数
+     * 
+     * @param targetMonth 目标月份（格式：yyyy-MM）
+     * @return 总天数
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private int calculateTotalDaysInMonth(String targetMonth) {
+        try {
+            SimpleDateFormat monthFormat = new SimpleDateFormat("yyyy-MM");
+            Date monthDate = monthFormat.parse(targetMonth);
+            
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(monthDate);
+            
+            // 获取该月的最大天数
+            int totalDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+            
+            XxlJobHelper.log("{}月总天数：{}天", targetMonth, totalDays);
+            return totalDays;
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("计算{}月总天数失败：{}", targetMonth, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 计算指定月份的休息日天数
+     * 
+     * @param targetMonth 目标月份（格式：yyyy-MM）
+     * @param restDays 休息日配置（格式：1,2,6,7 表示周一、周二、周六、周日）
+     * @return 休息日天数
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private int calculateRestDaysInMonth(String targetMonth, String restDays) {
+        try {
+            if (StringUtils.isBlank(restDays)) {
+                XxlJobHelper.log("{}月无休息日配置", targetMonth);
+                return 0;
+            }
+            
+            // 解析休息日配置
+            String[] restDayArray = restDays.split(",");
+            Set<Integer> restDaySet = new HashSet<>();
+            
+            for (String restDay : restDayArray) {
+                try {
+                    int day = Integer.parseInt(restDay.trim());
+                    // 1-7 代表周一到周日
+                    if (day >= 1 && day <= 7) {
+                        restDaySet.add(day);
+                    }
+                } catch (NumberFormatException e) {
+                    XxlJobHelper.log("无效的休息日配置：{}", restDay);
+                }
+            }
+            
+            if (restDaySet.isEmpty()) {
+                XxlJobHelper.log("{}月没有有效的休息日配置", targetMonth);
+                return 0;
+            }
+            
+            // 计算该月的休息日天数
+            SimpleDateFormat monthFormat = new SimpleDateFormat("yyyy-MM");
+            Date monthDate = monthFormat.parse(targetMonth);
+            
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(monthDate);
+            
+            int totalDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+            int restDaysCount = 0;
+            
+            // 遍历该月的每一天
+            for (int day = 1; day <= totalDays; day++) {
+                cal.set(Calendar.DAY_OF_MONTH, day);
+                
+                // 获取星期几（Calendar.SUNDAY = 1, Calendar.MONDAY = 2, ..., Calendar.SATURDAY = 7）
+                int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+                
+                // 转换为 1-7 格式（1=周一，7=周日）
+                int weekDay = dayOfWeek == Calendar.SUNDAY ? 7 : dayOfWeek - 1;
+                
+                // 检查是否是休息日
+                if (restDaySet.contains(weekDay)) {
+                    restDaysCount++;
+                }
+            }
+            
+            XxlJobHelper.log("{}月休息日配置[{}]，共有{}天休息日", targetMonth, restDays, restDaysCount);
+            return restDaysCount;
+            
+        } catch (Exception e) {
+            XxlJobHelper.log("计算{}月休息日天数失败：{}", targetMonth, e.getMessage());
+            return 0;
+        }
     }
 }

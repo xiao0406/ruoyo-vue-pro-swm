@@ -18,6 +18,7 @@ import java.math.BigDecimal;
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "employee_id", attrName = "employeeId", label = "员工ID"),
         @Column(name = "employee_name", attrName = "employeeName", label = "员工姓名", queryType = QueryType.LIKE),
+        @Column(name = "identity_card", attrName = "identityCard", label = "身份证号", queryType = QueryType.LIKE),
         @Column(name = "department", attrName = "department", label = "所属车间", queryType = QueryType.LIKE),
         @Column(name = "work_process", attrName = "workProcess", label = "所属工序", queryType = QueryType.LIKE),
         @Column(name = "team", attrName = "team", label = "所属班组", queryType = QueryType.LIKE),
@@ -40,6 +41,7 @@ public class SwmAttendanceSummary extends DataEntity<SwmAttendanceSummary> {
 
     private String employeeId;        // 员工ID
     private String employeeName;        // 员工姓名
+    private String identityCard;       // 身份证号
     private String department;          // 所属车间
     private String workProcess;         // 所属工序
     private String team;                // 所属班组
@@ -80,6 +82,15 @@ public class SwmAttendanceSummary extends DataEntity<SwmAttendanceSummary> {
 
     public void setEmployeeName(String employeeName) {
         this.employeeName = employeeName;
+    }
+
+    @Length(min = 0, max = 20, message = "身份证号长度不能超过 20 个字符")
+    public String getIdentityCard() {
+        return identityCard;
+    }
+
+    public void setIdentityCard(String identityCard) {
+        this.identityCard = identityCard;
     }
 
     @Length(min = 0, max = 100, message = "所属车间长度不能超过 100 个字符")
