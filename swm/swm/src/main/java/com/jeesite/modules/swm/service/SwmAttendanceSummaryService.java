@@ -4,24 +4,39 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmAttendanceSummaryDao;
 import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
+import com.jeesite.modules.swm.entity.SwmPersonSchedule;
+import com.jeesite.modules.swm.entity.SwmScheduleTime;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * 考勤月统计表Service
- * @author  zwf
+ * 
+ * @author zwf
  * @version 2025-05-20
  */
 @Service
 @Transactional(readOnly = true)
 public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummaryDao, SwmAttendanceSummary> {
 
+    @Autowired
+    private SwmPersonScheduleService swmPersonScheduleService;
+
+    @Autowired
+    private SwmScheduleTimeService swmScheduleTimeService;
+
     /**
      * 获取单条数据
+     * 
      * @param swmAttendanceSummary
      * @return
      */
@@ -32,6 +47,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 查询分页数据
+     * 
      * @param swmAttendanceSummary
      * @return
      */
@@ -42,6 +58,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 查询列表数据
+     * 
      * @param swmAttendanceSummary
      * @return
      */
@@ -53,6 +70,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
     /**
      * 保存数据（插入或更新）
      * 保存时自动计算：出勤率、考勤达成率
+     * 
      * @param swmAttendanceSummary
      */
     @Override
@@ -83,8 +101,8 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
         // 计算出勤率 = 实际出勤天数 / 应出勤天数
         if (swmAttendanceSummary.getScheduledDays() != null &&
-            swmAttendanceSummary.getActualDays() != null &&
-            swmAttendanceSummary.getScheduledDays().compareTo(BigDecimal.ZERO) > 0) {
+                swmAttendanceSummary.getActualDays() != null &&
+                swmAttendanceSummary.getScheduledDays().compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal attendanceRate = swmAttendanceSummary.getActualDays()
                     .divide(swmAttendanceSummary.getScheduledDays(), 4, RoundingMode.HALF_UP);
             swmAttendanceSummary.setAttendanceRate(attendanceRate);
@@ -94,8 +112,8 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
         // 计算考勤达成率 = 实际工作时间 / 应考勤时间
         if (swmAttendanceSummary.getScheduledHours() != null &&
-            swmAttendanceSummary.getActualHours() != null &&
-            swmAttendanceSummary.getScheduledHours().compareTo(BigDecimal.ZERO) > 0) {
+                swmAttendanceSummary.getActualHours() != null &&
+                swmAttendanceSummary.getScheduledHours().compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal attendanceAchievementRate = swmAttendanceSummary.getActualHours()
                     .divide(swmAttendanceSummary.getScheduledHours(), 4, RoundingMode.HALF_UP);
             swmAttendanceSummary.setAttendanceAchievementRate(attendanceAchievementRate);
@@ -108,6 +126,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 更新状态
+     * 
      * @param swmAttendanceSummary
      */
     @Override
@@ -118,6 +137,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 删除数据
+     * 
      * @param swmAttendanceSummary
      */
     @Override
@@ -128,6 +148,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 根据月份查询考勤统计记录
+     * 
      * @param month 统计月份 格式(YYYY-MM)
      * @return 考勤统计记录列表
      */
@@ -137,8 +158,9 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 根据员工姓名和月份查询考勤统计记录
+     * 
      * @param employeeName 员工姓名
-     * @param month 统计月份 格式(YYYY-MM)
+     * @param month        统计月份 格式(YYYY-MM)
      * @return 考勤统计记录
      */
     public SwmAttendanceSummary findByEmployeeAndMonth(String employeeName, String month) {
@@ -147,8 +169,9 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 根据部门和月份查询考勤统计记录
+     * 
      * @param department 部门名称
-     * @param month 统计月份 格式(YYYY-MM)
+     * @param month      统计月份 格式(YYYY-MM)
      * @return 考勤统计记录列表
      */
     public List<SwmAttendanceSummary> findByDepartmentAndMonth(String department, String month) {
@@ -157,8 +180,9 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 根据员工ID和月份查询考勤统计记录
+     * 
      * @param employeeId 员工ID
-     * @param month 统计月份 格式(YYYY-MM)
+     * @param month      统计月份 格式(YYYY-MM)
      * @return 考勤统计记录
      */
     public SwmAttendanceSummary findByEmployeeIdAndMonth(String employeeId, String month) {
@@ -167,6 +191,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 根据实体查询考勤统计记录
+     * 
      * @param entity
      * @return
      */
@@ -176,8 +201,9 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 根据身份证号和月份查询考勤统计记录
+     *
      * @param identityCard 身份证号
-     * @param month 统计月份 格式(YYYY-MM)
+     * @param month        统计月份 格式(YYYY-MM)
      * @return 考勤统计记录列表
      * @author Shawn
      * @date 2025-08-21
@@ -187,5 +213,148 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         query.setIdentityCard(identityCard);
         query.setMonth(month);
         return this.findList(query);
+    }
+
+    /**
+     * 根据身份证号统计月度考勤数据
+     * 
+     * @param identityCard 身份证号
+     * @param month        统计月份(格式:yyyy-MM)，为空时默认当前月
+     * @return 考勤统计对象
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    public SwmAttendanceSummary calculateAttendanceSummaryByIdentityCard(String identityCard, String month) {
+        // 如果没有传入月份，使用当前月份
+        if (month == null || month.trim().isEmpty()) {
+            YearMonth currentMonth = YearMonth.now();
+            month = currentMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        }
+
+        // 创建返回对象
+        SwmAttendanceSummary summary = new SwmAttendanceSummary();
+        summary.setIdentityCard(identityCard);
+        summary.setMonth(month);
+
+        // 计算应出勤天数
+        BigDecimal scheduledDays = calculateScheduledDays(identityCard, month);
+        summary.setScheduledDays(scheduledDays);
+
+        // TODO: 后续添加其他指标的计算
+        // 初始化其他字段为0
+        summary.setActualDays(BigDecimal.ZERO);
+        summary.setActualAttendanceDays(BigDecimal.ZERO);
+        summary.setScheduledHours(BigDecimal.ZERO);
+        summary.setActualHours(BigDecimal.ZERO);
+        summary.setIdleHours(BigDecimal.ZERO);
+        summary.setEfficiency(BigDecimal.ZERO);
+        summary.setAttendanceRate(BigDecimal.ZERO);
+        summary.setMonthlyAttendanceRate(BigDecimal.ZERO);
+        summary.setAttendanceAchievementRate(BigDecimal.ZERO);
+
+        return summary;
+    }
+
+    /**
+     * 计算应出勤天数
+     * 应出勤天数 = 查询月的总天数 - 排班里面的休息日
+     * 
+     * @param identityCard 身份证号
+     * @param month        月份(格式:yyyy-MM)
+     * @return 应出勤天数
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateScheduledDays(String identityCard, String month) {
+        try {
+            // 1. 获取该月份的总天数
+            YearMonth yearMonth = YearMonth.parse(month, DateTimeFormatter.ofPattern("yyyy-MM"));
+            int totalDaysInMonth = yearMonth.lengthOfMonth();
+
+            // 2. 根据身份证号查询该月的排班信息
+            List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService.findByIdCardAndMonth(identityCard,
+                    month);
+
+            if (personScheduleList == null || personScheduleList.isEmpty()) {
+                // 没有排班信息，应出勤天数为0
+                return BigDecimal.ZERO;
+            }
+
+            // 取第一条排班记录（一般一个月一个人只有一个班次）
+            SwmPersonSchedule personSchedule = personScheduleList.get(0);
+            String classes = personSchedule.getClasses();
+
+            if (classes == null || classes.trim().isEmpty()) {
+                // 班次为空，应出勤天数为0
+                return BigDecimal.ZERO;
+            }
+
+            // 3. 根据班次查询休息日配置
+            SwmScheduleTime scheduleTimeQuery = new SwmScheduleTime();
+            scheduleTimeQuery.setShiftType(classes);
+            List<SwmScheduleTime> scheduleTimeList = swmScheduleTimeService.findList(scheduleTimeQuery);
+
+            if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
+                // 没有找到班次时间配置，应出勤天数为0
+                return BigDecimal.ZERO;
+            }
+
+            SwmScheduleTime scheduleTime = scheduleTimeList.get(0);
+            String restDays = scheduleTime.getRestDays();
+
+            if (restDays == null || restDays.trim().isEmpty()) {
+                // 没有休息日配置，应出勤天数等于总天数
+                return new BigDecimal(totalDaysInMonth);
+            }
+
+            // 4. 解析休息日配置并计算休息日天数
+            int restDayCount = calculateRestDayCount(yearMonth, restDays);
+
+            // 5. 计算应出勤天数 = 总天数 - 休息日天数
+            int scheduledDayCount = totalDaysInMonth - restDayCount;
+            return new BigDecimal(Math.max(0, scheduledDayCount));
+
+        } catch (Exception e) {
+            // 发生异常时返回0
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * 计算指定月份中休息日的天数
+     * 
+     * @param yearMonth 年月
+     * @param restDays  休息日配置(如"6,7"表示周六日)
+     * @return 休息日天数
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private int calculateRestDayCount(YearMonth yearMonth, String restDays) {
+        // 解析休息日配置
+        String[] restDayArray = restDays.split(",");
+        int[] restDayNumbers = Arrays.stream(restDayArray)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .mapToInt(Integer::parseInt)
+                .toArray();
+
+        int restDayCount = 0;
+        int totalDays = yearMonth.lengthOfMonth();
+
+        // 遍历该月的每一天，检查是否为休息日
+        for (int day = 1; day <= totalDays; day++) {
+            LocalDate date = yearMonth.atDay(day);
+            int dayOfWeek = date.getDayOfWeek().getValue(); // 1=周一, 7=周日
+
+            // 检查当天是否为休息日
+            for (int restDay : restDayNumbers) {
+                if (dayOfWeek == restDay) {
+                    restDayCount++;
+                    break;
+                }
+            }
+        }
+
+        return restDayCount;
     }
 }

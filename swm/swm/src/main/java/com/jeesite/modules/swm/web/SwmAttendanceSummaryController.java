@@ -287,17 +287,17 @@ public class SwmAttendanceSummaryController extends BaseController {
      * 轨迹信息-个人考勤记录明细
      *
      * @param employeeId 员工ID
-     * @param month 月份（可选，格式：yyyy-MM）
+     * @param month      月份（可选，格式：yyyy-MM）
      */
     @GetMapping(value = "attendanceDetails")
     @ResponseBody
     @ApiOperation("轨迹信息-个人考勤记录明细")
     public Map<String, Object> attendanceDetails(String employeeId, String month) {
         Map<String, Object> result = new HashMap<>();
-        
+
         // 如果没有传入月份参数，使用当前月份（保持向后兼容）
         String queryMonth = StringUtils.isNotBlank(month) ? month : DateUtil.format(new Date(), "yyyy-MM");
-        
+
         // 解析月份获取年和月
         int year;
         int monthValue;
@@ -316,13 +316,13 @@ public class SwmAttendanceSummaryController extends BaseController {
             monthValue = DateUtil.month(new Date()) + 1;
             queryMonth = DateUtil.format(new Date(), "yyyy-MM");
         }
-        
+
         // 使用findList方法获取包含关联表翻译后的完整人员信息
         SwmPerson queryPerson = new SwmPerson();
         queryPerson.setId(employeeId);
         List<SwmPerson> personList = swmPersonService.findList(queryPerson);
         SwmPerson swmPerson = personList.isEmpty() ? null : personList.get(0);
-        
+
         if (swmPerson != null) {
             SwmPersonSchedule queryPersonSchedule = new SwmPersonSchedule();
             queryPersonSchedule.setIdCard(swmPerson.getIdentityCard());
@@ -340,11 +340,13 @@ public class SwmAttendanceSummaryController extends BaseController {
                     DateUtil.date());
             result.put("dailyAttendance", formatAttendanceTime(dailyAttendance));
 
-            // 查询月考勤 - 使用传入的月份
-            SwmAttendanceSummary queryAttendanceSummary = new SwmAttendanceSummary();
-            queryAttendanceSummary.setEmployeeId(employeeId);
-            queryAttendanceSummary.setMonth(queryMonth);
-            SwmAttendanceSummary attendanceSummary = swmAttendanceSummaryService.getByEntity(queryAttendanceSummary);
+            // 查询月考勤 - 使用身份证号实时计算统计数据
+            SwmAttendanceSummary attendanceSummary = null;
+            if (swmPerson.getIdentityCard() != null && !swmPerson.getIdentityCard().trim().isEmpty()) {
+                // 使用新的计算方法，包含应出勤天数等实时统计指标
+                attendanceSummary = swmAttendanceSummaryService
+                        .calculateAttendanceSummaryByIdentityCard(swmPerson.getIdentityCard(), queryMonth);
+            }
             result.put("attendanceSummary", attendanceSummary);
 
             // 考勤时间和功效统计 - 使用传入的月份
