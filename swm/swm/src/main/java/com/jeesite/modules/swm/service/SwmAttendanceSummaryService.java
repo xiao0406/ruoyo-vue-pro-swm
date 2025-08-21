@@ -261,11 +261,14 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal actualHours = calculateActualHoursFromList(dailyAttendanceList);
         summary.setActualHours(actualHours);
 
+        // 计算出勤率
+        BigDecimal attendanceRate = calculateAttendanceRate(actualDays, scheduledDays);
+        summary.setAttendanceRate(attendanceRate);
+
         // TODO: 后续添加其他指标的计算
         // 初始化其他字段为0
         summary.setActualAttendanceDays(BigDecimal.ZERO);
         summary.setEfficiency(BigDecimal.ZERO);
-        summary.setAttendanceRate(BigDecimal.ZERO);
         summary.setMonthlyAttendanceRate(BigDecimal.ZERO);
         summary.setAttendanceAchievementRate(BigDecimal.ZERO);
 
@@ -458,6 +461,37 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
                 .map(SwmDailyAttendance::getEffectiveWorkHours)
                 .filter(effectiveWorkHours -> effectiveWorkHours != null) // 过滤null值
                 .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
+    }
+
+    /**
+     * 计算出勤率
+     * 出勤率 = 实际出勤天数 ÷ 应出勤天数（返回小数形式，如0.8696表示86.96%）
+     *
+     * @param actualDays    实际出勤天数
+     * @param scheduledDays 应出勤天数
+     * @return 出勤率(小数形式，保留4位小数)
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateAttendanceRate(BigDecimal actualDays, BigDecimal scheduledDays) {
+        try {
+            // 应出勤天数为0或null时，出勤率为0
+            if (scheduledDays == null || scheduledDays.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO;
+            }
+
+            // 实际出勤天数为null时，按0处理
+            if (actualDays == null) {
+                return BigDecimal.ZERO;
+            }
+
+            // 计算出勤率：实际出勤天数 ÷ 应出勤天数（返回小数形式）
+            return actualDays.divide(scheduledDays, 4, RoundingMode.HALF_UP);
+
+        } catch (Exception e) {
+            // 发生异常时返回0
+            return BigDecimal.ZERO;
+        }
     }
 
 }
