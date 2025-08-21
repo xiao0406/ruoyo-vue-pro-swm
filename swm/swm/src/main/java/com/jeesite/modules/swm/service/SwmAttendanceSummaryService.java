@@ -252,10 +252,13 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal idleHours = calculateIdleHours(identityCard, month);
         summary.setIdleHours(idleHours);
 
+        // 计算应考勤时长
+        BigDecimal scheduledHours = calculateScheduledHours(identityCard, month);
+        summary.setScheduledHours(scheduledHours);
+
         // TODO: 后续添加其他指标的计算
         // 初始化其他字段为0
         summary.setActualAttendanceDays(BigDecimal.ZERO);
-        summary.setScheduledHours(BigDecimal.ZERO);
         summary.setActualHours(BigDecimal.ZERO);
         summary.setEfficiency(BigDecimal.ZERO);
         summary.setAttendanceRate(BigDecimal.ZERO);
@@ -430,6 +433,41 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
                     .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
 
             return totalIdleHours;
+
+        } catch (Exception e) {
+            // 发生异常时返回0
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * 计算应考勤时长
+     * 累加该员工指定月份内所有日考勤记录的应考勤时长
+     * 
+     * @param identityCard 身份证号
+     * @param month        月份(格式:yyyy-MM)
+     * @return 应考勤时长(小时)
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateScheduledHours(String identityCard, String month) {
+        try {
+            // 根据身份证号和月份查询该月所有日考勤记录
+            List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService
+                    .findByIdentityCardAndMonth(identityCard, month);
+
+            if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
+                // 没有考勤记录，应考勤时长为0
+                return BigDecimal.ZERO;
+            }
+
+            // 累加所有日考勤记录的应考勤时长
+            BigDecimal totalScheduledHours = dailyAttendanceList.stream()
+                    .map(SwmDailyAttendance::getScheduledHours)
+                    .filter(scheduledHours -> scheduledHours != null) // 过滤null值
+                    .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
+
+            return totalScheduledHours;
 
         } catch (Exception e) {
             // 发生异常时返回0
