@@ -248,12 +248,15 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal actualDays = calculateActualDays(identityCard, month);
         summary.setActualDays(actualDays);
 
+        // 计算怠工时长
+        BigDecimal idleHours = calculateIdleHours(identityCard, month);
+        summary.setIdleHours(idleHours);
+
         // TODO: 后续添加其他指标的计算
         // 初始化其他字段为0
         summary.setActualAttendanceDays(BigDecimal.ZERO);
         summary.setScheduledHours(BigDecimal.ZERO);
         summary.setActualHours(BigDecimal.ZERO);
-        summary.setIdleHours(BigDecimal.ZERO);
         summary.setEfficiency(BigDecimal.ZERO);
         summary.setAttendanceRate(BigDecimal.ZERO);
         summary.setMonthlyAttendanceRate(BigDecimal.ZERO);
@@ -392,6 +395,41 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
                     .count();
 
             return new BigDecimal(actualDayCount);
+
+        } catch (Exception e) {
+            // 发生异常时返回0
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * 计算怠工时长
+     * 累加该员工指定月份内所有日考勤记录的怠工时长
+     * 
+     * @param identityCard 身份证号
+     * @param month        月份(格式:yyyy-MM)
+     * @return 怠工时长(小时)
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateIdleHours(String identityCard, String month) {
+        try {
+            // 根据身份证号和月份查询该月所有日考勤记录
+            List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService
+                    .findByIdentityCardAndMonth(identityCard, month);
+
+            if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
+                // 没有考勤记录，怠工时长为0
+                return BigDecimal.ZERO;
+            }
+
+            // 累加所有日考勤记录的怠工时长
+            BigDecimal totalIdleHours = dailyAttendanceList.stream()
+                    .map(SwmDailyAttendance::getIdleHours)
+                    .filter(idleHours -> idleHours != null) // 过滤null值
+                    .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
+
+            return totalIdleHours;
 
         } catch (Exception e) {
             // 发生异常时返回0
