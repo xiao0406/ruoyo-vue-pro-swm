@@ -248,16 +248,19 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal scheduledDays = calculateScheduledDays(identityCard, month);
         summary.setScheduledDays(scheduledDays);
 
-        // 基于查询结果计算各项指标
+        // 基于查询结果计算各项指标，实际出勤天数
         BigDecimal actualDays = calculateActualDaysFromList(dailyAttendanceList);
         summary.setActualDays(actualDays);
 
+        // 怠工时长(小时)
         BigDecimal idleHours = calculateIdleHoursFromList(dailyAttendanceList);
         summary.setIdleHours(idleHours);
 
+        // 应考勤时长(小时)
         BigDecimal scheduledHours = calculateScheduledHoursFromList(dailyAttendanceList);
         summary.setScheduledHours(scheduledHours);
 
+        // 实际工作时长(小时)
         BigDecimal actualHours = calculateActualHoursFromList(dailyAttendanceList);
         summary.setActualHours(actualHours);
 
