@@ -283,9 +283,11 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal actualAttendanceDays = calculateActualAttendanceDaysFromList(dailyAttendanceList);
         summary.setActualAttendanceDays(actualAttendanceDays);
 
+        // 计算本月考勤率
+        BigDecimal monthlyAttendanceRate = calculateMonthlyAttendanceRate(actualAttendanceDays, scheduledDays);
+        summary.setMonthlyAttendanceRate(monthlyAttendanceRate);
+
         // TODO: 后续添加其他指标的计算
-        // 初始化其他字段为0
-        summary.setMonthlyAttendanceRate(BigDecimal.ZERO);
 
         return summary;
     }
@@ -607,6 +609,37 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
             // 计算工效：实际考勤时长 ÷ 应考勤时长（返回小数形式）
             return actualAttendanceHours.divide(scheduledHours, 4, RoundingMode.HALF_UP);
+
+        } catch (Exception e) {
+            // 发生异常时返回0
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * 计算本月考勤率
+     * 本月考勤率 = 实际考勤天数 ÷ 应考勤天数（返回小数形式）
+     *
+     * @param actualAttendanceDays 实际考勤天数
+     * @param scheduledDays        应考勤天数
+     * @return 本月考勤率(小数形式，保留4位小数)
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateMonthlyAttendanceRate(BigDecimal actualAttendanceDays, BigDecimal scheduledDays) {
+        try {
+            // 应考勤天数为0或null时，本月考勤率为0
+            if (scheduledDays == null || scheduledDays.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO;
+            }
+
+            // 实际考勤天数为null时，按0处理
+            if (actualAttendanceDays == null) {
+                return BigDecimal.ZERO;
+            }
+
+            // 计算本月考勤率：实际考勤天数 ÷ 应考勤天数（返回小数形式）
+            return actualAttendanceDays.divide(scheduledDays, 4, RoundingMode.HALF_UP);
 
         } catch (Exception e) {
             // 发生异常时返回0
