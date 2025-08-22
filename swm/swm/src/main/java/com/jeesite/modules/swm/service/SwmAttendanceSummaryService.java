@@ -279,9 +279,12 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal efficiency = calculateEfficiency(actualAttendanceHours, scheduledHours);
         summary.setEfficiency(efficiency);
 
+        // 计算实际考勤天数
+        BigDecimal actualAttendanceDays = calculateActualAttendanceDaysFromList(dailyAttendanceList);
+        summary.setActualAttendanceDays(actualAttendanceDays);
+
         // TODO: 后续添加其他指标的计算
         // 初始化其他字段为0
-        summary.setActualAttendanceDays(BigDecimal.ZERO);
         summary.setMonthlyAttendanceRate(BigDecimal.ZERO);
 
         return summary;
@@ -494,6 +497,28 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
                 .map(SwmDailyAttendance::getActualHours)
                 .filter(actualHours -> actualHours != null) // 过滤null值
                 .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
+    }
+
+    /**
+     * 基于日考勤记录列表计算实际考勤天数
+     * 统计打卡状态为正常的天数（attendance_normal = "0"）
+     *
+     * @param dailyAttendanceList 日考勤记录列表
+     * @return 实际考勤天数
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateActualAttendanceDaysFromList(List<SwmDailyAttendance> dailyAttendanceList) {
+        if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        // 统计打卡状态为正常的天数
+        long normalAttendanceDays = dailyAttendanceList.stream()
+                .filter(attendance -> "0".equals(attendance.getAttendanceNormal()))
+                .count();
+
+        return new BigDecimal(normalAttendanceDays);
     }
 
     /**
