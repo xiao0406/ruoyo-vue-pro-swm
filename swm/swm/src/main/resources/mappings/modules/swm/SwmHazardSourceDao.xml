@@ -27,7 +27,31 @@
                 AND a.location LIKE CONCAT('%', #{location}, '%')
             </if>
             <if test="beaconIdentifier != null and beaconIdentifier != ''">
-                AND a.beacon_identifier LIKE CONCAT('%', #{beaconIdentifier}, '%')
+                AND (
+                    a.beacon_identifier LIKE CONCAT('%', #{beaconIdentifier}, '%')
+                    OR EXISTS (
+                        SELECT 1 FROM swm_beacon_station b
+                        WHERE FIND_IN_SET(b.beacon_id, a.beacon_identifier) > 0
+                        AND (b.device_name LIKE CONCAT('%', #{beaconIdentifier}, '%')
+                             OR b.beacon_id LIKE CONCAT('%', #{beaconIdentifier}, '%'))
+                        AND b.status = '0'
+                    )
+                )
+            </if>
+            <!-- 支持多信标搜索的额外条件 -->
+            <if test="beaconIdentifierSearchList != null and beaconIdentifierSearchList.size() > 0">
+                <foreach collection="beaconIdentifierSearchList" item="searchTerm" separator="">
+                    AND (
+                        a.beacon_identifier LIKE CONCAT('%', #{searchTerm}, '%')
+                        OR EXISTS (
+                            SELECT 1 FROM swm_beacon_station b
+                            WHERE FIND_IN_SET(b.beacon_id, a.beacon_identifier) > 0
+                            AND (b.device_name LIKE CONCAT('%', #{searchTerm}, '%')
+                                 OR b.beacon_id LIKE CONCAT('%', #{searchTerm}, '%'))
+                            AND b.status = '0'
+                        )
+                    )
+                </foreach>
             </if>
             <if test="beaconTag != null and beaconTag != ''">
                 AND a.beacon_tag LIKE CONCAT('%', #{beaconTag}, '%')

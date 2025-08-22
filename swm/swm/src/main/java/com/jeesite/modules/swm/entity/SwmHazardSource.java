@@ -15,6 +15,7 @@ import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 危险源管理
@@ -79,6 +80,7 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
     // 非持久化字段
     private String[] beaconIdentifiers; // 所属信标数组，用于前端多选
     private String beaconIdentifierText; // 所属信标显示文本
+    private List<String> beaconIdentifierSearchList; // 用于多信标搜索的列表
 
     // 非持久化的文本展示字段，不再由数据库JOIN查询获取，而是在Controller中手动设置
     private String hazardCategoryText; // 危险源类别文本
@@ -145,7 +147,7 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
             this.beaconIdentifiers = new String[0];
         }
     }
-    
+
     public String[] getBeaconIdentifiers() {
         // 如果beaconIdentifiers为null但beaconIdentifier不为空，则初始化
         if (beaconIdentifiers == null && beaconIdentifier != null && !beaconIdentifier.isEmpty()) {
@@ -153,7 +155,7 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
         }
         return beaconIdentifiers == null ? new String[0] : beaconIdentifiers;
     }
-    
+
     public void setBeaconIdentifiers(String[] beaconIdentifiers) {
         this.beaconIdentifiers = beaconIdentifiers;
         // 同步更新beaconIdentifier字段
@@ -163,11 +165,11 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
             this.beaconIdentifier = "";
         }
     }
-    
+
     public String getBeaconIdentifierText() {
         return beaconIdentifierText;
     }
-    
+
     public void setBeaconIdentifierText(String beaconIdentifierText) {
         this.beaconIdentifierText = beaconIdentifierText;
     }
@@ -278,12 +280,20 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
     public void setHazardStatusText(String hazardStatusText) {
         this.hazardStatusText = hazardStatusText;
     }
-    
+
     public String getIsDraft() {
         return isDraft;
     }
-    
+
     public void setIsDraft(String isDraft) {
         this.isDraft = isDraft;
+    }
+
+    public List<String> getBeaconIdentifierSearchList() {
+        return beaconIdentifierSearchList;
+    }
+
+    public void setBeaconIdentifierSearchList(List<String> beaconIdentifierSearchList) {
+        this.beaconIdentifierSearchList = beaconIdentifierSearchList;
     }
 }

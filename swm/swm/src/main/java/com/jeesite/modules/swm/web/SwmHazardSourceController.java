@@ -80,20 +80,36 @@ public class SwmHazardSourceController extends BaseController {
     @ApiOperation(value = "获取危险源列表")
     public Page<SwmHazardSource> listData(SwmHazardSource swmHazardSource, HttpServletRequest request,
             HttpServletResponse response) {
+        // 处理多信标搜索
+        if (swmHazardSource.getBeaconIdentifier() != null && swmHazardSource.getBeaconIdentifier().contains(",")) {
+            // 将逗号分隔的搜索条件转换为列表
+            String[] searchTerms = swmHazardSource.getBeaconIdentifier().split(",");
+            List<String> searchList = new ArrayList<>();
+            for (String term : searchTerms) {
+                String trimmed = term.trim();
+                if (!trimmed.isEmpty()) {
+                    searchList.add(trimmed);
+                }
+            }
+            swmHazardSource.setBeaconIdentifierSearchList(searchList);
+            // 清空单个搜索条件，避免重复查询
+            swmHazardSource.setBeaconIdentifier(null);
+        }
+
         swmHazardSource.setPage(new Page<>(request, response));
         Page<SwmHazardSource> page = swmHazardSourceService.findPage(swmHazardSource);
 
         // 收集所有需要查询的ID
         Set<String> voiceTemplateIds = new HashSet<>();
         Set<String> beaconIds = new HashSet<>();
-        
+
         // 第一次遍历，收集所有ID
         for (SwmHazardSource item : page.getList()) {
             // 收集语音模板ID
             if (item.getVoiceTemplateId() != null && !item.getVoiceTemplateId().isEmpty()) {
                 voiceTemplateIds.add(item.getVoiceTemplateId());
             }
-            
+
             // 收集信标ID
             if (item.getBeaconIdentifier() != null && !item.getBeaconIdentifier().isEmpty()) {
                 String[] ids = item.getBeaconIdentifier().split(",");
@@ -104,16 +120,17 @@ public class SwmHazardSourceController extends BaseController {
                 }
             }
         }
-        
+
         // 批量查询语音模板
         Map<String, SwmVoiceTemplate> voiceTemplateMap = new HashMap<>();
         if (!voiceTemplateIds.isEmpty()) {
-            List<SwmVoiceTemplate> voiceTemplates = swmVoiceTemplateService.findByIds(new ArrayList<>(voiceTemplateIds));
+            List<SwmVoiceTemplate> voiceTemplates = swmVoiceTemplateService
+                    .findByIds(new ArrayList<>(voiceTemplateIds));
             for (SwmVoiceTemplate template : voiceTemplates) {
                 voiceTemplateMap.put(template.getId(), template);
             }
         }
-        
+
         // 批量查询信标
         Map<String, Map<String, Object>> beaconMap = new HashMap<>();
         if (!beaconIds.isEmpty()) {
@@ -122,7 +139,7 @@ public class SwmHazardSourceController extends BaseController {
                 Map<String, Object> beaconInfo = new HashMap<>();
                 beaconInfo.put("id", beacon.getId());
                 beaconInfo.put("beaconId", beacon.getBeaconId());
-                
+
                 // 如果设备名称为空，则使用MAC地址作为设备名称
                 String deviceName = beacon.getDeviceName();
                 if (deviceName == null || deviceName.trim().isEmpty() || "null".equals(deviceName)) {
@@ -133,7 +150,7 @@ public class SwmHazardSourceController extends BaseController {
                 beaconMap.put(beacon.getBeaconId(), beaconInfo);
             }
         }
-        
+
         // 手动处理字典数据
         for (SwmHazardSource item : page.getList()) {
             // 危险源类别
@@ -178,18 +195,19 @@ public class SwmHazardSourceController extends BaseController {
                     item.setVoiceTemplateText(voiceTemplate.getTemplateName());
                 }
             }
-            
+
             // 处理多个信标显示 - 从Map中获取
             if (item.getBeaconIdentifier() != null && !item.getBeaconIdentifier().isEmpty()) {
                 // 将逗号分隔的beaconIdentifier拆分为数组
                 String[] ids = item.getBeaconIdentifier().split(",");
                 StringBuilder beaconText = new StringBuilder();
-                
+
                 // 查询每个信标的名称
                 for (int i = 0; i < ids.length; i++) {
                     String beaconId = ids[i].trim();
-                    if (beaconId.isEmpty()) continue;
-                    
+                    if (beaconId.isEmpty())
+                        continue;
+
                     // 从Map中获取信标信息
                     Map<String, Object> beacon = beaconMap.get(beaconId);
                     if (beacon != null) {
@@ -207,7 +225,7 @@ public class SwmHazardSourceController extends BaseController {
                         beaconText.append(beaconId);
                     }
                 }
-                
+
                 item.setBeaconIdentifierText(beaconText.toString());
             } else {
                 // 如果没有信标ID，设置为"-"
@@ -311,7 +329,7 @@ public class SwmHazardSourceController extends BaseController {
         if (swmHazardSource.getIsDraft() == null) {
             swmHazardSource.setIsDraft("0");
         }
-        
+
         if (swmHazardSource.getResponsiblePersonId() != null) {
             SwmPerson swmPerson = swmPersonService.get(swmHazardSource.getResponsiblePersonId());
             if (swmPerson == null) {
@@ -331,16 +349,16 @@ public class SwmHazardSourceController extends BaseController {
                     || swmHazardSource.getResponsiblePersonId() == null) {
                 return renderResult(Global.TRUE, text("保存成功，但无法生成巡检计划，请补充巡检相关信息！"));
             }
-            
+
             // 先查询是否已存在该危险源关联的巡检计划
             try {
                 SwmInspectionPlan queryPlan = new SwmInspectionPlan();
                 queryPlan.setHazardSourceId(swmHazardSource.getId());
                 List<SwmInspectionPlan> existingPlans = swmInspectionPlanService.findList(queryPlan);
-                
+
                 SwmInspectionPlan swmInspectionPlan;
                 boolean isNewPlan = true;
-                
+
                 if (existingPlans != null && !existingPlans.isEmpty()) {
                     // 如果已存在计划，则更新第一个找到的计划
                     swmInspectionPlan = existingPlans.get(0);
@@ -349,7 +367,7 @@ public class SwmHazardSourceController extends BaseController {
                     // 不存在计划，创建新的
                     swmInspectionPlan = new SwmInspectionPlan();
                 }
-                
+
                 // 设置或更新计划信息
                 swmInspectionPlan.setPlanName(swmHazardSource.getHazardName());
                 swmInspectionPlan.setFrequencyDays(swmHazardSource.getFrequencyDays());
@@ -361,9 +379,9 @@ public class SwmHazardSourceController extends BaseController {
                 swmInspectionPlan.setResponsiblePersonId(swmHazardSource.getResponsiblePersonId());
                 swmInspectionPlan.setResponsiblePerson(swmHazardSource.getResponsiblePerson());
                 swmInspectionPlan.setPlanStatus(SwmInspectionPlan.PlanStatusEnum.OPEN); // 默认为开启状态
-                
+
                 swmInspectionPlanService.save(swmInspectionPlan);
-                
+
                 if (isNewPlan) {
                     return renderResult(Global.TRUE, text("保存危险源并生成巡检计划成功"));
                 } else {
@@ -412,23 +430,25 @@ public class SwmHazardSourceController extends BaseController {
         // 标记为暂存状态
         swmHazardSource.setHazardStatus(SwmHazardSource.HazardSourceStatusEnum.WAIT);
         swmHazardSource.setIsDraft("1"); // 标记为草稿状态
-        
+
         // 保存数据
         swmHazardSourceService.save(swmHazardSource);
-        
+
         return renderResult(Global.TRUE, text("危险源暂存成功"));
     }
 
     /**
      * 热力图-危险源总数趋势
+     * 
      * @param beginDate 开始时间
-     * @param endDate 结束时间
+     * @param endDate   结束时间
      * @return
      */
     @GetMapping("hazardSourceStatistics")
     @ResponseBody
     @ApiOperation(value = "热力图-危险源总数趋势")
-    public Map<String, Object> hazardSourceStatistics(@RequestParam(required = false) String beginDate, @RequestParam(required = false) String endDate) {
+    public Map<String, Object> hazardSourceStatistics(@RequestParam(required = false) String beginDate,
+            @RequestParam(required = false) String endDate) {
 
         Map<String, Object> result = new HashMap<>();
         List<DictData> hazardCategoryList = DictUtils.getDictList("hazard_category_enum");
@@ -439,18 +459,17 @@ public class SwmHazardSourceController extends BaseController {
                         DictData::getDictLabelRaw,
                         (existing, replacement) -> existing)); // 如果有重复键，保留已存在的
 
-
         // 1. 危险源总数趋势折线图
         result.put("totalTrend", getHazardSourceTotalTrend(beginDate, endDate));
 
         // 2. 危险源类别TOP 10 柱状图
-        result.put("categoryTop10", getHazardSourceCategoryTop10(beginDate, endDate,valueToLabelMap));
+        result.put("categoryTop10", getHazardSourceCategoryTop10(beginDate, endDate, valueToLabelMap));
 
         // 3. 危险源类别分布饼图
-        result.put("categoryDistribution",getHazardSourceCategoryDistribution(beginDate, endDate, valueToLabelMap));
+        result.put("categoryDistribution", getHazardSourceCategoryDistribution(beginDate, endDate, valueToLabelMap));
 
         // 4. 危险源类别趋势折线图
-        result.put("categoryTrend", getHazardSourceCategoryTrend(beginDate, endDate,valueToLabelMap));
+        result.put("categoryTrend", getHazardSourceCategoryTrend(beginDate, endDate, valueToLabelMap));
 
         return result;
     }
@@ -479,14 +498,14 @@ public class SwmHazardSourceController extends BaseController {
         int unclosedCount = swmHazardSourceService.countByDateRange(
                 dateRange.getBeginDate(),
                 dateRange.getEndDate(),
-                Arrays.asList(SwmHazardSource.HazardSourceStatusEnum.WAIT, SwmHazardSource.HazardSourceStatusEnum.IN_PROGRESS));
+                Arrays.asList(SwmHazardSource.HazardSourceStatusEnum.WAIT,
+                        SwmHazardSource.HazardSourceStatusEnum.IN_PROGRESS));
 
         // 3. 已关闭危险源数量（总数 - 未关闭的）
         int closedCount = rangeCount - unclosedCount;
 
         // 4. 危险源整改率（保留2位小数）
-        double rectificationRate = rangeCount > 0 ?
-                Math.round(closedCount * 10000.0 / rangeCount) / 100.0 : 0;
+        double rectificationRate = rangeCount > 0 ? Math.round(closedCount * 10000.0 / rangeCount) / 100.0 : 0;
 
         // 5. 未制定巡检计划的数量
         int noInspectionPlanCount = swmHazardSourceService.countNoInspectionPlan(
@@ -496,10 +515,10 @@ public class SwmHazardSourceController extends BaseController {
         // 返回结果
         result.put("totalCount", totalCount); // 危险源总数累计
         result.put("rangeCount", totalCount); // 危险源总数
-        result.put("unclosedCount", unclosedCount); //未关闭的
-        result.put("closedCount", closedCount); //已整改的
-        result.put("rectificationRate", rectificationRate);//危险源整改率
-        result.put("noInspectionPlanCount", noInspectionPlanCount);//未制定巡检计划的数量
+        result.put("unclosedCount", unclosedCount); // 未关闭的
+        result.put("closedCount", closedCount); // 已整改的
+        result.put("rectificationRate", rectificationRate);// 危险源整改率
+        result.put("noInspectionPlanCount", noInspectionPlanCount);// 未制定巡检计划的数量
 
         return result;
     }
@@ -517,15 +536,13 @@ public class SwmHazardSourceController extends BaseController {
         // 一次性查询所有数据
         List<Map<String, Object>> dbResults = swmHazardSourceService.countByDateRangeGroupByDay(
                 dateRange.getBeginDate(),
-                dateRange.getEndDate()
-        );
+                dateRange.getEndDate());
 
         // 转换为按日期索引的Map
         Map<String, Integer> countMap = dbResults.stream()
                 .collect(Collectors.toMap(
                         item -> (String) item.get("date"),
-                        item -> ((Number) item.get("count")).intValue()
-                ));
+                        item -> ((Number) item.get("count")).intValue()));
 
         // 构建返回结果 - 使用显式类型声明
         List<Map<String, Object>> result = new ArrayList<>();
@@ -542,18 +559,21 @@ public class SwmHazardSourceController extends BaseController {
     /**
      * 获取危险源类别TOP 10数据
      */
-    private List<Map<String, Object>> getHazardSourceCategoryTop10(String beginDate,String endDate,Map<String, String> valueToLabelMap) {
+    private List<Map<String, Object>> getHazardSourceCategoryTop10(String beginDate, String endDate,
+            Map<String, String> valueToLabelMap) {
         List<Map<String, Object>> topCategories = swmHazardSourceService.findTopCategories(beginDate, endDate, 10);
         return transformedCategoryDict(valueToLabelMap, topCategories);
     }
 
     /**
      * 获取字典值转换后的数据
+     * 
      * @param valueToLabelMap 字典值转换
-     * @param categoryCounts 类别数量
+     * @param categoryCounts  类别数量
      * @return
      */
-    private static List<Map<String, Object>> transformedCategoryDict(Map<String, String> valueToLabelMap, List<Map<String, Object>> categoryCounts) {
+    private static List<Map<String, Object>> transformedCategoryDict(Map<String, String> valueToLabelMap,
+            List<Map<String, Object>> categoryCounts) {
         // 转换categoryCounts中的category值
         List<Map<String, Object>> transformedCategoryCounts = categoryCounts.stream()
                 .map(originalMap -> {
@@ -572,20 +592,24 @@ public class SwmHazardSourceController extends BaseController {
     /**
      * 获取危险源类别分布数据
      */
-    private List<Map<String, Object>> getHazardSourceCategoryDistribution(String beginDate,String endDate,Map<String, String> valueToLabelMap) {
-        List<Map<String, Object>> categoryDistribution = swmHazardSourceService.findCategoryDistribution(beginDate, endDate);
+    private List<Map<String, Object>> getHazardSourceCategoryDistribution(String beginDate, String endDate,
+            Map<String, String> valueToLabelMap) {
+        List<Map<String, Object>> categoryDistribution = swmHazardSourceService.findCategoryDistribution(beginDate,
+                endDate);
         return transformedCategoryDict(valueToLabelMap, categoryDistribution);
     }
 
     /**
      * 获取危险源类别趋势数据
      */
-    private Map<String, List<Map<String, Object>>> getHazardSourceCategoryTrend(String beginDateStr, String endDateStr,Map<String, String> valueToLabelMap) {
+    private Map<String, List<Map<String, Object>>> getHazardSourceCategoryTrend(String beginDateStr, String endDateStr,
+            Map<String, String> valueToLabelMap) {
         // 解析日期参数
         DateRange dateRange = parseDateRange(beginDateStr, endDateStr);
 
         // 一次性查询所有类别的趋势数据
-        List<Map<String, Object>> allData = transformedCategoryDict(valueToLabelMap, swmHazardSourceService.countCategoryTrendByDateRange(dateRange.getBeginDate(),dateRange.getEndDate()));
+        List<Map<String, Object>> allData = transformedCategoryDict(valueToLabelMap,
+                swmHazardSourceService.countCategoryTrendByDateRange(dateRange.getBeginDate(), dateRange.getEndDate()));
 
         // 按类别分组（使用传统方式创建Map）
         Map<String, List<Map<String, Object>>> groupedData = allData.stream()
@@ -598,9 +622,7 @@ public class SwmHazardSourceController extends BaseController {
                                     map.put("count", item.get("count"));
                                     return map;
                                 },
-                                Collectors.toList()
-                        )
-                ));
+                                Collectors.toList())));
 
         // 生成完整日期列表
         List<String> dateList = getDateList(dateRange.getBeginDate(), dateRange.getEndDate());
@@ -610,8 +632,7 @@ public class SwmHazardSourceController extends BaseController {
             Map<String, Integer> dateCountMap = data.stream()
                     .collect(Collectors.toMap(
                             item -> (String) item.get("date"),
-                            item -> ((Number) item.get("count")).intValue()
-                    ));
+                            item -> ((Number) item.get("count")).intValue()));
 
             List<Map<String, Object>> completeData = dateList.stream()
                     .map(date -> {
@@ -627,6 +648,7 @@ public class SwmHazardSourceController extends BaseController {
 
         return groupedData;
     }
+
     /**
      * 解析日期范围
      */
@@ -701,7 +723,7 @@ public class SwmHazardSourceController extends BaseController {
     @ApiOperation(value = "获取危险源的巡检记录")
     public Map<String, Object> getInspectionRecords(@RequestParam String hazardSourceId) {
         Map<String, Object> result = new HashMap<>();
-        
+
         // 先获取危险源信息
         SwmHazardSource hazardSource = swmHazardSourceService.get(hazardSourceId);
         if (hazardSource == null) {
@@ -710,31 +732,35 @@ public class SwmHazardSourceController extends BaseController {
             result.put("records", new ArrayList<>());
             return result;
         }
-        
+
         // 组装所属信标显示文本（beaconIdentifierText）
         if (hazardSource.getBeaconIdentifier() != null && !hazardSource.getBeaconIdentifier().isEmpty()) {
             String[] ids = hazardSource.getBeaconIdentifier().split(",");
             StringBuilder beaconText = new StringBuilder();
             for (int i = 0; i < ids.length; i++) {
                 String beaconId = ids[i].trim();
-                if (beaconId.isEmpty()) continue;
+                if (beaconId.isEmpty())
+                    continue;
                 SwmBeaconStation beacon = swmBeaconStationService.getByBeaconId(beaconId);
-                String deviceName = beacon != null && beacon.getDeviceName() != null && !beacon.getDeviceName().trim().isEmpty() && !"null".equals(beacon.getDeviceName())
-                        ? beacon.getDeviceName() : beaconId;
-                if (beaconText.length() > 0) beaconText.append(", ");
+                String deviceName = beacon != null && beacon.getDeviceName() != null
+                        && !beacon.getDeviceName().trim().isEmpty() && !"null".equals(beacon.getDeviceName())
+                                ? beacon.getDeviceName()
+                                : beaconId;
+                if (beaconText.length() > 0)
+                    beaconText.append(", ");
                 beaconText.append(deviceName);
             }
             hazardSource.setBeaconIdentifierText(beaconText.toString());
         } else {
             hazardSource.setBeaconIdentifierText("-");
         }
-        
+
         // 1. 根据危险源ID查询相关的巡检计划
         SwmInspectionPlan queryPlan = new SwmInspectionPlan();
         queryPlan.setHazardSourceId(hazardSourceId);
         // 不再限制其他条件，只查询与该危险源相关的所有计划
         List<SwmInspectionPlan> planList = swmInspectionPlanService.findList(queryPlan);
-        
+
         if (planList.isEmpty()) {
             result.put("success", true);
             result.put("message", "没有找到相关的巡检计划");
@@ -742,23 +768,23 @@ public class SwmHazardSourceController extends BaseController {
             result.put("hazardSource", hazardSource);
             return result;
         }
-        
+
         // 2. 收集所有计划的ID
         List<String> planIds = planList.stream()
                 .map(SwmInspectionPlan::getId)
                 .collect(Collectors.toList());
-        
+
         // 3. 根据计划ID查询巡检记录
         List<Map<String, Object>> recordsList = swmInspectionPlanService.findInspectionListByPlanIds(planIds);
-        
+
         result.put("success", true);
         result.put("message", "获取巡检记录成功");
         result.put("records", recordsList);
         result.put("hazardSource", hazardSource);
-        
+
         return result;
     }
-    
+
     /**
      * 获取未加入巡检的危险源列表
      */
@@ -770,10 +796,10 @@ public class SwmHazardSourceController extends BaseController {
         SwmHazardSource query = new SwmHazardSource();
         query.setIsPatrolIncluded("0"); // 0表示未加入巡检
         query.setStatus("0"); // 只查询正常状态的记录
-        
+
         // 查询符合条件的危险源列表
         List<SwmHazardSource> hazardList = swmHazardSourceService.findList(query);
-        
+
         // 转换为前端需要的格式
         List<Map<String, Object>> result = new ArrayList<>();
         for (SwmHazardSource hazard : hazardList) {
@@ -782,7 +808,7 @@ public class SwmHazardSourceController extends BaseController {
             item.put("label", hazard.getHazardName());
             item.put("location", hazard.getLocation());
             item.put("hazardCategory", hazard.getHazardCategory());
-            
+
             // 添加危险源类别文本
             if ("0".equals(hazard.getHazardCategory())) {
                 item.put("hazardCategoryText", "气站");
@@ -799,10 +825,10 @@ public class SwmHazardSourceController extends BaseController {
             } else if ("99".equals(hazard.getHazardCategory())) {
                 item.put("hazardCategoryText", "其他风险");
             }
-            
+
             result.add(item);
         }
-        
+
         return result;
     }
 
