@@ -272,10 +272,16 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal attendanceAchievementRate = calculateAttendanceAchievementRate(actualHours, scheduledHours);
         summary.setAttendanceAchievementRate(attendanceAchievementRate);
 
+        // 计算实际考勤时长
+        BigDecimal actualAttendanceHours = calculateActualAttendanceHoursFromList(dailyAttendanceList);
+
+        // 计算工效
+        BigDecimal efficiency = calculateEfficiency(actualAttendanceHours, scheduledHours);
+        summary.setEfficiency(efficiency);
+
         // TODO: 后续添加其他指标的计算
         // 初始化其他字段为0
         summary.setActualAttendanceDays(BigDecimal.ZERO);
-        summary.setEfficiency(BigDecimal.ZERO);
         summary.setMonthlyAttendanceRate(BigDecimal.ZERO);
 
         return summary;
@@ -451,7 +457,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
     /**
      * 基于日考勤记录列表计算实际工作时长
      * 累加所有日考勤记录的实际工作时长
-     * 
+     *
      * @param dailyAttendanceList 日考勤记录列表
      * @return 实际工作时长(小时)
      * @author Shawn
@@ -466,6 +472,27 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         return dailyAttendanceList.stream()
                 .map(SwmDailyAttendance::getEffectiveWorkHours)
                 .filter(effectiveWorkHours -> effectiveWorkHours != null) // 过滤null值
+                .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
+    }
+
+    /**
+     * 基于日考勤记录列表计算实际考勤时长
+     * 累加所有日考勤记录的实际考勤时长
+     *
+     * @param dailyAttendanceList 日考勤记录列表
+     * @return 实际考勤时长(小时)
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateActualAttendanceHoursFromList(List<SwmDailyAttendance> dailyAttendanceList) {
+        if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        // 累加所有日考勤记录的实际考勤时长
+        return dailyAttendanceList.stream()
+                .map(SwmDailyAttendance::getActualHours)
+                .filter(actualHours -> actualHours != null) // 过滤null值
                 .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
     }
 
@@ -524,6 +551,37 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
             // 计算考勤达成率：实际工作时长 ÷ 应考勤时长（返回小数形式）
             return actualHours.divide(scheduledHours, 4, RoundingMode.HALF_UP);
+
+        } catch (Exception e) {
+            // 发生异常时返回0
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * 计算工效
+     * 工效 = 实际考勤时长 ÷ 应考勤时长（返回小数形式）
+     *
+     * @param actualAttendanceHours 实际考勤时长
+     * @param scheduledHours        应考勤时长
+     * @return 工效(小数形式，保留4位小数)
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateEfficiency(BigDecimal actualAttendanceHours, BigDecimal scheduledHours) {
+        try {
+            // 应考勤时长为0或null时，工效为0
+            if (scheduledHours == null || scheduledHours.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ZERO;
+            }
+
+            // 实际考勤时长为null时，按0处理
+            if (actualAttendanceHours == null) {
+                return BigDecimal.ZERO;
+            }
+
+            // 计算工效：实际考勤时长 ÷ 应考勤时长（返回小数形式）
+            return actualAttendanceHours.divide(scheduledHours, 4, RoundingMode.HALF_UP);
 
         } catch (Exception e) {
             // 发生异常时返回0
