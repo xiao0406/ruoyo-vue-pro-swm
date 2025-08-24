@@ -101,7 +101,7 @@
             GROUP BY da.employee_id
         ) da_stats ON a.id = da_stats.employee_id
         <where>
-            a.status = '0' 
+            a.status = '0'
             <if test="name != null and name != ''">
                 AND a.name LIKE CONCAT('%', #{name}, '%')
             </if>
