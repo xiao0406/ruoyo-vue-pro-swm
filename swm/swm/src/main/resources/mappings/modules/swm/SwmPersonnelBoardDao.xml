@@ -101,6 +101,7 @@
             GROUP BY da.employee_id
         ) da_stats ON a.id = da_stats.employee_id
         <where>
+            a.status = '0' 
             <if test="name != null and name != ''">
                 AND a.name LIKE CONCAT('%', #{name}, '%')
             </if>
@@ -117,15 +118,19 @@
                 AND (wg.work_group_name LIKE CONCAT('%', #{team}, '%') OR backup_wg.work_group_name LIKE CONCAT('%', #{team}, '%'))
             </if>
             <if test="deviceIds != null and deviceIds.size() > 0">
-                AND (
-                    hd.device_id IN 
-                    <foreach collection="deviceIds" item="deviceId" open="(" separator="," close=")">
-                        #{deviceId}
-                    </foreach>
-                    <if test="deviceIds.contains('')">
-                        OR hd.device_id IS NULL OR hd.device_id = ''
-                    </if>
-                )
+                <choose>
+                    <!-- 查询未分配设备的情况 -->
+                    <when test="deviceIds.size() == 1 and deviceIds.contains('')">
+                        AND (hd.device_id IS NULL OR hd.device_id = '')
+                    </when>
+                    <!-- 查询有设备的情况（工作中或休息中） -->
+                    <otherwise>
+                        AND hd.device_id IN 
+                        <foreach collection="deviceIds" item="deviceId" open="(" separator="," close=")">
+                            #{deviceId}
+                        </foreach>
+                    </otherwise>
+                </choose>
             </if>
             <if test="personnelStatus != null and personnelStatus != ''">
                 AND a.personnel_status = #{personnelStatus}

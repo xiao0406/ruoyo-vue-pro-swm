@@ -203,8 +203,8 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
      */
     private void setPersonnelStatus(SwmPersonnelBoard board) {
         if (board == null || StringUtils.isBlank(board.getDeviceId())) {
-            // 没有设备ID，设置为休息中和脱帽状态
-            board.setWorkStatus("0"); // 休息中
+            // 没有设备ID，设置为未分配设备状态
+            board.setWorkStatus("2"); // 未分配设备
             board.setHelmetStatus("0"); // 脱帽
             return;
         }
@@ -686,20 +686,31 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
                     }
                 }
 
-                // 4. 为了包含没有设备的人员，添加一个特殊的空设备ID标识
-                // 这样XML查询就能包含没有设备的人员
-                deviceIds.add("");
+                // 休息中只查询有设备但不活跃的人员，不包含无设备人员
+                // 无设备人员通过状态"2"单独查询
 
-                logger.debug("查询到休息中的设备数量（含无设备人员）: {}", deviceIds.size());
+                logger.debug("查询到休息中的设备数量: {}", deviceIds.size());
+
+            } else if ("2".equals(workStatus)) {
+                // 查询未分配设备：返回包含空字符串的列表
+                // 这样XML中的条件会匹配 hd.device_id IS NULL OR hd.device_id = ''
+                deviceIds.add("");
+                logger.debug("查询未分配设备人员");
             }
 
         } catch (Exception e) {
             logger.error("根据工作状态查询设备ID失败：workStatus={}", workStatus, e);
         }
 
-        // 如果没有查询到任何设备，返回一个空字符串，避免SQL查询返回所有数据
+        // 根据不同的工作状态处理空结果
         if (deviceIds.isEmpty()) {
-            deviceIds.add("");
+            if ("2".equals(workStatus)) {
+                // 未分配设备状态：添加空字符串匹配无设备人员
+                deviceIds.add("");
+            } else {
+                // 工作中/休息中状态：添加不存在的设备ID，避免匹配到任何人员
+                deviceIds.add("NO_DEVICE_FOUND");
+            }
         }
 
         return deviceIds;
