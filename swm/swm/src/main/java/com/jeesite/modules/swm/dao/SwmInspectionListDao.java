@@ -37,4 +37,12 @@ public interface SwmInspectionListDao extends CrudDao<SwmInspectionList> {
      * @return 巡检记录列表
      */
     List<Map<String, Object>> findByPlanIds(@Param("planIds") List<String> planIds);
+    
+    /**
+     * 检查指定计划在指定日期是否已有任务
+     * @param planId 计划ID
+     * @param dateStr 日期字符串，格式：yyyy-MM-dd
+     * @return 任务数量
+     */
+    int countByPlanIdAndDate(@Param("planId") String planId, @Param("dateStr") String dateStr);
 }

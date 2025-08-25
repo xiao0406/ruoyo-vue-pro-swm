@@ -106,20 +106,32 @@ public class InspectionPlanTask {
                             taskDate = combineDateAndTime(now, firstInspectionTime);
                         }
                         
-                        SwmInspectionList task = new SwmInspectionList();
-                        task.setPlanId(planId);
-                        task.setPlanName(planName);
-                        task.setInspectionType(inspectionType);
-                        task.setInspectorId(responsiblePersonId);
-                        task.setStartTime(taskDate);
-                        task.setInspectionListStatus(SwmInspectionList.InspectionListStatusEnum.WAIT);
+                        // 防重复检查：检查该日期是否已有任务
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                        String targetDateStr = dateFormat.format(taskDate);
+                        boolean taskExistsForDate = swmInspectionListService.existsByPlanIdAndDate(planId, targetDateStr);
+                        
+                        if (!taskExistsForDate) {
+                            SwmInspectionList task = new SwmInspectionList();
+                            task.setPlanId(planId);
+                            task.setPlanName(planName);
+                            task.setInspectionType(inspectionType);
+                            task.setInspectorId(responsiblePersonId);
+                            task.setStartTime(taskDate);
+                            task.setInspectionListStatus(SwmInspectionList.InspectionListStatusEnum.WAIT);
 
-                        // 保存巡检任务
-                        swmInspectionListService.save(task);
-                        String successMsg = "成功创建一次性巡检任务: 计划[" + planName + "], 时间[" + dateTimeFormat.format(taskDate) + "], 新任务ID: [" + task.getId() + "]";
-                        XxlJobHelper.log(successMsg);
-                        log.info(successMsg);
-                        successCount++;
+                            // 保存巡检任务
+                            swmInspectionListService.save(task);
+                            String successMsg = "成功创建一次性巡检任务: 计划[" + planName + "], 时间[" + dateTimeFormat.format(taskDate) + "], 新任务ID: [" + task.getId() + "]";
+                            XxlJobHelper.log(successMsg);
+                            log.info(successMsg);
+                            successCount++;
+                        } else {
+                            String skipMsg = "计划[" + planName + "]在日期[" + targetDateStr + "]已有任务，跳过重复创建";
+                            XxlJobHelper.log(skipMsg);
+                            log.info(skipMsg);
+                            skipCount++;
+                        }
                         continue;
                     }
                 }
@@ -168,35 +180,57 @@ public class InspectionPlanTask {
                     XxlJobHelper.log("计划[" + planName + "]下一次预期执行时间: [" + dateTimeFormat.format(expectedNextDate) + "]");
                     log.info("计划[{}]下一次预期执行时间: [{}]", planName, dateTimeFormat.format(expectedNextDate));
                     
-                    // 如果下一个预期日期已经到了或者过了，则需要创建新任务
-                    if (!expectedNextDate.after(now)) {
+                    // 使用日期级比较判断是否需要创建新任务（修复1天频次隔天生成的问题）
+                    Calendar expectedCal = Calendar.getInstance();
+                    expectedCal.setTime(expectedNextDate);
+                    Calendar nowCal = Calendar.getInstance();
+                    nowCal.setTime(now);
+                    
+                    // 只比较年月日，忽略时分秒
+                    boolean shouldCreateTaskByDate = expectedCal.get(Calendar.YEAR) < nowCal.get(Calendar.YEAR) ||
+                        (expectedCal.get(Calendar.YEAR) == nowCal.get(Calendar.YEAR) && 
+                         expectedCal.get(Calendar.DAY_OF_YEAR) <= nowCal.get(Calendar.DAY_OF_YEAR));
+                    
+                    if (shouldCreateTaskByDate) {
                         needCreateTask = true;
                         // 使用当前日期+上一次任务的时分秒
                         newTaskDate = combineDateAndTime(now, lastTaskDate);
-                        XxlJobHelper.log("已到达或超过预期执行时间，需要创建新任务，时间为: [" + dateTimeFormat.format(newTaskDate) + "]");
-                        log.info("已到达或超过预期执行时间，需要创建新任务，时间为: [{}]", dateTimeFormat.format(newTaskDate));
+                        XxlJobHelper.log("已到达或超过预期执行日期，需要创建新任务，时间为: [" + dateTimeFormat.format(newTaskDate) + "]");
+                        log.info("已到达或超过预期执行日期，需要创建新任务，时间为: [{}]", dateTimeFormat.format(newTaskDate));
                     } else {
-                        XxlJobHelper.log("未到达预期执行时间，不需要创建新任务");
-                        log.info("未到达预期执行时间，不需要创建新任务");
+                        XxlJobHelper.log("未到达预期执行日期，不需要创建新任务");
+                        log.info("未到达预期执行日期，不需要创建新任务");
                     }
                 }
                 
-                // 7. 创建新任务
+                // 7. 创建新任务（增加防重复检查）
                 if (needCreateTask && newTaskDate != null) {
-                    SwmInspectionList task = new SwmInspectionList();
-                    task.setPlanId(planId);
-                    task.setPlanName(planName);
-                    task.setInspectionType(inspectionType);
-                    task.setInspectorId(responsiblePersonId);
-                    task.setStartTime(newTaskDate);
-                    task.setInspectionListStatus(SwmInspectionList.InspectionListStatusEnum.WAIT);
+                    // 防重复检查：检查该日期是否已有任务
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    String targetDateStr = dateFormat.format(newTaskDate);
+                    boolean taskExistsForDate = swmInspectionListService.existsByPlanIdAndDate(planId, targetDateStr);
+                    
+                    if (!taskExistsForDate) {
+                        SwmInspectionList task = new SwmInspectionList();
+                        task.setPlanId(planId);
+                        task.setPlanName(planName);
+                        task.setInspectionType(inspectionType);
+                        task.setInspectorId(responsiblePersonId);
+                        task.setStartTime(newTaskDate);
+                        task.setInspectionListStatus(SwmInspectionList.InspectionListStatusEnum.WAIT);
 
-                    // 保存巡检任务
-                    swmInspectionListService.save(task);
-                    String successMsg = "成功创建巡检任务: 计划[" + planName + "], 时间[" + dateTimeFormat.format(newTaskDate) + "], 新任务ID: [" + task.getId() + "]";
-                    XxlJobHelper.log(successMsg);
-                    log.info(successMsg);
-                    successCount++;
+                        // 保存巡检任务
+                        swmInspectionListService.save(task);
+                        String successMsg = "成功创建巡检任务: 计划[" + planName + "], 时间[" + dateTimeFormat.format(newTaskDate) + "], 新任务ID: [" + task.getId() + "]";
+                        XxlJobHelper.log(successMsg);
+                        log.info(successMsg);
+                        successCount++;
+                    } else {
+                        String skipMsg = "计划[" + planName + "]在日期[" + targetDateStr + "]已有任务，跳过重复创建";
+                        XxlJobHelper.log(skipMsg);
+                        log.info(skipMsg);
+                        skipCount++;
+                    }
                 } else {
                     String skipMsg = "计划[" + planName + "]不满足创建新任务的条件，跳过";
                     XxlJobHelper.log(skipMsg);

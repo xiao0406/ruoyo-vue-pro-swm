@@ -139,4 +139,13 @@
         </if>
         ORDER BY a.start_time DESC
     </select>
+    
+    <!-- 检查指定计划在指定日期是否已有任务（防重复生成） -->
+    <select id="countByPlanIdAndDate" resultType="int">
+        SELECT COUNT(1) 
+        FROM swm_inspection_list a
+        WHERE a.status = '0'
+        AND a.plan_id = #{planId}
+        AND DATE_FORMAT(a.start_time, '%Y-%m-%d') = #{dateStr}
+    </select>
 </mapper>

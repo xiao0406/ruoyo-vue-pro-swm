@@ -186,4 +186,15 @@ public class SwmInspectionListService extends CrudService<SwmInspectionListDao, 
         
         return entity;
     }
+    
+    /**
+     * 检查指定计划在指定日期是否已有任务（用于防重复生成）
+     * @param planId 计划ID
+     * @param dateStr 日期字符串，格式：yyyy-MM-dd
+     * @return true表示已存在任务，false表示不存在
+     */
+    public boolean existsByPlanIdAndDate(String planId, String dateStr) {
+        int count = dao.countByPlanIdAndDate(planId, dateStr);
+        return count > 0;
+    }
 }
