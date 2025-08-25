@@ -39,7 +39,6 @@
         SELECT MAX(a.plan_code)
         FROM swm_inspection_plan a
         WHERE a.plan_code LIKE CONCAT(#{prefix}, '%')
-        AND a.status = #{STATUS_NORMAL}
     </select>
     
 </mapper> 
