@@ -102,8 +102,7 @@ public class SwmOneClickRecall extends DataEntity<SwmOneClickRecall> {
     public void setTemplateName(String templateName) {
         this.templateName = templateName;
     }
-    
-    @NotBlank(message = "语音模板内容不能为空")
+
     public String getTemplateContent() {
         return templateContent;
     }
