@@ -2039,6 +2039,7 @@ public class AttendanceTask {
         attendance.setEmployeeId(person.getId());
         attendance.setEmployeeName(person.getName());
         attendance.setIdentityCard(person.getIdentityCard());
+        attendance.setDeviceId(person.getSafetyHelmetId()); // 设置绑定设备号
         attendance.setPersonType(person.getPersonType());
         attendance.setAttendanceDate(targetDate);
         return attendance;

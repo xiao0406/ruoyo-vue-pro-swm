@@ -22,6 +22,7 @@ import java.util.Date;
         @Column(name = "employee_id", attrName = "employeeId", label = "员工ID"),
         @Column(name = "employee_name", attrName = "employeeName", label = "员工姓名", queryType = QueryType.LIKE),
         @Column(name = "identity_card", attrName = "identityCard", label = "身份证号"),
+        @Column(name = "device_id", attrName = "deviceId", label = "绑定设备号"),
         @Column(name = "person_type", attrName = "personType", label = "人员类型"),
         @Column(name = "attendance_date", attrName = "attendanceDate", label = "考勤日期"),
         @Column(name = "work_time_range", attrName = "workTimeRange", label = "应考勤时间范围", queryType = QueryType.LIKE),
@@ -50,6 +51,7 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private String employeeId; // 员工ID
     private String employeeName; // 员工姓名
     private String identityCard; // 身份证号
+    private String deviceId; // 绑定设备号
     private String personType; // 人员类型
     private Date attendanceDate; // 考勤日期
     private String workTimeRange; // 应考勤时间范围(如08:00-17:00)
@@ -108,6 +110,15 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     public void setIdentityCard(String identityCard) {
         this.identityCard = identityCard;
+    }
+
+    @Length(min = 0, max = 50, message = "设备号长度不能超过50个字符")
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
     }
 
     @Length(min = 0, max = 100, message = "人员类型不能超过100个字符")
