@@ -2150,22 +2150,11 @@ public class AttendanceTask {
         attendance.setClasses(scheduleInfo.classes);
         attendance.setWorkTimeRange(workTimeRange);
         
-        // 判断是否为休息日
-        if (isRestDay(scheduleTime, targetDate)) {
-            attendance.setAttendanceNormal("2"); // 设置为休息日
-            attendance.setScheduledHours(BigDecimal.ZERO); // 休息日应考勤时长为0
-            XxlJobHelper.log("员工[{}]{} {}是休息日，班次：{}，排班时间：{}", 
-                person.getId(), person.getName(), 
-                new SimpleDateFormat("yyyy-MM-dd").format(targetDate),
-                scheduleInfo.classes, workTimeRange);
-            return;
-        }
-        
-        // 计算应考勤时长
+        // 计算应考勤时长（工作日和休息日都计算）
         BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
         attendance.setScheduledHours(scheduledHours);
         
-        // 设置休息时长
+        // 设置休息时长（工作日和休息日都设置）
         Double restTime = scheduleTime.getRestTime();
         if (restTime != null) {
             attendance.setRestTime(BigDecimal.valueOf(restTime).setScale(1, RoundingMode.HALF_UP));
@@ -2173,8 +2162,17 @@ public class AttendanceTask {
             attendance.setRestTime(BigDecimal.ZERO);
         }
         
-        // 计算打卡时间范围
+        // 计算打卡时间范围（工作日和休息日都计算）
         calculateAndSetClockTimeRange(attendance, targetDate, workTimeRange);
+        
+        // 判断是否为休息日（仅影响考勤状态）
+        if (isRestDay(scheduleTime, targetDate)) {
+            attendance.setAttendanceNormal("2"); // 设置为休息日
+            XxlJobHelper.log("员工[{}]{} {}是休息日，班次：{}，但按工作日逻辑计算时间字段", 
+                person.getId(), person.getName(), 
+                new SimpleDateFormat("yyyy-MM-dd").format(targetDate),
+                scheduleInfo.classes);
+        }
         
         XxlJobHelper.log("员工[{}]{}有排班信息：班次：{}，时间：{}，应考勤时长：{} 小时，休息时长：{} 小时", 
             person.getId(), person.getName(), scheduleInfo.classes, workTimeRange, scheduledHours, 
