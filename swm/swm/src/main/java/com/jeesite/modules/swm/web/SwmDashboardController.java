@@ -13,6 +13,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,6 +55,9 @@ public class SwmDashboardController extends BaseController {
     private TDengineService tdengineService;
     @Autowired
     private SwmBeaconStationService swmBeaconStationService;
+
+    @Value("${tdengine.dbname}")
+    private String dbname;
 
     /**
      * 获取启用状态的地图路径
@@ -294,8 +298,6 @@ public class SwmDashboardController extends BaseController {
         // 获取统计数据
         try {
             // 使用TDengine直接查询统计数据
-            String dbname = "plb"; // TDengine数据库名称
-
             // 获取今天开始和结束的时间戳
             Calendar calendar = Calendar.getInstance();
             calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -1151,7 +1153,6 @@ public class SwmDashboardController extends BaseController {
         Set<String> uniqueIdCards = new HashSet<>();
 
         try {
-            String dbname = "plb";
             String sql;
 
             if (endTime != null) {

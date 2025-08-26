@@ -17,6 +17,7 @@ import com.jeesite.modules.utils.R;
 import com.jeesite.common.utils.SpringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,8 +43,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     @Autowired
     private TDengineService tdengineService;
 
-    // 直接使用固定的数据库名称
-    private String dbname = "plb";
+    @Value("${tdengine.dbname}")
+    private String dbname;
 
     /**
      * 获取单条数据

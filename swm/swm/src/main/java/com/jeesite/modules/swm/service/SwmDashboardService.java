@@ -156,9 +156,6 @@ public class SwmDashboardService {
         result.put("managers", 0);
         
         try {
-            // TDengine数据库名
-            String dbname = "plb";
-            
             // 计算20分钟前的时间戳
             long twentyMinutesAgo = System.currentTimeMillis() - 20 * 60 * 1000;
             
@@ -295,8 +292,6 @@ public class SwmDashboardService {
         Set<String> idCards = new HashSet<>();
         
         try {
-            String dbname = "plb";
-            
             // 查询当天有位置数据的所有身份证
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT DISTINCT id_card FROM ")
@@ -341,9 +336,6 @@ public class SwmDashboardService {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            // TDengine数据库名
-            String dbname = "plb";
-            
             // 获取当月开始和结束的时间戳
             Calendar calendar = Calendar.getInstance();
             calendar.set(Calendar.DAY_OF_MONTH, 1); // 当月第一天
@@ -466,9 +458,6 @@ public class SwmDashboardService {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            // TDengine数据库名
-            String dbname = "plb";
-            
             // 获取当日开始和结束的时间戳
             Calendar calendar = Calendar.getInstance();
             calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -581,9 +570,6 @@ public class SwmDashboardService {
         int lowBatteryCount = 0;
         
         try {
-            // TDengine数据库名
-            String dbname = "plb";
-            
             // 使用TDengine的last_row函数获取每个设备最新的一条记录
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT device_id, LAST_ROW(bat_l) as bat_l FROM ")
@@ -725,9 +711,6 @@ public class SwmDashboardService {
             // 设置为下月1号
             calendar.add(Calendar.MONTH, 1);
             long endTime = calendar.getTimeInMillis();
-            
-            // TDengine数据库名
-            String dbname = "plb"; // 根据实际数据库名调整
             
             // 构建SQL查询语句 - 第一步：获取危险源报警记录
             // 危险源报警类型为type=8
