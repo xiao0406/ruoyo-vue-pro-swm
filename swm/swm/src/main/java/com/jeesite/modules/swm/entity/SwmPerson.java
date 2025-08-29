@@ -26,7 +26,7 @@ import java.util.Date;
         @Column(name = "name", attrName = "name", label = "姓名", queryType = QueryType.LIKE),
         @Column(name = "person_type", attrName = "personType", label = "人员类型"),
         @Column(name = "gender", attrName = "gender", label = "性别"),
-        @Column(name = "company", attrName = "company", label = "所属单位", queryType = QueryType.LIKE),
+        @Column(name = "company", attrName = "company", label = "所属单位"),
         @Column(name = "department", attrName = "department", label = "所属车间"),
         @Column(name = "prod_line", attrName = "prodLine", label = "产线"),
         @Column(name = "work_process", attrName = "workProcess", label = "所属工序"),

@@ -45,7 +45,60 @@
         LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
         <where>
-         ${sqlMap.where.toSql()}
+            <!-- 组织结构字段使用COALESCE匹配，与SELECT显示逻辑保持一致 -->
+            <if test="company != null and company != ''">
+                AND COALESCE(o.office_name, backup_o.office_name) LIKE CONCAT('%', #{company}, '%')
+            </if>
+            <if test="department != null and department != ''">
+                AND COALESCE(p.position_name, backup_p.position_name) = #{department}
+            </if>
+            <if test="prodLine != null and prodLine != ''">
+                AND COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) = #{prodLine}
+            </if>
+            <if test="team != null and team != ''">
+                AND COALESCE(wg.work_group_name, backup_wg.work_group_name) = #{team}
+            </if>
+            <if test="jobType != null and jobType != ''">
+                AND COALESCE(f.work_type, backup_wt.work_type) = #{jobType}
+            </if>
+            
+            <!-- 非组织字段保留原有查询方式 -->
+            <if test="name != null and name != ''">
+                AND a.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="identityCard != null and identityCard != ''">
+                AND a.identity_card LIKE CONCAT('%', #{identityCard}, '%')
+            </if>
+            <if test="phoneNumber != null and phoneNumber != ''">
+                AND a.phone_number LIKE CONCAT('%', #{phoneNumber}, '%')
+            </if>
+            <if test="personnelStatus != null and personnelStatus != ''">
+                AND a.personnel_status = #{personnelStatus}
+            </if>
+            <if test="status != null and status != ''">
+                AND a.status = #{status}
+            </if>
+            <if test="personType != null and personType != ''">
+                AND a.person_type = #{personType}
+            </if>
+            <if test="gender != null and gender != ''">
+                AND a.gender = #{gender}
+            </if>
+            <if test="safetyHelmetId != null and safetyHelmetId != ''">
+                AND a.safety_helmet_id = #{safetyHelmetId}
+            </if>
+            <if test="safetyEducation != null and safetyEducation != ''">
+                AND a.safety_education = #{safetyEducation}
+            </if>
+            <if test="helmetReturned != null and helmetReturned != ''">
+                AND a.helmet_returned = #{helmetReturned}
+            </if>
+            <if test="departureType != null and departureType != ''">
+                AND a.departure_type = #{departureType}
+            </if>
+            <if test="isExternalPersonnel != null and isExternalPersonnel != ''">
+                AND a.is_external_personnel = #{isExternalPersonnel}
+            </if>
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
