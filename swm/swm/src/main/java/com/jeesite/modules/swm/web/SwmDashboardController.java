@@ -716,7 +716,8 @@ public class SwmDashboardController extends BaseController {
 
         BigDecimal attendanceRate = totalCount == 0 ? BigDecimal.ZERO
                 : BigDecimal.valueOf(presentCount)
-                        .divide(BigDecimal.valueOf(totalCount), 4, RoundingMode.HALF_UP);
+                        .divide(BigDecimal.valueOf(totalCount), 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100));
 
         // 获取当前处理的人员类型
         String personType = getCurrentPersonType(attendances);
