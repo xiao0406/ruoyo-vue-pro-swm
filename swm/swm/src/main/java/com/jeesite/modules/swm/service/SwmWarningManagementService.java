@@ -1632,6 +1632,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             String sql = String.format(
                     "SELECT * FROM %s.swm_warning_management WHERE type IN (%s) " +
                             "AND warning_time >= %d AND warning_time < %d " +
+                            "AND warning_content NOT IN ('考勤打卡', '进入大门') " +
                             "ORDER BY warning_time DESC",
                     dbname, inCondition, todayStartTime, todayEndTime);
 
