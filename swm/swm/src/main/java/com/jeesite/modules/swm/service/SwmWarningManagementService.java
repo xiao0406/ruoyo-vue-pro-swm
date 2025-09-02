@@ -1611,18 +1611,15 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.info("获取到{}个需要弹窗确认的告警配置: {}",
                     needConfirmConfigs.size(), alarmKeyList);
 
-            // 2. 构建查询当天数据的SQL
-            // 获取今天的开始时间（UTC时间，因为TDengine存储的是UTC时间）
+            // 2. 构建查询过去24小时数据的SQL
+            // 获取当前时间往前24小时的时间范围（long时间戳本身就是UTC时间）
             Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.HOUR_OF_DAY, -8); // 转换为UTC时间
-            cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.set(Calendar.MINUTE, 0);
-            cal.set(Calendar.SECOND, 0);
-            cal.set(Calendar.MILLISECOND, 0);
-            long todayStartTime = cal.getTimeInMillis();
+            long currentTime = cal.getTimeInMillis(); // UTC时间戳
+            long twentyFourHoursAgo = currentTime - (24 * 60 * 60 * 1000); // 24小时前的UTC时间戳
 
-            cal.add(Calendar.DAY_OF_MONTH, 1);
-            long todayEndTime = cal.getTimeInMillis();
+            // 直接使用UTC时间戳，无需额外时区转换
+            long todayStartTime = twentyFourHoursAgo; // 24小时前
+            long todayEndTime = currentTime; // 当前时间
 
             // 构建IN条件
             String inCondition = alarmKeyList.stream()
