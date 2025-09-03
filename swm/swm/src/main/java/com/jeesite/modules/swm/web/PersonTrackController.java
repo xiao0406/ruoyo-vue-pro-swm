@@ -26,6 +26,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import org.apache.commons.lang3.StringUtils;
+import com.jeesite.modules.sys.utils.DictUtils;
 
 /**
  * 人员追踪控制器
@@ -567,11 +568,21 @@ public class PersonTrackController extends BaseController {
                                 }
 
                                 if (!trajectoryPoints.isEmpty()) {
-                                    // 对轨迹点进行1分钟间隔抽样，减少数据量
+                                    // 从字典获取抽样间隔时间，默认1分钟
+                                    int sampleInterval = 1;
+                                    try {
+                                        String intervalStr = DictUtils.getDictLabel("sample_trajectory_points", "time", "1");
+                                        sampleInterval = Integer.parseInt(intervalStr);
+                                        logger.info("从字典获取轨迹抽样间隔: {} 分钟", sampleInterval);
+                                    } catch (Exception e) {
+                                        logger.warn("获取轨迹抽样间隔失败，使用默认值: {} 分钟", sampleInterval);
+                                    }
+                                    
+                                    // 对轨迹点进行间隔抽样，减少数据量
                                     List<Map<String, Object>> sampledPoints = sampleTrajectoryPoints(trajectoryPoints,
-                                            1);
-                                    logger.info("身份证 {} ({}) 原始轨迹点: {} 个，1分钟间隔抽样后: {} 个",
-                                            idCard, personName, trajectoryPoints.size(), sampledPoints.size());
+                                            sampleInterval);
+                                    logger.info("身份证 {} ({}) 原始轨迹点: {} 个，{}分钟间隔抽样后: {} 个",
+                                            idCard, personName, trajectoryPoints.size(), sampleInterval, sampledPoints.size());
                                     return sampledPoints;
                                 }
                             }
@@ -693,9 +704,11 @@ public class PersonTrackController extends BaseController {
                 }
             });
 
-            LocalDateTime lastSampledTime = null;
+            // 使用TreeMap按分钟分组，自动保持时间顺序
+            TreeMap<LocalDateTime, Map<String, Object>> minuteGroups = new TreeMap<>();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+            // 先按分钟分组，同一分钟内的点会被覆盖，最终保留最后一个点
             for (Map<String, Object> point : trajectoryPoints) {
                 String timeStr = (String) point.get("time");
                 if (timeStr == null || timeStr.trim().isEmpty()) {
@@ -714,14 +727,26 @@ public class PersonTrackController extends BaseController {
                     }
                     currentTime = LocalDateTime.parse(timeStr, formatter);
 
-                    // 第一个点或者距离上次抽样时间超过指定间隔的点
-                    if (lastSampledTime == null ||
-                            ChronoUnit.MINUTES.between(lastSampledTime, currentTime) >= intervalMinutes) {
-                        sampledPoints.add(point);
-                        lastSampledTime = currentTime;
-                    }
+                    // 将时间截断到分钟级别作为分组键
+                    LocalDateTime minuteKey = currentTime.truncatedTo(ChronoUnit.MINUTES);
+                    
+                    // 在同一分钟内，后面的点会覆盖前面的点，实现取最后一个点的效果
+                    minuteGroups.put(minuteKey, point);
+                    
                 } catch (Exception e) {
                     logger.warn("解析时间失败，跳过该轨迹点: {}", timeStr, e);
+                }
+            }
+
+            // 按间隔抽样分组后的数据
+            LocalDateTime lastSampledMinute = null;
+            for (Map.Entry<LocalDateTime, Map<String, Object>> entry : minuteGroups.entrySet()) {
+                LocalDateTime currentMinute = entry.getKey();
+                
+                if (lastSampledMinute == null || 
+                    ChronoUnit.MINUTES.between(lastSampledMinute, currentMinute) >= intervalMinutes) {
+                    sampledPoints.add(entry.getValue());
+                    lastSampledMinute = currentMinute;
                 }
             }
 
