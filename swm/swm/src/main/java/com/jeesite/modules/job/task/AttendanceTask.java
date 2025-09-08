@@ -1053,7 +1053,7 @@ public class AttendanceTask {
         // 1. 优先判断正常条件
         if (isNormalAttendanceCondition(record)) {
             record.setAttendanceNormal("0");
-            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [正常] - 完整打卡且实际考勤时长>=有效应考勤时长(应考勤时长-休息时长)",
+            XxlJobHelper.log("员工[{}]{} 考勤状态更新为 [正常] - 完整打卡且实际考勤时长>=应考勤时长",
                     record.getEmployeeId(), record.getEmployeeName());
             return;
         }
@@ -1084,19 +1084,19 @@ public class AttendanceTask {
     /**
      * 判断是否满足正常考勤条件
      * 条件：clockInDate != null AND clockOutDate != null 
-     * AND actualHours >= scheduledHours - restTime
+     * AND actualHours >= scheduledHours
+     * 注意：scheduledHours 已经是扣除休息时长后的净工作时间
      * 
      * @param record 考勤记录
      * @return true-满足正常条件，false-不满足
      * @author Shawn
-     * @date 2025/08/21
+     * @date 2025/01/09
      */
     private boolean isNormalAttendanceCondition(SwmDailyAttendance record) {
         Date clockInDate = record.getClockInDate();
         Date clockOutDate = record.getClockOutDate();
         BigDecimal scheduledHours = record.getScheduledHours();
         BigDecimal actualHours = record.getActualHours();
-        BigDecimal restTime = record.getRestTime();
 
         // 必须有完整的打卡时间
         boolean hasCompleteClockTimes = (clockInDate != null && clockOutDate != null);
@@ -1109,31 +1109,25 @@ public class AttendanceTask {
             return false;
         }
 
-        // 如果没有休息时长，默认为0
-        if (restTime == null) {
-            restTime = BigDecimal.ZERO;
+        // 确保应考勤时长不为负数
+        if (scheduledHours.compareTo(BigDecimal.ZERO) < 0) {
+            scheduledHours = BigDecimal.ZERO;
         }
 
-        // 计算有效应考勤时长 = 应考勤时长 - 休息时长
-        BigDecimal effectiveScheduledHours = scheduledHours.subtract(restTime);
-        
-        // 确保有效应考勤时长不为负数
-        if (effectiveScheduledHours.compareTo(BigDecimal.ZERO) < 0) {
-            effectiveScheduledHours = BigDecimal.ZERO;
-        }
-
-        // 实际考勤时长 >= 有效应考勤时长
-        boolean actualGEEffectiveScheduled = actualHours.compareTo(effectiveScheduledHours) >= 0;
+        // 实际考勤时长 >= 应考勤时长
+        // 注意：scheduledHours 现在已经是扣除休息时长后的净工作时间
+        // 不需要再次扣除休息时长
+        boolean actualGEScheduled = actualHours.compareTo(scheduledHours) >= 0;
 
         // 详细日志记录（DEBUG级别）
         if (log.isDebugEnabled()) {
-            log.debug("员工[{}]{} 正常条件判断详情: clockInDate={}, clockOutDate={}, scheduledHours={}, restTime={}, effectiveScheduledHours={}, actualHours={}, 结果={}",
+            log.debug("员工[{}]{} 正常条件判断详情: clockInDate={}, clockOutDate={}, scheduledHours={}, actualHours={}, 结果={}",
                     record.getEmployeeId(), record.getEmployeeName(),
                     clockInDate != null, clockOutDate != null,
-                    scheduledHours, restTime, effectiveScheduledHours, actualHours, actualGEEffectiveScheduled);
+                    scheduledHours, actualHours, actualGEScheduled);
         }
 
-        return actualGEEffectiveScheduled;
+        return actualGEScheduled;
     }
 
     /**
@@ -2001,8 +1995,8 @@ public class AttendanceTask {
                 existing.setWorkTimeRange(workTimeRange);
                 existing.setClasses(scheduleInfo.classes); // 设置班次
                 
-                // 计算应考勤时长
-                BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
+                // 计算应考勤时长（减去休息时长）
+                BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange, scheduleTime.getRestTime());
                 existing.setScheduledHours(scheduledHours);
                 
                 needUpdate = true;
@@ -2053,6 +2047,19 @@ public class AttendanceTask {
      * @date 2025-08-13
      */
     private BigDecimal calculateScheduledHoursFromWorkTimeRange(String workTimeRange) {
+        // 调用重载方法，不传入休息时长
+        return calculateScheduledHoursFromWorkTimeRange(workTimeRange, null);
+    }
+    
+    /**
+     * 根据工作时间范围和休息时长计算应考勤时长（用于createDailyAttendanceV2）
+     * @param workTimeRange 工作时间范围，格式如 "07:00-18:00"
+     * @param restTime 休息时长（小时），可以为null
+     * @return 应考勤时长（小时）= 班次总时长 - 休息时长
+     * @author Shawn
+     * @date 2025-01-09
+     */
+    private BigDecimal calculateScheduledHoursFromWorkTimeRange(String workTimeRange, Double restTime) {
         if (StringUtils.isBlank(workTimeRange)) {
             return BigDecimal.ZERO;
         }
@@ -2081,7 +2088,7 @@ public class AttendanceTask {
             // 处理跨日班次的情况(如夜班20:00-05:00)
             if (hours < 0) {
                 hours += 24;
-                XxlJobHelper.log("检测到跨日班次: {}，计算后的应考勤时长: {} 小时", workTimeRange, hours);
+                XxlJobHelper.log("检测到跨日班次: {}，计算后的班次总时长: {} 小时", workTimeRange, hours);
             }
             
             // 确保时长在合理范围内
@@ -2090,10 +2097,25 @@ public class AttendanceTask {
                 return BigDecimal.ZERO;
             }
             
+            // 减去休息时长
+            if (restTime != null && restTime > 0) {
+                double originalHours = hours;
+                hours -= restTime;
+                XxlJobHelper.log("班次 {} 总时长: {} 小时，减去休息时长: {} 小时，应考勤时长: {} 小时", 
+                    workTimeRange, originalHours, restTime, hours);
+            }
+            
+            // 确保最终应考勤时长不为负数
+            if (hours < 0) {
+                XxlJobHelper.log("班次 {} 减去休息时长后，应考勤时长为负数: {} 小时，设置为0", workTimeRange, hours);
+                hours = 0;
+            }
+            
             return BigDecimal.valueOf(hours).setScale(2, RoundingMode.HALF_UP);
             
         } catch (Exception e) {
-            XxlJobHelper.log("计算应考勤时长时发生异常，workTimeRange: {}, 错误: {}", workTimeRange, e.getMessage());
+            XxlJobHelper.log("计算应考勤时长时发生异常，workTimeRange: {}, restTime: {}, 错误: {}", 
+                workTimeRange, restTime, e.getMessage());
             return BigDecimal.ZERO;
         }
     }
@@ -2151,8 +2173,8 @@ public class AttendanceTask {
         attendance.setClasses(scheduleInfo.classes);
         attendance.setWorkTimeRange(workTimeRange);
         
-        // 计算应考勤时长（工作日和休息日都计算）
-        BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange);
+        // 计算应考勤时长（工作日和休息日都计算，减去休息时长）
+        BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange, scheduleTime.getRestTime());
         attendance.setScheduledHours(scheduledHours);
         
         // 设置休息时长（工作日和休息日都设置）
