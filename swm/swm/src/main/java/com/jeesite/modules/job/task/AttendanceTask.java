@@ -1730,7 +1730,8 @@ public class AttendanceTask {
      */
     private static class AttendanceGenerationParams {
         Date targetDate;
-        String idCard;
+        String idCard;  // 单个身份证（向后兼容）
+        List<String> idCardList = new ArrayList<>();  // 多个身份证列表
     }
     
     /**
@@ -1771,16 +1772,25 @@ public class AttendanceTask {
 
     /**
      * 创建每日考勤数据V2版本
-     * 支持参数化生成考勤记录
-     * 默认生成明天的考勤数据
+     * 支持参数化生成考勤记录，默认生成明天的考勤数据
+     * 
      * 参数格式：
      * - 无参数 - 生成明天所有在职人员的考勤
-     * - date=2025-08-12 - 生成指定日期的考勤
-     * - idCard=450422199502070018 - 生成指定身份证明天的考勤
-     * - date=2025-08-12,idCard=450422199502070018 - 生成指定日期和身份证的考勤
+     * - date=2025-01-10 - 生成指定日期所有在职人员的考勤
+     * - idCard=450422199502070018 - 生成指定身份证明天的考勤（向后兼容）
+     * - idCards=450422199502070018 - 生成单个身份证明天的考勤
+     * - idCards=450422199502070018,320106198801011234 - 批量生成多个身份证明天的考勤
+     * - date=2025-01-10,idCard=450422199502070018 - 生成指定日期和身份证的考勤
+     * - date=2025-01-10,idCards=450422199502070018,320106198801011234 - 生成指定日期多个身份证的考勤
+     * 
+     * 注意事项：
+     * - idCard 和 idCards 参数同时存在时，会合并处理（自动去重）
+     * - 只处理在职状态（ACTIVE）且状态正常（status=0）的人员
+     * - 如果指定的身份证对应人员不存在或状态异常，会跳过并记录日志
+     * - 应考勤时长 = 班次总时长 - 休息时长（净工作时间）
      * 
      * @author Shawn
-     * @date 2025-08-12
+     * @date 2025-01-09
      */
     @XxlJob("createDailyAttendanceV2")
     public void createDailyAttendanceV2() {
@@ -1868,10 +1878,26 @@ public class AttendanceTask {
                 }
             }
             
-            // 解析身份证参数
+            // 解析身份证参数（支持单个和多个）
+            // 1. 先尝试解析单个身份证（向后兼容）
             params.idCard = paramMap.get("idCard");
             if (StringUtils.isNotBlank(params.idCard)) {
-                XxlJobHelper.log("使用指定身份证: {}", params.idCard);
+                params.idCardList.add(params.idCard);
+                XxlJobHelper.log("使用指定身份证(idCard): {}", params.idCard);
+            }
+            
+            // 2. 解析多个身份证参数
+            String idCards = paramMap.get("idCards");
+            if (StringUtils.isNotBlank(idCards)) {
+                String[] idCardArray = idCards.split(",");
+                for (String id : idCardArray) {
+                    String trimmedId = id.trim();
+                    if (StringUtils.isNotBlank(trimmedId) && !params.idCardList.contains(trimmedId)) {
+                        params.idCardList.add(trimmedId);
+                    }
+                }
+                XxlJobHelper.log("使用指定身份证列表(idCards): {} 个身份证 - {}", 
+                    params.idCardList.size(), String.join(", ", params.idCardList));
             }
         }
         
@@ -1882,9 +1908,16 @@ public class AttendanceTask {
      * 查询目标人员
      */
     private List<SwmPerson> queryTargetPersons(AttendanceGenerationParams params) {
-        if (StringUtils.isNotBlank(params.idCard)) {
+        // 如果有身份证列表，查询指定的人员
+        if (!params.idCardList.isEmpty()) {
+            return queryMultiplePersons(params.idCardList);
+        } 
+        // 向后兼容：如果只有单个身份证参数
+        else if (StringUtils.isNotBlank(params.idCard)) {
             return querySinglePerson(params.idCard);
-        } else {
+        } 
+        // 否则查询所有在职人员
+        else {
             return queryAllActivePersons();
         }
     }
@@ -1914,6 +1947,43 @@ public class AttendanceTask {
         return targetPersons;
     }
 
+    /**
+     * 查询多个人员
+     * @param idCardList 身份证列表
+     * @return 符合条件的在职人员列表
+     */
+    private List<SwmPerson> queryMultiplePersons(List<String> idCardList) {
+        List<SwmPerson> targetPersons = new ArrayList<>();
+        int successCount = 0;
+        int skipCount = 0;
+        
+        for (String idCard : idCardList) {
+            SwmPerson person = swmPersonService.getByIdentityCard(idCard);
+            
+            if (person != null 
+                && SwmPerson.PersonStatusEnum.ACTIVE.equals(person.getPersonnelStatus())
+                && "0".equals(person.getStatus())) {
+                targetPersons.add(person);
+                successCount++;
+                XxlJobHelper.log("找到在职人员：{}, 身份证：{}", person.getName(), idCard);
+            } else {
+                skipCount++;
+                if (person == null) {
+                    XxlJobHelper.log("跳过：未找到身份证为 {} 的人员", idCard);
+                } else if (!SwmPerson.PersonStatusEnum.ACTIVE.equals(person.getPersonnelStatus())) {
+                    XxlJobHelper.log("跳过：身份证 {} 对应的人员 {} 不是在职状态", idCard, person.getName());
+                } else {
+                    XxlJobHelper.log("跳过：身份证 {} 对应的人员 {} 状态异常", idCard, person.getName());
+                }
+            }
+        }
+        
+        XxlJobHelper.log("批量查询完成：总计 {} 个身份证，找到 {} 名在职人员，跳过 {} 个", 
+            idCardList.size(), successCount, skipCount);
+        
+        return targetPersons;
+    }
+    
     /**
      * 查询所有在职人员
      */
