@@ -55,11 +55,17 @@
     
     <!-- 根据身份证号获取班组名称 -->
     <select id="getWorkGroupNameByIdCard" resultType="String">
-        SELECT 
+        SELECT
             COALESCE(wg.work_group_name, backup_wg.work_group_name) AS work_group_name
         FROM swm_person sp
-        -- 原有关联（通过fms_worker关联）
+        -- 关联最新的 fms_worker 记录（使用 EXISTS 优化性能）
         LEFT JOIN fms_worker w ON sp.identity_card = w.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = w.identity_code
+                AND fw2.create_date &gt; w.create_date
+            )
         LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id
         -- 备用关联（通过swm_person表中保存的team字段关联）
         LEFT JOIN fms_work_group backup_wg ON sp.team = backup_wg.id COLLATE utf8mb4_general_ci
@@ -107,8 +113,14 @@
             sp.identity_card AS "key",
             COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "value"
         FROM swm_person sp
-        -- 原有关联（通过fms_worker关联）
+        -- 关联最新的 fms_worker 记录（使用 EXISTS 优化性能）
         LEFT JOIN fms_worker w ON sp.identity_card = w.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = w.identity_code
+                AND fw2.create_date &gt; w.create_date
+            )
         LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id
         -- 备用关联（通过swm_person表中保存的team字段关联）
         LEFT JOIN fms_work_group backup_wg ON sp.team = backup_wg.id COLLATE utf8mb4_general_ci
@@ -152,8 +164,14 @@
         FROM swm_person_schedule a
         -- 通过身份证关联人员表
         LEFT JOIN swm_person sp ON a.id_card = sp.identity_card
-        -- 原有的关联查询（通过fms_worker关联）
+        -- 关联最新的 fms_worker 记录（使用 EXISTS 优化性能）
         LEFT JOIN fms_worker f ON a.id_card = f.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = f.identity_code
+                AND fw2.create_date &gt; f.create_date
+            )
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
