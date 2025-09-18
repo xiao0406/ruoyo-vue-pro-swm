@@ -32,8 +32,14 @@
                a.remarks AS "remarks",
                a.status AS "status"
         FROM ${sqlMap.table.toSql()}
-        -- 原有的关联查询（通过fms_worker关联）
+        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = f.identity_code
+                AND fw2.create_date > f.create_date
+            )
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
@@ -156,8 +162,14 @@
                a.remarks AS "remarks",
                a.status AS "status"
         FROM swm_person a
-        -- 原有的关联查询（通过fms_worker关联）
+        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = f.identity_code
+                AND fw2.create_date > f.create_date
+            )
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
@@ -215,8 +227,14 @@
                a.status AS "status",
                a.is_external_personnel AS "isExternalPersonnel"
         FROM swm_person a
-        -- 原有的关联查询（通过fms_worker关联）
+        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = f.identity_code
+                AND fw2.create_date > f.create_date
+            )
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
@@ -270,8 +288,14 @@
                wg.id AS "workGroupId",                    -- 班组ID
                fpl.id AS "prodLineId"                     -- 产线ID
         FROM swm_person a
-        -- 原有的关联查询（通过fms_worker关联）
+        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = f.identity_code
+                AND fw2.create_date > f.create_date
+            )
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
@@ -337,8 +361,14 @@
         MAX(wg.id) AS "workGroupId",
         MAX(fpl.id) AS "prodLineId"
         FROM swm_person a
-        -- 原有的关联查询（通过fms_worker关联）
+        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = f.identity_code
+                AND fw2.create_date > f.create_date
+            )
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
