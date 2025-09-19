@@ -72,9 +72,11 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
             idCardCondition.append(")");
 
             // 使用LAST_ROW函数配合PARTITION BY进行批量查询external_coordinate_data表
+            // 添加别名强制指定列名格式，兼容不同环境的TDengine返回格式
             // 添加过滤条件排除original_x或original_y小于等于0的数据
             String sql = String.format(
-                    "select LAST_ROW(id_card, x, y, time) from %s.%s " +
+                    "select LAST_ROW(id_card) as id_card, LAST_ROW(x) as x, " +
+                            "LAST_ROW(y) as y, LAST_ROW(time) as time from %s.%s " +
                             "where %s and time >= '%s' and time <= '%s' " +
                             "and original_x > 0 and original_y > 0 " +
                             "partition by id_card",
@@ -83,6 +85,17 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
 
             log.info("查询external_coordinate_data身份证坐标SQL: {}", sql);
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            // 添加调试日志，打印TDengine返回的原始列元数据和数据
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+                JSONArray columnMeta = result.getData().getJSONArray("column_meta");
+                JSONArray data = result.getData().getJSONArray("data");
+                log.info("TDengine返回的列元数据: {}", columnMeta);
+                log.info("TDengine返回的数据行数: {}", data != null ? data.size() : 0);
+                if (data != null && data.size() > 0) {
+                    log.info("TDengine返回的第一行数据: {}", data.getJSONArray(0));
+                }
+            }
 
             if (result.getCode() == R.SUCCESS) {
                 List<Map<String, Object>> rows = processQueryResult(result.getData());
@@ -468,9 +481,12 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
 
     /**
      * 处理查询结果
+     * 兼容TDengine不同环境的列名格式（支持last_row(column)和column两种格式）
      *
      * @param jsonObject TDengine查询结果
      * @return 处理后的数据列表
+     * @author Shawn
+     * @date 2025-09-19
      */
     private List<Map<String, Object>> processQueryResult(JSONObject jsonObject) {
         List<Map<String, Object>> list = new ArrayList<>();
@@ -480,21 +496,36 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
             JSONArray data = jsonObject.getJSONArray("data");
 
             if (columnMeta != null && data != null) {
+                // 打印每行的列名映射关系用于调试
+                log.debug("processQueryResult - 处理{}行数据，列数: {}", data.size(), columnMeta.size());
+
                 for (int i = 0; i < data.size(); i++) {
                     JSONArray row = data.getJSONArray(i);
                     Map<String, Object> map = new HashMap<>();
 
                     for (int j = 0; j < columnMeta.size() && j < row.size(); j++) {
                         JSONArray columnInfo = columnMeta.getJSONArray(j);
-                        String columnName = columnInfo.getStr(0);
+                        String originalColumnName = columnInfo.getStr(0);
                         Object value = row.get(j);
 
+                        // 标准化列名：处理last_row(column)格式，提取实际的列名
+                        String normalizedColumnName = normalizeColumnName(originalColumnName);
+
+                        // 打印列名映射关系用于调试
+                        if (!originalColumnName.equals(normalizedColumnName)) {
+                            log.debug("列名标准化: '{}' -> '{}'", originalColumnName, normalizedColumnName);
+                        }
+
                         // 处理时间字段的时区转换
-                        if (isTimeColumn(columnName) && value != null) {
+                        if (isTimeColumn(normalizedColumnName) && value != null) {
                             value = convertUtcToBeijingTime(value.toString());
                         }
 
-                        map.put(columnName, value);
+                        // 使用标准化后的列名存储数据
+                        map.put(normalizedColumnName, value);
+
+                        // 打印每个字段的值用于调试
+                        log.debug("字段值: {} = {}", normalizedColumnName, value);
                     }
                     list.add(map);
                 }
@@ -504,6 +535,30 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
         }
 
         return list;
+    }
+
+    /**
+     * 标准化列名，兼容last_row(column)和column两种格式
+     *
+     * @param columnName 原始列名
+     * @return 标准化后的列名
+     * @author Shawn
+     * @date 2025-09-19
+     */
+    private String normalizeColumnName(String columnName) {
+        if (columnName == null) {
+            return null;
+        }
+
+        // 处理last_row(column)格式，提取括号内的列名
+        if (columnName.startsWith("last_row(") && columnName.endsWith(")")) {
+            String extracted = columnName.substring(9, columnName.length() - 1);
+            log.debug("提取LAST_ROW列名: '{}' -> '{}'", columnName, extracted);
+            return extracted;
+        }
+
+        // 如果不是last_row格式，直接返回原列名
+        return columnName;
     }
 
     /**
@@ -522,17 +577,17 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
     }
 
     /**
-     * 判断是否为时间列
+     * 判断是否为时间列（基于标准化后的列名）
      *
-     * @param columnName 列名
+     * @param columnName 列名（应该是已标准化的列名）
      * @return 是否为时间列
+     * @author Shawn
+     * @date 2025-09-19
      */
     private boolean isTimeColumn(String columnName) {
         return "time".equals(columnName) ||
                 columnName.contains("time") ||
-                columnName.contains("Time") ||
-                columnName.startsWith("last_row(time") ||
-                columnName.equals("last_row(time)");
+                columnName.contains("Time");
     }
 
     /**
