@@ -25,11 +25,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * TDengine原始消息日志Service实现类
  */
 @Service
 public class SwmRawMessageLogServiceImpl implements SwmRawMessageLogService {
+
+    private static final Logger logger = LoggerFactory.getLogger(SwmRawMessageLogServiceImpl.class);
 
     @Autowired
     private TDengineService tdengineService;
@@ -41,21 +46,12 @@ public class SwmRawMessageLogServiceImpl implements SwmRawMessageLogService {
 
     @Override
     public Page<SwmRawMessageLogVO> findPage(Page<SwmRawMessageLogVO> page, SwmRawMessageLog entity) {
-        String sql = buildQuerySql(entity, true, page.getPageNo(), page.getPageSize());
+        // 复用findPageData方法，保持接口兼容性
+        List<SwmRawMessageLogVO> list = findPageData(page.getPageNo(), page.getPageSize(), entity);
 
-        R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
-        if (result.getCode() == R.SUCCESS) {
-            JSONObject data = result.getData();
-            if (data != null && data.containsKey("data")) {
-                JSONArray dataArray = data.getJSONArray("data");
-                List<SwmRawMessageLogVO> list = parseQueryResult(dataArray);
-                page.setList(list);
-
-                // 设置总记录数
-                long totalCount = count(entity);
-                page.setCount(totalCount);
-            }
-        }
+        // 设置结果
+        page.setList(list);
+        page.setCount(count(entity));
 
         return page;
     }
@@ -150,9 +146,31 @@ public class SwmRawMessageLogServiceImpl implements SwmRawMessageLogService {
     private List<String> buildWhereConditions(SwmRawMessageLog entity) {
         List<String> conditions = new ArrayList<>();
 
-        // 设备ID条件
+        // 设备ID条件（支持多设备查询）
         if (StringUtils.isNotBlank(entity.getDeviceId())) {
-            conditions.add("device_id = '" + entity.getDeviceId() + "'");
+            String deviceIdParam = entity.getDeviceId().trim();
+
+            // 检查是否包含逗号，支持多设备查询
+            if (deviceIdParam.contains(",")) {
+                // 多设备查询：使用 IN 操作符
+                String[] deviceIds = deviceIdParam.split(",");
+                List<String> validDeviceIds = new ArrayList<>();
+
+                for (String deviceId : deviceIds) {
+                    String trimmedId = deviceId.trim();
+                    if (StringUtils.isNotBlank(trimmedId)) {
+                        // SQL注入防护：转义单引号
+                        validDeviceIds.add("'" + trimmedId.replace("'", "''") + "'");
+                    }
+                }
+
+                if (!validDeviceIds.isEmpty()) {
+                    conditions.add("device_id IN (" + String.join(",", validDeviceIds) + ")");
+                }
+            } else {
+                // 单设备查询：使用等号
+                conditions.add("device_id = '" + deviceIdParam.replace("'", "''") + "'");
+            }
         }
 
         // 时间范围条件
@@ -218,5 +236,67 @@ public class SwmRawMessageLogServiceImpl implements SwmRawMessageLogService {
         }
 
         return list;
+    }
+
+    @Override
+    public List<SwmRawMessageLogVO> findPageData(int pageNo, int pageSize, SwmRawMessageLog entity) {
+        List<SwmRawMessageLogVO> allResults = new ArrayList<>();
+
+        // 如果pageSize > 999，使用分批查询绕过TDengine限制
+        if (pageSize > 999) {
+            int batchSize = 999; // TDengine的限制
+            int offset = (pageNo - 1) * pageSize;
+            int remaining = pageSize;
+            int currentOffset = offset;
+
+            while (remaining > 0) {
+                int currentBatchSize = Math.min(batchSize, remaining);
+
+                // 构建当前批次的SQL
+                String batchSql = buildQuerySql(entity, true,
+                    currentOffset / batchSize + 1, currentBatchSize);
+
+                // 手动调整SQL的OFFSET（因为我们需要精确控制）
+                batchSql = batchSql.replaceAll("LIMIT \\d+ OFFSET \\d+",
+                    "LIMIT " + currentBatchSize + " OFFSET " + currentOffset);
+
+                R<JSONObject> result = tdengineService.executeTDengineSQL(batchSql);
+                if (result.getCode() == R.SUCCESS) {
+                    JSONObject data = result.getData();
+                    if (data != null && data.containsKey("data")) {
+                        JSONArray dataArray = data.getJSONArray("data");
+                        List<SwmRawMessageLogVO> batchResults = parseQueryResult(dataArray);
+                        allResults.addAll(batchResults);
+
+                        // 如果返回的数据少于请求的数量，说明没有更多数据了
+                        if (batchResults.size() < currentBatchSize) {
+                            break;
+                        }
+                    }
+                } else {
+                    logger.warn("TDengine批次查询失败: {}", result.getMsg());
+                    break;
+                }
+
+                currentOffset += currentBatchSize;
+                remaining -= currentBatchSize;
+            }
+        } else {
+            // 正常查询流程
+            String sql = buildQuerySql(entity, true, pageNo, pageSize);
+
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+            if (result.getCode() == R.SUCCESS) {
+                JSONObject data = result.getData();
+                if (data != null && data.containsKey("data")) {
+                    JSONArray dataArray = data.getJSONArray("data");
+                    allResults = parseQueryResult(dataArray);
+                }
+            } else {
+                logger.warn("TDengine查询失败: {}", result.getMsg());
+            }
+        }
+
+        return allResults;
     }
 }

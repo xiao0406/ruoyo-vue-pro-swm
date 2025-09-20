@@ -21,10 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * TDengine原始消息日志Controller
@@ -61,14 +58,43 @@ public class SwmRawMessageLogController extends BaseController {
     @RequestMapping(value = "listData")
     @ResponseBody
     public Page<SwmRawMessageLogVO> listData(SwmRawMessageLog swmRawMessageLog, HttpServletRequest request, HttpServletResponse response) {
-        // 创建分页对象，最大支持10000条
-        Page<SwmRawMessageLogVO> page = new Page<>(request, response);
-        if (page.getPageSize() > 10000) {
-            page.setPageSize(10000);
+        // 手动获取分页参数，绕过JeeSite框架的限制
+        int pageNo = 1;
+        int pageSize = 1000;
+
+        String pageNoStr = request.getParameter("pageNo");
+        String pageSizeStr = request.getParameter("pageSize");
+
+        if (pageNoStr != null && !pageNoStr.isEmpty()) {
+            try {
+                pageNo = Integer.parseInt(pageNoStr);
+            } catch (NumberFormatException e) {
+                logger.warn("pageNo参数格式错误: {}", pageNoStr);
+            }
         }
 
-        // 查询数据
-        page = swmRawMessageLogService.findPage(page, swmRawMessageLog);
+        if (pageSizeStr != null && !pageSizeStr.isEmpty()) {
+            try {
+                pageSize = Integer.parseInt(pageSizeStr);
+                // 限制最大10000条
+                pageSize = Math.min(pageSize, 10000);
+            } catch (NumberFormatException e) {
+                logger.warn("pageSize参数格式错误: {}", pageSizeStr);
+            }
+        }
+
+        // 直接调用新的分页方法，绕过Page对象限制
+        List<SwmRawMessageLogVO> list = swmRawMessageLogService.findPageData(pageNo, pageSize, swmRawMessageLog);
+
+        // 获取总记录数
+        long totalCount = swmRawMessageLogService.count(swmRawMessageLog);
+
+        // 手动构建返回的Page对象
+        Page<SwmRawMessageLogVO> page = new Page<>();
+        page.setPageNo(pageNo);
+        page.setPageSize(pageSize);
+        page.setList(list);
+        page.setCount(totalCount);
 
         return page;
     }
@@ -80,22 +106,32 @@ public class SwmRawMessageLogController extends BaseController {
     @ResponseBody
     public String exportData(SwmRawMessageLog swmRawMessageLog, HttpServletRequest request, HttpServletResponse response) {
         try {
-            // 获取导出页数和页大小参数
+            // 获取分页参数
+            int pageNo = 1;
+            int pageSize = 1000;
+
+            String pageNoStr = request.getParameter("pageNo");
             String pageSizeStr = request.getParameter("pageSize");
-            int pageSize = 1000; // 默认1000条
-            if (pageSizeStr != null) {
+
+            if (pageNoStr != null && !pageNoStr.isEmpty()) {
                 try {
-                    pageSize = Integer.parseInt(pageSizeStr);
-                    if (pageSize > 10000) {
-                        pageSize = 10000; // 最大10000条
-                    }
+                    pageNo = Integer.parseInt(pageNoStr);
                 } catch (NumberFormatException e) {
-                    // 使用默认值
+                    logger.warn("pageNo参数格式错误: {}", pageNoStr);
                 }
             }
 
-            // 查询数据
-            List<SwmRawMessageLogVO> list = swmRawMessageLogService.findList(swmRawMessageLog, pageSize);
+            if (pageSizeStr != null && !pageSizeStr.isEmpty()) {
+                try {
+                    pageSize = Integer.parseInt(pageSizeStr);
+                    pageSize = Math.min(pageSize, 10000); // 最大10000条
+                } catch (NumberFormatException e) {
+                    logger.warn("pageSize参数格式错误: {}", pageSizeStr);
+                }
+            }
+
+            // 使用findPageData方法获取当前页数据
+            List<SwmRawMessageLogVO> list = swmRawMessageLogService.findPageData(pageNo, pageSize, swmRawMessageLog);
             if (list.isEmpty()) {
                 return renderResult(Global.FALSE, text("没有符合条件的数据可以导出！"));
             }
@@ -109,7 +145,7 @@ public class SwmRawMessageLogController extends BaseController {
             // 使用EasyExcel导出
             EasyExcel.write(response.getOutputStream(), SwmRawMessageLogExcelVO.class)
                     .sheet("原始消息日志")
-                    .doWrite(convertToExcelVOList(list));
+                    .doWrite(convertToExcelVOList(list, pageNo, pageSize));
 
             return null;
 
@@ -125,8 +161,17 @@ public class SwmRawMessageLogController extends BaseController {
     /**
      * 转换为Excel导出VO
      */
-    private List<SwmRawMessageLogExcelVO> convertToExcelVOList(List<SwmRawMessageLogVO> list) {
-        return list.stream().map(this::convertToExcelVO).collect(java.util.stream.Collectors.toList());
+    private List<SwmRawMessageLogExcelVO> convertToExcelVOList(List<SwmRawMessageLogVO> list, int pageNo, int pageSize) {
+        List<SwmRawMessageLogExcelVO> result = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            SwmRawMessageLogVO vo = list.get(i);
+            SwmRawMessageLogExcelVO excelVO = convertToExcelVO(vo);
+            // 计算跨页序号
+            int rowNum = (pageNo - 1) * pageSize + i + 1;
+            excelVO.setRowNum(rowNum);
+            result.add(excelVO);
+        }
+        return result;
     }
 
     /**
@@ -149,6 +194,9 @@ public class SwmRawMessageLogController extends BaseController {
      * Excel导出VO类
      */
     public static class SwmRawMessageLogExcelVO {
+        @com.alibaba.excel.annotation.ExcelProperty("序号")
+        private Integer rowNum;
+
         @com.alibaba.excel.annotation.ExcelProperty("time")
         private String time;
 
@@ -171,6 +219,14 @@ public class SwmRawMessageLogController extends BaseController {
         private String deviceId;
 
         // getter和setter方法
+        public Integer getRowNum() {
+            return rowNum;
+        }
+
+        public void setRowNum(Integer rowNum) {
+            this.rowNum = rowNum;
+        }
+
         public String getTime() {
             return time;
         }

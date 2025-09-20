@@ -37,4 +37,13 @@ public interface SwmRawMessageLogService {
      * @return 总数
      */
     long count(SwmRawMessageLog entity);
+
+    /**
+     * 直接分页查询（绕过Page对象限制）
+     * @param pageNo 页码
+     * @param pageSize 每页大小
+     * @param entity 查询条件
+     * @return 数据列表
+     */
+    List<SwmRawMessageLogVO> findPageData(int pageNo, int pageSize, SwmRawMessageLog entity);
 }
