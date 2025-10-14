@@ -14,7 +14,12 @@
                COALESCE(p.position_name, backup_p.position_name) AS "department",
                COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
                COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
-               COALESCE(f.work_type, backup_wt.work_type) AS "jobType",
+               -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
+               COALESCE(
+                   NULLIF(TRIM(f.work_type), ''),
+                   NULLIF(TRIM(backup_wt.work_type), ''),
+                   NULLIF(TRIM(a.job_type), '')
+               ) AS "jobType",
                a.safety_helmet_id AS "safetyHelmetId",
                a.personnel_status AS "personnelStatus",
                a.safety_education AS "safetyEducation",
@@ -65,7 +70,11 @@
                 AND COALESCE(wg.work_group_name, backup_wg.work_group_name) = #{team}
             </if>
             <if test="jobType != null and jobType != ''">
-                AND COALESCE(f.work_type, backup_wt.work_type) = #{jobType}
+                AND COALESCE(
+                        NULLIF(TRIM(f.work_type), ''),
+                        NULLIF(TRIM(backup_wt.work_type), ''),
+                        NULLIF(TRIM(a.job_type), '')
+                    ) = #{jobType}
             </if>
             
             <!-- 非组织字段保留原有查询方式 -->
@@ -145,7 +154,12 @@
                COALESCE(p.position_name, backup_p.position_name) AS "department",
                COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
                COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
-               COALESCE(f.work_type, backup_wt.work_type) AS "jobType",
+               -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
+               COALESCE(
+                   NULLIF(TRIM(f.work_type), ''),
+                   NULLIF(TRIM(backup_wt.work_type), ''),
+                   NULLIF(TRIM(a.job_type), '')
+               ) AS "jobType",
                a.safety_helmet_id AS "safetyHelmetId",
                a.personnel_status AS "personnelStatus",
                a.safety_education AS "safetyEducation",
@@ -209,7 +223,12 @@
                COALESCE(p.position_name, backup_p.position_name) AS "department",
                COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
                COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
-               COALESCE(f.work_type, backup_wt.work_type) AS "jobType",
+               -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
+               COALESCE(
+                   NULLIF(TRIM(f.work_type), ''),
+                   NULLIF(TRIM(backup_wt.work_type), ''),
+                   NULLIF(TRIM(a.job_type), '')
+               ) AS "jobType",
                a.safety_helmet_id AS "safetyHelmetId",
                a.personnel_status AS "personnelStatus",
                a.safety_education AS "safetyEducation",
@@ -269,7 +288,12 @@
                COALESCE(p.position_name, backup_p.position_name) AS "department",           -- 所属车间
                COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",          -- 产线
                COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",              -- 所属班组
-               COALESCE(f.work_type, backup_wt.work_type) AS "jobType",                  -- 工种
+               -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
+               COALESCE(
+                   NULLIF(TRIM(f.work_type), ''),
+                   NULLIF(TRIM(backup_wt.work_type), ''),
+                   NULLIF(TRIM(a.job_type), '')
+               ) AS "jobType",      -- 工种
                a.safety_helmet_id AS "safetyHelmetId",
                a.personnel_status AS "personnelStatus",
                a.identity_card AS "identityCard",

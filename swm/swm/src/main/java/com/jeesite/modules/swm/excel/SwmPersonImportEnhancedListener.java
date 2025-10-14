@@ -9,9 +9,15 @@ import com.alibaba.excel.event.AnalysisEventListener;
 import com.jeesite.common.collect.ListUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.utils.SpringUtils;
+import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
 import com.jeesite.modules.swm.service.OrgValidationService;
+import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.service.SwmPersonService;
+import com.jeesite.modules.swm.service.SwmSafetyHelmetOrderService;
+import com.jeesite.modules.sys.entity.User;
+import com.jeesite.modules.sys.utils.UserUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,18 +44,33 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
     private int successCount = 0;
     private int errorCount = 0;
 
+    private int helmetBindSuccessCount = 0;
+    private int helmetRebindCount = 0;
+    private int helmetBindFailCount = 0;
+
+    private List<Integer> helmetBindSuccessRows = new ArrayList<>();
+    private List<Integer> helmetRebindRows = new ArrayList<>();
+    private List<Integer> helmetBindFailRows = new ArrayList<>();
+
     private SwmPersonService swmPersonService;
     private OrgValidationService orgValidationService;
+    private SwmHelmetDeviceService swmHelmetDeviceService;
+    private SwmSafetyHelmetOrderService swmSafetyHelmetOrderService;
 
     public SwmPersonImportEnhancedListener() {
         this.swmPersonService = SpringUtils.getBean(SwmPersonService.class);
         this.orgValidationService = SpringUtils.getBean(OrgValidationService.class);
+        this.swmHelmetDeviceService = SpringUtils.getBean(SwmHelmetDeviceService.class);
+        this.swmSafetyHelmetOrderService = SpringUtils.getBean(SwmSafetyHelmetOrderService.class);
     }
 
     @Override
     public void invoke(SwmPersonExcelEnhancedModel data, AnalysisContext context) {
         totalCount++;
         int rowIndex = context.readRowHolder().getRowIndex() + 1;
+        data.trimAll();
+        data.setRowIndex(rowIndex);
+        data.setSafetyHelmetCode(data.getTrimmedSafetyHelmetCode());
 
         try {
             // 步骤1：基础数据验证
@@ -399,21 +420,24 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
             SwmPersonExcelEnhancedModel rowData = data.get(i);
             int rowIndex = i + 2; // Excel从第2行开始
 
-            // 检查身份证号码重复
+            // 检查身份证号码重复 - 允许更新同一人员
             if (StringUtils.isNotBlank(rowData.getIdentityCard())) {
                 SwmPerson existingPerson = identityCardPersonMap.get(rowData.getIdentityCard());
                 if (existingPerson != null) {
-                    errors.add(String.format("第%d行，字段[身份证号码]：与在职人员[%s]重复 (%s)",
-                            rowIndex, existingPerson.getName(), rowData.getIdentityCard()));
+                    continue;
                 }
             }
 
-            // 检查手机号码重复
+            // 检查手机号码重复 - 若与不同身份证重复则报错
             if (StringUtils.isNotBlank(rowData.getPhoneNumber())) {
                 SwmPerson existingPerson = phoneNumberPersonMap.get(rowData.getPhoneNumber());
                 if (existingPerson != null) {
-                    errors.add(String.format("第%d行，字段[手机号码]：与在职人员[%s]重复 (%s)",
-                            rowIndex, existingPerson.getName(), rowData.getPhoneNumber()));
+                    String existingIdentity = existingPerson.getIdentityCard();
+                    if (StringUtils.isBlank(rowData.getIdentityCard())
+                            || !rowData.getIdentityCard().equals(existingIdentity)) {
+                        errors.add(String.format("第%d行，字段[手机号码]：与在职人员[%s]重复 (%s)",
+                                rowIndex, existingPerson.getName(), rowData.getPhoneNumber()));
+                    }
                 }
             }
         }
@@ -429,54 +453,174 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
             return;
         }
 
-        try {
-            // 转换为SwmPerson对象
-            List<SwmPerson> persons = list.stream().map(excelModel -> {
-                SwmPerson person = new SwmPerson();
-                person.setName(excelModel.getName());
-                person.setPersonType(excelModel.getPersonType());
-                person.setGender(excelModel.getGender());
-                person.setIdentityCard(excelModel.getIdentityCard());
-                person.setPhoneNumber(excelModel.getPhoneNumber());
-                person.setIsExternalPersonnel(excelModel.getStandardizedExternalPersonnel());
+        for (SwmPersonExcelEnhancedModel excelModel : list) {
+            int rowIndex = excelModel.getRowIndex() != null ? excelModel.getRowIndex() : (successCount + errorCount + 1);
+            try {
+                EnhancedRowContext context = buildRowContext(excelModel);
+                validateHelmetBinding(context, rowIndex);
 
-                // 组织架构字段
-                if (excelModel.isInternalPersonnel()) {
-                    person.setCompany(excelModel.getCompany());
-                    person.setDepartment(excelModel.getDepartment());
-                    person.setProdLine(excelModel.getProdLine());
-                    person.setTeam(excelModel.getTeam());
-                    person.setJobType(excelModel.getJobType());
-                } else {
-                    // 外部员工清空组织架构字段
-                    person.setCompany(null);
-                    person.setDepartment(null);
-                    person.setProdLine(null);
-                    person.setTeam(null);
-                    person.setJobType(null);
-                }
-
-                // 设置默认值
-                person.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
-                person.setSafetyEducation(SwmPerson.SafetyEducationEnum.NOT_STARTED);
-                person.setHelmetReturned(SwmPerson.HelmetReturnedEnum.NO);
-
-                return person;
-            }).collect(Collectors.toList());
-
-            // 逐个保存
-            for (SwmPerson person : persons) {
-                swmPersonService.save(person);
+                swmPersonService.save(context.getPerson());
                 successCount++;
-            }
 
-        } catch (Exception e) {
-            logger.error("保存数据时发生异常", e);
-            errors.add("数据保存异常: " + e.getMessage());
-            errorCount += list.size();
-        } finally {
-            list.clear();
+                processHelmetBinding(context, rowIndex);
+            } catch (Exception e) {
+                logger.error("保存第{}行数据时发生异常: {}", rowIndex, e.getMessage(), e);
+                errors.add("第" + rowIndex + "行，字段[数据处理]：发生异常 - " + e.getMessage());
+                errorCount++;
+                if (StringUtils.isNotBlank(excelModel.getSafetyHelmetCode())) {
+                    helmetBindFailCount++;
+                    helmetBindFailRows.add(rowIndex);
+                }
+            }
         }
+
+        list.clear();
+    }
+
+    private EnhancedRowContext buildRowContext(SwmPersonExcelEnhancedModel excelModel) {
+        String identityCard = trimToNull(excelModel.getIdentityCard());
+        SwmPerson existingPerson = identityCard != null ? swmPersonService.getByIdentityCard(identityCard) : null;
+        boolean newRecord = existingPerson == null;
+
+        SwmPerson person = newRecord ? new SwmPerson() : existingPerson;
+        if (newRecord) {
+            person.setIsNewRecord(true);
+            person.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
+            person.setSafetyEducation(SwmPerson.SafetyEducationEnum.NOT_STARTED);
+            person.setHelmetReturned(SwmPerson.HelmetReturnedEnum.NO);
+            person.setStatus("0");
+        } else {
+            person.setIsNewRecord(false);
+        }
+
+        applyExcelValues(person, excelModel);
+
+        String previousHelmetId = existingPerson != null ? existingPerson.getSafetyHelmetId() : null;
+        return new EnhancedRowContext(person, identityCard, excelModel.getSafetyHelmetCode(), previousHelmetId);
+    }
+
+    private void applyExcelValues(SwmPerson person, SwmPersonExcelEnhancedModel excelModel) {
+        person.setName(trimToNull(excelModel.getName()));
+        person.setPersonType(trimToNull(excelModel.getPersonType()));
+        person.setGender(trimToNull(excelModel.getGender()));
+
+        String identityCard = trimToNull(excelModel.getIdentityCard());
+        if (identityCard != null) {
+            person.setIdentityCard(identityCard);
+        }
+
+        person.setPhoneNumber(trimToNull(excelModel.getPhoneNumber()));
+        person.setIsExternalPersonnel(excelModel.getStandardizedExternalPersonnel());
+
+        if (excelModel.isInternalPersonnel()) {
+            person.setCompany(trimToNull(excelModel.getCompany()));
+            person.setDepartment(trimToNull(excelModel.getDepartment()));
+            person.setProdLine(trimToNull(excelModel.getProdLine()));
+            person.setTeam(trimToNull(excelModel.getTeam()));
+            person.setJobType(trimToNull(excelModel.getJobType()));
+        } else {
+            person.setCompany(null);
+            person.setDepartment(null);
+            person.setProdLine(null);
+            person.setTeam(null);
+            person.setJobType(null);
+        }
+
+        person.setRemarks(trimToNull(excelModel.getRemarks()));
+    }
+
+    private void validateHelmetBinding(EnhancedRowContext context, int rowIndex) {
+        if (!context.hasHelmetCode()) {
+            return;
+        }
+
+        if (StringUtils.isBlank(context.getIdentityCard())) {
+            throw new RuntimeException("第" + rowIndex + "行，字段[身份证号码]：提供安全帽编码时必须填写身份证号码");
+        }
+
+        SwmHelmetDevice device = swmHelmetDeviceService.getByDeviceId(context.getHelmetCode());
+        if (device == null) {
+            throw new RuntimeException("第" + rowIndex + "行，字段[安全帽编码]：设备不存在 (" + context.getHelmetCode() + ")");
+        }
+
+        String assignedPerson = trimToNull(device.getAssignedPerson());
+        if (assignedPerson != null && !assignedPerson.equals(context.getIdentityCard())) {
+            throw new RuntimeException("第" + rowIndex + "行，字段[安全帽编码]：设备已绑定其他人员 (" + assignedPerson + ")");
+        }
+
+        context.setTargetHelmet(device);
+        context.getPerson().setSafetyHelmetId(device.getDeviceId());
+    }
+
+    private void processHelmetBinding(EnhancedRowContext context, int rowIndex) {
+        if (context.getTargetHelmet() == null) {
+            return;
+        }
+
+        SwmHelmetDevice device = context.getTargetHelmet();
+        SwmPerson person = context.getPerson();
+        String newHelmetId = device.getDeviceId();
+        String previousHelmetId = trimToNull(context.getPreviousHelmetId());
+
+        if (previousHelmetId != null && !previousHelmetId.equals(newHelmetId)) {
+            unbindPreviousHelmet(previousHelmetId, rowIndex);
+            helmetRebindCount++;
+            helmetRebindRows.add(rowIndex);
+        } else {
+            helmetBindSuccessCount++;
+            helmetBindSuccessRows.add(rowIndex);
+        }
+
+        updateDeviceAssignment(device, person);
+        ensureHelmetOrderExists(newHelmetId, person);
+    }
+
+    private void unbindPreviousHelmet(String helmetId, int rowIndex) {
+        swmHelmetDeviceService.clearDeviceAssignment(helmetId);
+        SwmSafetyHelmetOrder activeOrder = swmSafetyHelmetOrderService.findActiveOrderByDeviceId(helmetId);
+        if (activeOrder != null) {
+            swmSafetyHelmetOrderService.unbindHelmet(activeOrder.getId());
+        }
+    }
+
+    private void updateDeviceAssignment(SwmHelmetDevice device, SwmPerson person) {
+        device.setAssignedPerson(person.getIdentityCard());
+        device.setPersonName(person.getName());
+        device.setPersonPhone(person.getPhoneNumber());
+        device.setAssignedWorkshop(person.getDepartment());
+        device.setAssignedProcess(person.getWorkProcess());
+        device.setAssignedTeam(person.getTeam());
+        swmHelmetDeviceService.updateDevice(device);
+    }
+
+    private void ensureHelmetOrderExists(String helmetId, SwmPerson person) {
+        SwmSafetyHelmetOrder activeOrder = swmSafetyHelmetOrderService.findActiveOrderByDeviceId(helmetId);
+        if (activeOrder != null) {
+            return;
+        }
+
+        swmSafetyHelmetOrderService.createBindingOrder(
+                person.getId(),
+                person.getName(),
+                helmetId,
+                resolveCurrentUser(),
+                person.getIdentityCard());
+    }
+
+    private String resolveCurrentUser() {
+        User user = UserUtils.getUser();
+        if (user != null && StringUtils.isNotBlank(user.getLoginCode())) {
+            return user.getLoginCode();
+        }
+        return "system";
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     /**
@@ -489,7 +633,56 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         result.setErrorCount(errorCount);
         result.setErrors(errors);
         result.setWarnings(warnings);
+        result.setHelmetBindSuccessCount(helmetBindSuccessCount);
+        result.setHelmetRebindCount(helmetRebindCount);
+        result.setHelmetBindFailCount(helmetBindFailCount);
+        result.setHelmetBindSuccessRows(new ArrayList<>(helmetBindSuccessRows));
+        result.setHelmetRebindRows(new ArrayList<>(helmetRebindRows));
+        result.setHelmetBindFailRows(new ArrayList<>(helmetBindFailRows));
         return result;
+    }
+
+    private static class EnhancedRowContext {
+        private final SwmPerson person;
+        private final String identityCard;
+        private final String helmetCode;
+        private final String previousHelmetId;
+        private SwmHelmetDevice targetHelmet;
+
+        EnhancedRowContext(SwmPerson person, String identityCard, String helmetCode, String previousHelmetId) {
+            this.person = person;
+            this.identityCard = identityCard;
+            this.helmetCode = helmetCode;
+            this.previousHelmetId = previousHelmetId;
+        }
+
+        public SwmPerson getPerson() {
+            return person;
+        }
+
+        public String getIdentityCard() {
+            return identityCard;
+        }
+
+        public String getHelmetCode() {
+            return helmetCode;
+        }
+
+        public String getPreviousHelmetId() {
+            return previousHelmetId;
+        }
+
+        public boolean hasHelmetCode() {
+            return StringUtils.isNotBlank(helmetCode);
+        }
+
+        public SwmHelmetDevice getTargetHelmet() {
+            return targetHelmet;
+        }
+
+        public void setTargetHelmet(SwmHelmetDevice targetHelmet) {
+            this.targetHelmet = targetHelmet;
+        }
     }
 
     /**
@@ -501,6 +694,12 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         private int errorCount;
         private List<String> errors;
         private List<String> warnings;
+        private int helmetBindSuccessCount;
+        private int helmetRebindCount;
+        private int helmetBindFailCount;
+        private List<Integer> helmetBindSuccessRows;
+        private List<Integer> helmetRebindRows;
+        private List<Integer> helmetBindFailRows;
 
         public int getTotalCount() {
             return totalCount;
@@ -540,6 +739,54 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
 
         public void setWarnings(List<String> warnings) {
             this.warnings = warnings;
+        }
+
+        public int getHelmetBindSuccessCount() {
+            return helmetBindSuccessCount;
+        }
+
+        public void setHelmetBindSuccessCount(int helmetBindSuccessCount) {
+            this.helmetBindSuccessCount = helmetBindSuccessCount;
+        }
+
+        public int getHelmetRebindCount() {
+            return helmetRebindCount;
+        }
+
+        public void setHelmetRebindCount(int helmetRebindCount) {
+            this.helmetRebindCount = helmetRebindCount;
+        }
+
+        public int getHelmetBindFailCount() {
+            return helmetBindFailCount;
+        }
+
+        public void setHelmetBindFailCount(int helmetBindFailCount) {
+            this.helmetBindFailCount = helmetBindFailCount;
+        }
+
+        public List<Integer> getHelmetBindSuccessRows() {
+            return helmetBindSuccessRows;
+        }
+
+        public void setHelmetBindSuccessRows(List<Integer> helmetBindSuccessRows) {
+            this.helmetBindSuccessRows = helmetBindSuccessRows;
+        }
+
+        public List<Integer> getHelmetRebindRows() {
+            return helmetRebindRows;
+        }
+
+        public void setHelmetRebindRows(List<Integer> helmetRebindRows) {
+            this.helmetRebindRows = helmetRebindRows;
+        }
+
+        public List<Integer> getHelmetBindFailRows() {
+            return helmetBindFailRows;
+        }
+
+        public void setHelmetBindFailRows(List<Integer> helmetBindFailRows) {
+            this.helmetBindFailRows = helmetBindFailRows;
         }
     }
 }

@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 人员登记表service
  *
@@ -161,7 +163,13 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         swmPerson.setIdentityCard(identityCard);
 
         List<SwmPerson> list = dao.findList(swmPerson);
-        return list.isEmpty() ? null : list.get(0);
+        if (list.isEmpty()) {
+            return null;
+        }
+        return list.stream()
+                .filter(person -> StringUtils.equals("0", StringUtils.trimToEmpty(person.getStatus())))
+                .findFirst()
+                .orElse(null);
     }
 
     /**

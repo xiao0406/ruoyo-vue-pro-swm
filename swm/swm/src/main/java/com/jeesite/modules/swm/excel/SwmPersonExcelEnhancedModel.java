@@ -6,6 +6,7 @@ package com.jeesite.modules.swm.excel;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 人员登记Excel导入增强版模型（支持组织架构字段）
@@ -49,6 +50,9 @@ public class SwmPersonExcelEnhancedModel {
     @ExcelProperty("备注")
     private String remarks;
 
+    @ExcelProperty("安全帽编码")
+    private String safetyHelmetCode;
+
     // 错误信息（不会导出到模板中）
     private String errorMsg;
 
@@ -73,6 +77,25 @@ public class SwmPersonExcelEnhancedModel {
     }
 
     /**
+     * 去除所有字符串字段的前后空格
+     */
+    public void trimAll() {
+        name = trim(name);
+        personType = trim(personType);
+        gender = trim(gender);
+        identityCard = trim(identityCard);
+        phoneNumber = trim(phoneNumber);
+        isExternalPersonnel = trim(isExternalPersonnel);
+        company = trim(company);
+        department = trim(department);
+        prodLine = trim(prodLine);
+        team = trim(team);
+        jobType = trim(jobType);
+        remarks = trim(remarks);
+        safetyHelmetCode = trim(safetyHelmetCode);
+    }
+
+    /**
      * 检查组织架构字段是否填写完整
      */
     public boolean hasCompleteOrgInfo() {
@@ -91,7 +114,22 @@ public class SwmPersonExcelEnhancedModel {
         this.jobType = null;
     }
 
+    /**
+     * 获取去除首尾空格的安全帽编码
+     */
+    public String getTrimmedSafetyHelmetCode() {
+        if (safetyHelmetCode == null) {
+            return null;
+        }
+        String value = safetyHelmetCode.trim();
+        return value.isEmpty() ? null : value;
+    }
+
     private boolean isNotBlank(String str) {
         return str != null && !str.trim().isEmpty();
+    }
+
+    private String trim(String value) {
+        return value == null ? null : StringUtils.trim(value);
     }
 }

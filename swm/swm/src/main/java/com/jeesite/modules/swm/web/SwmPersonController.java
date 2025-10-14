@@ -348,6 +348,7 @@ public class SwmPersonController extends BaseController {
                         // 查询数据库中是否已存在相同身份证的在职人员
                         SwmPerson existingPerson = swmPersonService.getByIdentityCard(model.getIdentityCard());
                         if (existingPerson != null
+                                && StringUtils.equals("0", StringUtils.trimToEmpty(existingPerson.getStatus()))
                                 && SwmPerson.PersonStatusEnum.ACTIVE.equals(existingPerson.getPersonnelStatus())) {
                             duplicateIdentityCards.add(model.getIdentityCard());
                             duplicatePersons.put(model.getIdentityCard(),
@@ -378,7 +379,10 @@ public class SwmPersonController extends BaseController {
             // 重新打开文件流进行实际导入
             try (InputStream secondInputStream = file.getInputStream()) {
                 // 创建Excel读取监听器
-                SwmPersonImportListener listener = new SwmPersonImportListener(swmPersonService);
+                SwmPersonImportListener listener = new SwmPersonImportListener(
+                        swmPersonService,
+                        swmHelmetDeviceService,
+                        swmSafetyHelmetOrderService);
 
                 // 读取Excel
                 ExcelReader excelReader = EasyExcel.read(secondInputStream, SwmPersonExcelModel.class, listener)
@@ -396,7 +400,24 @@ public class SwmPersonController extends BaseController {
                 result.put("total", listener.getTotal());
                 result.put("successCount", successList.size());
                 result.put("errorCount", errorList.size());
-                result.put("message", "导入成功" + successList.size() + "条，失败" + errorList.size() + "条");
+                StringBuilder messageBuilder = new StringBuilder();
+                messageBuilder.append("导入成功").append(successList.size()).append("条，失败").append(errorList.size()).append("条");
+                if (listener.getHelmetBindSuccessCount() > 0) {
+                    messageBuilder.append("，绑定安全帽").append(listener.getHelmetBindSuccessCount()).append("条");
+                }
+                if (listener.getHelmetRebindCount() > 0) {
+                    messageBuilder.append("，重新绑定").append(listener.getHelmetRebindCount()).append("条");
+                }
+                if (listener.getHelmetBindFailCount() > 0) {
+                    messageBuilder.append("，安全帽绑定失败").append(listener.getHelmetBindFailCount()).append("条");
+                }
+                result.put("message", messageBuilder.toString());
+                result.put("helmetBindSuccess", listener.getHelmetBindSuccessCount());
+                result.put("helmetRebind", listener.getHelmetRebindCount());
+                result.put("helmetBindFail", listener.getHelmetBindFailCount());
+                result.put("helmetBindSuccessRows", listener.getHelmetBindSuccessRows());
+                result.put("helmetRebindRows", listener.getHelmetRebindRows());
+                result.put("helmetBindFailRows", listener.getHelmetBindFailRows());
             }
         } catch (Exception e) {
             logger.error("导入Excel异常", e);
@@ -518,6 +539,12 @@ public class SwmPersonController extends BaseController {
                 result.put("errorCount", importResult.getErrorCount());
                 result.put("errors", importResult.getErrors());
                 result.put("warnings", importResult.getWarnings());
+                result.put("helmetBindSuccess", importResult.getHelmetBindSuccessCount());
+                result.put("helmetRebind", importResult.getHelmetRebindCount());
+                result.put("helmetBindFail", importResult.getHelmetBindFailCount());
+                result.put("helmetBindSuccessRows", importResult.getHelmetBindSuccessRows());
+                result.put("helmetRebindRows", importResult.getHelmetRebindRows());
+                result.put("helmetBindFailRows", importResult.getHelmetBindFailRows());
 
                 // 构建详细消息
                 StringBuilder message = new StringBuilder();
@@ -525,6 +552,15 @@ public class SwmPersonController extends BaseController {
                         .append(importResult.getErrorCount()).append("条");
                 if (!importResult.getWarnings().isEmpty()) {
                     message.append("，转换").append(importResult.getWarnings().size()).append("条");
+                }
+                if (importResult.getHelmetBindSuccessCount() > 0) {
+                    message.append("，绑定安全帽").append(importResult.getHelmetBindSuccessCount()).append("条");
+                }
+                if (importResult.getHelmetRebindCount() > 0) {
+                    message.append("，重新绑定").append(importResult.getHelmetRebindCount()).append("条");
+                }
+                if (importResult.getHelmetBindFailCount() > 0) {
+                    message.append("，安全帽绑定失败").append(importResult.getHelmetBindFailCount()).append("条");
                 }
                 result.put("message", message.toString());
             }
