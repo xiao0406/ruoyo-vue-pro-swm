@@ -4,39 +4,46 @@
     
     <!-- 根据单位ID获取人员列表 -->
     <select id="getPersonsByOffice" resultType="Map">
-        SELECT p.id, p.name, p.identity_card as identityCard
+        SELECT 
+            p.id, 
+            p.name, 
+            p.identity_card AS identityCard
         FROM swm_person p
-        left join fms_worker w ON w.identity_code COLLATE utf8mb4_general_ci = p.identity_card COLLATE utf8mb4_general_ci 
-        WHERE w.office_code = #{officeId} 
+        WHERE p.company = #{officeId}
         AND p.status = '0'
     </select>
     
     <!-- 根据车间ID获取人员列表 -->
     <select id="getPersonsByWorkshop" resultType="Map">
-        SELECT p.id, p.name, p.identity_card as identityCard
+        SELECT 
+            p.id, 
+            p.name, 
+            p.identity_card AS identityCard
         FROM swm_person p
-        left join fms_worker w ON w.identity_code COLLATE utf8mb4_general_ci = p.identity_card COLLATE utf8mb4_general_ci 
-        WHERE w.work_shop_code = #{workshopId} 
+        WHERE p.department = #{workshopId}
         AND p.status = '0'
     </select>
     
     <!-- 根据产线ID获取人员列表 -->
     <select id="getPersonsByProdLine" resultType="Map">
-        SELECT p.id, p.name, p.identity_card as identityCard
+        SELECT 
+            p.id, 
+            p.name, 
+            p.identity_card AS identityCard
         FROM swm_person p
-        left join fms_worker w ON w.identity_code COLLATE utf8mb4_general_ci = p.identity_card COLLATE utf8mb4_general_ci 
-        left join fms_work_group g ON w.work_group_id = g.id
-        WHERE g.prod_line_id = #{prodLineId} 
+        WHERE p.prod_line = #{prodLineId}
         AND p.status = '0'
     </select>
     
     <!-- 根据班组ID获取人员列表 -->
     <select id="getPersonsByWorkGroup" resultType="Map">
-        SELECT p.id, p.name, p.identity_card as identityCard
+        SELECT 
+            p.id, 
+            p.name, 
+            p.identity_card AS identityCard
         FROM swm_person p
-        left join fms_worker w ON w.identity_code COLLATE utf8mb4_general_ci = p.identity_card COLLATE utf8mb4_general_ci 
-        WHERE w.work_group_id = #{workGroupId} 
+        WHERE p.team = #{workGroupId}
         AND p.status = '0'
     </select>
     
-</mapper> 
+</mapper>
