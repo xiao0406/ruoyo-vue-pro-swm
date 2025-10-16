@@ -199,6 +199,13 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.info("添加区域查询条件: {}", swmWarningManagement.getArea());
         }
 
+        // 添加时间范围条件
+        if(swmWarningManagement.getBeginAlarmTime() != null && swmWarningManagement.getEndAlarmTime() != null){
+            conditions.add("alarm_time >= '" + swmWarningManagement.getBeginAlarmTime() + "'");
+            conditions.add("alarm_time <= '" + swmWarningManagement.getEndAlarmTime() + "'");
+            logger.info("添加报警时间范围查询条件: {} - {}", swmWarningManagement.getBeginAlarmTime(), swmWarningManagement.getEndAlarmTime());
+        }
+
         if (!conditions.isEmpty()) {
             sqlBuilder.append(" WHERE ");
             for (int i = 0; i < conditions.size(); i++) {

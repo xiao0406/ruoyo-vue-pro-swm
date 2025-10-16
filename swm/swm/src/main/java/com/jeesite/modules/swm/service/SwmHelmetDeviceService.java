@@ -348,7 +348,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                         "FROM %s.%s " +
                         "WHERE time >= NOW() - 5m " +
                         "GROUP BY device_id " +
-                        "HAVING LAST_ROW(bat_l) = %d;",
+                        "HAVING LAST_ROW(bat_l) <= %d;",
                 dbname, HELMET_SUPER_TABLE_NAME, batteryLevel);
 
         try {

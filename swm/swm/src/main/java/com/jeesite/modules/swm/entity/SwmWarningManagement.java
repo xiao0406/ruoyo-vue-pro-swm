@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -161,6 +162,8 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private transient boolean excludeSOS; // 是否排除一键SOS预警
     private transient boolean excludeAttendance; // 是否排除考勤打卡预警
     private transient boolean excludeGateEntry; // 是否排除进入大门预警
+    private Date beginAlarmTime; // 查询开始预警/报警时间
+    private Date endAlarmTime; // 查询结束预警/报警时间
 
     // 用于存储额外数据的Map
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -488,5 +491,22 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setArea(String area) {
         this.area = area;
+    }
+    @JsonIgnore
+    public Date getBeginAlarmTime() {
+        return beginAlarmTime;
+    }
+
+    public void setBeginAlarmTime(Date beginAlarmTime) {
+        this.beginAlarmTime = beginAlarmTime;
+    }
+
+    @JsonIgnore
+    public Date getEndAlarmTime() {
+        return endAlarmTime;
+    }
+
+    public void setEndAlarmTime(Date endAlarmTime) {
+        this.endAlarmTime = endAlarmTime;
     }
 }

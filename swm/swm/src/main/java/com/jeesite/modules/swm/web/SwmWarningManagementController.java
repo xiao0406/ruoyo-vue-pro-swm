@@ -91,8 +91,18 @@ public class SwmWarningManagementController extends BaseController {
             swmWarningManagement = new SwmWarningManagement();
         }
 
+        // 处理时间范围查询条件
+        String beginTime = request.getParameter("timeRange[0]");
+        String endTime = request.getParameter("timeRange[1]");
+
+        if (com.jeesite.common.lang.StringUtils.isNotBlank(beginTime) && com.jeesite.common.lang.StringUtils.isNotBlank(endTime)) {
+            // 设置开始时间和结束时间条件
+            swmWarningManagement.setBeginAlarmTime(DateUtils.parseDate(beginTime));
+            swmWarningManagement.setEndAlarmTime(DateUtils.parseDate(endTime));
+        }
+
         logger.info(
-                "查询参数: id={}, personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS={}, excludeAttendance={}, excludeGateEntry={}",
+                "查询参数: id={}, personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS={}, excludeAttendance={}, excludeGateEntry={}, beginAlarmTime={}, endAlarmTime={}",
                 swmWarningManagement.getId(),
                 swmWarningManagement.getPersonName(),
                 swmWarningManagement.getWarningType(),
@@ -100,7 +110,9 @@ public class SwmWarningManagementController extends BaseController {
                 swmWarningManagement.getHandleStatus(),
                 swmWarningManagement.isExcludeSOS(),
                 swmWarningManagement.isExcludeAttendance(),
-                swmWarningManagement.isExcludeGateEntry());
+                swmWarningManagement.isExcludeGateEntry(),
+                swmWarningManagement.getBeginAlarmTime(),
+                swmWarningManagement.getEndAlarmTime());
 
         // 调用服务层方法，仅从 TDengine 查询数据
         // 时区调整已在SQL查询中完成，无需再次调整
