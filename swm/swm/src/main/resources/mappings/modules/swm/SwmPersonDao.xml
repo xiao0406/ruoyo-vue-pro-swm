@@ -60,6 +60,9 @@
             <if test="company != null and company != ''">
                 AND COALESCE(o.office_name, backup_o.office_name) LIKE CONCAT('%', #{company}, '%')
             </if>
+            <if test="id != null and id != ''">
+                AND a.id = #{id}
+            </if>
             <if test="department != null and department != ''">
                 AND COALESCE(p.position_name, backup_p.position_name) = #{department}
             </if>
