@@ -139,6 +139,7 @@
             swm_person_schedule
         WHERE 
             month = #{yearMonth}
+            AND status = '0'
     </select>
     
     <!-- 重写findList方法，添加组织架构关联查询 Author: Shawn Date: 2025/01/27 -->
