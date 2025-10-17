@@ -59,7 +59,17 @@
             a.status AS "status"
         FROM swm_person a
         -- 原有的关联查询（通过fms_worker关联）
-        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+        LEFT JOIN (
+            SELECT *
+            FROM (
+                SELECT 
+                    fw.*,
+                    ROW_NUMBER() OVER (PARTITION BY fw.identity_code ORDER BY fw.id DESC) AS rn
+                FROM fms_worker fw
+                WHERE fw.identity_code IS NOT NULL
+            ) latest_worker
+            WHERE latest_worker.rn = 1
+        ) f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
