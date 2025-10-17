@@ -1637,6 +1637,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     "SELECT * FROM %s.swm_warning_management WHERE type IN (%s) " +
                             "AND warning_time >= %d AND warning_time < %d " +
                             "AND warning_content NOT IN ('考勤打卡', '进入大门') " +
+                            "AND front_alarm = '1' " +
                             "ORDER BY warning_time DESC",
                     dbname, inCondition, todayStartTime, todayEndTime);
 
@@ -1795,29 +1796,11 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 return false;
             }
 
-            // ========== 第二步：简化的 TDengine 更新逻辑 ==========
-            if (subTableName != null && createDateTs != null) {
-                try {
-                    // 直接向子表插入更新的记录，更新 front_alarm 和 update_date 字段
-                    long currentTime = System.currentTimeMillis();
-                    String updateSql = String.format(
-                        "INSERT INTO %s.%s (create_date, front_alarm, update_date) VALUES (%d, '0', %d)",
-                        dbname, subTableName, createDateTs, currentTime
-                    );
-                    
-                    logger.info("执行 TDengine 更新，子表: {}, 时间戳: {}", subTableName, createDateTs);
-                    R<JSONObject> updateResult = tdengineService.executeTDengineSQL(updateSql);
-                    
-                    if (updateResult.getCode() == R.SUCCESS) {
-                        logger.info("TDengine 更新成功，front_alarm 已更新为 0, update_date 已更新, ID: {}", id);
-                    } else {
-                        logger.warn("TDengine 更新失败: {}，将继续执行 MySQL 操作", updateResult.getMsg());
-                    }
-                } catch (Exception tdException) {
-                    logger.error("TDengine 更新操作异常，将继续执行 MySQL 操作", tdException);
-                }
-            } else {
-                logger.warn("未能获取子表名或时间戳，跳过 TDengine 更新");
+            // ========== 第二步：可靠的 TDengine front_alarm 清零 ==========
+            // 先校验子表名称和时间戳是否可用，不可用直接返回失败避免数据不一致
+            if (!updateTdengineFrontAlarm(id, subTableName, createDateTs)) {
+                logger.error("TDengine front_alarm 清零失败，终止确认流程，ID: {}", id);
+                return false;
             }
 
             // ========== 第三步：MySQL 同步逻辑 ==========
@@ -1846,6 +1829,108 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.error("处理告警确认失败", e);
             return false;
         }
+    }
+
+    /**
+     * 写入 TDengine front_alarm=0 并进行结果校验
+     *
+     * @param id            告警唯一标识
+     * @param subTableName  子表名称
+     * @param createDateTs  原始毫秒时间戳
+     * @return TDengine 是否成功更新 front_alarm
+     * @author Shawn
+     * @date 2025-10-17
+     */
+    private boolean updateTdengineFrontAlarm(String id, String subTableName, Long createDateTs) {
+        // 记录输入参数方便排查
+        logger.info("准备更新 TDengine front_alarm, ID:{}, 子表:{}, 时间戳:{}", id, subTableName, createDateTs);
+
+        // 子表或时间戳缺失时直接返回，避免产生错误插入
+        if (StringUtils.isBlank(subTableName)) {
+            logger.warn("子表名称为空，无法更新 TDengine front_alarm, ID: {}", id);
+            return false;
+        }
+        if (createDateTs == null) {
+            logger.warn("create_date_ts 为空，无法更新 TDengine front_alarm, ID: {}", id);
+            return false;
+        }
+
+        // 构造插入语句，利用相同 create_date 覆写 front_alarm 并刷新 update_date
+        long currentTime = System.currentTimeMillis();
+        String updateSql = String.format(
+                "INSERT INTO %s.%s (create_date, front_alarm, update_date) VALUES (%d, '0', %d)",
+                dbname, subTableName, createDateTs, currentTime);
+        logger.info("执行 TDengine front_alarm 清零 SQL: {}", updateSql);
+
+        try {
+            // 执行写入操作并检查返回码
+            R<JSONObject> updateResult = tdengineService.executeTDengineSQL(updateSql);
+            if (updateResult.getCode() != R.SUCCESS) {
+                logger.error("TDengine front_alarm 清零执行失败，code:{} msg:{}，ID:{}", updateResult.getCode(),
+                        updateResult.getMsg(), id);
+                return false;
+            }
+        } catch (Exception ex) {
+            // 捕获异常并提示下一步处理
+            logger.error("TDengine front_alarm 清零执行异常，ID: {}", id, ex);
+            return false;
+        }
+
+        // 追加校验，确保 front_alarm 已经被置为 0
+        if (!verifyTdengineFrontAlarmCleared(id, subTableName, createDateTs)) {
+            logger.error("TDengine front_alarm 校验未通过，ID: {}", id);
+            return false;
+        }
+
+        logger.info("TDengine front_alarm 清零成功并通过校验，ID: {}", id);
+        return true;
+    }
+
+    /**
+     * 校验 TDengine 中指定记录的 front_alarm 是否已经清零
+     *
+     * @param id            告警唯一标识
+     * @param subTableName  子表名称
+     * @param createDateTs  原始毫秒时间戳
+     * @return front_alarm 是否为 0
+     * @author Shawn
+     * @date 2025-10-17
+     */
+    private boolean verifyTdengineFrontAlarmCleared(String id, String subTableName, Long createDateTs) {
+        // 选择从子表验证，保证定位到唯一时间点的数据
+        String verifySql = String.format(
+                "SELECT front_alarm FROM %s.%s WHERE create_date = %d LIMIT 1",
+                dbname, subTableName, createDateTs);
+        logger.info("执行 TDengine front_alarm 校验 SQL: {}", verifySql);
+
+        try {
+            // 执行校验查询
+            R<JSONObject> verifyResult = tdengineService.executeTDengineSQL(verifySql);
+            if (verifyResult.getCode() != R.SUCCESS || verifyResult.getData() == null) {
+                logger.error("TDengine front_alarm 校验失败，无法获取数据，code:{}，ID:{}",
+                        verifyResult.getCode(), id);
+                return false;
+            }
+
+            JSONArray rows = verifyResult.getData().getJSONArray("data");
+            if (rows == null || rows.size() == 0) {
+                logger.error("TDengine front_alarm 校验失败，未返回目标记录，ID: {}", id);
+                return false;
+            }
+
+            JSONArray firstRow = rows.getJSONArray(0);
+            Object frontAlarmObj = firstRow != null ? firstRow.get(0) : null;
+            String frontAlarmValue = frontAlarmObj != null ? frontAlarmObj.toString() : null;
+            if (!"0".equals(frontAlarmValue)) {
+                logger.error("TDengine front_alarm 校验失败，当前值为 {}，ID: {}", frontAlarmValue, id);
+                return false;
+            }
+        } catch (Exception ex) {
+            logger.error("TDengine front_alarm 校验发生异常，ID: {}", id, ex);
+            return false;
+        }
+
+        return true;
     }
 
     /**
