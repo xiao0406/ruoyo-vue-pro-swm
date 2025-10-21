@@ -14,6 +14,8 @@ import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 一键召回记录表实体类
@@ -82,8 +84,12 @@ public class SwmOneClickRecall extends DataEntity<SwmOneClickRecall> {
     private String evacuationPlan;   // 撤离方案
     private Integer evacueeCount;    // 撤离人员数量
     private String evacueeList;      // 撤离人员名单(JSON格式)
+    private String pushMethod;
+    private Integer recallFrequency;
+    private Integer recallCount;
     private Date recallTime;         // 召回时间
     private String recallResult;     // 召回结果
+    List<Map<String, Object>> deviceList;
     
     public SwmOneClickRecall() {
         this(null);
@@ -92,7 +98,39 @@ public class SwmOneClickRecall extends DataEntity<SwmOneClickRecall> {
     public SwmOneClickRecall(String id) {
         super(id);
     }
-    
+
+    public List<Map<String, Object>> getDeviceList() {
+        return deviceList;
+    }
+
+    public void setDeviceList(List<Map<String, Object>> deviceList) {
+        this.deviceList = deviceList;
+    }
+
+    public String getPushMethod() {
+        return pushMethod;
+    }
+
+    public void setPushMethod(String pushMethod) {
+        this.pushMethod = pushMethod;
+    }
+
+    public Integer getRecallFrequency() {
+        return recallFrequency;
+    }
+
+    public void setRecallFrequency(Integer recallFrequency) {
+        this.recallFrequency = recallFrequency;
+    }
+
+    public Integer getRecallCount() {
+        return recallCount;
+    }
+
+    public void setRecallCount(Integer recallCount) {
+        this.recallCount = recallCount;
+    }
+
     @NotBlank(message = "语音模板名称不能为空")
     @Length(min = 0, max = 100, message = "语音模板名称不能超过100个字符")
     public String getTemplateName() {

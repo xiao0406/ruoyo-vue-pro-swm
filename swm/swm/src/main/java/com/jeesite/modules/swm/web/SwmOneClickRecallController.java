@@ -13,6 +13,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.jeesite.modules.swm.param.SwmOneClickRecallSaveParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -95,18 +96,12 @@ public class SwmOneClickRecallController extends BaseController {
      */
     @PostMapping(value = "save")
     @ResponseBody
-    public String save(@Validated SwmOneClickRecall swmOneClickRecall) {
-        // 设置召回时间
-        if (swmOneClickRecall.getRecallTime() == null) {
-            swmOneClickRecall.setRecallTime(new Date());
-        }
+    public Map<String, Object> save(@Validated @RequestBody SwmOneClickRecallSaveParam param) {
         // 如果未设置召回结果，则默认为进行中
-        if (swmOneClickRecall.getRecallResult() == null || swmOneClickRecall.getRecallResult().isEmpty()) {
-            swmOneClickRecall.setRecallResult(SwmOneClickRecall.RecallResultEnum.IN_PROGRESS);
+        if (param.getRecallResult() == null || param.getRecallResult().isEmpty()) {
+            param.setRecallResult(SwmOneClickRecall.RecallResultEnum.IN_PROGRESS);
         }
-        
-        swmOneClickRecallService.save(swmOneClickRecall);
-        return renderResult(Global.TRUE, text("保存一键召回记录成功！"));
+        return swmOneClickRecallService.addRecallRecord(param);
     }
 
     /**
