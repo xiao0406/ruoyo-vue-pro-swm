@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.service.impl;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.alibaba.fastjson.JSON;
 import com.jeesite.common.constant.RabbitMQConstant;
 import com.jeesite.modules.swm.mq.SwmQueueKey;
 import com.jeesite.modules.swm.mq.producer.RabbitMqSender;
@@ -74,6 +75,7 @@ public class SwmOneClickRecallServiceImpl extends CrudService<SwmOneClickRecallD
         // 保存召回记录
         String evacuationPlan = param.getEvacuationPlan();
         SwmOneClickRecall swmOneClickRecall = new SwmOneClickRecall();
+        swmOneClickRecall.setVoiceText(param.getVoiceText());
         swmOneClickRecall.setTemplateName(param.getTemplateName());
         swmOneClickRecall.setTemplateContent(param.getTemplateContent());
         swmOneClickRecall.setEvacuationPlan(evacuationPlan);
@@ -82,28 +84,45 @@ public class SwmOneClickRecallServiceImpl extends CrudService<SwmOneClickRecallD
         swmOneClickRecall.setPushMethod(param.getPushMethod());
         swmOneClickRecall.setRecallFrequency(param.getRecallFrequency());
         swmOneClickRecall.setRecallCount(param.getRecallCount());
+        swmOneClickRecall.setRecallSuccessCount(0);
+        swmOneClickRecall.setRecallFailCount(0);
         // 非全体人员撤离
         if(!evacuationPlan.equals(SwmOneClickRecall.EvacuationPlanEnum.ALL)){
             List<String> selectedTargets = param.getSelectedTargets();
             List<Map<String, Object>> originalTreeData = param.getOriginalTreeData();
             List<Map<String, Object>> deviceList = sendRecallToSelectedTargets(selectedTargets, originalTreeData);
-            swmOneClickRecall.setDeviceList(deviceList);
-            if(deviceList.isEmpty()){
+            if(Objects.isNull(deviceList) || deviceList.isEmpty()){
                 result.put("success", false);
-                result.put("message", "推送目标设备列表为空");
+                result.put("message", "未找到推送目标");
+                return result;
+            }else{
+                swmOneClickRecall.setDeviceList(JSON.toJSONString(deviceList));
+                swmOneClickRecall.setEvacueeCount(deviceList.size());
             }
         }else{
             // 全体人员撤离
             List<Map<String, Object>> allTargetPersonnel = swmOneClickRecallDao.findAllTargetPersonnelForBroadcast();
-            swmOneClickRecall.setDeviceList(allTargetPersonnel);
-            if(allTargetPersonnel.isEmpty()){
+            if(Objects.isNull(allTargetPersonnel) || allTargetPersonnel.isEmpty()){
                 result.put("success", false);
-                result.put("message", "推送目标设备列表为空");
+                result.put("message", "未找到推送目标");
+                return result;
+            }else {
+                swmOneClickRecall.setDeviceList(JSON.toJSONString(allTargetPersonnel));
+                swmOneClickRecall.setEvacueeCount(allTargetPersonnel.size());
             }
         }
         super.save(swmOneClickRecall);
-        // 发送一条消息，用于召回消息推送
-        rabbitMqSender.sendMessage(SwmQueueKey.SWM_RECALL_MESSAGE_PUSH, UUID.randomUUID().toString(), swmOneClickRecall);
+
+        String pushMethods = swmOneClickRecall.getPushMethod();
+        String[] methods = pushMethods.split(",");
+        for (String method : methods) {
+            if (method.equals(SwmOneClickRecall.PushMethodEnum.DEVICE)){
+                // 设备推送，发送一条消息，用于召回消息推送
+                rabbitMqSender.sendMessage(SwmQueueKey.SWM_RECALL_MESSAGE_PUSH, UUID.randomUUID().toString(), swmOneClickRecall);
+            } else if (method.equals(SwmOneClickRecall.PushMethodEnum.SMS)) {
+                // TODO 短信推送待实现
+            }
+        }
         return result;
     }
 

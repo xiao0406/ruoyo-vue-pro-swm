@@ -20,11 +20,11 @@ public class SwmOneClickRecallSaveParam implements Serializable {
 
     @NotBlank(message = "语音模板名称不能为空")
     @Length(min = 0, max = 100, message = "语音模板名称不能超过100个字符")
-    private String templateName;     // 语音模板名称
-
-    @NotBlank(message = "语音模板内容不能为空")
-    private String templateContent;  // 语音模板内容
-
+    private String templateName;
+//    @NotBlank(message = "语音模板内容不能为空")
+    private String templateContent;
+    @NotBlank(message = "语音文字内容不能为空")
+    private String voiceText;
     @NotBlank(message = "撤离方案不能为空")
     private String evacuationPlan;
     @NotBlank(message = "推送方式不能为空")
@@ -38,7 +38,7 @@ public class SwmOneClickRecallSaveParam implements Serializable {
 
     private String recallResult;     // 召回结果
 
-    private List<String> selectedTargets; // 撤离方案不为全员时，需要传。选中的树形节点
+    private List<String> selectedTargets; // 选中的树形节点
 
-    private List<Map<String, Object>> originalTreeData; // 撤离方案不为全员时，需要传。原始树形数据
+    private List<Map<String, Object>> originalTreeData; // 原始树形数据
 } 
