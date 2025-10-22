@@ -3,9 +3,7 @@ package com.jeesite.modules.swm.web;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
-import com.jeesite.modules.swm.entity.SwmDailyAttendance;
-import com.jeesite.modules.swm.entity.SwmDailyAttendanceExportEntity;
+import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
 import com.jeesite.common.utils.excel.ExcelExport;
@@ -773,4 +771,104 @@ public class SwmDailyAttendanceController extends BaseController {
         }
     }
 
+    /**
+     * 导出月考勤记录
+     */
+    @RequestMapping(value = "exportMonthlyData")
+    @ResponseBody
+    @ApiOperation("导出月考勤记录")
+    public String exportMonthlyData(SwmMonthlyAttendance swmMonthlyAttendance, HttpServletRequest request,
+                             HttpServletResponse response) throws IOException {
+
+        // 验证日期参数，确保只导出一天数据
+        if (swmMonthlyAttendance.getCurrentMonth() == null) {
+            return renderResult(Global.FALSE, text("请选择考勤月份！"));
+        }
+
+        try {
+            // 获取所有符合条件的数据（不分页）
+            List<SwmMonthlyAttendance> list = swmDailyAttendanceService.findExportListByMonth(swmMonthlyAttendance);
+
+            if (list.isEmpty()) {
+                return renderResult(Global.FALSE, text("没有符合条件的数据可以导出！"));
+            }
+
+            // 转换为导出实体
+            List<SwmMonthlyAttendanceExportEntity> exportList = swmDailyAttendanceService.monthlyConvertToExportList(list);
+
+            // 生成文件名
+            String fileName = "月考勤记录_" + DateUtils.formatDate(swmMonthlyAttendance.getCurrentMonth(), "yyyyMM") + "_"
+                    + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
+
+            // 使用ExcelExport生成Excel文件
+            byte[] excelData;
+            try (ExcelExport ee = new ExcelExport("月考勤记录", SwmDailyAttendanceExportEntity.class);
+                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                ee.setDataList(exportList);
+                ee.getWorkbook().write(baos);
+                excelData = baos.toByteArray();
+            }
+
+            // 创建MockMultipartFile用于上传到MinIO
+            MockMultipartFile mockFile = new MockMultipartFile(
+                    "file",
+                    fileName,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    excelData);
+
+            // 构建MinIO存储路径
+            String objectName = "daily-attendance/"
+                    + DateUtils.formatDate(swmMonthlyAttendance.getCurrentMonth(), "yyyyMM") + "/" + fileName;
+            logger.info("Excel文件将存储在MinIO路径: {}", objectName);
+
+            // 使用MinioUtils上传文件到MinIO
+            Map<String, Object> uploadResult = minioUtils.upload(mockFile, objectName);
+            logger.info("MinIO上传成功，返回结果: {}", uploadResult);
+
+            // 生成预览URL，使用相对路径，并添加fileName参数
+            String previewUrl = "fileUpload/preview?objectName=" + objectName + "&fileName=" + fileName;
+            logger.info("生成预览URL: {}", previewUrl);
+
+            return renderResult(Global.TRUE, text("导出成功！"), previewUrl);
+        } catch (Exception e) {
+            logger.error("导出月考勤记录失败: {}", e.getMessage(), e);
+            return renderResult(Global.FALSE, text("导出失败！") + e.getMessage());
+        }
+    }
+
+    /**
+     * 月考核查询列表数据
+     */
+    @RequestMapping(value = "monthlyListData")
+    @ResponseBody
+    public Page<Map<String, Object>> monthlyListData(SwmMonthlyAttendance swmMonthlyAttendance, HttpServletRequest request,
+                                              HttpServletResponse response) {
+        if (swmMonthlyAttendance.getCurrentMonth() == null) {
+
+            Date today = new Date();
+
+            swmMonthlyAttendance.setCurrentMonth(today);
+        }
+
+        swmMonthlyAttendance.setPage(new Page<>(request, response));
+
+        Page<SwmMonthlyAttendance> originalPage = swmDailyAttendanceService.findMonthlyByPage(swmMonthlyAttendance);
+
+        // 创建新的分页对象，用于存储格式化后的数据
+        Page<Map<String, Object>> formattedPage = new Page<>(request, response);
+        formattedPage.setCount(originalPage.getCount());
+        formattedPage.setPageNo(originalPage.getPageNo());
+        formattedPage.setPageSize(originalPage.getPageSize());
+
+        // 处理日期格式并计算怠工时长
+        List<Map<String, Object>> formattedList = new ArrayList<>();
+
+        for (SwmMonthlyAttendance record : originalPage.getList()) {
+            formattedList.add(convertToMap(record));
+        }
+
+        formattedPage.setList(formattedList);
+
+        return formattedPage;
+    }
 }

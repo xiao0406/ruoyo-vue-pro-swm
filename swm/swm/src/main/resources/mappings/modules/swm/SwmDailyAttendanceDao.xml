@@ -33,6 +33,22 @@
         <result property="status" column="status"/>
     </resultMap>
 
+    <resultMap id="swmMonthlyAttendanceResult" type="com.jeesite.modules.swm.entity.SwmMonthlyAttendance">
+        <id property="id" column="id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="employeeName" column="employee_name"/>
+        <result property="identityCard" column="identity_card"/>
+        <result property="currentMonth" column="current_month"/>
+        <result property="phoneNumber" column="phone_number"/>
+        <result property="team" column="team"/>
+        <result property="jobType" column="job_type"/>
+        <result property="attendanceDay" column="attendance_date_total"/>
+        <result property="monthlyAttendanceRate" column="attendance_rate"/>
+        <result property="validAttendanceDays" column="valid_attendance_total"/>
+        <result property="actualHours" column="actual_hours_total"/>
+        <result property="idleHours" column="idle_hours_total"/>
+    </resultMap>
+
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmDailyAttendance">
         SELECT ${sqlMap.column.toSql()}
@@ -483,4 +499,91 @@
         ORDER BY a.attendance_date ASC
     </select>
 
+    <!-- 按月查询月考勤记录 -->
+    <select id="findStatisticsByMonth" resultMap="swmMonthlyAttendanceResult">
+        SELECT sda.employee_id,
+        sda.identity_card,
+        DATE_FORMAT(sda.attendance_date,'%Y-%m') as current_month,
+        sda.employee_name,
+        sp.phone_number,
+        sp.team,
+        sp.job_type,
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
+        CONCAT(ROUND(
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
+        2),'%') as attendance_rate,
+        SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as valid_attendance_total,
+        SUM(sda.actual_hours) as actual_hours_total,
+        SUM(sda.idle_hours) as idle_hours_total
+        FROM swm_daily_attendance sda
+        LEFT JOIN swm_person sp
+        ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+        WHERE DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
+        GROUP BY sda.employee_name
+    </select>
+
+    <!-- 按月查询月考勤记录分页处理 -->
+    <select id="findStatisticsByMonthWithPage" resultMap="swmMonthlyAttendanceResult">
+        SELECT sda.employee_id,
+        sda.identity_card,
+        DATE_FORMAT(sda.attendance_date,'%Y-%m') as current_month,
+        sda.employee_name,
+        sp.phone_number,
+        sp.team,
+        sp.job_type,
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
+        CONCAT(ROUND(
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
+        2),'%') as attendance_rate,
+        SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as valid_attendance_total,
+        SUM(sda.actual_hours) as actual_hours_total,
+        SUM(sda.idle_hours) as idle_hours_total
+        FROM swm_daily_attendance sda
+        LEFT JOIN swm_person sp
+        ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+        <where>
+            DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
+            <if test="team != null and team != ''">
+                AND sp.team = #{team}
+            </if>
+            <if test="employeeName != null and employeeName != ''">
+                AND a.employee_name LIKE concat('%', #{employeeName}, '%')
+            </if>
+        </where>
+        GROUP BY sda.employee_name
+        LIMIT #{pageNum},#{pageSize}
+    </select>
+
+    <!-- 按月查询月考勤记录总条数 -->
+    <select id="findStatisticsTotalByMonth" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM(
+        SELECT sda.employee_id,
+        sda.identity_card,
+        DATE_FORMAT(sda.attendance_date,'%Y-%m') as current_month,
+        sda.employee_name,
+        sp.phone_number,
+        sp.team,
+        sp.job_type,
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
+        CONCAT(ROUND(
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
+        2),'%') as attendance_rate,
+        SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as valid_attendance_total,
+        SUM(sda.actual_hours) as actual_hours_total,
+        SUM(sda.idle_hours) as idle_hours_total
+        FROM swm_daily_attendance sda
+        LEFT JOIN swm_person sp
+        ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+        <where>
+            DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
+            <if test="team != null and team != ''">
+                AND sp.team = #{team}
+            </if>
+            <if test="employeeName != null and employeeName != ''">
+                AND a.employee_name LIKE concat('%', #{employeeName}, '%')
+            </if>
+        </where>
+        GROUP BY sda.employee_name ) monthly_attendance
+    </select>
 </mapper>
