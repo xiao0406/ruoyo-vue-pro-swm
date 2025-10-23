@@ -15,12 +15,11 @@ import javax.annotation.Resource;
 import java.util.UUID;
 
 @ComponentScan(basePackages="com.jeesite.*")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        classes = {SwmApplication.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {SwmApplication.class})
 @Slf4j
 public class ControllerTest {
 
-    @Autowired
+    @Resource
     private SwmOneClickRecallServiceImpl swmOneClickRecallService;
 
     @Test
