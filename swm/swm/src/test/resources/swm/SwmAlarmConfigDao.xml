@@ -85,7 +85,8 @@
             a.update_by AS updateBy, a.update_date AS updateDate,
             a.remarks, a.status, a.alarm_name AS alarmName,
             a.alarm_key AS alarmKey, a.enable_alarm AS enableAlarm,
-            a.need_confirm AS needConfirm, a.dialog_position AS dialogPosition
+            a.need_confirm AS needConfirm, a.dialog_position AS dialogPosition,
+            a.is_send_zjt AS isSendZjt
         FROM
             swm_alarm_config a
         WHERE
