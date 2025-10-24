@@ -802,7 +802,7 @@ public class SwmDailyAttendanceController extends BaseController {
 
             // 使用ExcelExport生成Excel文件
             byte[] excelData;
-            try (ExcelExport ee = new ExcelExport("月考勤记录", SwmDailyAttendanceExportEntity.class);
+            try (ExcelExport ee = new ExcelExport("月考勤记录", SwmMonthlyAttendanceExportEntity.class);
                  ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
                 ee.setDataList(exportList);
                 ee.getWorkbook().write(baos);
@@ -817,7 +817,7 @@ public class SwmDailyAttendanceController extends BaseController {
                     excelData);
 
             // 构建MinIO存储路径
-            String objectName = "daily-attendance/"
+            String objectName = "monthly-attendance/"
                     + DateUtils.formatDate(swmMonthlyAttendance.getCurrentMonth(), "yyyyMM") + "/" + fileName;
             logger.info("Excel文件将存储在MinIO路径: {}", objectName);
 
