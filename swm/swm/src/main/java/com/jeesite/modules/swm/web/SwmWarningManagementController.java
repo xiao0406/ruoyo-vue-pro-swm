@@ -340,9 +340,13 @@ public class SwmWarningManagementController extends BaseController {
     public String save(@Validated SwmWarningManagement swmWarningManagement) {
         swmWarningManagementService.save(swmWarningManagement);
         //根据预警报警记录信息判断是否要推送中建通
+        logger.info("预警报警记录推送中间通，预警ID：{}", swmWarningManagement.getId());
         SwmAlarmConfig swmAlarmConfig = swmAlarmConfigService.getByAlarmName(swmWarningManagement.getWarningContent());
+        logger.info("预警报警记录推送中间通，查询配置查询：{}", swmAlarmConfig);
         if(swmAlarmConfig != null && swmAlarmConfig.getIsSendZjt().equals(1)){
+            logger.info("预警报警记录推送中间通，开始推送处理：{}", swmAlarmConfig.getIsSendZjt());
             sendZjt(swmAlarmConfig,swmWarningManagement);
+            logger.info("预警报警记录推送中间通，推送成功！");
         }
         return renderResult(Global.TRUE, text("保存预警信息成功！"));
     }
@@ -1108,8 +1112,10 @@ public class SwmWarningManagementController extends BaseController {
         SwmAlarmConfigDetailVO detail = new SwmAlarmConfigDetailVO();
         detail.setMainKey(swmAlarmConfig.getAlarmKey());
         detail.setContent(swmWarningManagement.getTriggerReason());
+        logger.info("预警报警记录推送中间通，推送参数组装：{},{}", detail.getMainKey(),detail.getContent());
         try {
             swmSendZjtService.send(detail);
+            logger.info("预警报警记录推送中间通，推送完成！");
         } catch (Exception e) {
             logger.error("预警报警记录推送中间通，预警ID：{}", e.toString());
             result =false;
