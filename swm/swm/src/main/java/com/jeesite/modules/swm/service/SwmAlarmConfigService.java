@@ -4,6 +4,7 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmAlarmConfigDao;
 import com.jeesite.modules.swm.entity.SwmAlarmConfig;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -138,5 +139,18 @@ public class SwmAlarmConfigService extends CrudService<SwmAlarmConfigDao, SwmAla
     public void delete(SwmAlarmConfig swmAlarmConfig) {
         super.delete(swmAlarmConfig);
         logger.info("删除报警配置成功: {}", swmAlarmConfig.getId());
+    }
+
+    /**
+     * 根据报警名称查询对应报警配置
+     * @param alarmName 报警名称
+     * @return
+     */
+    public SwmAlarmConfig getByAlarmName(String alarmName){
+        List<SwmAlarmConfig> swmAlarmConfigList = dao.getByAlarmName(alarmName);
+        if(CollectionUtils.isNotEmpty(swmAlarmConfigList)){
+            return swmAlarmConfigList.get(0);
+        }
+        return null;
     }
 } 

@@ -44,4 +44,12 @@ public interface SwmAlarmConfigDao extends CrudDao<SwmAlarmConfig> {
      * @return 影响行数
      */
     int updateWithDialogPosition(SwmAlarmConfig swmAlarmConfig);
+
+    /**
+     * 根据报警名称获取报警配置
+     *
+     * @param alarmName 报警名称
+     * @return 报警配置对象
+     */
+    List<SwmAlarmConfig> getByAlarmName(String alarmName);
 } 

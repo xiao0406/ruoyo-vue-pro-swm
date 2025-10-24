@@ -8,12 +8,11 @@ import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.swm.entity.SwmAlarmConfig;
 import com.jeesite.modules.swm.entity.SwmHandleRecord;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
-import com.jeesite.modules.swm.service.SwmHandleRecordService;
-import com.jeesite.modules.swm.service.SwmPersonService;
-import com.jeesite.modules.swm.service.SwmWarningManagementService;
+import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
+import com.jeesite.modules.vo.SwmAlarmConfigDetailVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
@@ -56,6 +55,11 @@ public class SwmWarningManagementController extends BaseController {
 
     @Autowired
     private SwmPersonService swmPersonService;
+
+    @Autowired
+    private SwmAlarmConfigService swmAlarmConfigService;
+    @Autowired
+    private SwmSendZjtService swmSendZjtService;
 
     /**
      * 获取数据
@@ -335,6 +339,11 @@ public class SwmWarningManagementController extends BaseController {
     @ApiOperation("保存数据")
     public String save(@Validated SwmWarningManagement swmWarningManagement) {
         swmWarningManagementService.save(swmWarningManagement);
+        //根据预警报警记录信息判断是否要推送中建通
+        SwmAlarmConfig swmAlarmConfig = swmAlarmConfigService.getByAlarmName(swmWarningManagement.getWarningContent());
+        if(swmAlarmConfig != null && swmAlarmConfig.getIsSendZjt().equals(1)){
+            sendZjt(swmAlarmConfig,swmWarningManagement);
+        }
         return renderResult(Global.TRUE, text("保存预警信息成功！"));
     }
 
@@ -1074,4 +1083,37 @@ public class SwmWarningManagementController extends BaseController {
         }
     }
 
+    /**
+     * 重新推送中建通
+     */
+    @PostMapping(value = "resendZjt")
+    @ResponseBody
+    @ApiOperation("预警报警记录重新推送中建通")
+    public String resendZjt(@Validated SwmWarningManagement swmWarningManagement) {
+        SwmWarningManagement swmWarning = swmWarningManagementService.get(swmWarningManagement.getId());
+        //根据预警报警记录信息判断是否要推送中建通
+        SwmAlarmConfig swmAlarmConfig = swmAlarmConfigService.getByAlarmName(swmWarning.getWarningContent());
+        if(swmAlarmConfig != null && swmAlarmConfig.getIsSendZjt().equals(1)){
+            Boolean result = sendZjt(swmAlarmConfig, swmWarning);
+            if(result){
+                return renderResult(Global.TRUE, text("预警信息推送中建通成功！"));
+            }
+        }
+        return renderResult(Global.TRUE, text("预警信息推送中建通失败！"));
+    }
+
+    private Boolean sendZjt(SwmAlarmConfig swmAlarmConfig,SwmWarningManagement swmWarningManagement){
+        Boolean result = true;
+        //推送中建通
+        SwmAlarmConfigDetailVO detail = new SwmAlarmConfigDetailVO();
+        detail.setMainKey(swmAlarmConfig.getAlarmKey());
+        detail.setContent(swmWarningManagement.getTriggerReason());
+        try {
+            swmSendZjtService.send(detail);
+        } catch (Exception e) {
+            logger.error("预警报警记录推送中间通，预警ID：{}", e.toString());
+            result =false;
+        }
+        return result;
+    }
 }
