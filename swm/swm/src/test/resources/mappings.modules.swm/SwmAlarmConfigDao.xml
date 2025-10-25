@@ -77,5 +77,22 @@
             update_date = #{updateDate}
         WHERE id = #{id}
     </update>
+
+    <!-- 根据报警类型名称获取报警配置 -->
+    <select id="getByAlarmName" resultType="com.jeesite.modules.swm.entity.SwmAlarmConfig">
+        SELECT
+            a.id, a.create_by AS createBy, a.create_date AS createDate,
+            a.update_by AS updateBy, a.update_date AS updateDate,
+            a.remarks, a.status, a.alarm_name AS alarmName,
+            a.alarm_key AS alarmKey, a.enable_alarm AS enableAlarm,
+            a.need_confirm AS needConfirm, a.dialog_position AS dialogPosition,
+            a.is_send_zjt AS isSendZjt
+        FROM
+            swm_alarm_config a
+        WHERE
+            a.alarm_name = #{alarmName}
+            AND a.status = '0'
+        ORDER BY a.create_date DESC
+    </select>
     
 </mapper> 

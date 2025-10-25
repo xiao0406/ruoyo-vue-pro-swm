@@ -9,6 +9,7 @@ import java.util.Date;
 
 public class SwmMonthlyAttendance extends DataEntity<SwmMonthlyAttendance> {
 
+    private String monthly;
     private String employeeId; // 员工ID
     private String employeeName; // 员工姓名
     private String identityCard; // 身份证号
@@ -121,5 +122,13 @@ public class SwmMonthlyAttendance extends DataEntity<SwmMonthlyAttendance> {
 
     public void setCurrentMonth(Date currentMonth) {
         this.currentMonth = currentMonth;
+    }
+
+    public String getMonthly() {
+        return monthly;
+    }
+
+    public void setMonthly(String monthly) {
+        this.monthly = monthly;
     }
 }

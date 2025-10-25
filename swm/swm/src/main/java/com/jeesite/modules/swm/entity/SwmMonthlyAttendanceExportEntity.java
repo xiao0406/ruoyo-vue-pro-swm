@@ -4,11 +4,10 @@ import com.jeesite.common.utils.excel.annotation.ExcelField;
 import com.jeesite.common.utils.excel.annotation.ExcelFields;
 
 import java.math.BigDecimal;
-import java.util.Date;
 
 public class SwmMonthlyAttendanceExportEntity {
 
-    private Date currentMonth; //月份
+    private String monthly; //月份
     private String employeeName; // 员工姓名
     private String phoneNumber; // 手机号
     private String team; // 班组
@@ -20,7 +19,7 @@ public class SwmMonthlyAttendanceExportEntity {
     private BigDecimal idleHours; //本月怠工时长
 
     @ExcelFields({
-            @ExcelField(title = "月份", attrName = "currentMonth", align = ExcelField.Align.CENTER, sort = 10, dataFormat = "yyyy-MM"),
+            @ExcelField(title = "月份", attrName = "monthly", align = ExcelField.Align.CENTER, sort = 10),
             @ExcelField(title = "员工姓名", attrName = "employeeName", align = ExcelField.Align.CENTER, sort = 20),
             @ExcelField(title = "手机号", attrName = "phoneNumber", align = ExcelField.Align.CENTER, sort = 30),
             @ExcelField(title = "班组", attrName = "team", align = ExcelField.Align.CENTER, sort = 40),
@@ -34,12 +33,12 @@ public class SwmMonthlyAttendanceExportEntity {
     public SwmMonthlyAttendanceExportEntity() {
     }
 
-    public SwmMonthlyAttendanceExportEntity(Date currentMonth, String employeeName,
+    public SwmMonthlyAttendanceExportEntity(String monthly, String employeeName,
                                             String phoneNumber, String team,
                                             String jobType, BigDecimal attendanceDay,
                                             String monthlyAttendanceRate, BigDecimal validAttendanceDays,
                                             BigDecimal actualHours, BigDecimal idleHours) {
-        this.currentMonth = currentMonth;
+        this.monthly = monthly;
         this.employeeName = employeeName;
         this.phoneNumber = phoneNumber;
         this.team = team;
@@ -51,12 +50,12 @@ public class SwmMonthlyAttendanceExportEntity {
         this.idleHours = idleHours;
     }
 
-    public Date getCurrentMonth() {
-        return currentMonth;
+    public String getMonthly() {
+        return monthly;
     }
 
-    public void setCurrentMonth(Date currentMonth) {
-        this.currentMonth = currentMonth;
+    public void setMonthly(String monthly) {
+        this.monthly = monthly;
     }
 
     public String getEmployeeName() {

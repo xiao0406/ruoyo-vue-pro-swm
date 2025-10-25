@@ -812,7 +812,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             SwmMonthlyAttendanceExportEntity exportEntity = new SwmMonthlyAttendanceExportEntity();
 
             // 复制基本字段
-            exportEntity.setCurrentMonth(attendance.getCurrentMonth());
+            exportEntity.setMonthly(attendance.getMonthly());
             exportEntity.setEmployeeName(attendance.getEmployeeName());
             exportEntity.setPhoneNumber(attendance.getPhoneNumber());
             exportEntity.setTeam(attendance.getTeam());

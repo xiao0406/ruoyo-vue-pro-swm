@@ -38,7 +38,7 @@
         <result property="employeeId" column="employee_id"/>
         <result property="employeeName" column="employee_name"/>
         <result property="identityCard" column="identity_card"/>
-        <result property="currentMonth" column="current_month"/>
+        <result property="monthly" column="monthly"/>
         <result property="phoneNumber" column="phone_number"/>
         <result property="team" column="team"/>
         <result property="jobType" column="job_type"/>
@@ -502,13 +502,14 @@
 
     <!-- 按月查询月考勤记录 -->
     <select id="findStatisticsByMonth" resultMap="swmMonthlyAttendanceResult">
-        SELECT sda.employee_id,
-        sda.identity_card,
-        DATE_FORMAT(sda.attendance_date,'%Y-%m') as current_month,
-        sda.employee_name,
-        sp.phone_number,
-        sp.team,
-        sp.job_type,
+        SELECT
+        sda.employee_id as employee_id,
+        sda.identity_card as identity_card,
+        DATE_FORMAT(sda.attendance_date,'%Y-%m') as monthly,
+        sda.employee_name as employee_name,
+        sp.phone_number as phone_number,
+        sp.team as team,
+        sp.job_type as job_type,
         SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
         CONCAT(ROUND(
         SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
@@ -525,13 +526,14 @@
 
     <!-- 按月查询月考勤记录分页处理 -->
     <select id="findStatisticsByMonthWithPage" resultMap="swmMonthlyAttendanceResult">
-        SELECT sda.employee_id,
-        sda.identity_card,
-        DATE_FORMAT(sda.attendance_date,'%Y-%m') as current_month,
-        sda.employee_name,
-        sp.phone_number,
-        sp.team,
-        sp.job_type,
+        SELECT
+        sda.employee_id as employee_id,
+        sda.identity_card as identity_card,
+        DATE_FORMAT(sda.attendance_date,'%Y-%m') as monthly,
+        sda.employee_name as employee_name,
+        sp.phone_number as phone_number,
+        sp.team as team,
+        sp.job_type as job_type,
         SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
         CONCAT(ROUND(
         SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
