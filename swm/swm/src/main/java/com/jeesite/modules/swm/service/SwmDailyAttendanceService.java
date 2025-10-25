@@ -3,10 +3,9 @@ package com.jeesite.modules.swm.service;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
-import com.jeesite.modules.swm.entity.SwmAttendanceSummary;
-import com.jeesite.modules.swm.entity.SwmDailyAttendance;
-import com.jeesite.modules.swm.entity.SwmDailyAttendanceExportEntity;
+import com.jeesite.modules.swm.entity.*;
 
+import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -783,6 +782,75 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     }
 
     /**
+     * 查询导出列表数据（不分页）通过月份
+     *
+     * @param swmMonthlyAttendance 查询条件
+     * @return 考勤记录列表
+     */
+    public List<SwmMonthlyAttendance> findExportListByMonth(SwmMonthlyAttendance swmMonthlyAttendance) {
+        // 确保有日期条件，如果没有则默认当月
+        if (swmMonthlyAttendance.getCurrentMonth() == null) {
+            swmMonthlyAttendance.setCurrentMonth(new Date());
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+        String month = sdf.format(swmMonthlyAttendance.getCurrentMonth());
+
+        // 不设置分页，查询所有数据
+        return dao.findStatisticsByMonth(month);
+    }
+
+    /**
+     * 将SwmMonthlyAttendance列表转换为导出实体列表
+     *
+     * @param attendanceList 考勤记录列表
+     * @return 导出实体列表
+     */
+    public List<SwmMonthlyAttendanceExportEntity> monthlyConvertToExportList(List<SwmMonthlyAttendance> attendanceList) {
+        List<SwmMonthlyAttendanceExportEntity> exportList = new ArrayList<>();
+
+        for (SwmMonthlyAttendance attendance : attendanceList) {
+            SwmMonthlyAttendanceExportEntity exportEntity = new SwmMonthlyAttendanceExportEntity();
+
+            // 复制基本字段
+            exportEntity.setMonthly(attendance.getMonthly());
+            exportEntity.setEmployeeName(attendance.getEmployeeName());
+            exportEntity.setPhoneNumber(attendance.getPhoneNumber());
+            exportEntity.setTeam(attendance.getTeam());
+            exportEntity.setJobType(attendance.getJobType());
+            exportEntity.setAttendanceDay(attendance.getAttendanceDay());
+            exportEntity.setMonthlyAttendanceRate(attendance.getMonthlyAttendanceRate());
+            exportEntity.setValidAttendanceDays(attendance.getValidAttendanceDays());
+            exportEntity.setActualHours(attendance.getActualHours());
+            exportEntity.setIdleHours(attendance.getIdleHours());
+
+            exportList.add(exportEntity);
+        }
+
+        return exportList;
+    }
+
+    public Page<SwmMonthlyAttendance> findMonthlyByPage(SwmMonthlyAttendance swmMonthlyAttendance) {
+        // 处理日期，去除时间部分
+        String month ="";
+        if (swmMonthlyAttendance.getCurrentMonth() != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
+            month = sdf.format(swmMonthlyAttendance.getCurrentMonth());
+        }
+        //分页查询处理
+        List<SwmMonthlyAttendance> list = dao.findStatisticsByMonthWithPage(swmMonthlyAttendance.getTeam(), swmMonthlyAttendance.getEmployeeName(),
+                month, swmMonthlyAttendance.getPageNo(), swmMonthlyAttendance.getPageSize());
+        //查询对应的总数据量
+        Long statisticsCount = dao.findStatisticsTotalByMonth(swmMonthlyAttendance.getTeam(), swmMonthlyAttendance.getEmployeeName(), month);
+        //组装返回结果
+        Page<SwmMonthlyAttendance> result = new Page<>();
+        result.setCount(statisticsCount);
+        result.setPageNo(swmMonthlyAttendance.getPageNo());
+        result.setPageSize(swmMonthlyAttendance.getPageSize());
+        result.setList(list);
+        return result;
+    }
+
+    /**
      * 获取员工的实时位置
      *
      * @param employeeId 员工ID
@@ -807,5 +875,28 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             logger.error("获取员工 {} 实时位置失败", employeeId, e);
             return "3";
         }
+    }
+
+    public List<SwmDashboardNewController.JobTypeCount> statisticsPersonJobType(String date) {
+        return dao.statisticsPersonJobType(date);
+    }
+
+    public Long countAttendanceByWorkshop(String companyName, String workshopName, String date) {
+        return dao.countAttendanceByWorkshop(companyName, workshopName, date);
+    }
+
+    public Long countAttendanceByTeam(String companyName, String workshopName, String lineName, String teamName, String date) {
+        return dao.countAttendanceByTeam(companyName, workshopName, lineName, teamName, date);
+    }
+
+    public List<SwmDashboardNewController.Person> attendanceList(String date) {
+        return dao.attendanceList(date);
+    }
+
+    public List<SwmDailyAttendance> findByDateRange(Date beginDate, Date endDate) {
+        // 处理日期，去除时间部分
+        beginDate = truncateTime(beginDate);
+        endDate = truncateTime(endDate);
+        return dao.findByDateRange(beginDate, endDate);
     }
 }

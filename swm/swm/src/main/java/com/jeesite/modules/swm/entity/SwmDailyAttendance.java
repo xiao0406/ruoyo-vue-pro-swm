@@ -292,4 +292,9 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     public void setClockEndTime(Date clockEndTime) {
         this.clockEndTime = clockEndTime;
     }
+
+    // 判断是否为有效未打卡（非休息状态且未打卡）
+    public boolean isEffectiveAbsence() {
+        return "0".equals(status) && clockInTime == null;
+    }
 }

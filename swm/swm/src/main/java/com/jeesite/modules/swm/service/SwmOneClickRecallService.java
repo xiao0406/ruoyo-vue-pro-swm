@@ -5,10 +5,13 @@
  */
 package com.jeesite.modules.swm.service;
 
-import java.util.List;
 
 import com.jeesite.common.entity.Page;
 import com.jeesite.modules.swm.entity.SwmOneClickRecall;
+import com.jeesite.modules.swm.param.SwmOneClickRecallSaveParam;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 一键召回记录表服务接口
@@ -42,11 +45,11 @@ public interface SwmOneClickRecallService {
      */
     List<SwmOneClickRecall> findList(SwmOneClickRecall oneClickRecall);
 
+    Map<String, Object> addRecallRecord(SwmOneClickRecallSaveParam param);
     /**
      * 保存数据
      */
     void save(SwmOneClickRecall oneClickRecall);
-
     /**
      * 删除数据
      */

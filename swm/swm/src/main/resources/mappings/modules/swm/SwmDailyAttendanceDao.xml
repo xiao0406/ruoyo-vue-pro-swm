@@ -33,6 +33,22 @@
         <result property="status" column="status"/>
     </resultMap>
 
+    <resultMap id="swmMonthlyAttendanceResult" type="com.jeesite.modules.swm.entity.SwmMonthlyAttendance">
+        <id property="id" column="id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="employeeName" column="employee_name"/>
+        <result property="identityCard" column="identity_card"/>
+        <result property="monthly" column="monthly"/>
+        <result property="phoneNumber" column="phone_number"/>
+        <result property="team" column="team"/>
+        <result property="jobType" column="job_type"/>
+        <result property="attendanceDay" column="attendance_date_total"/>
+        <result property="monthlyAttendanceRate" column="attendance_rate"/>
+        <result property="validAttendanceDays" column="valid_attendance_total"/>
+        <result property="actualHours" column="actual_hours_total"/>
+        <result property="idleHours" column="idle_hours_total"/>
+    </resultMap>
+
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmDailyAttendance">
         SELECT ${sqlMap.column.toSql()}
@@ -261,6 +277,7 @@
             a.effective_work_hours AS "effectiveWorkHours",
             a.daily_efficiency AS "dailyEfficiency",
             a.daily_achievement_rate AS "dailyAchievementRate",
+            a.attendance_normal as "attendanceNormal",
             a.status AS "status",
             a.create_by AS "createBy",
             a.create_date AS "createDate",
@@ -483,4 +500,189 @@
         ORDER BY a.attendance_date ASC
     </select>
 
+    <!-- 按月查询月考勤记录 -->
+    <select id="findStatisticsByMonth" resultMap="swmMonthlyAttendanceResult">
+        SELECT
+        sda.employee_id as employee_id,
+        sda.identity_card as identity_card,
+        DATE_FORMAT(sda.attendance_date,'%Y-%m') as monthly,
+        sda.employee_name as employee_name,
+        sp.phone_number as phone_number,
+        sp.team as team,
+        sp.job_type as job_type,
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
+        CONCAT(ROUND(
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
+        2),'%') as attendance_rate,
+        SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as valid_attendance_total,
+        SUM(sda.actual_hours) as actual_hours_total,
+        SUM(sda.idle_hours) as idle_hours_total
+        FROM swm_daily_attendance sda
+        LEFT JOIN swm_person sp
+        ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+        WHERE DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
+        GROUP BY sda.employee_name
+    </select>
+
+    <!-- 按月查询月考勤记录分页处理 -->
+    <select id="findStatisticsByMonthWithPage" resultMap="swmMonthlyAttendanceResult">
+        SELECT
+        sda.employee_id as employee_id,
+        sda.identity_card as identity_card,
+        DATE_FORMAT(sda.attendance_date,'%Y-%m') as monthly,
+        sda.employee_name as employee_name,
+        sp.phone_number as phone_number,
+        sp.team as team,
+        sp.job_type as job_type,
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
+        CONCAT(ROUND(
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
+        2),'%') as attendance_rate,
+        SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as valid_attendance_total,
+        SUM(sda.actual_hours) as actual_hours_total,
+        SUM(sda.idle_hours) as idle_hours_total
+        FROM swm_daily_attendance sda
+        LEFT JOIN swm_person sp
+        ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+        <where>
+            DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
+            <if test="team != null and team != ''">
+                AND sp.team = #{team}
+            </if>
+            <if test="employeeName != null and employeeName != ''">
+                AND a.employee_name LIKE concat('%', #{employeeName}, '%')
+            </if>
+        </where>
+        GROUP BY sda.employee_name
+        LIMIT #{pageNum},#{pageSize}
+    </select>
+
+    <!-- 按月查询月考勤记录总条数 -->
+    <select id="findStatisticsTotalByMonth" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM(
+        SELECT sda.employee_id,
+        sda.identity_card,
+        DATE_FORMAT(sda.attendance_date,'%Y-%m') as current_month,
+        sda.employee_name,
+        sp.phone_number,
+        sp.team,
+        sp.job_type,
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
+        CONCAT(ROUND(
+        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
+        2),'%') as attendance_rate,
+        SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as valid_attendance_total,
+        SUM(sda.actual_hours) as actual_hours_total,
+        SUM(sda.idle_hours) as idle_hours_total
+        FROM swm_daily_attendance sda
+        LEFT JOIN swm_person sp
+        ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+        <where>
+            DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
+            <if test="team != null and team != ''">
+                AND sp.team = #{team}
+            </if>
+            <if test="employeeName != null and employeeName != ''">
+                AND a.employee_name LIKE concat('%', #{employeeName}, '%')
+            </if>
+        </where>
+        GROUP BY sda.employee_name ) monthly_attendance
+    </select>
+
+    <!-- 指定日期的出勤工种分布 -->
+    <select id="statisticsPersonJobType" resultType="Map">
+        SELECT
+            job_type as jobType,
+            COUNT(1) as count
+        from
+            swm_daily_attendance a
+        left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+            and a.attendance_date = #{date}
+        GROUP BY b.job_type
+    </select>
+
+    <!-- 指定日期，车间的出勤人数统计 -->
+    <select id="countAttendanceByWorkshop" resultType="java.lang.Long">
+        SELECT
+            COUNT(1) as count
+        from
+            swm_daily_attendance a
+            left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+        and a.attendance_date = #{date}
+        and b.company = #{companyName}
+        and b.department = #{workshopName}
+        and a.clock_in_time is NOT null
+    </select>
+
+    <!-- 指定日期，班组的出勤人数统计 -->
+    <select id="countAttendanceByTeam" resultType="java.lang.Long">
+        SELECT
+            COUNT(1) as count
+        from
+            swm_daily_attendance a
+            left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+          and a.attendance_date = #{date}
+          and b.company = #{companyName}
+          and b.department = #{workshopName}
+          and b.prod_line = #{lineName}
+          and b.team = #{teamName}
+          and a.clock_in_time is NOT null
+    </select>
+
+    <!-- 指定日期的出勤人数列表 -->
+    <select id="attendanceList" resultType="Map">
+        SELECT
+            b.name,
+            b.gender,
+            b.phone_number,
+            b.person_type,
+            a.clock_in_date
+        from
+            swm_daily_attendance a
+        left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+        and a.attendance_date = #{date}
+        and a.clock_in_time is not null
+    </select>
+
+    <!-- 根据员工姓名和日期范围查询考勤记录 -->
+    <select id="findByDateRange" resultType="SwmDailyAttendance">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            DATE(a.attendance_date) BETWEEN DATE(#{beginDate}) AND DATE(#{endDate})
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
 </mapper>

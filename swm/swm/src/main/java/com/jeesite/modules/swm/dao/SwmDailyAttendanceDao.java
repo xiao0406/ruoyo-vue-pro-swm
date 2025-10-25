@@ -3,6 +3,8 @@ package com.jeesite.modules.swm.dao;
 import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.swm.entity.SwmMonthlyAttendance;
+import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Date;
@@ -123,4 +125,48 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
      */
     List<SwmDailyAttendance> findByIdentityCardAndMonth(@Param("identityCard") String identityCard,
             @Param("month") String month);
+
+    /**
+     * 查询指定月份的月考勤记录
+     *
+     * @param month       月份(格式: yyyy-MM)
+     * @return 月考勤记录列表
+     */
+    List<SwmMonthlyAttendance> findStatisticsByMonth(@Param("month") String month);
+
+    /**
+     * 查询指定月份的月考勤记录 --分页查询
+     * @param team  班组
+     * @param employeeName 员工姓名
+     * @param month   当前月
+     * @param pageNum  页码
+     * @param pageSize  条数
+     * @return
+     */
+    List<SwmMonthlyAttendance> findStatisticsByMonthWithPage(@Param("team") String team,@Param("employeeName") String employeeName,
+                                                             @Param("month") String month,@Param("pageNum") int pageNum,@Param("pageSize") int pageSize);
+
+    /**
+     * 查询指定月份的月考勤记录总数
+     * @param team
+     * @param employeeName
+     * @param month
+     * @return
+     */
+    Long findStatisticsTotalByMonth(@Param("team") String team,@Param("employeeName") String employeeName,
+                                                             @Param("month") String month);
+
+    List<SwmDashboardNewController.JobTypeCount> statisticsPersonJobType(@Param("date") String date);
+
+    Long countAttendanceByWorkshop(@Param("companyName") String companyName, @Param("workshopName") String workshopName, @Param("date") String date);
+
+    Long countAttendanceByTeam(@Param("companyName")String companyName,
+                               @Param("workshopName")String workshopName,
+                               @Param("lineName")String lineName,
+                               @Param("teamName")String teamName,
+                               @Param("date")String date);
+
+    List<SwmDashboardNewController.Person> attendanceList(@Param("date")String date);
+
+    List<SwmDailyAttendance> findByDateRange(@Param("beginDate")Date beginDate, @Param("endDate")Date endDate);
 }
