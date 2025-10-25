@@ -493,7 +493,7 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
-    private List<AttendanceAnalysis> getTeamAttendanceAnalysis(String companyCode, String companyName, String date) {
+    private List<AttendanceAnalysis> getWorkshopAttendanceAnalysis(String companyCode, String companyName, String date) {
         List<AttendanceAnalysis> result = new ArrayList<>();
         // 根据工厂查询车间数据
         List<TreeNode> workshopList = swmOrganizationTreeService.getNodes("office", companyCode);
@@ -522,7 +522,7 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
-    private List<AttendanceAnalysis> getWorkshopAttendanceAnalysis(String companyCode, String companyName, String date) {
+    private List<AttendanceAnalysis> getTeamAttendanceAnalysis(String companyCode, String companyName, String date) {
         List<AttendanceAnalysis> result = new ArrayList<>();
         // 根据工厂查询车间数据
         List<TreeNode> workshopList = swmOrganizationTreeService.getNodes("office", companyCode);
