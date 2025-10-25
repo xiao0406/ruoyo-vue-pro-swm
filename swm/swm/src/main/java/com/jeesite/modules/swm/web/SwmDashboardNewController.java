@@ -419,90 +419,6 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
-
-    private List<PersonWorkType> getPersonWorkTypeStatistics(List<SwmPerson> swmPersonList, List<SwmDailyAttendance> todayAttendances) {
-        // 人员列表分类统计
-        // 1. 先进行分组统计
-        Map<String, PersonWorkType> resultMap = swmPersonList.stream()
-                .filter(p -> p.getJobType() != null && !p.getJobType().trim().isEmpty())
-                .collect(Collectors.groupingBy(
-                        SwmPerson::getJobType,
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                l -> new PersonWorkType("", l.size(), l.stream().map(SwmPerson::getId).collect(Collectors.toList()), 0, "", "")
-                        )));
-
-        List<PersonWorkType> list = resultMap.entrySet().stream()
-                .map(entry -> {
-                    PersonWorkType value = entry.getValue();
-                    List<String> idList = value.getIdList();
-                    // 统计实际出勤人数
-                    long actualCount = todayAttendances.stream().filter(a ->
-                            (a.getClockInTime() != null ||
-                            a.getClockOutTime() != null ||
-                            (a.getActualHours() != null && a.getActualHours().compareTo(BigDecimal.ZERO) > 0) ||
-                            (a.getIdleHours() != null && a.getIdleHours().compareTo(BigDecimal.ZERO) > 0) ||
-                            (a.getEffectiveWorkHours() != null && a.getEffectiveWorkHours().compareTo(BigDecimal.ZERO) > 0))
-                            && idList.contains(a.getEmployeeId())).count();
-                    return new PersonWorkType(entry.getKey(), entry.getValue().getCount(), entry.getValue().getIdList(),actualCount, "", "");
-                })
-                .collect(Collectors.toList());
-        return calculateAttendance(list, todayAttendances);
-    }
-
-    public static List<PersonWorkType> calculateAttendance(List<PersonWorkType> personWorkTypeList, List<SwmDailyAttendance> todayAttendances) {
-        Map<String, BigDecimal> scheduledHoursMap = todayAttendances.stream()
-                .filter(a -> a.getEmployeeId() != null)
-                .collect(Collectors.toMap(
-                        SwmDailyAttendance::getEmployeeId,
-                        a -> a.getScheduledHours() != null ? a.getScheduledHours() : BigDecimal.ZERO,
-                        BigDecimal::add // 合并同一ID的多个记录
-                ));
-
-        Map<String, BigDecimal> effectiveHoursMap = todayAttendances.stream()
-                .filter(a -> a.getEmployeeId() != null)
-                .collect(Collectors.toMap(
-                        SwmDailyAttendance::getEmployeeId,
-                        a -> a.getEffectiveWorkHours() != null ? a.getEffectiveWorkHours() : BigDecimal.ZERO,
-                        BigDecimal::add // 合并同一ID的多个记录
-                ));
-        // 统计每个分组的实际出勤
-        List<PersonWorkType> collectList = personWorkTypeList.stream()
-                .peek(group -> {
-                    List<String> idList = group.getIdList();
-//                    // 统计实际出勤人数
-//                    long actualCount = idList.stream()
-//                            .filter(scheduledHoursMap::containsKey)
-//                            .count();
-
-                    // 统计应考勤时长
-                    BigDecimal scheduledHours = idList.stream()
-                            .filter(scheduledHoursMap::containsKey)
-                            .map(scheduledHoursMap::get)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                    // 统计实际工作时长
-                    BigDecimal totalEffectiveHours = idList.stream()
-                            .filter(effectiveHoursMap::containsKey)
-                            .map(effectiveHoursMap::get)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                    group.setAttendanceRate(BigDecimal.valueOf(group.getActualCount()).divide(BigDecimal.valueOf(group.getCount()), 2, RoundingMode.HALF_UP).toString());
-                    if(scheduledHours.toString().equals("0.00") || totalEffectiveHours.toString().equals("0.00")){
-                        group.setErgonomic("0.00");
-                    }else{
-                        group.setErgonomic(totalEffectiveHours.divide(scheduledHours, 2, RoundingMode.HALF_UP).toString());
-                    }
-                })
-                .collect(Collectors.toList());
-
-        return collectList.stream()
-                .sorted(Comparator
-                        .comparingDouble(person -> Double.parseDouble(((PersonWorkType)person).getAttendanceRate()))
-                        .reversed())
-                .collect(Collectors.toList());
-    }
-
     private List<String> getTodayHour(){
         // 获取当前时间
         LocalDateTime now = LocalDateTime.now();
@@ -519,28 +435,13 @@ public class SwmDashboardNewController extends BaseController {
         }
         return hourList;
     }
-
-    // 统计结果封装类
-    @Data
-    @AllArgsConstructor
-    public static class PersonWorkType {
-        private String jobType;
-        private long count;
-        private List<String> idList;
-        // 出勤人数
-        private long actualCount;
-        // 出勤率
-        private String attendanceRate;
-        // 工效
-        private String ergonomic;
-    }
     //******************************************************************************数据看板-人员分布******************************************************************//
 
     //******************************************************************************数据看板-劳务管理******************************************************************//
     @GetMapping("/labor")
     @ResponseBody
     @ApiOperation("劳务管理看板数据")
-    public Map<String, Object> labor(@RequestParam("companyCode") String companyCode, @RequestParam("companyName") String companyName) {
+    public Map<String, Object> labor() {
         Map<String, Object> result = new HashMap<>();
 
         // 查询所有在职人员
@@ -566,18 +467,8 @@ public class SwmDashboardNewController extends BaseController {
         CompletableFuture<Map<String, Object>> last10DaysAttendance = CompletableFuture.supplyAsync(
                 this::getLast10DaysAttendance);
 
-        // 车间考勤分析
-        CompletableFuture<List<AttendanceAnalysis>> workshopAttendanceAnalysis = CompletableFuture.supplyAsync(
-                () -> getWorkshopAttendanceAnalysis(companyCode, companyName, DateUtils.formatDate(date)));
-
-        // 班组考勤分析
-        CompletableFuture<List<AttendanceAnalysis>> teamAttendanceAnalysis = CompletableFuture.supplyAsync(
-                () -> getTeamAttendanceAnalysis(companyCode, companyName, DateUtils.formatDate(date)));
-
-
         // 等待所有任务完成
-        CompletableFuture.allOf(personJobTypeStatistics, entryAndExitRecord, last7DaysAttendance, last10DaysAttendance,
-                workshopAttendanceAnalysis, teamAttendanceAnalysis).join();
+        CompletableFuture.allOf(personJobTypeStatistics, entryAndExitRecord, last7DaysAttendance, last10DaysAttendance).join();
 
         // 组装结果
         try {
@@ -585,12 +476,34 @@ public class SwmDashboardNewController extends BaseController {
             result.put("entryAndExitRecord", entryAndExitRecord.get());
             result.put("last7DaysAttendance", last7DaysAttendance.get());
             result.put("last10DaysAttendance", last10DaysAttendance.get());
-            result.put("workshopAttendanceAnalysis", workshopAttendanceAnalysis.get());
-            result.put("teamAttendanceAnalysis", teamAttendanceAnalysis.get());
         } catch (Exception e) {
             logger.error("获取统计结果时出错", e);
             throw new RuntimeException("获取统计结果时出错", e);
         }
+        return result;
+    }
+
+    @GetMapping("/workshop/attendance/analysis")
+    @ResponseBody
+    @ApiOperation("车间考勤分析")
+    public Map<String, Object> workshop(@RequestParam("companyCode") String companyCode, @RequestParam("companyName") String companyName) {
+        Map<String, Object> result = new HashMap<>();
+        Date date = new Date(2025 - 1900, 8, 20);
+        // 车间考勤分析
+        List<AttendanceAnalysis> workshopAttendanceAnalysis = getWorkshopAttendanceAnalysis(companyCode, companyName, DateUtils.formatDate(date));
+        result.put("workshopAttendanceAnalysis", workshopAttendanceAnalysis);
+        return result;
+    }
+
+    @GetMapping("/team/attendance/analysis")
+    @ResponseBody
+    @ApiOperation("班组考勤分析")
+    public Map<String, Object> team(@RequestParam("companyCode") String companyCode, @RequestParam("companyName") String companyName) {
+        Map<String, Object> result = new HashMap<>();
+        Date date = new Date(2025 - 1900, 8, 20);
+        // 班组考勤分析
+        List<AttendanceAnalysis> teamAttendanceAnalysis = getTeamAttendanceAnalysis(companyCode, companyName, DateUtils.formatDate(date));
+        result.put("teamAttendanceAnalysis", teamAttendanceAnalysis);
         return result;
     }
 
@@ -670,13 +583,12 @@ public class SwmDashboardNewController extends BaseController {
 
     private Map<String, Object> getLast10DaysAttendance() {
         Map<String, Object> result = new HashMap<>();
-        List<AttendanceCount> attendanceCountList = new ArrayList<>();
+        List<Long> attendanceCountList = new ArrayList<>();
         List<String> last10Days = getLast10Days();
         for (String last10Day : last10Days) {
             List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(DateUtils.parseDate(last10Day));
             long count = todayAttendances.stream().filter(a -> a.getClockInTime() != null).count();
-            AttendanceCount attendanceCount = new AttendanceCount(last10Day, count);
-            attendanceCountList.add(attendanceCount);
+            attendanceCountList.add(count);
         }
         List<String> days = new ArrayList<>();
         for (String day : last10Days) {
