@@ -563,7 +563,7 @@ public class SwmDashboardNewController extends BaseController {
                 () -> getLast7DaysAttendance(swmPersonList));
 
         // 近十日出勤人数统计变化趋势
-        CompletableFuture<List<AttendanceCount>> last10DaysAttendance = CompletableFuture.supplyAsync(
+        CompletableFuture<Map<String, Object>> last10DaysAttendance = CompletableFuture.supplyAsync(
                 this::getLast10DaysAttendance);
 
         // 车间考勤分析
@@ -668,15 +668,22 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
-    private List<AttendanceCount> getLast10DaysAttendance() {
-        List<AttendanceCount> result = new ArrayList<>();
+    private Map<String, Object> getLast10DaysAttendance() {
+        Map<String, Object> result = new HashMap<>();
+        List<AttendanceCount> attendanceCountList = new ArrayList<>();
         List<String> last10Days = getLast10Days();
         for (String last10Day : last10Days) {
             List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(DateUtils.parseDate(last10Day));
             long count = todayAttendances.stream().filter(a -> a.getClockInTime() != null).count();
             AttendanceCount attendanceCount = new AttendanceCount(last10Day, count);
-            result.add(attendanceCount);
+            attendanceCountList.add(attendanceCount);
         }
+        List<String> days = new ArrayList<>();
+        for (String day : last10Days) {
+            days.add(day.substring(5));
+        }
+        result.put("x", days);
+        result.put("y", attendanceCountList);
         return result;
     }
 
@@ -684,7 +691,6 @@ public class SwmDashboardNewController extends BaseController {
         Map<String, Object> result = new HashMap<>();
 
         List<String> last7Days = getLast7Days();
-        result.put("x", last7Days);
         List<Long> countList = new ArrayList<>();
         List<String> attendanceRateList = new ArrayList<>();
         for (String last7Day : last7Days) {
@@ -695,6 +701,11 @@ public class SwmDashboardNewController extends BaseController {
             String attendanceRate = BigDecimal.valueOf(count).divide(BigDecimal.valueOf(swmPersonList.size()), 2, RoundingMode.HALF_UP).toString();
             attendanceRateList.add(attendanceRate);
         }
+        List<String> days = new ArrayList<>();
+        for (String last7Day : last7Days) {
+            days.add(last7Day.substring(5));
+        }
+        result.put("x", days);
         result.put("y1", countList);
         result.put("y2", attendanceRateList);
         return result;
@@ -927,7 +938,7 @@ public class SwmDashboardNewController extends BaseController {
     // 在场管理员人数列表
     @GetMapping("/manager/list")
     @ResponseBody
-    @ApiOperation("在场工人数列表")
+    @ApiOperation("在场管理员人数列表")
     public List<Person> managerList() {
         List<Person> list = new ArrayList<>();
         SwmPerson query = new SwmPerson();
@@ -945,10 +956,7 @@ public class SwmDashboardNewController extends BaseController {
         }
         return list;
     }
-
-    /**
-     * 查询列表数据
-     */
+    // 报警记录列表
     @RequestMapping(value = "/warningRecord/list")
     @ResponseBody
     @ApiOperation("报警记录列表")

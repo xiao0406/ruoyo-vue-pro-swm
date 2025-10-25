@@ -201,8 +201,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
         // 添加时间范围条件
         if(swmWarningManagement.getBeginAlarmTime() != null && swmWarningManagement.getEndAlarmTime() != null){
-            conditions.add("alarm_time >= '" + swmWarningManagement.getBeginAlarmTime() + "'");
-            conditions.add("alarm_time <= '" + swmWarningManagement.getEndAlarmTime() + "'");
+            conditions.add("alarm_time >= '" + DateUtils.formatDateTime(swmWarningManagement.getBeginAlarmTime()) + "'");
+            conditions.add("alarm_time <= '" + DateUtils.formatDateTime(swmWarningManagement.getEndAlarmTime()) + "'");
             logger.info("添加报警时间范围查询条件: {} - {}", swmWarningManagement.getBeginAlarmTime(), swmWarningManagement.getEndAlarmTime());
         }
 
