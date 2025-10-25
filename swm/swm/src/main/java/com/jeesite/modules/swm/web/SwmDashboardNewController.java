@@ -68,11 +68,10 @@ public class SwmDashboardNewController extends BaseController {
         Map<String, Object> result = new HashMap<>();
         // 查询所有在职人员
         List<SwmPerson> swmPersonList = swmPersonService.findActivePersons();
-
-        Date date = new Date(2025 - 1900, 8, 20);
+        // Date date = new Date(2025 - 1900, 8, 20);
+        Date date = new Date();
         // 查询日考勤数据
         List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(date);
-
         // 人员数据统计
         CompletableFuture<Map<String, Object>> todayAttendanceCount = CompletableFuture.supplyAsync(
                 () -> getPersonCount(todayAttendances, swmPersonList));
@@ -137,15 +136,12 @@ public class SwmDashboardNewController extends BaseController {
         // 统计今天异常记录数
         List<SwmWarningManagement> swmWarningManagements = swmWarningManagementService.listTodayWarning();
         result.put("swmWarningManagementCount", swmWarningManagements.size());
-
         // 五天未考勤人数
         Long abnormalAttendanceCount = countAbnormalAttendance(5);
         result.put("abnormalAttendanceCount", abnormalAttendanceCount);
-
         // 低电量人数
         Long lowBatteryCount = countLowBattery(swmPersonList);
         result.put("lowBatteryCount", lowBatteryCount);
-
         return result;
     }
 
@@ -172,7 +168,6 @@ public class SwmDashboardNewController extends BaseController {
         LocalDate thirtyDaysAgo = today.minusDays(30);
         Date startDate = Date.from(thirtyDaysAgo.atStartOfDay(ZoneId.systemDefault()).toInstant());
         List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findByDateRange(startDate, new Date());
-
         // 生成最近N个工作日日期（含今天）
         List<LocalDate> targetDates = new ArrayList<>();
         for (int i = 0; i < days; i++) {
@@ -239,14 +234,12 @@ public class SwmDashboardNewController extends BaseController {
         result.put("workingManagerCount", workingManagerCount);
         // 实时作业人数
         result.put("totalWorkingCount", workingPersonCount + workingManagerCount);
-
         // 在场工人数
         long workerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
         result.put("workerCount", workerCount);
         // 在场管理员数
         long managerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
         result.put("managerCount", managerCount);
-
         // 今日出勤率
         if(todayAttendanceCount == 0){
             result.put("todayAttendanceRate", "0.00");
@@ -423,10 +416,8 @@ public class SwmDashboardNewController extends BaseController {
         // 获取当前时间
         LocalDateTime now = LocalDateTime.now();
         int currentHour = now.getHour(); // 当前小时（0-23）
-
         // 定义时间格式
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:00");
-
         // 生成从 00:00 到当前时间的小时列表
         List<String> hourList = new ArrayList<>();
         for (int hour = 0; hour <= currentHour; hour++) {
@@ -443,33 +434,26 @@ public class SwmDashboardNewController extends BaseController {
     @ApiOperation("劳务管理看板数据")
     public Map<String, Object> labor() {
         Map<String, Object> result = new HashMap<>();
-
         // 查询所有在职人员
         List<SwmPerson> swmPersonList = swmPersonService.findActivePersons();
-
-        Date date = new Date(2025 - 1900, 8, 20);
+        // Date date = new Date(2025 - 1900, 8, 20);
+        Date date = new Date();
         // 1. 查询日考勤数据
         List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(date);
-
         // 工厂人员工种类型分布
         CompletableFuture<List<JobTypeCount>> personJobTypeStatistics = CompletableFuture.supplyAsync(
                 () -> swmDailyAttendanceService.statisticsPersonJobType(DateUtils.formatDate(date)));
-
         // 进出场记录
         CompletableFuture<List<EntryAndExitRecord>> entryAndExitRecord = CompletableFuture.supplyAsync(
                 () -> getEntryAndExitRecord(todayAttendances));
-
         // 近七日考勤人数和考勤率分析
         CompletableFuture<Map<String, Object>> last7DaysAttendance = CompletableFuture.supplyAsync(
                 () -> getLast7DaysAttendance(swmPersonList));
-
         // 近十日出勤人数统计变化趋势
         CompletableFuture<Map<String, Object>> last10DaysAttendance = CompletableFuture.supplyAsync(
                 this::getLast10DaysAttendance);
-
         // 等待所有任务完成
         CompletableFuture.allOf(personJobTypeStatistics, entryAndExitRecord, last7DaysAttendance, last10DaysAttendance).join();
-
         // 组装结果
         try {
             result.put("jobTypeCount", personJobTypeStatistics.get());
@@ -488,7 +472,8 @@ public class SwmDashboardNewController extends BaseController {
     @ApiOperation("车间考勤分析")
     public Map<String, Object> workshop(@RequestParam("companyCode") String companyCode, @RequestParam("companyName") String companyName) {
         Map<String, Object> result = new HashMap<>();
-        Date date = new Date(2025 - 1900, 8, 20);
+        // Date date = new Date(2025 - 1900, 8, 20);
+        Date date = new Date();
         // 车间考勤分析
         List<AttendanceAnalysis> workshopAttendanceAnalysis = getWorkshopAttendanceAnalysis(companyCode, companyName, DateUtils.formatDate(date));
         result.put("workshopAttendanceAnalysis", workshopAttendanceAnalysis);
@@ -500,7 +485,8 @@ public class SwmDashboardNewController extends BaseController {
     @ApiOperation("班组考勤分析")
     public Map<String, Object> team(@RequestParam("companyCode") String companyCode, @RequestParam("companyName") String companyName) {
         Map<String, Object> result = new HashMap<>();
-        Date date = new Date(2025 - 1900, 8, 20);
+        // Date date = new Date(2025 - 1900, 8, 20);
+        Date date = new Date();
         // 班组考勤分析
         List<AttendanceAnalysis> teamAttendanceAnalysis = getTeamAttendanceAnalysis(companyCode, companyName, DateUtils.formatDate(date));
         result.put("teamAttendanceAnalysis", teamAttendanceAnalysis);
@@ -541,20 +527,16 @@ public class SwmDashboardNewController extends BaseController {
         // 根据工厂查询车间数据
         List<TreeNode> workshopList = swmOrganizationTreeService.getNodes("office", companyCode);
         for (TreeNode workshop : workshopList) {
-
             // 查询产线数据
             List<TreeNode> lineList = swmOrganizationTreeService.getNodes("workshop", workshop.getId());
-
             for (TreeNode line : lineList) {
                 // 查询班组数据
                 List<TreeNode> teamList = swmOrganizationTreeService.getNodes("prodLine", line.getId());
                 for (TreeNode team : teamList) {
-
                     AttendanceAnalysis attendanceAnalysis = new AttendanceAnalysis();
                     String workshopName = workshop.getTitle();
                     String lineName = line.getTitle();
                     String teamName = team.getTitle();
-
                     SwmPerson swmPerson = new SwmPerson();
                     swmPerson.setCompany(companyName);
                     swmPerson.setDepartment(workshopName);
@@ -728,7 +710,8 @@ public class SwmDashboardNewController extends BaseController {
     @ResponseBody
     @ApiOperation("今日出勤人数列表")
     public List<Person> attendanceList() {
-        Date date = new Date(2025 - 1900, 8, 20);
+        // Date date = new Date(2025 - 1900, 8, 20);
+        Date date = new Date();
         return swmDailyAttendanceService.attendanceList(DateUtils.formatDate(date));
     }
     // 实时作业人数列表
@@ -737,7 +720,8 @@ public class SwmDashboardNewController extends BaseController {
     @ApiOperation("实时作业人数列表")
     public List<Person> workingList() {
         List<Person> list = new ArrayList<>();
-        Date date = new Date(2025 - 1900, 8, 20);
+        // Date date = new Date(2025 - 1900, 8, 20);
+        Date date = new Date();
         // 获取1小时前的时间字符串
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Calendar calendar = Calendar.getInstance();
