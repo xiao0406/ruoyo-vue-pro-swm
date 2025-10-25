@@ -888,4 +888,15 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     public Long countAttendanceByTeam(String companyName, String workshopName, String lineName, String teamName, String date) {
         return dao.countAttendanceByTeam(companyName, workshopName, lineName, teamName, date);
     }
+
+    public List<SwmDashboardNewController.Person> attendanceList(String date) {
+        return dao.attendanceList(date);
+    }
+
+    public List<SwmDailyAttendance> findByDateRange(Date beginDate, Date endDate) {
+        // 处理日期，去除时间部分
+        beginDate = truncateTime(beginDate);
+        endDate = truncateTime(endDate);
+        return dao.findByDateRange(beginDate, endDate);
+    }
 }

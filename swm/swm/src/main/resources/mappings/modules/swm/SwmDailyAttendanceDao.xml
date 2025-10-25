@@ -616,7 +616,7 @@
         and a.attendance_date = #{date}
         and b.company = #{companyName}
         and b.department = #{workshopName}
-        and a.clock_in_time != null
+        and a.clock_in_time is NOT null
     </select>
 
     <!-- 指定日期，班组的出勤人数统计 -->
@@ -633,6 +633,56 @@
           and b.department = #{workshopName}
           and b.prod_line = #{lineName}
           and b.team = #{teamName}
-          and a.clock_in_time != null
+          and a.clock_in_time is NOT null
+    </select>
+
+    <!-- 指定日期的出勤人数列表 -->
+    <select id="attendanceList" resultType="Map">
+        SELECT
+            b.name,
+            b.gender,
+            b.phone_number,
+            b.person_type,
+            a.clock_in_date
+        from
+            swm_daily_attendance a
+        left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+        and a.attendance_date = #{date}
+        and a.clock_in_time is not null
+    </select>
+
+    <!-- 根据员工姓名和日期范围查询考勤记录 -->
+    <select id="findByDateRange" resultType="SwmDailyAttendance">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            DATE(a.attendance_date) BETWEEN DATE(#{beginDate}) AND DATE(#{endDate})
+        </where>
+        ORDER BY a.attendance_date ASC
     </select>
 </mapper>

@@ -387,6 +387,64 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     }
 
     /**
+     * 根据电量条件从TDengine查询设备ID列表
+     * 使用LAST_ROW函数确保查询的是每个设备的最新电量状态
+     *
+     * @author Shawn
+     * @date 2025-01-13
+     */
+    public List<Map<String, String>> findDeviceIdAndIdBatteryByBatteryLevel(Integer batteryLevel) {
+        List<Map<String, String>> mapList = new ArrayList<>();
+
+        // 使用LAST_ROW函数获取每个设备在最近5分钟内的最新电量记录
+        // 只返回最新电量为指定值的设备
+        String sql = String.format(
+                "SELECT device_id, LAST_ROW(bat_l) as latest_battery " +
+                        "FROM %s.%s " +
+                        "WHERE time >= NOW() - 5m " +
+                        "GROUP BY device_id " +
+                        "HAVING LAST_ROW(bat_l) <= %d;",
+                dbname, HELMET_SUPER_TABLE_NAME, batteryLevel);
+
+        try {
+            logger.info("根据电量条件{}%查询设备ID的SQL: {}", batteryLevel, sql);
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            if (result != null && result.getCode() == R.SUCCESS && result.getData() != null) {
+                JSONObject obj = result.getData();
+                JSONArray dataArray = obj.getJSONArray("data");
+
+                if (dataArray != null && dataArray.size() > 0) {
+                    for (int i = 0; i < dataArray.size(); i++) {
+                        JSONArray row = dataArray.getJSONArray(i);
+                        String deviceId = row.getStr(0);
+                        Integer latestBattery = row.getInt(1);
+
+                        if (deviceId != null && !deviceId.trim().isEmpty()) {
+                            Map<String, String> map = new HashMap<>();
+                            map.put("deviceId", deviceId);
+                            map.put("latestBattery", String.valueOf(latestBattery));
+                            mapList.add(map);
+                            logger.debug("设备 {} 的最新电量: {}%", deviceId, latestBattery);
+                        }
+                    }
+                }
+            } else {
+                logger.warn("TDengine查询失败或无数据, 返回码: {}, 消息: {}",
+                        result != null ? result.getCode() : "null",
+                        result != null ? result.getMsg() : "null");
+            }
+
+            logger.info("根据电量条件{}%查询到{}个设备（确保是最新状态）", batteryLevel, mapList.size());
+            return mapList;
+
+        } catch (Exception e) {
+            logger.error("根据电量条件查询设备ID失败: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
      * 查询可用的安全帽列表（未绑定人员的）
      */
     public List<SwmHelmetDevice> findAvailableHelmets(String keyword) {

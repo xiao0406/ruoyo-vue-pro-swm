@@ -1,6 +1,7 @@
 package com.jeesite.modules.swm.web;
 
 import cn.hutool.json.JSONObject;
+import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.*;
@@ -8,6 +9,8 @@ import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +22,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -55,27 +64,32 @@ public class SwmDashboardNewController extends BaseController {
     @GetMapping("/personnel")
     @ResponseBody
     @ApiOperation("人员分布看板数据")
-    public Map<String, Object> todayData(PersonnelOrganizationQueryParam queryParam) {
+    public Map<String, Object> todayData() {
         Map<String, Object> result = new HashMap<>();
         // 查询所有在职人员
         List<SwmPerson> swmPersonList = swmPersonService.findActivePersons();
 
         Date date = new Date(2025 - 1900, 8, 20);
-        // 1. 查询日考勤数据
+        // 查询日考勤数据
         List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(date);
 
-        // 3. 并行处理各项统计
+        // 人员数据统计
         CompletableFuture<Map<String, Object>> todayAttendanceCount = CompletableFuture.supplyAsync(
                 () -> getPersonCount(todayAttendances, swmPersonList));
+        // 异常数据统计
         CompletableFuture<Map<String, Object>> todayAbnormalCount = CompletableFuture.supplyAsync(
-                () -> getAbnormalCount(todayAttendances, swmPersonList));
+                () -> getAbnormalCount(swmPersonList));
+        // 实时作业人员变化趋势-每小时统计
+        CompletableFuture<Map<String, Object>> hourWorkingCount = CompletableFuture.supplyAsync(
+                this::getHourWorkingCount);
 
         // 等待所有任务完成
-        CompletableFuture.allOf(todayAttendanceCount, todayAbnormalCount).join();
+        CompletableFuture.allOf(todayAttendanceCount, todayAbnormalCount, hourWorkingCount).join();
         // 组装结果
         try {
             result.put("todayAttendance", todayAttendanceCount.get());
             result.put("todayAbnormalCount", todayAbnormalCount.get());
+            result.put("hourWorkingCount", hourWorkingCount.get());
         } catch (Exception e) {
             logger.error("获取统计结果时出错", e);
             throw new RuntimeException("获取统计结果时出错", e);
@@ -83,14 +97,49 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
-    private Map<String, Object> getAbnormalCount(List<SwmDailyAttendance> todayAttendances, List<SwmPerson> swmPersonList){
+    private Map<String, Object> getHourWorkingCount() {
+        Map<String, Object> result = new HashMap<>();
+        List<String> todayHour = getTodayHour();
+        List<Integer> countList = new ArrayList<>();
+
+        LocalDate today = LocalDate.now(); // 获取当前日期
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        for (String hour : todayHour) {
+            String startTime;
+            String endTime;
+            // 特殊处理 00:00 的情况
+            if ("00:00".equals(hour)) {
+                LocalDate yesterday = today.minusDays(1);
+                // 生成前一天 23:00 的完整时间字符串
+                startTime = yesterday.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 23:00:00";
+                endTime = today.format(DateTimeFormatter.ISO_LOCAL_DATE) + hour + ":00";
+            } else {
+                // 其他小时使用当天时间
+                LocalDateTime hourStart = today.atTime(Integer.parseInt(hour.split(":")[0]) - 1, 0);
+                startTime = hourStart.format(timeFormatter);
+                LocalDateTime hourEnd = today.atTime(Integer.parseInt(hour.split(":")[0]), 0);
+                endTime = hourEnd.format(timeFormatter);
+            }
+            log.info("getHourWorkingCount startTime | {} endTime | {}", startTime, endTime);
+            Map<String, Integer> hourWorkingCount = getHourWorkingCountByTypeFromTDengine(startTime, endTime);
+            Integer workingPersonCount = hourWorkingCount.getOrDefault("worker", 0);
+            Integer workingManagerCount = hourWorkingCount.getOrDefault("manager", 0);
+            countList.add(workingPersonCount + workingManagerCount);
+        }
+        result.put("y", countList);
+        result.put("x", todayHour);
+        return result;
+    }
+
+    private Map<String, Object> getAbnormalCount(List<SwmPerson> swmPersonList){
         Map<String, Object> result = new HashMap<>();
         // 统计今天异常记录数
         List<SwmWarningManagement> swmWarningManagements = swmWarningManagementService.listTodayWarning();
         result.put("swmWarningManagementCount", swmWarningManagements.size());
 
         // 五天未考勤人数
-        Long abnormalAttendanceCount = countAbnormalAttendance(todayAttendances, 5);
+        Long abnormalAttendanceCount = countAbnormalAttendance(5);
         result.put("abnormalAttendanceCount", abnormalAttendanceCount);
 
         // 低电量人数
@@ -114,19 +163,23 @@ public class SwmDashboardNewController extends BaseController {
 
     /**
      * 统计连续N天有效未打卡的员工数量
-     * @param todayAttendances 考勤记录列表
      * @param days 连续未打卡天数阈值
      * @return 异常员工数量
      */
-    private Long countAbnormalAttendance(List<SwmDailyAttendance> todayAttendances, int days) {
-        // 生成最近N个工作日日期（含今天）
+    private Long countAbnormalAttendance(int days) {
+        // 查询从今天开始往前推30天的考勤记录
         LocalDate today = LocalDate.now();
+        LocalDate thirtyDaysAgo = today.minusDays(30);
+        Date startDate = Date.from(thirtyDaysAgo.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findByDateRange(startDate, new Date());
+
+        // 生成最近N个工作日日期（含今天）
         List<LocalDate> targetDates = new ArrayList<>();
         for (int i = 0; i < days; i++) {
             targetDates.add(today.minusDays(i));
         }
         // 按员工分组考勤记录
-        Map<String, List<SwmDailyAttendance>> recordsByEmployee = todayAttendances.stream()
+        Map<String, List<SwmDailyAttendance>> recordsByEmployee = attendanceList.stream()
                 .collect(Collectors.groupingBy(SwmDailyAttendance::getEmployeeId));
         // 统计符合条件的员工
         Set<String> abnormalEmployees = new HashSet<>();
@@ -200,6 +253,35 @@ public class SwmDashboardNewController extends BaseController {
         }else{
             String todayAttendanceRate = BigDecimal.valueOf(todayAttendanceCount).divide(BigDecimal.valueOf(workerCount + managerCount), 2, RoundingMode.HALF_UP).toString();
             result.put("todayAttendanceRate", todayAttendanceRate);
+        }
+        return result;
+    }
+
+    /**
+     * 从TDengine查询指定时间内工作中人数（按人员类型分类）
+     * 统计指定时间内有位置数据的唯一身份证数量，并按工人/管理员分类
+     */
+    private Map<String, Integer> getHourWorkingCountByTypeFromTDengine(String startTime, String endTime) {
+        Map<String, Integer> result = new HashMap<>();
+        result.put("worker", 0);
+        result.put("manager", 0);
+        try {
+            // 从TDengine获取指定时间内的唯一身份证集合
+            Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(startTime, endTime);
+
+            if (!uniqueIdCards.isEmpty()) {
+                // 通过身份证查询人员信息并按类型分类统计
+                Map<String, Integer> typeStats = classifyPersonsByType(uniqueIdCards);
+                result.put("worker", typeStats.get("worker"));
+                result.put("manager", typeStats.get("manager"));
+
+                logger.info("查询到指定时间内工作中人数 - 工人: {}, 管理员: {} (开始时间: {} | 结束时间: {} )",
+                        typeStats.get("worker"), typeStats.get("manager"), startTime, endTime);
+            } else {
+                logger.warn("查询到指定时间内工作中人数失败或无数据");
+            }
+        } catch (Exception e) {
+            logger.error("查询TDengine 指定时间内工作中人数分类统计失败", e);
         }
         return result;
     }
@@ -421,9 +503,26 @@ public class SwmDashboardNewController extends BaseController {
                 .collect(Collectors.toList());
     }
 
+    private List<String> getTodayHour(){
+        // 获取当前时间
+        LocalDateTime now = LocalDateTime.now();
+        int currentHour = now.getHour(); // 当前小时（0-23）
+
+        // 定义时间格式
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:00");
+
+        // 生成从 00:00 到当前时间的小时列表
+        List<String> hourList = new ArrayList<>();
+        for (int hour = 0; hour <= currentHour; hour++) {
+            String time = LocalTime.of(hour, 0).format(formatter);
+            hourList.add(time);
+        }
+        return hourList;
+    }
+
     // 统计结果封装类
-    @Getter
-    @Setter
+    @Data
+    @AllArgsConstructor
     public static class PersonWorkType {
         private String jobType;
         private long count;
@@ -434,15 +533,6 @@ public class SwmDashboardNewController extends BaseController {
         private String attendanceRate;
         // 工效
         private String ergonomic;
-
-        public PersonWorkType(String jobType, long count, List<String> idList, long actualCount, String attendanceRate, String ergonomic) {
-            this.jobType = jobType;
-            this.count = count;
-            this.idList = idList;
-            this.actualCount = actualCount;
-            this.attendanceRate = attendanceRate;
-            this.ergonomic = ergonomic;
-        }
     }
     //******************************************************************************数据看板-人员分布******************************************************************//
 
@@ -641,53 +731,36 @@ public class SwmDashboardNewController extends BaseController {
     }
 
     // 统计结果封装类
-    @Getter
-    @Setter
+    @Data
+    @AllArgsConstructor
     public static class JobTypeCount {
         private String jobType;
         private Long count;
-        public JobTypeCount(String jobType, Long count) {
-            this.jobType = jobType;
-            this.count = count;
-        }
     }
 
-    @Getter
-    @Setter
+    @Data
+    @AllArgsConstructor
     public static class AttendanceCount {
         private String date;
         private Long count;
-        public AttendanceCount(String date, Long count) {
-            this.date = date;
-            this.count = count;
-        }
     }
 
-    @Getter
-    @Setter
+    @Data
     public static class EntryAndExitRecord {
         private String nameNumber;
         private String jobType;
         private String team;
         private String type;
         private Date dateTime;
-        public EntryAndExitRecord() {
-        }
     }
 
-    @Getter
-    @Setter
+    @Data
     public static class AttendanceAnalysis {
         private String name;
         private Long count;
         private Long attendanceCount;
         private String attendanceRate;
-        public AttendanceAnalysis() {
-        }
     }
-
-
-
     /**
      * 获取不包含今天在内的近7天日期列表(格式: yyyy-MM-dd)
      */
@@ -706,7 +779,6 @@ public class SwmDashboardNewController extends BaseController {
         Collections.reverse(days);
         return days;
     }
-
     /**
      * 获取包含今天在内的近10天日期列表(格式: yyyy-MM-dd)
      */
@@ -725,6 +797,257 @@ public class SwmDashboardNewController extends BaseController {
         Collections.reverse(days);
         return days;
     }
-
     //******************************************************************************数据看板-劳务管理******************************************************************//
+
+    //******************************************************************************数据看板-列表查询******************************************************************//
+    // 今日出勤人数列表
+    @GetMapping("/attendance/list")
+    @ResponseBody
+    @ApiOperation("今日出勤人数列表")
+    public List<Person> attendanceList() {
+        Date date = new Date(2025 - 1900, 8, 20);
+        return swmDailyAttendanceService.attendanceList(DateUtils.formatDate(date));
+    }
+    // 实时作业人数列表
+    @GetMapping("/working/list")
+    @ResponseBody
+    @ApiOperation("实时作业人数列表")
+    public List<Person> workingList() {
+        List<Person> list = new ArrayList<>();
+        Date date = new Date(2025 - 1900, 8, 20);
+        // 获取1小时前的时间字符串
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR_OF_DAY, -1); // 减去1小时
+        String oneHourAgo = sdf.format(calendar.getTime());
+        // 从TDengine获取1小时内的唯一身份证集合
+        Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
+        if (!uniqueIdCards.isEmpty()) {
+            // 通过身份证号查询人员信息
+            List<SwmPerson> persons = swmPersonService.findByIdCards(new ArrayList<>(uniqueIdCards));
+            for (SwmPerson swmPerson : persons) {
+                // 查询考勤记录
+                SwmDailyAttendance dailyAttendance = swmDailyAttendanceService.findByEmployeeIdAndDate(swmPerson.getId(), date);
+                Person person = new Person();
+                person.setName(swmPerson.getName());
+                person.setGender(swmPerson.getGender());
+                person.setPhone(swmPerson.getPhoneNumber());
+                person.setPersonType(swmPerson.getPersonType());
+                if(Objects.isNull(dailyAttendance)){
+                    person.setClockInDate(null);
+                }else{
+                    person.setClockInDate(dailyAttendance.getClockInDate());
+                }
+                list.add(person);
+            }
+        } else {
+            logger.warn("查询1小时内工作中人数失败或无数据");
+        }
+        return list;
+    }
+    // 5天未考勤人数列表
+    @GetMapping("/abnormalAttendance/list")
+    @ResponseBody
+    @ApiOperation("5天未考勤人数列表")
+    public List<Person> abnormalAttendanceList() {
+        List<Person> list = new ArrayList<>();
+        // 查询从今天开始往前推30天的考勤记录
+        LocalDate today = LocalDate.now();
+        LocalDate thirtyDaysAgo = today.minusDays(30);
+        Date startDate = Date.from(thirtyDaysAgo.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findByDateRange(startDate, new Date());
+        // 生成最近N个工作日日期（含今天）
+        List<LocalDate> targetDates = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            targetDates.add(today.minusDays(i));
+        }
+        // 按员工分组考勤记录
+        Map<String, List<SwmDailyAttendance>> recordsByEmployee = attendanceList.stream()
+                .collect(Collectors.groupingBy(SwmDailyAttendance::getEmployeeId));
+        // 统计符合条件的员工
+        Set<String> abnormalEmployees = new HashSet<>();
+        for (Map.Entry<String, List<SwmDailyAttendance>> entry : recordsByEmployee.entrySet()) {
+            String empId = entry.getKey();
+            List<SwmDailyAttendance> empRecords = entry.getValue();
+            boolean allDaysAbsent = true;
+            // 检查每个目标日期
+            for (LocalDate date : targetDates) {
+                Optional<SwmDailyAttendance> recordOptional = empRecords.stream()
+                        .filter(record -> record.getAttendanceDate().equals(date))
+                        .findFirst();
+                // 情况1：该日期无考勤记录（未排班）
+                if (!recordOptional.isPresent()) {
+                    allDaysAbsent = false;
+                    break;
+                }
+                // 情况2：有记录但非有效未打卡
+                SwmDailyAttendance record = recordOptional.get();
+                if (!record.isEffectiveAbsence()) {
+                    allDaysAbsent = false;
+                    break;
+                }
+            }
+            // 所有日期均为有效未打卡
+            if (allDaysAbsent) {
+                abnormalEmployees.add(empId);
+            }
+        }
+        for (String abnormalEmployee : abnormalEmployees) {
+            SwmPerson swmPerson = swmPersonService.get(abnormalEmployee);
+            Person person = new Person();
+            person.setName(swmPerson.getName());
+            person.setGender(swmPerson.getGender());
+            person.setPhone(swmPerson.getPhoneNumber());
+            person.setPersonType(swmPerson.getPersonType());
+            list.add(person);
+        }
+        return list;
+    }
+    // 在场工人数列表
+    @GetMapping("/worker/list")
+    @ResponseBody
+    @ApiOperation("在场工人数列表")
+    public List<Person> workerList() {
+        List<Person> list = new ArrayList<>();
+        SwmPerson query = new SwmPerson();
+        query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // '1' - 在职
+        query.setStatus("0"); // 正常状态
+        query.setPersonType(SwmPerson.PersonTypeEnum.WORKER);
+        List<SwmPerson> swmPersonList = swmPersonService.findList(query);
+        for (SwmPerson swmPerson : swmPersonList) {
+            Person person = new Person();
+            person.setName(swmPerson.getName());
+            person.setGender(swmPerson.getGender());
+            person.setPhone(swmPerson.getPhoneNumber());
+            person.setPersonType(swmPerson.getPersonType());
+            list.add(person);
+        }
+        return list;
+    }
+    // 在场管理员人数列表
+    @GetMapping("/manager/list")
+    @ResponseBody
+    @ApiOperation("在场工人数列表")
+    public List<Person> managerList() {
+        List<Person> list = new ArrayList<>();
+        SwmPerson query = new SwmPerson();
+        query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // '1' - 在职
+        query.setStatus("0"); // 正常状态
+        query.setPersonType(SwmPerson.PersonTypeEnum.MANAGER);
+        List<SwmPerson> swmPersonList = swmPersonService.findList(query);
+        for (SwmPerson swmPerson : swmPersonList) {
+            Person person = new Person();
+            person.setName(swmPerson.getName());
+            person.setGender(swmPerson.getGender());
+            person.setPhone(swmPerson.getPhoneNumber());
+            person.setPersonType(swmPerson.getPersonType());
+            list.add(person);
+        }
+        return list;
+    }
+
+    /**
+     * 查询列表数据
+     */
+    @RequestMapping(value = "/warningRecord/list")
+    @ResponseBody
+    @ApiOperation("报警记录列表")
+    public Page<SwmWarningManagement> warningRecordList(SwmWarningManagement swmWarningManagement, HttpServletRequest request,
+            HttpServletResponse response) {
+        // 创建分页对象
+        Page<SwmWarningManagement> page = new Page<>(request, response);
+        // 确保对象不为空
+        if (swmWarningManagement == null) {
+            swmWarningManagement = new SwmWarningManagement();
+        }
+        // 处理时间范围查询条件
+        String beginTime = DateUtils.getDate() + " 00:00:00";
+        String endTime = DateUtils.getDate() + " 23:59:59";
+        // 设置开始时间和结束时间条件
+        swmWarningManagement.setBeginAlarmTime(DateUtils.parseDate(beginTime));
+        swmWarningManagement.setEndAlarmTime(DateUtils.parseDate(endTime));
+        logger.info(
+                "查询参数: id={}, personName={}, warningType={}, warningContent={}, handleStatus={}, excludeSOS={}, excludeAttendance={}, excludeGateEntry={}, beginAlarmTime={}, endAlarmTime={}",
+                swmWarningManagement.getId(),
+                swmWarningManagement.getPersonName(),
+                swmWarningManagement.getWarningType(),
+                swmWarningManagement.getWarningContent(),
+                swmWarningManagement.getHandleStatus(),
+                swmWarningManagement.isExcludeSOS(),
+                swmWarningManagement.isExcludeAttendance(),
+                swmWarningManagement.isExcludeGateEntry(),
+                swmWarningManagement.getBeginAlarmTime(),
+                swmWarningManagement.getEndAlarmTime());
+        // 调用服务层方法，仅从 TDengine 查询数据
+        // 时区调整已在SQL查询中完成，无需再次调整
+        Page<SwmWarningManagement> resultPage = swmWarningManagementService.tdEngineFindPage(page, swmWarningManagement);
+        logger.info("查询完成，数据中的时区调整已在SQL中进行");
+        // 添加日志检查返回的数据
+        if (resultPage != null && resultPage.getList() != null && !resultPage.getList().isEmpty()) {
+            logger.info("返回数据总条数: {}", resultPage.getCount());
+            // 检查数据是否来自MySQL还是时序数据库
+            int mysqlCount = 0;
+            int tdEngineCount = 0;
+            for (SwmWarningManagement item : resultPage.getList()) {
+                if (item.getDeviceId() != null || item.getIdCard() != null) {
+                    mysqlCount++;
+                } else {
+                    tdEngineCount++;
+                }
+                // 确保处置时长字段即使为0也返回
+                if (item.getDisposalDuration() == null) {
+                    item.setDisposalDuration(0L);
+                    logger.debug("ID: {}, 处置时长为空，设置为0", item.getId());
+                } else {
+                    logger.debug("ID: {}, 处置时长: {}", item.getId(), item.getDisposalDuration());
+                }
+                // 记录坐标信息，确保即使为空也在日志中显示
+                logger.debug("ID: {}, x坐标: {}, y坐标: {}",
+                        item.getId(),
+                        item.getX() != null ? item.getX() : "null",
+                        item.getY() != null ? item.getY() : "null");
+            }
+            logger.info("返回数据中，来自MySQL的记录: {}条，来自时序数据库的记录: {}条", mysqlCount, tdEngineCount);
+        } else {
+            logger.info("返回数据为空或没有记录");
+        }
+        return resultPage;
+    }
+    // 低电量人数列表
+    @GetMapping("/lowBattery/list")
+    @ResponseBody
+    @ApiOperation("低电量人数列表")
+    public List<Person> lowBatteryList() {
+        List<Person> list = new ArrayList<>();
+        List<SwmPerson> swmPersonList = swmPersonService.findActivePersons();
+        // 查询电量低于20的设备
+        List<Map<String, String>> deviceList = swmHelmetDeviceService.findDeviceIdAndIdBatteryByBatteryLevel(20);
+        for (SwmPerson swmPerson : swmPersonList) {
+            for (Map<String, String> map : deviceList) {
+                if(swmPerson.getSafetyHelmetId().equals(map.get("deviceId"))){
+                    Person person = new Person();
+                    person.setName(swmPerson.getName());
+                    person.setGender(swmPerson.getGender());
+                    person.setPhone(swmPerson.getPhoneNumber());
+                    person.setPersonType(swmPerson.getPersonType());
+                    person.setBattery(map.get("latestBattery"));
+                    list.add(person);
+                }
+            }
+        }
+        return list;
+    }
+
+    @Data
+    public static class Person {
+        private String name;
+        private String gender;
+        private String phone;
+        private String personType;
+        private Date clockInDate;
+        private String battery;
+    }
+    //******************************************************************************数据看板-列表查询******************************************************************//
+
+
 }
