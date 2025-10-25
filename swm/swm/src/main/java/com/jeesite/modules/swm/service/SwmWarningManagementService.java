@@ -267,6 +267,108 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         return page;
     }
 
+    public List<SwmWarningManagement> listFromTDEngine(SwmWarningManagement swmWarningManagement) {
+        // 构建TDengine查询SQL
+        StringBuilder sqlBuilder = new StringBuilder();
+        // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
+        sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
+                .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
+                .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
+                .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+                .append("disposal_duration, ")
+                .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+                .append("front_alarm, type, x, y, hazard_category, location, area ")
+                .append("FROM ").append(dbname).append(".swm_warning_management");
+
+        // 添加查询条件
+        List<String> conditions = new ArrayList<>();
+        // 如果需要排除一键SOS
+        if (swmWarningManagement.isExcludeSOS()) {
+            conditions.add("warning_content != '一键SOS'");
+            logger.info("添加排除一键SOS的查询条件");
+        }
+        // 如果需要排除考勤打卡
+        if (swmWarningManagement.isExcludeAttendance()) {
+            conditions.add("warning_content != '考勤打卡'");
+            logger.info("添加排除考勤打卡的查询条件");
+        }
+        // 如果需要排除进入大门
+        if (swmWarningManagement.isExcludeGateEntry()) {
+            conditions.add("warning_content != '进入大门'");
+            logger.info("添加排除进入大门的查询条件");
+        }
+        // 添加预警单号(ID)查询条件
+        if (swmWarningManagement.getId() != null && !swmWarningManagement.getId().isEmpty()) {
+            conditions.add("id LIKE '%" + swmWarningManagement.getId() + "%'");
+            logger.info("添加预警单号查询条件: {}", swmWarningManagement.getId());
+        }
+        if (swmWarningManagement.getPersonName() != null && !swmWarningManagement.getPersonName().isEmpty()) {
+            conditions.add("person_name LIKE '%" + swmWarningManagement.getPersonName() + "%'");
+        }
+        if (swmWarningManagement.getWarningType() != null && !swmWarningManagement.getWarningType().isEmpty()) {
+            conditions.add("warning_type = '" + swmWarningManagement.getWarningType() + "'");
+        }
+        if (swmWarningManagement.getWarningContent() != null && !swmWarningManagement.getWarningContent().isEmpty()) {
+            conditions.add("warning_content = '" + swmWarningManagement.getWarningContent() + "'");
+        }
+        if (swmWarningManagement.getHandleStatus() != null && !swmWarningManagement.getHandleStatus().isEmpty()) {
+            conditions.add("handle_status = '" + swmWarningManagement.getHandleStatus() + "'");
+        }
+        // 添加位置条件
+        if (swmWarningManagement.getLocation() != null && !swmWarningManagement.getLocation().isEmpty()) {
+            conditions.add("location LIKE '%" + swmWarningManagement.getLocation() + "%'");
+            logger.info("添加位置查询条件: {}", swmWarningManagement.getLocation());
+        }
+        // 添加区域条件
+        if (swmWarningManagement.getArea() != null && !swmWarningManagement.getArea().isEmpty()) {
+            conditions.add("area LIKE '%" + swmWarningManagement.getArea() + "%'");
+            logger.info("添加区域查询条件: {}", swmWarningManagement.getArea());
+        }
+        // 添加时间范围条件
+        if(swmWarningManagement.getBeginAlarmTime() != null && swmWarningManagement.getEndAlarmTime() != null){
+            conditions.add("alarm_time >= '" + DateUtils.formatDateTime(swmWarningManagement.getBeginAlarmTime()) + "'");
+            conditions.add("alarm_time <= '" + DateUtils.formatDateTime(swmWarningManagement.getEndAlarmTime()) + "'");
+            logger.info("添加报警时间范围查询条件: {} - {}", swmWarningManagement.getBeginAlarmTime(), swmWarningManagement.getEndAlarmTime());
+        }
+        if (!conditions.isEmpty()) {
+            sqlBuilder.append(" WHERE ");
+            for (int i = 0; i < conditions.size(); i++) {
+                sqlBuilder.append(conditions.get(i));
+                if (i < conditions.size() - 1) {
+                    sqlBuilder.append(" AND ");
+                }
+            }
+        }
+
+        // 添加排序
+        sqlBuilder.append(" ORDER BY warning_time DESC");
+        logger.info("执行SQL: {}", sqlBuilder);
+        // 执行查询
+        R<JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+        List<SwmWarningManagement> list = new ArrayList<>();
+
+        if (result.getCode() == R.SUCCESS && result.getData() != null) {
+            JSONObject data = result.getData();
+            JSONArray rows = data.getJSONArray("data");
+            JSONArray columnMeta = data.getJSONArray("column_meta");
+
+            if (rows != null) {
+                for (int i = 0; i < rows.size(); i++) {
+                    try {
+                        JSONArray row = rows.getJSONArray(i);
+                        SwmWarningManagement entity = convertToEntity(row, columnMeta);
+                        if (entity != null) {
+                            list.add(entity);
+                        }
+                    } catch (Exception e) {
+                        logger.error("转换行数据异常: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+        return list;
+    }
+
     /**
      * 查询分页数据（带分页参数）
      */

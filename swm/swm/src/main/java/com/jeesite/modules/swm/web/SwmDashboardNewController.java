@@ -134,7 +134,14 @@ public class SwmDashboardNewController extends BaseController {
     private Map<String, Object> getAbnormalCount(List<SwmPerson> swmPersonList){
         Map<String, Object> result = new HashMap<>();
         // 统计今天异常记录数
-        List<SwmWarningManagement> swmWarningManagements = swmWarningManagementService.listTodayWarning();
+        SwmWarningManagement swmWarningManagement = new SwmWarningManagement();
+        // 处理时间范围查询条件
+        String beginTime = DateUtils.getDate() + " 00:00:00";
+        String endTime = DateUtils.getDate() + " 23:59:59";
+        // 设置开始时间和结束时间条件
+        swmWarningManagement.setBeginAlarmTime(DateUtils.parseDate(beginTime));
+        swmWarningManagement.setEndAlarmTime(DateUtils.parseDate(endTime));
+        List<SwmWarningManagement> swmWarningManagements = swmWarningManagementService.listFromTDEngine(swmWarningManagement);
         result.put("swmWarningManagementCount", swmWarningManagements.size());
         // 五天未考勤人数
         Long abnormalAttendanceCount = countAbnormalAttendance(5);
