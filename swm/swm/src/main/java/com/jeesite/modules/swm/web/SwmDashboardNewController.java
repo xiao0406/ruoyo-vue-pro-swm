@@ -67,23 +67,15 @@ public class SwmDashboardNewController extends BaseController {
         // 3. 并行处理各项统计
         CompletableFuture<Map<String, Object>> todayAttendanceCount = CompletableFuture.supplyAsync(
                 () -> getPersonCount(todayAttendances, swmPersonList));
-
         CompletableFuture<Map<String, Object>> todayAbnormalCount = CompletableFuture.supplyAsync(
                 () -> getAbnormalCount(todayAttendances, swmPersonList));
 
-
-
-        // 当前工厂总人数，当前工厂工人数，当前工厂管理员数
-        CompletableFuture<Map<String, Object>> todayFactoryPersonCount = CompletableFuture.supplyAsync(
-                () -> getFactoryPerson(swmPersonList));
-
         // 等待所有任务完成
-        CompletableFuture.allOf(todayAttendanceCount, todayFactoryPersonCount).join();
-
+        CompletableFuture.allOf(todayAttendanceCount, todayAbnormalCount).join();
         // 组装结果
         try {
             result.put("todayAttendance", todayAttendanceCount.get());
-            result.put("todayFactoryPerson", todayFactoryPersonCount.get());
+            result.put("todayAbnormalCount", todayAbnormalCount.get());
         } catch (Exception e) {
             logger.error("获取统计结果时出错", e);
             throw new RuntimeException("获取统计结果时出错", e);
@@ -452,18 +444,6 @@ public class SwmDashboardNewController extends BaseController {
             this.ergonomic = ergonomic;
         }
     }
-
-    private Map<String, Object> getFactoryPerson(List<SwmPerson> swmPersonList) {
-        Map<String, Object> result = new HashMap<>();
-        long workerCount = swmPersonList.stream().filter(person -> person.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
-        long managerCount = swmPersonList.stream().filter(person -> person.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
-        // 计算统计
-        result.put("total", swmPersonList.size());
-        result.put("worker", workerCount);
-        result.put("manager", managerCount);
-        return result;
-    }
-
     //******************************************************************************数据看板-人员分布******************************************************************//
 
     //******************************************************************************数据看板-劳务管理******************************************************************//
