@@ -4,6 +4,7 @@ import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmMonthlyAttendance;
+import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Date;
@@ -154,4 +155,14 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
      */
     Long findStatisticsTotalByMonth(@Param("team") String team,@Param("employeeName") String employeeName,
                                                              @Param("month") String month);
+
+    List<SwmDashboardNewController.JobTypeCount> statisticsPersonJobType(@Param("date") String date);
+
+    Long countAttendanceByWorkshop(@Param("companyName") String companyName, @Param("workshopName") String workshopName, @Param("date") String date);
+
+    Long countAttendanceByTeam(@Param("companyName")String companyName,
+                               @Param("workshopName")String workshopName,
+                               @Param("lineName")String lineName,
+                               @Param("teamName")String teamName,
+                               @Param("date")String date);
 }

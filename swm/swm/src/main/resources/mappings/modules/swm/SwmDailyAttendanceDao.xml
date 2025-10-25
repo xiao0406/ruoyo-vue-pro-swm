@@ -277,6 +277,7 @@
             a.effective_work_hours AS "effectiveWorkHours",
             a.daily_efficiency AS "dailyEfficiency",
             a.daily_achievement_rate AS "dailyAchievementRate",
+            a.attendance_normal as "attendanceNormal",
             a.status AS "status",
             a.create_by AS "createBy",
             a.create_date AS "createDate",
@@ -585,5 +586,51 @@
             </if>
         </where>
         GROUP BY sda.employee_name ) monthly_attendance
+    </select>
+
+    <!-- 指定日期的出勤工种分布 -->
+    <select id="statisticsPersonJobType" resultType="Map">
+        SELECT
+            job_type as jobType,
+            COUNT(1) as count
+        from
+            swm_daily_attendance a
+        left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+            and a.attendance_date = #{date}
+        GROUP BY b.job_type
+    </select>
+
+    <!-- 指定日期，车间的出勤人数统计 -->
+    <select id="countAttendanceByWorkshop" resultType="java.lang.Long">
+        SELECT
+            COUNT(1) as count
+        from
+            swm_daily_attendance a
+            left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+        and a.attendance_date = #{date}
+        and b.company = #{companyName}
+        and b.department = #{workshopName}
+        and a.clock_in_time != null
+    </select>
+
+    <!-- 指定日期，班组的出勤人数统计 -->
+    <select id="countAttendanceByTeam" resultType="java.lang.Long">
+        SELECT
+            COUNT(1) as count
+        from
+            swm_daily_attendance a
+            left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+          and a.attendance_date = #{date}
+          and b.company = #{companyName}
+          and b.department = #{workshopName}
+          and b.prod_line = #{lineName}
+          and b.team = #{teamName}
+          and a.clock_in_time != null
     </select>
 </mapper>

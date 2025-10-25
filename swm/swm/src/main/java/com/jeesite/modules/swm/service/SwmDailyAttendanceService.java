@@ -5,6 +5,7 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.*;
 
+import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -874,5 +875,17 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             logger.error("获取员工 {} 实时位置失败", employeeId, e);
             return "3";
         }
+    }
+
+    public List<SwmDashboardNewController.JobTypeCount> statisticsPersonJobType(String date) {
+        return dao.statisticsPersonJobType(date);
+    }
+
+    public Long countAttendanceByWorkshop(String companyName, String workshopName, String date) {
+        return dao.countAttendanceByWorkshop(companyName, workshopName, date);
+    }
+
+    public Long countAttendanceByTeam(String companyName, String workshopName, String lineName, String teamName, String date) {
+        return dao.countAttendanceByTeam(companyName, workshopName, lineName, teamName, date);
     }
 }

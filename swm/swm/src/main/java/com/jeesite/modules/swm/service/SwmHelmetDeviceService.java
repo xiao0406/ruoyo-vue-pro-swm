@@ -338,7 +338,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
      * @author Shawn
      * @date 2025-01-13
      */
-    private List<String> findDeviceIdsByBatteryLevel(Integer batteryLevel) {
+    public List<String> findDeviceIdsByBatteryLevel(Integer batteryLevel) {
         List<String> deviceIds = new ArrayList<>();
 
         // 使用LAST_ROW函数获取每个设备在最近5分钟内的最新电量记录
