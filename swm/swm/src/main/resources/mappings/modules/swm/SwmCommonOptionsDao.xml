@@ -55,6 +55,8 @@
         FROM fms_position_archive 
         WHERE position_name = #{departmentName} 
         AND type = 'CJ' 
+        <!-- 仅查询启用状态记录 -->
+        AND status = '0'
         AND region = #{companyId}
         LIMIT 1
     </select>
