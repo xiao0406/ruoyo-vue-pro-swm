@@ -1,5 +1,7 @@
 package com.jeesite.modules.swm.web;
 
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
@@ -7,6 +9,7 @@ import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.utils.R;
+import groovy.lang.Lazy;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
@@ -16,6 +19,9 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,6 +63,9 @@ public class SwmDashboardNewController extends BaseController {
     private TDengineService tdengineService;
     @Value("${tdengine.dbname}")
     private String dbname;
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
 
 
@@ -141,8 +150,28 @@ public class SwmDashboardNewController extends BaseController {
         // 设置开始时间和结束时间条件
         swmWarningManagement.setBeginAlarmTime(DateUtils.parseDate(beginTime));
         swmWarningManagement.setEndAlarmTime(DateUtils.parseDate(endTime));
+
+        //今日报警总数
+//        result.put("swmWarningManagementCount", swmWarningManagements.size());
+
         List<SwmWarningManagement> swmWarningManagements = swmWarningManagementService.listFromTDEngine(swmWarningManagement);
-        result.put("swmWarningManagementCount", swmWarningManagements.size());
+        SwmWarningManagement vo = new SwmWarningManagement();
+        vo.setPage(new Page<>(1, 20));
+
+        // 创建模拟的HttpServletRequest来传递参数
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        // 设置时间范围参数
+        request.setParameter("timeRange[0]", beginTime);  // 今日开始时间
+        request.setParameter("timeRange[1]", endTime);  // 今日结束时间
+
+        // 获取SwmWarningManagementController Bean
+        SwmWarningManagementController controller = applicationContext.getBean(SwmWarningManagementController.class);
+        // 调用listData方法
+        Page<SwmWarningManagement> result1 = controller.listData(swmWarningManagement, request, response);
+        result.put("swmWarningManagementCount", result1.getCount());
+
         // 五天未考勤人数
         Long abnormalAttendanceCount = countAbnormalAttendance(5);
         result.put("abnormalAttendanceCount", abnormalAttendanceCount);
@@ -240,7 +269,19 @@ public class SwmDashboardNewController extends BaseController {
         Integer workingManagerCount = workingStats.getOrDefault("manager", 0);
         result.put("workingManagerCount", workingManagerCount);
         // 实时作业人数
-        result.put("totalWorkingCount", workingPersonCount + workingManagerCount);
+        // 获取SwmPersonController Bean
+//        result.put("totalWorkingCount", workingPersonCount + workingManagerCount);
+
+        SwmPersonController swmPersonController = applicationContext.getBean(SwmPersonController.class);
+        // 调用方法（假设不需要keyword参数）
+        Map<String, Object> allActivePersonsWithIdCardFromCache = swmPersonController.getAllActivePersonsWithIdCardFromCache(null);
+        // 获取data条数
+        if (allActivePersonsWithIdCardFromCache != null && allActivePersonsWithIdCardFromCache.get("data") instanceof List) {
+            List<?> dataList = (List<?>) allActivePersonsWithIdCardFromCache.get("data");
+            int size = dataList.size();
+            result.put("totalWorkingCount", size);
+        }
+
         // 在场工人数
         long workerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
         result.put("workerCount", workerCount);
