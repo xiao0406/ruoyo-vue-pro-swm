@@ -151,26 +151,27 @@ public class SwmDashboardNewController extends BaseController {
         swmWarningManagement.setBeginAlarmTime(DateUtils.parseDate(beginTime));
         swmWarningManagement.setEndAlarmTime(DateUtils.parseDate(endTime));
 
-        //今日报警总数
-//        result.put("swmWarningManagementCount", swmWarningManagements.size());
+
 
         List<SwmWarningManagement> swmWarningManagements = swmWarningManagementService.listFromTDEngine(swmWarningManagement);
-        SwmWarningManagement vo = new SwmWarningManagement();
-        vo.setPage(new Page<>(1, 20));
-
-        // 创建模拟的HttpServletRequest来传递参数
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-
-        // 设置时间范围参数
-        request.setParameter("timeRange[0]", beginTime);  // 今日开始时间
-        request.setParameter("timeRange[1]", endTime);  // 今日结束时间
-
-        // 获取SwmWarningManagementController Bean
-        SwmWarningManagementController controller = applicationContext.getBean(SwmWarningManagementController.class);
-        // 调用listData方法
-        Page<SwmWarningManagement> result1 = controller.listData(swmWarningManagement, request, response);
-        result.put("swmWarningManagementCount", result1.getCount());
+        //今日报警总数
+        result.put("swmWarningManagementCount", swmWarningManagements.size());
+//        SwmWarningManagement vo = new SwmWarningManagement();
+//        vo.setPage(new Page<>(1, 20));
+//
+//        // 创建模拟的HttpServletRequest来传递参数
+//        MockHttpServletRequest request = new MockHttpServletRequest();
+//        MockHttpServletResponse response = new MockHttpServletResponse();
+//
+//        // 设置时间范围参数
+//        request.setParameter("timeRange[0]", beginTime);  // 今日开始时间
+//        request.setParameter("timeRange[1]", endTime);  // 今日结束时间
+//
+//        // 获取SwmWarningManagementController Bean
+//        SwmWarningManagementController controller = applicationContext.getBean(SwmWarningManagementController.class);
+//        // 调用listData方法
+//        Page<SwmWarningManagement> result1 = controller.listData(swmWarningManagement, request, response);
+//        result.put("swmWarningManagementCount", result1.getCount());
 
         // 五天未考勤人数
         Long abnormalAttendanceCount = countAbnormalAttendance(5);
@@ -270,17 +271,19 @@ public class SwmDashboardNewController extends BaseController {
         result.put("workingManagerCount", workingManagerCount);
         // 实时作业人数
         // 获取SwmPersonController Bean
-//        result.put("totalWorkingCount", workingPersonCount + workingManagerCount);
+        result.put("totalWorkingCount", workingPersonCount + workingManagerCount);
+        //TODO  这里前端字段取反了，后端临时反一下，先保证演示，10-30号演示完记得取消
+        result.put("workingPersonCount", workingPersonCount + workingManagerCount);
 
-        SwmPersonController swmPersonController = applicationContext.getBean(SwmPersonController.class);
-        // 调用方法（假设不需要keyword参数）
-        Map<String, Object> allActivePersonsWithIdCardFromCache = swmPersonController.getAllActivePersonsWithIdCardFromCache(null);
-        // 获取data条数
-        if (allActivePersonsWithIdCardFromCache != null && allActivePersonsWithIdCardFromCache.get("data") instanceof List) {
-            List<?> dataList = (List<?>) allActivePersonsWithIdCardFromCache.get("data");
-            int size = dataList.size();
-            result.put("totalWorkingCount", size);
-        }
+//        SwmPersonController swmPersonController = applicationContext.getBean(SwmPersonController.class);
+//        // 调用方法（假设不需要keyword参数）
+//        Map<String, Object> allActivePersonsWithIdCardFromCache = swmPersonController.getAllActivePersonsWithIdCardFromCache(null);
+//        // 获取data条数
+//        if (allActivePersonsWithIdCardFromCache != null && allActivePersonsWithIdCardFromCache.get("data") instanceof List) {
+//            List<?> dataList = (List<?>) allActivePersonsWithIdCardFromCache.get("data");
+//            int size = dataList.size();
+//            result.put("workingPersonCount", size);
+//        }
 
         // 在场工人数
         long workerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
