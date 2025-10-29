@@ -275,15 +275,15 @@ public class SwmDashboardNewController extends BaseController {
         //TODO  这里前端字段取反了，后端临时反一下，先保证演示，10-30号演示完记得取消
         result.put("workingPersonCount", workingPersonCount + workingManagerCount);
 
-//        SwmPersonController swmPersonController = applicationContext.getBean(SwmPersonController.class);
-//        // 调用方法（假设不需要keyword参数）
-//        Map<String, Object> allActivePersonsWithIdCardFromCache = swmPersonController.getAllActivePersonsWithIdCardFromCache(null);
-//        // 获取data条数
-//        if (allActivePersonsWithIdCardFromCache != null && allActivePersonsWithIdCardFromCache.get("data") instanceof List) {
-//            List<?> dataList = (List<?>) allActivePersonsWithIdCardFromCache.get("data");
-//            int size = dataList.size();
-//            result.put("workingPersonCount", size);
-//        }
+        SwmPersonController swmPersonController = applicationContext.getBean(SwmPersonController.class);
+        // 调用方法（假设不需要keyword参数）
+        Map<String, Object> allActivePersonsWithIdCardFromCache = swmPersonController.getAllActivePersonsWithIdCardFromCache(null);
+        // 获取data条数
+        if (allActivePersonsWithIdCardFromCache != null && allActivePersonsWithIdCardFromCache.get("data") instanceof List) {
+            List<?> dataList = (List<?>) allActivePersonsWithIdCardFromCache.get("data");
+            int size = dataList.size();
+            result.put("workingPersonCount", size);
+        }
 
         // 在场工人数
         long workerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
