@@ -7,6 +7,7 @@ import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.utils.R;
+import groovy.lang.Lazy;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,6 +59,9 @@ public class SwmDashboardNewController extends BaseController {
     private TDengineService tdengineService;
     @Value("${tdengine.dbname}")
     private String dbname;
+
+    @Autowired
+    private ApplicationContext applicationContext;
 
 
 
@@ -240,7 +245,19 @@ public class SwmDashboardNewController extends BaseController {
         Integer workingManagerCount = workingStats.getOrDefault("manager", 0);
         result.put("workingManagerCount", workingManagerCount);
         // 实时作业人数
-        result.put("totalWorkingCount", workingPersonCount + workingManagerCount);
+        // 获取SwmPersonController Bean
+//        result.put("totalWorkingCount", workingPersonCount + workingManagerCount);
+
+        SwmPersonController swmPersonController = applicationContext.getBean(SwmPersonController.class);
+        // 调用方法（假设不需要keyword参数）
+        Map<String, Object> allActivePersonsWithIdCardFromCache = swmPersonController.getAllActivePersonsWithIdCardFromCache(null);
+        // 获取data条数
+        if (allActivePersonsWithIdCardFromCache != null && allActivePersonsWithIdCardFromCache.get("data") instanceof List) {
+            List<?> dataList = (List<?>) allActivePersonsWithIdCardFromCache.get("data");
+            int size = dataList.size();
+            result.put("totalWorkingCount", size);
+        }
+
         // 在场工人数
         long workerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
         result.put("workerCount", workerCount);
