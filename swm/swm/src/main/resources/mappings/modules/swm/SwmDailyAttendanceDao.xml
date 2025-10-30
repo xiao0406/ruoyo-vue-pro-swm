@@ -637,7 +637,7 @@
     </select>
 
     <!-- 指定日期的出勤人数列表 -->
-    <select id="attendanceList" resultType="Map">
+    <select id="attendanceList" resultType="com.jeesite.modules.swm.web.SwmDashboardNewController$Person">
         SELECT
             b.name,
             b.gender,
@@ -646,12 +646,28 @@
             a.clock_in_date
         from
             swm_daily_attendance a
-        left JOIN swm_person b on a.employee_id = b.id
+                left JOIN swm_person b on a.employee_id = b.id
         WHERE
             b.job_type is NOT null and b.job_type != ''
-        and a.attendance_date = #{date}
-        and a.clock_in_time is not null
+          and a.attendance_date = #{date}
+          and a.clock_in_time is not null
     </select>
+    <!-- 指定日期的出勤人数列表 -->
+<!--    <select id="attendanceList" resultType="Map">-->
+<!--        SELECT-->
+<!--            b.name,-->
+<!--            b.gender,-->
+<!--            b.phone_number,-->
+<!--            b.person_type,-->
+<!--            a.clock_in_date-->
+<!--        from-->
+<!--            swm_daily_attendance a-->
+<!--        left JOIN swm_person b on a.employee_id = b.id-->
+<!--        WHERE-->
+<!--            b.job_type is NOT null and b.job_type != ''-->
+<!--        and a.attendance_date = #{date}-->
+<!--        and a.clock_in_time is not null-->
+<!--    </select>-->
 
     <!-- 根据员工姓名和日期范围查询考勤记录 -->
     <select id="findByDateRange" resultType="SwmDailyAttendance">
