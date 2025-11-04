@@ -35,7 +35,9 @@
                a.update_by AS "updateBy",
                a.update_date AS "updateDate",
                a.remarks AS "remarks",
-               a.status AS "status"
+               a.status AS "status",
+               a.dept ,
+               a.position
         FROM ${sqlMap.table.toSql()}
         -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
@@ -344,7 +346,7 @@
         SELECT
             id, name, identity_card, person_type, phone_number, status, personnel_status,
             team, department, prod_line, job_type, safety_helmet_id, company,
-            create_by, create_date, update_by, update_date, remarks
+            create_by, create_date, update_by, update_date, remarks,dept , position
         FROM swm_person
         WHERE status = '0'
           AND identity_card IN

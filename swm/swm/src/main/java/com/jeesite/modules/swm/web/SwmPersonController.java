@@ -167,6 +167,8 @@ public class SwmPersonController extends BaseController {
             personMap.put("departureDate", person.getDepartureDate());
             personMap.put("isExternalPersonnel", person.getIsExternalPersonnel());
             personMap.put("isNewRecord", person.getIsNewRecord());
+            personMap.put("dept", person.getDept());
+            personMap.put("position", person.getPosition());
 
             // 添加枚举文本显示值
             personMap.put("personnelStatusText", person.getPersonnelStatusText());
@@ -226,6 +228,9 @@ public class SwmPersonController extends BaseController {
             personData.put("departureReason", swmPerson.getDepartureReason());
             personData.put("departureDate", swmPerson.getDepartureDate()); // 添加离职时间
             personData.put("isExternalPersonnel", swmPerson.getIsExternalPersonnel()); // 补充字段
+
+            personData.put("dept", swmPerson.getDept());
+            personData.put("position", swmPerson.getPosition());
 
             result.putAll(personData);
         }

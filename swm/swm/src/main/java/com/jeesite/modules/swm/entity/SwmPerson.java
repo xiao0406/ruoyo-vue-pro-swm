@@ -10,6 +10,7 @@ import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.sys.utils.DictUtils;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -32,6 +33,8 @@ import java.util.Date;
         @Column(name = "work_process", attrName = "workProcess", label = "所属工序"),
         @Column(name = "team", attrName = "team", label = "所属班组"),
         @Column(name = "job_type", attrName = "jobType", label = "所属工种"),
+        @Column(name = "dept", attrName = "dept", label = "部门"),
+        @Column(name = "position", attrName = "position", label = "职务"),
         @Column(name = "safety_helmet_id", attrName = "safetyHelmetId", label = "关联安全帽编号"),
         @Column(name = "personnel_status", attrName = "personnelStatus", label = "人员状态"),
         @Column(name = "safety_education", attrName = "safetyEducation", label = "入场安全教育"),
@@ -44,6 +47,7 @@ import java.util.Date;
         @Column(name = "is_external_personnel", attrName = "isExternalPersonnel", label = "是否厂内员工"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmPerson extends DataEntity<SwmPerson> {
 
     private static final long serialVersionUID = 1L;
@@ -145,6 +149,9 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private Date departureDate; // 离职时间
     private String isExternalPersonnel; // 是否厂内员工
     private String classes;// 所属班次
+    private String dept;// 部门
+    private String position;// 职务
+
 
     public SwmPerson() {
         this(null);
