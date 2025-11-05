@@ -7,21 +7,17 @@ package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.swm.entity.SwmHazardSource;
-import com.jeesite.modules.swm.entity.SwmInspectionPlan;
-import com.jeesite.modules.swm.entity.SwmPerson;
-import com.jeesite.modules.swm.entity.SwmVoiceTemplate;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
-import com.jeesite.modules.swm.service.SwmHazardSourceService;
-import com.jeesite.modules.swm.service.SwmInspectionPlanService;
-import com.jeesite.modules.swm.service.SwmPersonService;
-import com.jeesite.modules.swm.service.SwmVoiceTemplateService;
-import com.jeesite.modules.swm.service.SwmBeaconStationService;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.swm.entity.*;
+import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -54,6 +50,11 @@ public class SwmHazardSourceController extends BaseController {
     private SwmVoiceTemplateService swmVoiceTemplateService;
     @Autowired
     private SwmBeaconStationService swmBeaconStationService; // 注入信标服务
+
+    @Autowired
+    private RedisService redisService;
+    @Autowired
+    private SwmHelmetDeviceService swmHelmetDeviceService;
 
     /**
      * 获取数据
@@ -313,6 +314,10 @@ public class SwmHazardSourceController extends BaseController {
                 }
             }
 
+            //白名单人员
+            data.put("filterIdentityCard", swmHazardSource.getFilterIdentityCard());
+            data.put("filterPersonnel", swmHazardSource.getFilterPersonnel());
+
             result.putAll(data);
         }
         return result;
@@ -341,6 +346,27 @@ public class SwmHazardSourceController extends BaseController {
 
         // 保存危险源信息
         swmHazardSourceService.save(swmHazardSource);
+
+        // 判断这个危险源是否有报警标识，存入redis,永不过期
+        String filterIdentityCard = swmHazardSource.getFilterIdentityCard();
+        if (StringUtils.isNotBlank(filterIdentityCard)) {
+            //分割为多个人员身份证
+            String[] identityCard = filterIdentityCard.split(",");
+            //通过人员身份证去查询设备id ,deviceId
+            SwmHelmetDevice query = new SwmHelmetDevice();
+            query.getSqlMap().getWhere().and("assigned_person", QueryType.IN, identityCard);
+            query.setStatus(SwmHelmetDevice.STATUS_NORMAL);
+            List<SwmHelmetDevice> list = swmHelmetDeviceService.findList(query);
+            Set<String> deviceIds = list.stream().map(SwmHelmetDevice::getDeviceId).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+
+            // 从Redis取出已有设备ID（如果有）
+            Object object = redisService.get(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON);
+            Set<String> existing = (Set<String>) object;
+            if (existing != null && !existing.isEmpty()) {
+                deviceIds.addAll(existing);
+            }
+            redisService.set(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, deviceIds);
+        }
 
         // 如果设置为加入巡检且不是草稿状态
         if ("1".equals(swmHazardSource.getIsPatrolIncluded()) && !"1".equals(swmHazardSource.getIsDraft())) {

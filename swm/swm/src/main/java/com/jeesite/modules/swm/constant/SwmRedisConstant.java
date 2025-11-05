@@ -32,6 +32,14 @@ public class SwmRedisConstant {
     }
 
     /**
+     * 危险源管理（危险源是否报警）
+     */
+    public static class HazardSource {
+        /** 哪些信标标识为不用报警 */
+        public static final String Hazard_ISALARM_BEACON = "Hazard_ISALARM_BEACON";
+    }
+
+    /**
      * 缓存过期时间（秒）
      */
     public static class TTL {

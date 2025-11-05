@@ -41,6 +41,8 @@ import java.util.List;
         @Column(name = "voice_template_id", attrName = "voiceTemplateId", label = "语音模板ID"),
         @Column(name = "beacon_tag", attrName = "beaconTag", label = "信标标记", queryType = QueryType.LIKE),
         @Column(name = "is_draft", attrName = "isDraft", label = "是否草稿状态"),
+        @Column(name = "filter_identity_card", attrName = "filterIdentityCard", label = "白名单人员（这里的人员不收到报警信号）"),
+        @Column(name = "filter_personnel", attrName = "filterPersonnel", label = "白名单人员（这里的人员不收到报警信号）"),
 }, orderBy = "a.create_date DESC")
 public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 
@@ -76,6 +78,8 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
     private String voiceTemplateId; // 语音模板ID
     private String beaconTag; // 信标标记
     private String isDraft; // 是否草稿状态 0:否 1:是
+    private String filterIdentityCard; // 白名单人员（这里的人员不收到报警信号）
+    private String filterPersonnel; // 白名单人员（这里的人员不收到报警信号）
 
     // 非持久化字段
     private String[] beaconIdentifiers; // 所属信标数组，用于前端多选
@@ -295,5 +299,21 @@ public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 
     public void setBeaconIdentifierSearchList(List<String> beaconIdentifierSearchList) {
         this.beaconIdentifierSearchList = beaconIdentifierSearchList;
+    }
+
+    public String getFilterIdentityCard() {
+        return filterIdentityCard;
+    }
+
+    public void setFilterIdentityCard(String filterIdentityCard) {
+        this.filterIdentityCard = filterIdentityCard;
+    }
+
+    public String getFilterPersonnel() {
+        return filterPersonnel;
+    }
+
+    public void setFilterPersonnel(String filterPersonnel) {
+        this.filterPersonnel = filterPersonnel;
     }
 }
