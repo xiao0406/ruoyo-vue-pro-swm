@@ -360,12 +360,16 @@ public class SwmHazardSourceController extends BaseController {
             Set<String> deviceIds = list.stream().map(SwmHelmetDevice::getDeviceId).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
 
             // 从Redis取出已有设备ID（如果有）
-            Object object = redisService.get(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON);
-            Set<String> existing = (Set<String>) object;
-            if (existing != null && !existing.isEmpty()) {
-                deviceIds.addAll(existing);
+            Object cacheObj = redisService.get(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON);
+            Map<String, Set<String>> hazardDeviceMap = new HashMap<>();
+            if (cacheObj instanceof Map) {
+                hazardDeviceMap = (Map<String, Set<String>>) cacheObj;
             }
-            redisService.set(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, deviceIds);
+
+            // 3. 更新当前危险源对应的设备集合（覆盖旧的）
+            hazardDeviceMap.put(swmHazardSource.getId(), deviceIds);
+
+            redisService.set(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, hazardDeviceMap);
         }
 
         // 如果设置为加入巡检且不是草稿状态
