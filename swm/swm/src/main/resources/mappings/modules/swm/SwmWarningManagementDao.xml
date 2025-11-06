@@ -130,7 +130,7 @@
             </if>
             <!-- 排除一键SOS预警 -->
             <if test="excludeSOS == true">
-                AND a.warning_content  NOT IN (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '应急呼叫' AND `status` = '0')
+                AND a.warning_content  != '一键SOS'
             </if>
             <!-- 排除考勤打卡预警 -->
             <if test="excludeAttendance == true">
@@ -190,7 +190,7 @@
         WHERE warning_time &gt;= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
         AND status = '0'
-        AND warning_content  NOT IN (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '应急呼叫' AND `status` = '0')
+        AND warning_content  != '一键SOS'
     </select>
 
     <!-- 获取今日的预警，排除一键SOS -->
@@ -210,7 +210,7 @@
         WHERE warning_time &gt;= CURDATE()
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
         AND status = '0'
-        AND warning_content  NOT IN (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '应急呼叫' AND `status` = '0')
+        AND warning_content  != '一键SOS'
         AND warning_content != '考勤打卡'
         AND warning_content != '进入大门'
     </select>
@@ -232,7 +232,7 @@
         WHERE warning_time &gt;= DATE_FORMAT(CURDATE(), '%Y-%m-01')
         AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
         AND status = '0'
-        AND warning_content  NOT IN (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '应急呼叫' AND `status` = '0')
+        AND warning_content  != '一键SOS'
         AND warning_content != '考勤打卡'
         AND warning_content != '进入大门'
     </select>
@@ -255,7 +255,7 @@
         AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
         AND handle_status = '1'
         AND status = '0'
-        AND warning_content  NOT IN (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '应急呼叫' AND `status` = '0')
+        AND warning_content  != '一键SOS'
         AND warning_content != '考勤打卡'
         AND warning_content != '进入大门'
     </select>
@@ -284,8 +284,8 @@
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
-                   ELSE warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
             END)
         GROUP BY DATE(warning_time)
         ORDER BY date
@@ -299,7 +299,7 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content = (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+          AND warning_content = '危险源报警'
         GROUP BY hazard_category
         ORDER BY count DESC
         LIMIT #{limit}
@@ -313,8 +313,8 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
-          AND warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '应急呼叫' AND `status` = '0')
+          AND warning_content != '危险源报警'
+          AND warning_content != '一键SOS'
           AND warning_content != '考勤打卡'
           AND warning_content != '进入大门'
         GROUP BY warning_content
@@ -332,7 +332,7 @@
         swm_warning_management a
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content = (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+          AND warning_content = '危险源报警'
         GROUP BY
         a.person_name
         ORDER BY
@@ -349,7 +349,7 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content = (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+          AND warning_content = '危险源报警'
           AND hazard_category is not null
         GROUP BY hazard_category, DATE(warning_time)
         ORDER BY date, category
@@ -364,7 +364,7 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content = (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+          AND warning_content = '危险源报警'
           AND hazard_category is not null
         GROUP BY hazard_category, DATE(warning_time)
         ORDER BY date, category
@@ -378,8 +378,8 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
-          AND warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '应急呼叫' AND `status` = '0')
+          AND warning_content != '危险源报警'
+          AND warning_content != '一键SOS'
           AND warning_content != '考勤打卡'
           AND warning_content != '进入大门'
           AND warning_content is not null
@@ -394,8 +394,8 @@
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
-                   ELSE warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
             END)
     </select>
 
@@ -405,8 +405,8 @@
         FROM swm_warning_management
         WHERE status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
-                   ELSE warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
             END)
     </select>
 
@@ -417,8 +417,8 @@
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
-                   ELSE warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
             END)
     </select>
 
@@ -442,8 +442,8 @@
         FROM swm_warning_management a
         WHERE a.status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
-                   ELSE warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
+                   ELSE warning_content != '危险源报警'
             END)
         order by a.warning_time desc
         limit #{limit}
@@ -454,7 +454,7 @@
         SELECT a.handler                          AS "handler",
                ROUND(AVG(a.disposal_duration), 2) AS "avgHandleMinutes"
         FROM swm_warning_management a
-        WHERE a.warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
+        WHERE a.warning_content != '危险源报警'
           AND a.handle_status = '1'
           AND a.handler IS NOT NULL
           AND a.disposal_duration IS NOT NULL
@@ -479,9 +479,9 @@
         WHERE warning_time <![CDATA[ >= ]]> DATE_FORMAT(CURDATE(), '%Y-%m-%d 00:00:00')
         AND warning_time <![CDATA[ <= ]]> DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), '%Y-%m-%d 00:00:00')
         AND status = '0'
-        AND warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '危险区域闯入提示' AND `status` = '0')
-        AND warning_content != (SELECT dict_label COLLATE utf8mb4_0900_ai_ci FROM js_sys_dict_data WHERE dict_type = 'warning_content_enum' AND dict_value = '应急呼叫' AND `status` = '0')
-        AND warning_content != '考勤打卡'
+          AND warning_content != '危险源报警'
+          AND warning_content != '一键SOS'
+          AND warning_content != '考勤打卡'
         AND warning_content != '进入大门'
     </select>
     
