@@ -45,6 +45,4 @@ INSERT INTO `swm`.`js_sys_dict_data` (`dict_code`, `parent_code`, `parent_codes`
 ALTER TABLE swm_hazard_source
     ADD filter_identity_card TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '白名单人员（这里的人员不收到报警信号）' AFTER beacon_tag;
 ALTER TABLE swm_hazard_source
-    ADD filter_personnel TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '白名单人员（这里的人员不收到报警信号）' AFTER filter_personnel_id;
-
-
+    ADD filter_personnel TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '白名单人员（这里的人员不收到报警信号）' AFTER filter_identity_card;
