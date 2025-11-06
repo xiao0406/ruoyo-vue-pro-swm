@@ -638,8 +638,9 @@ public class SwmWarningManagementController extends BaseController {
         }
 
         // 添加SOS条件
-        swmWarningManagement.setWarningContent("一键SOS报警");
-
+//        swmWarningManagement.setWarningContent("一键SOS报警");
+        String warningContent = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+        swmWarningManagement.setWarningContent(warningContent);
         logger.info("SOS查询参数: personName={}, warningType={}, warningContent={}, handleStatus={}",
                 swmWarningManagement.getPersonName(),
                 swmWarningManagement.getWarningType(),
