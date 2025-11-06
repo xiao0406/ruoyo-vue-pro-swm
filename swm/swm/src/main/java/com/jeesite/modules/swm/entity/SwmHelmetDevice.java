@@ -8,6 +8,8 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.common.utils.excel.annotation.ExcelField;
+import com.jeesite.common.utils.excel.annotation.ExcelFields;
 import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -181,6 +183,20 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
 
     // 非数据库字段，用于查询条件
     private List<String> deviceIdList; // 设备ID列表，用于批量查询
+
+
+    @ExcelFields({
+            @ExcelField(title="设备编号", attrName = "deviceId", align = ExcelField.Align.CENTER, sort = 10),
+            @ExcelField(title="设备类型", attrName = "helmetType",align = ExcelField.Align.CENTER,dictType = "helmet_type_enum", sort = 20),
+            @ExcelField(title="电量", attrName = "batteryLevel",align = ExcelField.Align.CENTER, sort = 30),
+            @ExcelField(title="IP", attrName = "ip",align = ExcelField.Align.CENTER, sort = 40),
+            @ExcelField(title="MAC地址", attrName = "macAddress",align = ExcelField.Align.CENTER, sort = 50),
+            @ExcelField(title="人员姓名", attrName = "personName",align = ExcelField.Align.CENTER, sort = 60),
+            @ExcelField(title="手机号码", attrName = "personPhone",align = ExcelField.Align.CENTER, sort = 70),
+            @ExcelField(title="所属车间", attrName = "assignedWorkshop",align = ExcelField.Align.CENTER, sort = 80),
+            @ExcelField(title="所属班组", attrName = "assignedTeam",align = ExcelField.Align.CENTER, sort = 90),
+            @ExcelField(title="运动状态", attrName = "motionStatus",align = ExcelField.Align.CENTER, dictType = "motion_status_enum",sort = 100),
+    })
 
     public SwmHelmetDevice() {
         super();

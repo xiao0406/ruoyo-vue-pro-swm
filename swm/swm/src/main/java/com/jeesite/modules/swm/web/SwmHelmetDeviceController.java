@@ -6,6 +6,8 @@ package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.DateUtils;
+import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
@@ -14,11 +16,13 @@ import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmHelmetCacheService;
 import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
 import com.jeesite.modules.swm.service.SwmSafetyHelmetOrderService;
+import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -488,5 +492,28 @@ public class SwmHelmetDeviceController extends BaseController {
     @GetMapping("getDeviceConfig")
     public SwmHelmetDevice getDeviceConfig(@RequestParam String deviceId) {
         return swmHelmetDeviceService.getByDeviceId(deviceId);
+    }
+
+    /**
+     * 导出分页数据
+     */
+    @GetMapping("export")
+    public String export(SwmHelmetDevice swmHelmetDevice, HttpServletRequest request,
+                                      HttpServletResponse response) {
+
+        swmHelmetDevice.setPage(new Page<>(1, 99999));
+        Page<SwmHelmetDevice> page = swmHelmetDeviceService.findPage(swmHelmetDevice);
+
+        String name;
+        List<SwmHelmetDevice> list =  page.getList();
+
+        String fileName = "安全帽管理导出" + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
+
+        try (ExcelExport ee = new ExcelExport("安全帽管理导出", SwmHelmetDevice.class)) {
+            name = ExcelExportUtil.uploadOss(ee.setDataList(list), fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return renderResult(Global.TRUE, text("成功！"), name);
     }
 }
