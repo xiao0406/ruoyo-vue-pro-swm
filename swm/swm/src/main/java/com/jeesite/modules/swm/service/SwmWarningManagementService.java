@@ -1330,8 +1330,11 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         List<SwmPerson> activePersonsByIdentityCards = swmPersonService.findActivePersonsByIdentityCards(idCard);
         Map<String, SwmPerson> personMap = activePersonsByIdentityCards.stream().collect(Collectors.toMap(SwmPerson::getIdentityCard, p -> p));
         for (SwmWarningManagement warningManagement : tdEngineList) {
-            if (warningManagement.getIdCard() != null){
-                warningManagement.setPersonType(personMap.get(warningManagement.getIdCard()).getPersonType());
+            if (warningManagement.getIdCard() != null) {
+                SwmPerson person = personMap.get(warningManagement.getIdCard());
+                if (person != null) {
+                    warningManagement.setPersonType(person.getPersonType());
+                }
             }
         }
 
