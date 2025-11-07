@@ -437,7 +437,8 @@
             a.name AS "name",
             a.identity_card AS "identityCard",
             a.phone_number AS "phoneNumber",
-            a.personnel_status AS "personnelStatus"
+            a.personnel_status AS "personnelStatus",
+            a.person_type AS "personType"
         FROM swm_person a
         WHERE a.personnel_status = '1'
         AND a.status = '0'

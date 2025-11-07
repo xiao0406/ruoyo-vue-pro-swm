@@ -10,6 +10,7 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmAlarmConfigDao;
 import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.swm.entity.SwmAlarmConfig;
+import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
 import com.jeesite.modules.swm.service.SwmPersonScheduleService;
 import com.jeesite.modules.sys.utils.DictUtils;
@@ -45,6 +46,9 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
     @Value("${tdengine.dbname}")
     private String dbname;
+
+    @Autowired
+    private SwmPersonService swmPersonService;
 
     /**
      * 获取单条数据
@@ -1319,7 +1323,17 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 item.setDisposalDuration(0L);
             }
         }
-        
+
+        //查询人员类型
+        Set<String> idCards = tdEngineList.stream().map(SwmWarningManagement::getIdCard).collect(Collectors.toSet());
+        List<SwmPerson> activePersonsByIdentityCards = swmPersonService.findActivePersonsByIdentityCards((List<String>) idCards);
+        Map<String, SwmPerson> personMap = activePersonsByIdentityCards.stream().collect(Collectors.toMap(SwmPerson::getIdentityCard, p -> p));
+        for (SwmWarningManagement warningManagement : tdEngineList) {
+            if (warningManagement.getIdCard() != null){
+                warningManagement.setPersonType(personMap.get(warningManagement.getIdCard()).getPersonType());
+            }
+        }
+
         logger.info("查询完成，返回 {} 条记录", tdEngineList.size());
         return tdEnginePage;
     }

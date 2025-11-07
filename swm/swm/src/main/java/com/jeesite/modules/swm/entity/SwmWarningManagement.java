@@ -164,6 +164,7 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private transient boolean excludeGateEntry; // 是否排除进入大门预警
     private Date beginAlarmTime; // 查询开始预警/报警时间
     private Date endAlarmTime; // 查询结束预警/报警时间
+    private String personType ;
 
     // 用于存储额外数据的Map
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -508,5 +509,13 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setEndAlarmTime(Date endAlarmTime) {
         this.endAlarmTime = endAlarmTime;
+    }
+
+    public String getPersonType() {
+        return personType;
+    }
+
+    public void setPersonType(String personType) {
+        this.personType = personType;
     }
 }
