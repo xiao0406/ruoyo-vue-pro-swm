@@ -1326,7 +1326,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
         //查询人员类型
         Set<String> idCards = tdEngineList.stream().map(SwmWarningManagement::getIdCard).collect(Collectors.toSet());
-        List<SwmPerson> activePersonsByIdentityCards = swmPersonService.findActivePersonsByIdentityCards((List<String>) idCards);
+        List<String> idCard = new ArrayList<>(idCards);
+        List<SwmPerson> activePersonsByIdentityCards = swmPersonService.findActivePersonsByIdentityCards(idCard);
         Map<String, SwmPerson> personMap = activePersonsByIdentityCards.stream().collect(Collectors.toMap(SwmPerson::getIdentityCard, p -> p));
         for (SwmWarningManagement warningManagement : tdEngineList) {
             if (warningManagement.getIdCard() != null){
