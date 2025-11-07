@@ -641,7 +641,7 @@
         SELECT
             b.name,
             b.gender,
-            b.phone_number,
+            b.phone_number as phone,
             b.person_type,
             a.clock_in_date
         from

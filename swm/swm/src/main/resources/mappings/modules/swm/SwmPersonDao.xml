@@ -347,7 +347,7 @@
         SELECT
             id, name, identity_card, person_type, phone_number, status, personnel_status,
             team, department, prod_line, job_type, safety_helmet_id, company,
-            create_by, create_date, update_by, update_date, remarks,dept , position
+            create_by, create_date, update_by, update_date, remarks,dept , position,  gender
         FROM swm_person
         WHERE status = '0'
           AND identity_card IN

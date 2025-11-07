@@ -1001,6 +1001,7 @@ public class SwmDashboardNewController extends BaseController {
         private String personType;
         private Date clockInDate;
         private String battery;
+
     }
     //******************************************************************************数据看板-列表查询******************************************************************//
 
