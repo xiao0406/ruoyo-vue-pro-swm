@@ -10,11 +10,12 @@
                a.person_type AS "personType",
                a.gender AS "gender",
                -- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
-               COALESCE(o.office_name, backup_o.office_name) AS "company",
+#                COALESCE(o.office_name, backup_o.office_name) AS "company",
+                COALESCE(backup_o.office_name, o.office_name) AS "company",
                COALESCE(p.position_name, backup_p.position_name) AS "department",
                COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
-#                COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
-                COALESCE(a.team, backup_wg.work_group_name) AS "team",
+               COALESCE(backup_wg.work_group_name, wg.work_group_name) AS "team",
+#                 COALESCE(a.team, backup_wg.work_group_name) AS "team",
                -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
                COALESCE(
                    NULLIF(TRIM(f.work_type), ''),
