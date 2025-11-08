@@ -11,6 +11,7 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -298,5 +299,24 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
             return Collections.emptyList();
         }
         return dao.findActivePersonsByPhoneNumbers(phoneNumbers);
+    }
+
+    public Page<SwmPerson> findByIdCardsPage(SwmPerson swmPersonPage) {
+        Page<SwmPerson> page = swmPersonPage.getPage();
+        List<String> idCards = swmPersonPage.getIdCards();
+        if (idCards == null || idCards.isEmpty()) {
+            return page;
+        }
+
+//        List<SwmPerson> byIdCards = dao.findByIdCards(idCards);
+        // 从DAO获取分页数据
+        List<SwmPerson> list = dao.findByIdCardsPage(swmPersonPage);
+        // 获取总记录数
+        Long count = dao.findByIdCardsCount(swmPersonPage);
+
+        // 设置分页结果
+        page.setList(list);
+        page.setCount(count);
+        return page;
     }
 }

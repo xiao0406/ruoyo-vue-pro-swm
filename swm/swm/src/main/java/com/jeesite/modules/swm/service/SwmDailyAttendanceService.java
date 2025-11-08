@@ -889,8 +889,22 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         return dao.countAttendanceByTeam(companyName, workshopName, lineName, teamName, date);
     }
 
-    public List<SwmDashboardNewController.Person> attendanceList(String date) {
-        return dao.attendanceList(date);
+    public Page<SwmDashboardNewController.Person> attendanceList(SwmDashboardNewController.Person person) {
+        // 调用DAO层进行分页查询
+        Page<SwmDashboardNewController.Person> page = person.getPage();
+        if (page == null) {
+            page = new Page<>();
+        }
+        // 从DAO获取分页数据
+        List<SwmDashboardNewController.Person> list = dao.attendanceListPage(person);
+        // 获取总记录数
+        Long count = dao.attendanceListCount(person);
+
+        // 设置分页结果
+        page.setList(list);
+        page.setCount(count);
+
+        return page;
     }
 
     public List<SwmDailyAttendance> findByDateRange(Date beginDate, Date endDate) {

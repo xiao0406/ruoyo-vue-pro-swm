@@ -16,6 +16,8 @@ import org.hibernate.validator.constraints.Length;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 人员登记表实体类
@@ -151,6 +153,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String classes;// 所属班次
     private String dept;// 部门
     private String position;// 职务
+    private List<String> idCards;
 
 
     public SwmPerson() {
@@ -367,5 +370,13 @@ public class SwmPerson extends DataEntity<SwmPerson> {
 
     public void setClasses(String classes) {
         this.classes = classes;
+    }
+
+    public List<String> getIdCards() {
+        return idCards;
+    }
+
+    public void setIdCards(List<String> idCards) {
+        this.idCards = idCards;
     }
 }

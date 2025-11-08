@@ -169,4 +169,8 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
     List<SwmDashboardNewController.Person> attendanceList(@Param("date")String date);
 
     List<SwmDailyAttendance> findByDateRange(@Param("beginDate")Date beginDate, @Param("endDate")Date endDate);
+
+    List<SwmDashboardNewController.Person> attendanceListPage(SwmDashboardNewController.Person person);
+
+    Long attendanceListCount(SwmDashboardNewController.Person person);
 }

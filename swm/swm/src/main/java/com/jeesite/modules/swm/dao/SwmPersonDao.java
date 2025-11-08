@@ -103,4 +103,8 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
      * @date 2025-01-15
      */
     List<SwmPerson> findActivePersonsByPhoneNumbers(@Param("phoneNumbers") List<String> phoneNumbers);
+
+    List<SwmPerson> findByIdCardsPage(SwmPerson swmPersonPage);
+
+    Long findByIdCardsCount(SwmPerson swmPersonPage);
 }

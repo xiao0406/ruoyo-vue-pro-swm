@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.web;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONObject;
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.web.BaseController;
@@ -41,6 +42,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Slf4j
@@ -744,17 +746,26 @@ public class SwmDashboardNewController extends BaseController {
     @GetMapping("/attendance/list")
     @ResponseBody
     @ApiOperation("今日出勤人数列表")
-    public List<Person> attendanceList() {
-        // Date date = new Date(2025 - 1900, 8, 20);
+    public Page<Person> attendanceList(HttpServletRequest request, HttpServletResponse response) {
         Date date = new Date();
-        return swmDailyAttendanceService.attendanceList(DateUtils.formatDate(date));
+        // 创建查询参数对象
+        Person person = new Person();
+        person.setPage(new Page<>(request, response));
+        person.setDate(DateUtils.formatDate(date));
+        // 调用服务层方法进行数据库分页查询
+        Page<Person> resultPage = swmDailyAttendanceService.attendanceList(person);
+        return resultPage;
     }
     // 实时作业人数列表
     @GetMapping("/working/list")
     @ResponseBody
     @ApiOperation("实时作业人数列表")
-    public List<Person> workingList() {
+    public Page<Person> workingList(HttpServletRequest request, HttpServletResponse response) {
+        Page<SwmPerson> page = new Page<>();
+        SwmPerson swmPersonPage = new SwmPerson();
+        swmPersonPage.setPage(new Page<>(request, response));
         List<Person> list = new ArrayList<>();
+        Page<Person> resultPage = new Page<>();
         // Date date = new Date(2025 - 1900, 8, 20);
         Date date = new Date();
         // 获取1小时前的时间字符串
@@ -765,8 +776,12 @@ public class SwmDashboardNewController extends BaseController {
         // 从TDengine获取1小时内的唯一身份证集合
         Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
         if (!uniqueIdCards.isEmpty()) {
+
+            swmPersonPage.setIdCards(new ArrayList<>(uniqueIdCards));
             // 通过身份证号查询人员信息
-            List<SwmPerson> persons = swmPersonService.findByIdCards(new ArrayList<>(uniqueIdCards));
+//            List<SwmPerson> persons = swmPersonService.findByIdCards(new ArrayList<>(uniqueIdCards));
+            page = swmPersonService.findByIdCardsPage(swmPersonPage);
+            List<SwmPerson> persons = page.getList();
             for (SwmPerson swmPerson : persons) {
                 // 查询考勤记录
                 SwmDailyAttendance dailyAttendance = swmDailyAttendanceService.findByEmployeeIdAndDate(swmPerson.getId(), date);
@@ -785,7 +800,11 @@ public class SwmDashboardNewController extends BaseController {
         } else {
             logger.warn("查询1小时内工作中人数失败或无数据");
         }
-        return list;
+        resultPage.setList(list);
+        resultPage.setCount(page.getCount());
+        resultPage.setPageNo(swmPersonPage.getPageNo());
+        resultPage.setPageSize(swmPersonPage.getPageSize());
+        return resultPage;
     }
     // 5天未考勤人数列表
     @GetMapping("/abnormalAttendance/list")
@@ -877,13 +896,16 @@ public class SwmDashboardNewController extends BaseController {
     @GetMapping("/manager/list")
     @ResponseBody
     @ApiOperation("在场管理员人数列表")
-    public List<Person> managerList() {
+    public Page<Person> managerList(HttpServletRequest request, HttpServletResponse response) {
+        Page<Person> personPage = new Page<>();
         List<Person> list = new ArrayList<>();
         SwmPerson query = new SwmPerson();
         query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // '1' - 在职
         query.setStatus("0"); // 正常状态
         query.setPersonType(SwmPerson.PersonTypeEnum.MANAGER);
-        List<SwmPerson> swmPersonList = swmPersonService.findList(query);
+        query.setPage(new Page<>(request, response));
+        Page<SwmPerson> page = swmPersonService.findPage(query);
+        List<SwmPerson> swmPersonList = page.getList();
         for (SwmPerson swmPerson : swmPersonList) {
             Person person = new Person();
             person.setName(swmPerson.getName());
@@ -892,7 +914,11 @@ public class SwmDashboardNewController extends BaseController {
             person.setPersonType(swmPerson.getPersonType());
             list.add(person);
         }
-        return list;
+        personPage.setCount(page.getCount());
+        personPage.setPageNo(page.getPageNo());
+        personPage.setPageSize(page.getPageSize());
+        personPage.setList(list);
+        return personPage;
     }
     // 报警记录列表
     @RequestMapping(value = "/warningRecord/list")
@@ -985,13 +1011,14 @@ public class SwmDashboardNewController extends BaseController {
     }
 
     @Data
-    public static class Person {
+    public static class Person extends BaseEntity {
         private String name;
         private String gender;
         private String phone;
         private String personType;
         private Date clockInDate;
         private String battery;
+        private String date;
 
     }
     //******************************************************************************数据看板-列表查询******************************************************************//
