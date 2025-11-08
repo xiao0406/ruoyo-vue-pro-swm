@@ -2236,4 +2236,95 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     public long countTodayHandledWarnings() {
         return dao.countTodayHandledWarnings();
     }
+
+    public List<SwmWarningManagement> warningStatisticsForPast7Days() {
+
+        logger.info("开始混合查询分页数据...");
+
+        // 设置查询近7天的条件（包含今天，共7天）
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, -6); // 7天前的00:00:00
+        Date startDate = calendar.getTime();
+
+        calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1); // 明天的00:00:00（用于 < 条件，避免漏算今天23:59:59）
+        Date endDate = calendar.getTime();
+
+        // 日期格式化：TDengine 要求时间字符串格式为 'YYYY-MM-DD HH:mm:ss' 或 'YYYY-MM-DD'
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String startDateStr = sdf.format(startDate);
+        String endDateStr = sdf.format(endDate);
+
+
+        // 构建TDengine查询SQL
+        StringBuilder sqlBuilder = new StringBuilder();
+        // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
+        sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
+                .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
+                .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
+                .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+                .append("disposal_duration, ")
+                .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+                .append("front_alarm, type, x, y, hazard_category, location, area ")
+                .append("FROM ").append(dbname).append(".swm_warning_management");
+
+        // 添加查询条件
+        List<String> conditions = new ArrayList<>();
+        // 获取字典标签值
+        String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+        String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+        String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+
+        // 使用IN条件
+        String inCondition = String.format("warning_content IN ('%s','%s','%s')", dictLabel1, dictLabel2, dictLabel3);
+        conditions.add(inCondition);
+        // 添加时间范围条件
+        conditions.add("alarm_time >= '" + startDateStr + "'");
+        conditions.add("alarm_time < '" + endDateStr + "'");
+
+        if (!conditions.isEmpty()) {
+            sqlBuilder.append(" WHERE ");
+            for (int i = 0; i < conditions.size(); i++) {
+                sqlBuilder.append(conditions.get(i));
+                if (i < conditions.size() - 1) {
+                    sqlBuilder.append(" AND ");
+                }
+            }
+        }
+
+        // 添加排序和分页
+        sqlBuilder.append(" ORDER BY warning_time DESC");
+
+        logger.info("执行SQL: {}", sqlBuilder.toString());
+
+        // 执行查询
+        R<JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+        List<SwmWarningManagement> list = new ArrayList<>();
+
+        if (result.getCode() == R.SUCCESS && result.getData() != null) {
+            JSONObject data = result.getData();
+            JSONArray rows = data.getJSONArray("data");
+            JSONArray columnMeta = data.getJSONArray("column_meta");
+
+            if (rows != null) {
+                for (int i = 0; i < rows.size(); i++) {
+                    try {
+                        JSONArray row = rows.getJSONArray(i);
+                        SwmWarningManagement entity = convertToEntity(row, columnMeta);
+                        if (entity != null) {
+                            list.add(entity);
+                        }
+                    } catch (Exception e) {
+                        logger.error("转换行数据异常: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+
+        // 设置分页结果
+        return list;
+    }
+
+
+
 }

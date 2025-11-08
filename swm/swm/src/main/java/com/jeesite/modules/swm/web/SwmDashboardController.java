@@ -161,13 +161,7 @@ public class SwmDashboardController extends BaseController {
         Map<String, Object> result = new HashMap<>();
 
         // 1. 获取近7天的预警数据
-        Page<SwmWarningManagement> page = new Page<>();
-        SwmWarningManagement swmWarningManagementPage = new SwmWarningManagement();
-        page.setPageNo(1);
-        page.setPageSize(9999999);
-        Page<SwmWarningManagement> past7DaysWarningPage = swmWarningManagementService.findPast7DaysWarningPage(swmWarningManagementPage, page);
-        List<SwmWarningManagement> warnings = past7DaysWarningPage.getList();
-//        List<SwmWarningManagement> warnings = swmWarningManagementService.listPast7DaysWarning();
+        List<SwmWarningManagement> warnings = swmWarningManagementService.warningStatisticsForPast7Days();
 
         // 2. 统计每种预警内容的总数
         Map<String, Long> warningMap = warnings.stream()
