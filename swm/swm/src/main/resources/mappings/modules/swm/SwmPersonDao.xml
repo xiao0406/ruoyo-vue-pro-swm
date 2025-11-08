@@ -476,7 +476,7 @@
     </select>
     <select id="findByIdCardsCount" resultType="java.lang.Long">
         SELECT
-        COUNT(1)
+        count(id)
         FROM swm_person
         WHERE status = '0'
         AND identity_card IN

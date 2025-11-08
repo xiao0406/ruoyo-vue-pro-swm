@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -302,6 +303,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
     }
 
     public Page<SwmPerson> findByIdCardsPage(SwmPerson swmPersonPage) {
+        SwmPerson swmPerson = new SwmPerson();
         Page<SwmPerson> page = swmPersonPage.getPage();
         List<String> idCards = swmPersonPage.getIdCards();
         if (idCards == null || idCards.isEmpty()) {
@@ -312,7 +314,8 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         // 从DAO获取分页数据
         List<SwmPerson> list = dao.findByIdCardsPage(swmPersonPage);
         // 获取总记录数
-        Long count = dao.findByIdCardsCount(swmPersonPage);
+        swmPerson.setIdCards(swmPersonPage.getIdCards());
+        Long count = dao.findByIdCardsCount(swmPerson);
 
         // 设置分页结果
         page.setList(list);

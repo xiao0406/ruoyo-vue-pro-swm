@@ -890,6 +890,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     }
 
     public Page<SwmDashboardNewController.Person> attendanceList(SwmDashboardNewController.Person person) {
+        SwmDashboardNewController.Person personCount = new SwmDashboardNewController.Person();
         // 调用DAO层进行分页查询
         Page<SwmDashboardNewController.Person> page = person.getPage();
         if (page == null) {
@@ -897,8 +898,9 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         }
         // 从DAO获取分页数据
         List<SwmDashboardNewController.Person> list = dao.attendanceListPage(person);
+        personCount.setDate(person.getDate());
         // 获取总记录数
-        Long count = dao.attendanceListCount(person);
+        Long count = dao.attendanceListCount(personCount);
 
         // 设置分页结果
         page.setList(list);
