@@ -1151,12 +1151,14 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 for (SwmWarningManagement item : mysqlList) {
                     if (item.getWarningType() != null) {
                         // 修复warningType=1时显示为"主动报警"的问题
-                        if ("1".equals(item.getWarningType())) {
-                            item.setWarningTypeText("主动报警");
-                        } else {
-                            item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(),
-                                    item.getWarningType()));
-                        }
+                        item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(),
+                                item.getWarningType()));
+//                        if ("1".equals(item.getWarningType())) {
+//                            item.setWarningTypeText("主动报警");
+//                        } else {
+//                            item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(),
+//                                    item.getWarningType()));
+//                        }
                     }
                     if (item.getHandleStatus() != null) {
                         item.setHandleStatusText(DictUtils.getDictLabel("handle_status_enum", item.getHandleStatus(),
@@ -1234,13 +1236,15 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 // 设置显示文本值
                 if (item.getWarningType() != null) {
                     // 修复warningType=1时显示为"主动报警"的问题
-                    if ("1".equals(item.getWarningType())) {
-                        item.setWarningTypeText("主动报警");
-                    } else {
-                        item.setWarningTypeText(
-                                DictUtils.getDictLabel("warning_type_enum", item.getWarningType(),
-                                        item.getWarningType()));
-                    }
+                    item.setWarningTypeText(DictUtils.getDictLabel("warning_type_enum", item.getWarningType(),
+                            item.getWarningType()));
+//                    if ("1".equals(item.getWarningType())) {
+//                        item.setWarningTypeText("主动报警");
+//                    } else {
+//                        item.setWarningTypeText(
+//                                DictUtils.getDictLabel("warning_type_enum", item.getWarningType(),
+//                                        item.getWarningType()));
+//                    }
                 }
                 if (item.getHandleStatus() != null) {
                     item.setHandleStatusText(

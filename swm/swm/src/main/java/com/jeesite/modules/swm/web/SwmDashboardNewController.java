@@ -849,13 +849,16 @@ public class SwmDashboardNewController extends BaseController {
     @GetMapping("/worker/list")
     @ResponseBody
     @ApiOperation("在场工人数列表")
-    public List<Person> workerList() {
+    public Page<Person> workerList( HttpServletRequest request, HttpServletResponse response) {
+        Page<Person> personPage = new Page<>();
         List<Person> list = new ArrayList<>();
         SwmPerson query = new SwmPerson();
         query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // '1' - 在职
         query.setStatus("0"); // 正常状态
         query.setPersonType(SwmPerson.PersonTypeEnum.WORKER);
-        List<SwmPerson> swmPersonList = swmPersonService.findList(query);
+        query.setPage(new Page<>(request, response));
+        Page<SwmPerson> page = swmPersonService.findPage(query);
+        List<SwmPerson> swmPersonList = page.getList();
         for (SwmPerson swmPerson : swmPersonList) {
             Person person = new Person();
             person.setName(swmPerson.getName());
@@ -864,7 +867,11 @@ public class SwmDashboardNewController extends BaseController {
             person.setPersonType(swmPerson.getPersonType());
             list.add(person);
         }
-        return list;
+        personPage.setCount(page.getCount());
+        personPage.setPageNo(page.getPageNo());
+        personPage.setPageSize(page.getPageSize());
+        personPage.setList(list);
+        return personPage;
     }
     // 在场管理员人数列表
     @GetMapping("/manager/list")
