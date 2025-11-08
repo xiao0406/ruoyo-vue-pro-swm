@@ -295,6 +295,10 @@ public class SwmDashboardController extends BaseController {
     public Map<String, Object> warningStatisticsForToday() {
         Map<String, Object> map = new HashMap<>();
 
+        String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+        String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+        String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+
         // 获取统计数据
         try {
             // 使用TDengine直接查询统计数据
@@ -308,6 +312,7 @@ public class SwmDashboardController extends BaseController {
             calendar.add(Calendar.DAY_OF_YEAR, 1);
             long tomorrowStartTime = calendar.getTimeInMillis();
 
+
             // TDengine特有语法：1. 不能使用COUNT(*) 2. 不能使用别名
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT warning_content,COUNT(1) FROM ")
@@ -315,12 +320,14 @@ public class SwmDashboardController extends BaseController {
                     .append(" WHERE warning_time >= ").append(todayStartTime)
                     .append(" AND warning_time < ").append(tomorrowStartTime)
                     .append(" AND status = '0'")
+                    .append(" AND ")
+                    .append(String.format("warning_content IN ('%s','%s','%s')", dictLabel1, dictLabel2, dictLabel3))
                     .append(" GROUP BY warning_content");
 
             logger.info("执行今日预警统计SQL: {}", sqlBuilder.toString());
 
             // 执行查询并解析结果
-            Map<String, Object> warningMap = new HashMap<>();
+            Map<String, Object> warningMap = new HashMap<>(); // 储存：长时间静止报警、跌落报警、应急呼叫
             Map<String, Long> totalCountMap = new HashMap<>(); // 存储每种类型的总数
 
             try {
@@ -388,38 +395,54 @@ public class SwmDashboardController extends BaseController {
                 handledCountMap.remove("危险源报警");
             }
 
-            // 设置安全预警（即危险源报警）- 不用"已处置/总数"格式
-            warningMap.put("安全预警", hazardTotalCount);
+//            // 设置安全预警（即危险源报警）- 不用"已处置/总数"格式
+//            warningMap.put("安全预警", hazardTotalCount);
+//
+//            // 计算跌落报警的总数和已处置数
+//            Long fallTotalCount = totalCountMap.getOrDefault("跌落报警", 0L);
+//            Long fallHandledCount = handledCountMap.getOrDefault("跌落报警", 0L);
+//            warningMap.put("跌落报警", fallHandledCount + "/" + fallTotalCount);
+//
+//            // 计算静默报警的总数和已处置数
+//            Long silentTotalCount = totalCountMap.getOrDefault("静默报警", 0L);
+//            Long silentHandledCount = handledCountMap.getOrDefault("静默报警", 0L);
+//            warningMap.put("静默报警", silentHandledCount + "/" + silentTotalCount);
+
+//            // 计算主动报警（除安全预警外所有报警的总和）
+//            Long activeTotalCount = 0L;
+//            Long activeHandledCount = 0L;
+//
+//            // 遍历所有报警类型，计算除安全预警和危险源报警之外的总数和已处置数
+//            for (String warningType : totalCountMap.keySet()) {
+//                if (!"安全预警".equals(warningType) && !"危险源报警".equals(warningType)) {
+//                    activeTotalCount += totalCountMap.getOrDefault(warningType, 0L);
+//                }
+//            }
+//
+//            for (String warningType : handledCountMap.keySet()) {
+//                if (!"安全预警".equals(warningType) && !"危险源报警".equals(warningType)) {
+//                    activeHandledCount += handledCountMap.getOrDefault(warningType, 0L);
+//                }
+//            }
+
+//            // 设置主动报警总数，格式为"已处置/总数"
+//            warningMap.put("主动报警", activeHandledCount + "/" + activeTotalCount);
+
+
 
             // 计算跌落报警的总数和已处置数
-            Long fallTotalCount = totalCountMap.getOrDefault("跌落报警", 0L);
-            Long fallHandledCount = handledCountMap.getOrDefault("跌落报警", 0L);
-            warningMap.put("跌落报警", fallHandledCount + "/" + fallTotalCount);
-
-            // 计算静默报警的总数和已处置数
-            Long silentTotalCount = totalCountMap.getOrDefault("静默报警", 0L);
-            Long silentHandledCount = handledCountMap.getOrDefault("静默报警", 0L);
-            warningMap.put("静默报警", silentHandledCount + "/" + silentTotalCount);
-
-            // 计算主动报警（除安全预警外所有报警的总和）
-            Long activeTotalCount = 0L;
-            Long activeHandledCount = 0L;
-
-            // 遍历所有报警类型，计算除安全预警和危险源报警之外的总数和已处置数
-            for (String warningType : totalCountMap.keySet()) {
-                if (!"安全预警".equals(warningType) && !"危险源报警".equals(warningType)) {
-                    activeTotalCount += totalCountMap.getOrDefault(warningType, 0L);
-                }
-            }
-
-            for (String warningType : handledCountMap.keySet()) {
-                if (!"安全预警".equals(warningType) && !"危险源报警".equals(warningType)) {
-                    activeHandledCount += handledCountMap.getOrDefault(warningType, 0L);
-                }
-            }
-
-            // 设置主动报警总数，格式为"已处置/总数"
-            warningMap.put("主动报警", activeHandledCount + "/" + activeTotalCount);
+            //长时间静止报警
+            Long fallTotalCount1 = totalCountMap.getOrDefault(dictLabel1, 0L);
+            Long fallHandledCount1 = handledCountMap.getOrDefault(dictLabel1, 0L);
+            warningMap.put(dictLabel1, fallHandledCount1 + "/" + fallTotalCount1);
+            //跌落报警
+            Long fallTotalCount2 = totalCountMap.getOrDefault(dictLabel2, 0L);
+            Long fallHandledCount2 = handledCountMap.getOrDefault(dictLabel2, 0L);
+            warningMap.put(dictLabel2, fallHandledCount2 + "/" + fallTotalCount2);
+            //应急呼叫
+            Long fallTotalCount3 = totalCountMap.getOrDefault(dictLabel3, 0L);
+            Long fallHandledCount3 = handledCountMap.getOrDefault(dictLabel3, 0L);
+            warningMap.put(dictLabel3, fallHandledCount3 + "/" + fallTotalCount3);
 
             map.put("warning", warningMap);
         } catch (Exception e) {
@@ -432,18 +455,28 @@ public class SwmDashboardController extends BaseController {
                             Collectors.counting()));
 
             Map<String, Object> warningMap = new HashMap<>();
-            warningMap.put("安全预警", totalCountMap.getOrDefault("危险源报警", 0L));
-            warningMap.put("跌落报警", "0/" + totalCountMap.getOrDefault("跌落报警", 0L));
-            warningMap.put("静默报警", "0/" + totalCountMap.getOrDefault("静默报警", 0L));
+//            warningMap.put("安全预警", totalCountMap.getOrDefault("危险源报警", 0L));
+//            warningMap.put("跌落报警", "0/" + totalCountMap.getOrDefault("跌落报警", 0L));
+//            warningMap.put("静默报警", "0/" + totalCountMap.getOrDefault("静默报警", 0L));
+//
+//            // 计算主动报警（除安全预警外所有报警的总和）
+//            Long activeTotalCount = 0L;
+//            for (Map.Entry<String, Long> entry : totalCountMap.entrySet()) {
+//                if (!"危险源报警".equals(entry.getKey())) {
+//                    activeTotalCount += entry.getValue();
+//                }
+//            }
+//            warningMap.put("主动报警", "0/" + activeTotalCount);
 
-            // 计算主动报警（除安全预警外所有报警的总和）
-            Long activeTotalCount = 0L;
-            for (Map.Entry<String, Long> entry : totalCountMap.entrySet()) {
-                if (!"危险源报警".equals(entry.getKey())) {
-                    activeTotalCount += entry.getValue();
-                }
-            }
-            warningMap.put("主动报警", "0/" + activeTotalCount);
+            //长时间静止报警
+            Long fallTotalCount1 = totalCountMap.getOrDefault(dictLabel1, 0L);
+            warningMap.put(dictLabel1,  "0/" + fallTotalCount1);
+            //跌落报警
+            Long fallTotalCount2 = totalCountMap.getOrDefault(dictLabel2, 0L);
+            warningMap.put(dictLabel2, "0/" + fallTotalCount2);
+            //应急呼叫
+            Long fallTotalCount3 = totalCountMap.getOrDefault(dictLabel3, 0L);
+            warningMap.put(dictLabel3, "0/" + fallTotalCount3);
 
             map.put("warning", warningMap);
         }

@@ -210,6 +210,18 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.info("添加报警时间范围查询条件: {} - {}", swmWarningManagement.getBeginAlarmTime(), swmWarningManagement.getEndAlarmTime());
         }
 
+
+        //新增条件，主数据看板，今日报警总数只统计：静默、跌落、应急呼叫这三个预警类型
+        if(swmWarningManagement.isMasterDataAlarm()){
+            String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+            String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+            String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+            // 使用IN条件
+            String inCondition = String.format("warning_content IN ('%s','%s','%s')", dictLabel1, dictLabel2, dictLabel3);
+            conditions.add(inCondition);
+        }
+
+
         if (!conditions.isEmpty()) {
             sqlBuilder.append(" WHERE ");
             for (int i = 0; i < conditions.size(); i++) {
@@ -328,6 +340,17 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             conditions.add("area LIKE '%" + swmWarningManagement.getArea() + "%'");
             logger.info("添加区域查询条件: {}", swmWarningManagement.getArea());
         }
+
+        //新增条件，主数据看板，今日报警总数只统计：静默、跌落、应急呼叫这三个预警类型
+        if(swmWarningManagement.isMasterDataAlarm()){
+            String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+            String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+            String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+            // 使用IN条件
+            String inCondition = String.format("warning_content IN ('%s','%s','%s')", dictLabel1, dictLabel2, dictLabel3);
+            conditions.add(inCondition);
+        }
+
         // 添加时间范围条件
         if(swmWarningManagement.getBeginAlarmTime() != null && swmWarningManagement.getEndAlarmTime() != null){
             conditions.add("alarm_time >= '" + DateUtils.formatDateTime(swmWarningManagement.getBeginAlarmTime()) + "'");
@@ -1682,6 +1705,15 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
         // 注意：默认已经排除一键SOS、考勤打卡、进入大门的记录
 
+
+        String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+        String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+        String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+        swmWarningManagement.setWarningContentList(Arrays.asList(dictLabel1, dictLabel2, dictLabel3));
+
+        swmWarningManagement.setMasterDataAlarm( true);
+
+
         // 调用混合查询方法
         Page<SwmWarningManagement> resultPage = hybridFindPage(page, swmWarningManagement);
 
@@ -2251,7 +2283,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         Date endDate = calendar.getTime();
 
         // 日期格式化：TDengine 要求时间字符串格式为 'YYYY-MM-DD HH:mm:ss' 或 'YYYY-MM-DD'
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String startDateStr = sdf.format(startDate);
         String endDateStr = sdf.format(endDate);
 

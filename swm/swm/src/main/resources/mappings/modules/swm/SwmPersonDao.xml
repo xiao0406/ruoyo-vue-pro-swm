@@ -370,12 +370,11 @@
         a.name AS "name",
         a.person_type AS "personType",
         a.gender AS "gender",
-        -- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
         COALESCE(MAX(o.office_name), MAX(backup_o.office_name)) AS "company",
         COALESCE(MAX(p.position_name), MAX(backup_p.position_name)) AS "department",
         COALESCE(MAX(fpl.prod_line_name), MAX(backup_fpl.prod_line_name)) AS "prodLine",
         COALESCE(MAX(wg.work_group_name), MAX(backup_wg.work_group_name)) AS "team",
-        COALESCE(MAX(f.work_type), MAX(backup_wt.work_type)) AS "jobType",
+        COALESCE(MAX(a.job_type), f.work_type) AS "jobType",
         a.safety_helmet_id AS "safetyHelmetId",
         a.personnel_status AS "personnelStatus",
         a.identity_card AS "identityCard",
@@ -392,7 +391,6 @@
         MAX(wg.id) AS "workGroupId",
         MAX(fpl.id) AS "prodLineId"
         FROM swm_person a
-        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
             AND NOT EXISTS (
                 SELECT 1
@@ -404,7 +402,6 @@
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
         LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-        -- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
         LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
         LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci

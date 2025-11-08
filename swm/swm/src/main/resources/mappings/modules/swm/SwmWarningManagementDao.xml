@@ -140,6 +140,12 @@
             <if test="excludeGateEntry == true">
                 AND a.warning_content != '进入大门'
             </if>
+        <if test="warningContentList != null and warningContentList.size >0">
+            AND a.warning_content in
+        <foreach item="warningContent" collection="warningContentList" separator="," open="(" close=")">
+              #{warningContent}
+        </foreach>
+        </if>
         ORDER BY
             a.warning_time DESC
     </select>

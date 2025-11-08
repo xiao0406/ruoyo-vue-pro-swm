@@ -152,26 +152,10 @@ public class SwmDashboardNewController extends BaseController {
         swmWarningManagement.setEndAlarmTime(DateUtils.parseDate(endTime));
 
 
-
+        swmWarningManagement.setMasterDataAlarm(true);
         List<SwmWarningManagement> swmWarningManagements = swmWarningManagementService.listFromTDEngine(swmWarningManagement);
         //今日报警总数
         result.put("swmWarningManagementCount", swmWarningManagements.size());
-//        SwmWarningManagement vo = new SwmWarningManagement();
-//        vo.setPage(new Page<>(1, 20));
-//
-//        // 创建模拟的HttpServletRequest来传递参数
-//        MockHttpServletRequest request = new MockHttpServletRequest();
-//        MockHttpServletResponse response = new MockHttpServletResponse();
-//
-//        // 设置时间范围参数
-//        request.setParameter("timeRange[0]", beginTime);  // 今日开始时间
-//        request.setParameter("timeRange[1]", endTime);  // 今日结束时间
-//
-//        // 获取SwmWarningManagementController Bean
-//        SwmWarningManagementController controller = applicationContext.getBean(SwmWarningManagementController.class);
-//        // 调用listData方法
-//        Page<SwmWarningManagement> result1 = controller.listData(swmWarningManagement, request, response);
-//        result.put("swmWarningManagementCount", result1.getCount());
 
         // 五天未考勤人数
         Long abnormalAttendanceCount = countAbnormalAttendance(5);

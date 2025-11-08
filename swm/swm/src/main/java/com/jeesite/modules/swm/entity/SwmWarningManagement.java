@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -165,6 +166,9 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private Date beginAlarmTime; // 查询开始预警/报警时间
     private Date endAlarmTime; // 查询结束预警/报警时间
     private String personType ;
+    private List<String> warningContentList;
+
+    private boolean isMasterDataAlarm = false;  //主数据看板，今日报警总数只统计：静默、跌落、应急呼叫这三个预警类型
 
     // 用于存储额外数据的Map
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -517,5 +521,21 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setPersonType(String personType) {
         this.personType = personType;
+    }
+
+    public boolean isMasterDataAlarm() {
+        return isMasterDataAlarm;
+    }
+
+    public void setMasterDataAlarm(boolean masterDataAlarm) {
+        isMasterDataAlarm = masterDataAlarm;
+    }
+
+    public List<String> getWarningContentList() {
+        return warningContentList;
+    }
+
+    public void setWarningContentList(List<String> warningContentList) {
+        this.warningContentList = warningContentList;
     }
 }
