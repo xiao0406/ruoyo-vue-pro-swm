@@ -1705,6 +1705,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 .and("warning_time", QueryType.GTE, startDate)
                 .and("warning_time", QueryType.LT, endDate);
 
+        swmWarningManagement.setBeginAlarmTime(startDate);
+        swmWarningManagement.setEndAlarmTime(endDate);
+
+
         swmWarningManagement.setStatus("0"); // 状态为0的记录
 
         // 注意：默认已经排除一键SOS、考勤打卡、进入大门的记录

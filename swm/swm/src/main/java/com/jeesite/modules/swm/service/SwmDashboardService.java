@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -233,18 +234,23 @@ public class SwmDashboardService {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             Calendar calendar = Calendar.getInstance();
             
-            // 当天开始时间 00:00:00
-            calendar.set(Calendar.HOUR_OF_DAY, 0);
-            calendar.set(Calendar.MINUTE, 0);
-            calendar.set(Calendar.SECOND, 0);
-            calendar.set(Calendar.MILLISECOND, 0);
-            String todayStartTime = sdf.format(calendar.getTime());
-            
-            // 当天结束时间 23:59:59
-            calendar.set(Calendar.HOUR_OF_DAY, 23);
-            calendar.set(Calendar.MINUTE, 59);
-            calendar.set(Calendar.SECOND, 59);
-            String todayEndTime = sdf.format(calendar.getTime());
+//            // 当天开始时间 00:00:00
+//            calendar.set(Calendar.HOUR_OF_DAY, 0);
+//            calendar.set(Calendar.MINUTE, 0);
+//            calendar.set(Calendar.SECOND, 0);
+//            calendar.set(Calendar.MILLISECOND, 0);
+//            String todayStartTime = sdf.format(calendar.getTime());
+//
+//            // 当天结束时间 23:59:59
+//            calendar.set(Calendar.HOUR_OF_DAY, 23);
+//            calendar.set(Calendar.MINUTE, 59);
+//            calendar.set(Calendar.SECOND, 59);
+//            String todayEndTime = sdf.format(calendar.getTime());
+
+            Date now = new Date();
+            Date oneMinuteAgo = DateUtil.offsetMinute(now, -1);
+            String todayStartTime = DateUtil.formatDateTime(oneMinuteAgo);
+            String todayEndTime = DateUtil.formatDateTime(now);
             
             // 从TDengine获取当天所有有位置数据的身份证
             Set<String> todayOnSiteIdCards = getTodayOnSiteIdCards(todayStartTime, todayEndTime);

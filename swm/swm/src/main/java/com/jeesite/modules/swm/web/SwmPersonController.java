@@ -4,6 +4,7 @@
  */
 package com.jeesite.modules.swm.web;
 
+import cn.hutool.core.date.DateUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelReader;
 import com.alibaba.excel.context.AnalysisContext;
@@ -1423,9 +1424,13 @@ public class SwmPersonController extends BaseController {
 
         try {
             // 获取当前日期的开始和结束时间
-            String currentDate = cn.hutool.core.date.DateUtil.today();
-            String startTime = currentDate + " 00:00:00";
-            String endTime = currentDate + " 23:59:59";
+//            String currentDate = cn.hutool.core.date.DateUtil.today();
+//            String startTime = currentDate + " 00:00:00";
+//            String endTime = currentDate + " 23:59:59";
+            Date now = new Date();
+            Date oneMinuteAgo = DateUtil.offsetMinute(now, -1);
+            String startTime = DateUtil.formatDateTime(oneMinuteAgo);
+            String endTime = DateUtil.formatDateTime(now);
 
             // 构建批量查询SQL，使用IN子句
             StringBuilder sqlBuilder = new StringBuilder();
@@ -1655,7 +1660,7 @@ public class SwmPersonController extends BaseController {
             }
 
             sqlBuilder.append(
-                    ") AND time <= NOW() AND time >= NOW() - 5m AND (type = '1' OR type = '6') GROUP BY id_card");
+                    ") AND time <= NOW() AND time >= NOW() - 2m AND (type = '1' OR type = '6') GROUP BY id_card");
 
             logger.debug("批量查询运动状态SQL: {}", sqlBuilder.toString());
 

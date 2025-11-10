@@ -79,8 +79,8 @@ public class TdengineServiceImpl implements TDengineService {
         if (DebugConstant.open) {
             if (StringUtils.isNotBlank(DebugConstant.deviceNum)) {
                 if (sql.contains(DebugConstant.deviceNum)) {
-                    log.info("执行sql:" + sql);
-                    log.info("执行结果：" + result);
+//                    log.info("执行sql:" + sql);
+//                    log.info("执行结果：" + result);
                 }
             } else {
                 log.info("执行sql:" + sql);
@@ -786,8 +786,8 @@ public class TdengineServiceImpl implements TDengineService {
                     .execute()
                     .body();
 
-            log.debug("执行SQL: {}", sql);
-            log.debug("执行结果: {}", result);
+//            log.debug("执行SQL: {}", sql);
+//            log.debug("执行结果: {}", result);
 
             JSONObject jsonObject = JSONUtil.parseObj(result);
             if (!"succ".equals(jsonObject.getStr("status"))

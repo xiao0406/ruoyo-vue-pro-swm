@@ -248,6 +248,7 @@ public class SwmDashboardNewController extends BaseController {
         result.put("todayAttendanceManagerCount", todayAttendanceManagerCount);
 
         // 工作中人数：从TDengine查询1小时内有位置数据的人数（按类型分类）
+        //这里改下逻辑，取最近5分钟的数据
         Map<String, Integer> workingStats = getWorkingCountByTypeFromTDengine();
         // 实时作业工人数
         Integer workingPersonCount = workingStats.getOrDefault("worker", 0);
@@ -257,19 +258,7 @@ public class SwmDashboardNewController extends BaseController {
         result.put("workingManagerCount", workingManagerCount);
         // 实时作业人数
         // 获取SwmPersonController Bean
-        result.put("totalWorkingCount", workingPersonCount + workingManagerCount);
-        //TODO  这里前端字段取反了，后端临时反一下，先保证演示，10-30号演示完记得取消
-        result.put("workingPersonCount", workingPersonCount + workingManagerCount);
-
-        SwmPersonController swmPersonController = applicationContext.getBean(SwmPersonController.class);
-        // 调用方法（假设不需要keyword参数）
-        Map<String, Object> allActivePersonsWithIdCardFromCache = swmPersonController.getAllActivePersonsWithIdCardFromCache(null);
-        // 获取data条数
-        if (allActivePersonsWithIdCardFromCache != null && allActivePersonsWithIdCardFromCache.get("data") instanceof List) {
-            List<?> dataList = (List<?>) allActivePersonsWithIdCardFromCache.get("data");
-            int size = dataList.size();
-            result.put("workingPersonCount", size);
-        }
+        result.put("totalWorkingCount", workingPersonCount);
 
         // 在场工人数
         long workerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
@@ -327,10 +316,14 @@ public class SwmDashboardNewController extends BaseController {
 
         try {
             // 获取1小时前的时间字符串
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.HOUR_OF_DAY, -1); // 减去1小时
-            String oneHourAgo = sdf.format(calendar.getTime());
+//            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//            Calendar calendar = Calendar.getInstance();
+//            calendar.add(Calendar.HOUR_OF_DAY, -1); // 减去1小时
+//            String oneHourAgo = sdf.format(calendar.getTime());
+
+            Date now = new Date();
+            Date oneMinuteAgo = DateUtil.offsetMinute(now, -5);
+            String oneHourAgo = DateUtil.formatDateTime(oneMinuteAgo);
 
             // 从TDengine获取1小时内的唯一身份证集合
             Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
@@ -341,7 +334,8 @@ public class SwmDashboardNewController extends BaseController {
                 result.put("worker", typeStats.get("worker"));
                 result.put("manager", typeStats.get("manager"));
 
-                logger.info("查询到1小时内工作中人数 - 工人: {}, 管理员: {} (1小时前时间: {})",
+//                logger.info("查询到1小时内工作中人数 - 工人: {}, 管理员: {} (1小时前时间: {})",
+                logger.info("查询到5分钟内工作中人数 - 工人: {}, 管理员: {} (5分钟前时间: {})",
                         typeStats.get("worker"), typeStats.get("manager"), oneHourAgo);
             } else {
                 logger.warn("查询1小时内工作中人数失败或无数据");
@@ -952,6 +946,7 @@ public class SwmDashboardNewController extends BaseController {
                 swmWarningManagement.getEndAlarmTime());
         // 调用服务层方法，仅从 TDengine 查询数据
         // 时区调整已在SQL查询中完成，无需再次调整
+        swmWarningManagement.setMasterDataAlarm( true);
         Page<SwmWarningManagement> resultPage = swmWarningManagementService.tdEngineFindPage(page, swmWarningManagement);
         logger.info("查询完成，数据中的时区调整已在SQL中进行");
         // 添加日志检查返回的数据

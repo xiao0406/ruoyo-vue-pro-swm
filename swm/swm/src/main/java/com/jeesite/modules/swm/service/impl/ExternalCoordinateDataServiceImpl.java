@@ -56,9 +56,13 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
 
         try {
             // 获取当前日期的开始和结束时间
-            String currentDate = DateUtil.today();
-            String startTime = currentDate + " 00:00:00";
-            String endTime = currentDate + " 23:59:59";
+//            String currentDate = DateUtil.today();
+//            String startTime = currentDate + " 00:00:00";
+//            String endTime = currentDate + " 23:59:59";
+            Date now = new Date();
+            Date oneMinuteAgo = DateUtil.offsetMinute(now, -1);
+            String startTime = DateUtil.formatDateTime(oneMinuteAgo);
+            String endTime = DateUtil.formatDateTime(now);
 
             // 构建身份证号的IN查询条件
             StringBuilder idCardCondition = new StringBuilder();

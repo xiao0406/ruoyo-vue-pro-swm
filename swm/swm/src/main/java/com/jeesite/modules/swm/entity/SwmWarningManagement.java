@@ -167,6 +167,8 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
     private Date endAlarmTime; // 查询结束预警/报警时间
     private String personType ;
     private List<String> warningContentList;
+    private Date startDate;
+    private Date endDate;
 
     private boolean isMasterDataAlarm = false;  //主数据看板，今日报警总数只统计：静默、跌落、应急呼叫这三个预警类型
 
@@ -537,5 +539,21 @@ public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 
     public void setWarningContentList(List<String> warningContentList) {
         this.warningContentList = warningContentList;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
     }
 }

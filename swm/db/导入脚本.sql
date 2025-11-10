@@ -48,4 +48,12 @@ INSERT INTO `swm`.`fms_work_group` (`id`, `work_group_name`, `work_group_code`, 
 # 余料班组
 INSERT INTO `swm`.`fms_work_group` (`id`, `work_group_name`, `work_group_code`, `head_id`, `prod_line_id`, `work_shop_id`, `proc_id`, `create_by`, `create_date`, `update_by`, `update_date`, `remarks`, `corp_code`, `corp_name`, `make_unit`, `work_shop_name`, `office_work_code`) VALUES (REPLACE(UUID(), '-', ''), '余料班组', 'YLBZ_ZJ', '13719644368', '1775065603265200128', '1745709611073945600', NULL, 'ZJGG_adminZJGG', NOW(), 'ZJGG_adminZJGG', NOW(), NULL, 'ZJGG', '中建钢构股份有限公司', '0001A110000000002ZWA', NULL, NULL);
 
+-- 2025/11/10 导入人员 ===================================================
 
+-- 班组 ===================================
+-- 何望辉班组  二车间桥梁线
+INSERT INTO `swm`.`fms_work_group` (`id`, `work_group_name`, `work_group_code`, `head_id`, `prod_line_id`, `work_shop_id`, `proc_id`, `create_by`, `create_date`, `update_by`, `update_date`, `remarks`, `corp_code`, `corp_name`, `make_unit`, `work_shop_name`, `office_work_code`) VALUES (REPLACE(UUID(), '-', ''), '何望辉班组', 'HWH_BZ', '13794508580', '1762161057997701', '1745710598073368576', NULL, 'ZJGG_adminZJGG', NOW(), 'ZJGG_adminZJGG', NOW(), NULL, 'ZJGG', '中建钢构股份有限公司', '0001A110000000002ZWA', NULL, '');
+-- 刘洋班组  二车间桥梁线
+INSERT INTO `swm`.`fms_work_group` (`id`, `work_group_name`, `work_group_code`, `head_id`, `prod_line_id`, `work_shop_id`, `proc_id`, `create_by`, `create_date`, `update_by`, `update_date`, `remarks`, `corp_code`, `corp_name`, `make_unit`, `work_shop_name`, `office_work_code`) VALUES (REPLACE(UUID(), '-', ''), '刘洋班组', 'LY_BZ', '13794508580', '1762161057997701', '1745710598073368576', NULL, 'ZJGG_adminZJGG', NOW(), 'ZJGG_adminZJGG', NOW(), NULL, 'ZJGG', '中建钢构股份有限公司', '0001A110000000002ZWA', NULL, '');
+-- 何望辉班组  二车间桥梁线
+INSERT INTO `swm`.`fms_work_group` (`id`, `work_group_name`, `work_group_code`, `head_id`, `prod_line_id`, `work_shop_id`, `proc_id`, `create_by`, `create_date`, `update_by`, `update_date`, `remarks`, `corp_code`, `corp_name`, `make_unit`, `work_shop_name`, `office_work_code`) VALUES (REPLACE(UUID(), '-', ''), '何望辉班组', 'HWH_BZ', '13794508580', '1762161057997701', '1745710598073368576', NULL, 'ZJGG_adminZJGG', NOW(), 'ZJGG_adminZJGG', NOW(), NULL, 'ZJGG', '中建钢构股份有限公司', '0001A110000000002ZWA', NULL, '');
