@@ -248,7 +248,7 @@ public class SwmDashboardService {
 //            String todayEndTime = sdf.format(calendar.getTime());
 
             Date now = new Date();
-            Date oneMinuteAgo = DateUtil.offsetMinute(now, -5);
+            Date oneMinuteAgo = DateUtil.offsetMinute(now, -10);
             String todayStartTime = DateUtil.formatDateTime(oneMinuteAgo);
             String todayEndTime = DateUtil.formatDateTime(now);
             
