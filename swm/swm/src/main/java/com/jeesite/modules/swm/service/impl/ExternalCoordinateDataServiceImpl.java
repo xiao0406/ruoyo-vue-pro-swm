@@ -60,7 +60,7 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
 //            String startTime = currentDate + " 00:00:00";
 //            String endTime = currentDate + " 23:59:59";
             Date now = new Date();
-            Date oneMinuteAgo = DateUtil.offsetMinute(now, -10);
+            Date oneMinuteAgo = DateUtil.offsetMinute(now, -600);
             String startTime = DateUtil.formatDateTime(oneMinuteAgo);
             String endTime = DateUtil.formatDateTime(now);
 

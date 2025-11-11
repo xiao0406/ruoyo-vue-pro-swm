@@ -322,7 +322,7 @@ public class SwmDashboardNewController extends BaseController {
 //            String oneHourAgo = sdf.format(calendar.getTime());
 
             Date now = new Date();
-            Date oneMinuteAgo = DateUtil.offsetMinute(now, -10);
+            Date oneMinuteAgo = DateUtil.offsetMinute(now, -600);
             String oneHourAgo = DateUtil.formatDateTime(oneMinuteAgo);
 
             // 从TDengine获取1小时内的唯一身份证集合
