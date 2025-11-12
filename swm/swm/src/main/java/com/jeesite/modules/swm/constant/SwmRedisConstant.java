@@ -46,4 +46,14 @@ public class SwmRedisConstant {
         /** 映射关系缓存时间 - 永不过期 */
         public static final long MAPPING = -1;
     }
+
+    /**
+     * 设备信息
+     */
+    public static class Device {
+        /**
+         * Redis在线设备集合Key
+         */
+        public static final String ONLINE_DEVICES_KEY = "iot:devices:online";
+    }
 }

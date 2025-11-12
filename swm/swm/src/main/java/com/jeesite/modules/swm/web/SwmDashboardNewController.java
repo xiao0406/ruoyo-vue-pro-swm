@@ -7,6 +7,8 @@ import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.utils.R;
@@ -68,6 +70,9 @@ public class SwmDashboardNewController extends BaseController {
 
     @Autowired
     private ApplicationContext applicationContext;
+
+    @Autowired
+    private RedisService redisService;
 
 
 
@@ -321,12 +326,22 @@ public class SwmDashboardNewController extends BaseController {
 //            calendar.add(Calendar.HOUR_OF_DAY, -1); // 减去1小时
 //            String oneHourAgo = sdf.format(calendar.getTime());
 
-            Date now = new Date();
-            Date oneMinuteAgo = DateUtil.offsetMinute(now, -5);
-            String oneHourAgo = DateUtil.formatDateTime(oneMinuteAgo);
+//            Date now = new Date();
+//            Date oneMinuteAgo = DateUtil.offsetMinute(now, -10);
+//            String oneHourAgo = DateUtil.formatDateTime(oneMinuteAgo);
+//
+//            // 从TDengine获取1小时内的唯一身份证集合
+//            Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
 
-            // 从TDengine获取1小时内的唯一身份证集合
-            Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
+            //身份证从redis里获取，先获取到所有的设备，然后在获取设备对应的身份证
+            Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+            Set<String> uniqueIdCards = new HashSet<>();
+            if (deviceIds != null) {
+                for (Object deviceId : deviceIds) {
+                    String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                    uniqueIdCards.add(currentPerson);
+                }
+            }
 
             if (!uniqueIdCards.isEmpty()) {
                 // 通过身份证查询人员信息并按类型分类统计
@@ -335,8 +350,6 @@ public class SwmDashboardNewController extends BaseController {
                 result.put("manager", typeStats.get("manager"));
 
 //                logger.info("查询到1小时内工作中人数 - 工人: {}, 管理员: {} (1小时前时间: {})",
-                logger.info("查询到5分钟内工作中人数 - 工人: {}, 管理员: {} (5分钟前时间: {})",
-                        typeStats.get("worker"), typeStats.get("manager"), oneHourAgo);
             } else {
                 logger.warn("查询1小时内工作中人数失败或无数据");
             }

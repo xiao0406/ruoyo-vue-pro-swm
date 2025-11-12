@@ -13,6 +13,8 @@ import com.alibaba.excel.read.metadata.ReadSheet;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmPersonDeparture;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
@@ -93,6 +95,8 @@ public class SwmPersonController extends BaseController {
 
     @Value("${tdengine.dbname}")
     private String tdengineDbName;
+    @Autowired
+    private RedisService redisService;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -1421,6 +1425,14 @@ public class SwmPersonController extends BaseController {
         if (idCards == null || idCards.isEmpty()) {
             return result;
         }
+        idCards.clear();
+        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        if (deviceIds != null) {
+            for (Object deviceId : deviceIds) {
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                idCards.add(currentPerson);
+            }
+        }
 
         try {
             // 获取当前日期的开始和结束时间
@@ -1428,7 +1440,7 @@ public class SwmPersonController extends BaseController {
 //            String startTime = currentDate + " 00:00:00";
 //            String endTime = currentDate + " 23:59:59";
             Date now = new Date();
-            Date oneMinuteAgo = DateUtil.offsetMinute(now, -5);
+            Date oneMinuteAgo = DateUtil.offsetDay(now, -7);
             String startTime = DateUtil.formatDateTime(oneMinuteAgo);
             String endTime = DateUtil.formatDateTime(now);
 
@@ -1444,7 +1456,7 @@ public class SwmPersonController extends BaseController {
                 }
                 sqlBuilder.append("'").append(idCards.get(i)).append("'");
             }
-
+//
             sqlBuilder.append(") AND time >= '").append(startTime)
                     .append("' AND time <= '").append(endTime).append("'");
 
