@@ -3,6 +3,8 @@ package com.jeesite.modules.swm.service.impl;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
 import com.jeesite.modules.swm.service.TDengineService;
 import com.jeesite.modules.utils.R;
@@ -34,6 +36,9 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
     @Value("${tdengine.dbname}")
     private String dbname;
 
+    @Autowired
+    private RedisService redisService;
+
     /**
      * 外部坐标数据超级表名称
      */
@@ -54,13 +59,22 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
             return R.fail("身份证列表不能为空");
         }
 
+        idCardList.clear();
+        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        if (deviceIds != null) {
+            for (Object deviceId : deviceIds) {
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                idCardList.add(currentPerson);
+            }
+        }
+
         try {
             // 获取当前日期的开始和结束时间
 //            String currentDate = DateUtil.today();
 //            String startTime = currentDate + " 00:00:00";
 //            String endTime = currentDate + " 23:59:59";
             Date now = new Date();
-            Date oneMinuteAgo = DateUtil.offsetMinute(now, -10);
+            Date oneMinuteAgo = DateUtil.offsetDay(now, -7);
             String startTime = DateUtil.formatDateTime(oneMinuteAgo);
             String endTime = DateUtil.formatDateTime(now);
 

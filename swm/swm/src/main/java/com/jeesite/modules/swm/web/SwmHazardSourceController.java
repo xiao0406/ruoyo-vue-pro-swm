@@ -351,6 +351,7 @@ public class SwmHazardSourceController extends BaseController {
         String filterIdentityCard = swmHazardSource.getFilterIdentityCard();
         Map<String, Set<String>> hazardDeviceMap = new HashMap<>();
         hazardDeviceMap.put(swmHazardSource.getId(), new HashSet<>());
+        Set<String> deviceIds = new HashSet<>();
         if (StringUtils.isNotBlank(filterIdentityCard)) {
             //分割为多个人员身份证
             String[] identityCard = filterIdentityCard.split(",");
@@ -359,7 +360,7 @@ public class SwmHazardSourceController extends BaseController {
             query.getSqlMap().getWhere().and("assigned_person", QueryType.IN, identityCard);
             query.setStatus(SwmHelmetDevice.STATUS_NORMAL);
             List<SwmHelmetDevice> list = swmHelmetDeviceService.findList(query);
-            Set<String> deviceIds = list.stream().map(SwmHelmetDevice::getDeviceId).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+            deviceIds = list.stream().map(SwmHelmetDevice::getDeviceId).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
 
             // 从Redis取出已有设备ID（如果有）
             Object cacheObj = redisService.get(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON);
@@ -371,7 +372,7 @@ public class SwmHazardSourceController extends BaseController {
             hazardDeviceMap.put(swmHazardSource.getId(), deviceIds);
 //            redisService.set(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, hazardDeviceMap);
         }
-        redisService.set(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, hazardDeviceMap);
+        redisService.hset(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, swmHazardSource.getId(), deviceIds);
 
         // 如果设置为加入巡检且不是草稿状态
         if ("1".equals(swmHazardSource.getIsPatrolIncluded()) && !"1".equals(swmHazardSource.getIsDraft())) {

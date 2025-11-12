@@ -3,6 +3,8 @@ package com.jeesite.modules.swm.service;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -56,6 +58,9 @@ public class SwmDashboardService {
 
     @Value("${tdengine.dbname}")
     private String dbname;
+
+    @Autowired
+    private RedisService redisService;
     /**
      * 获取启用状态的地图路径
      * 
@@ -231,8 +236,8 @@ public class SwmDashboardService {
         
         try {
             // 1. 直接从TDengine查询当天所有有位置数据的身份证
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            Calendar calendar = Calendar.getInstance();
+//            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//            Calendar calendar = Calendar.getInstance();
             
 //            // 当天开始时间 00:00:00
 //            calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -247,14 +252,26 @@ public class SwmDashboardService {
 //            calendar.set(Calendar.SECOND, 59);
 //            String todayEndTime = sdf.format(calendar.getTime());
 
-            Date now = new Date();
-            Date oneMinuteAgo = DateUtil.offsetMinute(now, -10);
-            String todayStartTime = DateUtil.formatDateTime(oneMinuteAgo);
-            String todayEndTime = DateUtil.formatDateTime(now);
+//            Date now = new Date();
+//            Date oneMinuteAgo = DateUtil.offsetMinute(now, -10);
+//            String todayStartTime = DateUtil.formatDateTime(oneMinuteAgo);
+//            String todayEndTime = DateUtil.formatDateTime(now);
             
-            // 从TDengine获取当天所有有位置数据的身份证
-            Set<String> todayOnSiteIdCards = getTodayOnSiteIdCards(todayStartTime, todayEndTime);
-            
+//            // 从TDengine获取当天所有有位置数据的身份证
+//            Set<String> todayOnSiteIdCards = getTodayOnSiteIdCards(todayStartTime, todayEndTime);
+
+            //身份证从redis里获取，先获取到所有的设备，然后在获取设备对应的身份证
+            Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+            Set<String> todayOnSiteIdCards = new HashSet<>();
+            if (deviceIds != null) {
+                for (Object deviceId : deviceIds) {
+                    String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                    todayOnSiteIdCards.add(currentPerson);
+                }
+            }
+
+
+
             if (todayOnSiteIdCards.isEmpty()) {
                 return result;
             }
