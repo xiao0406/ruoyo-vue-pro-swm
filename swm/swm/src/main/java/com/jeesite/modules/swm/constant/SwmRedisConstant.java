@@ -56,4 +56,12 @@ public class SwmRedisConstant {
          */
         public static final String ONLINE_DEVICES_KEY = "iot:devices:online";
     }
+
+    /**
+     * 工作区域缓存服务
+     */
+    public static class AreaCache {
+        /** 哪些信标标识为不用报警 */
+        public static final String AREA_CACHE =SWM_PREFIX + "AREA_CACHE";
+    }
 }

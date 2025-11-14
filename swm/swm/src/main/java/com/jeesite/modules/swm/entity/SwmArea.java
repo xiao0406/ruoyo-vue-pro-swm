@@ -19,7 +19,7 @@ import javax.validation.constraints.NotBlank;
 @Table(name = "swm_area", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "area_name", attrName = "areaName", label = "区域名称", queryType = QueryType.LIKE),
-        @Column(name = "area_type", attrName = "areaType", label = "区域类型"),
+        @Column(name = "area_type", attrName = "areaType", label = "区域类型,字典-area_type ",queryType = QueryType.EQ),
         @Column(name = "area_color", attrName = "areaColor", label = "区域颜色"),
         @Column(name = "work_shop", attrName = "workShop", label = "车间ID"),
         @Column(name = "voice_prompt", attrName = "voicePrompt", label = "语音提示"),

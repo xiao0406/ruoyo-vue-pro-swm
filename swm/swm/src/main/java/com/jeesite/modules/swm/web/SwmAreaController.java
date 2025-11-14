@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import com.alibaba.fastjson.JSON;
 
+import com.jeesite.modules.swm.cache.SwmAreaCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -49,6 +50,9 @@ public class SwmAreaController extends BaseController {
 
     @Autowired
     private SwmBeaconStationService swmBeaconStationService;
+
+    @Autowired
+    private SwmAreaCache swmAreaCache;
 
     /**
      * 获取数据
@@ -153,6 +157,10 @@ public class SwmAreaController extends BaseController {
     @ApiOperation("保存区域")
     public String save(@Validated SwmArea swmArea) {
         swmAreaService.save(swmArea);
+        //生产区域信标,插入redis中
+        if (SwmArea.STATUS_NORMAL.equals(swmArea.getAreaType())){
+            swmAreaCache.insertAreaCache(swmArea.getId());
+        }
         return renderResult(Global.TRUE, text("保存区域成功！"));
     }
 
