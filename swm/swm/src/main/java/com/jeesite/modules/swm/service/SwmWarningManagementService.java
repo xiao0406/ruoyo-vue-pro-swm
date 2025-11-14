@@ -18,7 +18,9 @@ import com.jeesite.modules.utils.R;
 import com.jeesite.common.utils.SpringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +29,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
@@ -49,6 +50,11 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
     @Autowired
     private SwmPersonService swmPersonService;
+
+
+    @Qualifier("swmExecutor")
+    @Autowired
+    private ThreadPoolTaskExecutor swmExecutor;
 
     /**
      * 获取单条数据
@@ -1671,6 +1677,117 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             }
         } catch (Exception e) {
             logger.error("填充位置信息失败", e);
+        }
+    }
+
+    /**
+     * 为预警记录列表填充位置信息
+     * 从TDengine的area_fence_data表中查询位置信息
+     *
+     * @param warningList 预警记录列表
+     */
+    public void fillLocationInfoV1(List<SwmWarningManagement> warningList) {
+        if (warningList == null || warningList.isEmpty()) {
+            return;
+        }
+
+        try {
+            Map<String, Map<String, String>> deviceLocationMap = new ConcurrentHashMap<>();
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+
+
+
+
+            for (SwmWarningManagement warning : warningList) {
+                String deviceId = warning.getDeviceId();
+                String idCard = warning.getIdCard();
+                Date warningTime = warning.getWarningTime();
+
+                if (StringUtils.isBlank(deviceId) || StringUtils.isBlank(idCard) || warningTime == null) {
+                    continue;
+                }
+
+                // 子表名示例：plb.area_fence_data_设备id_身份证
+                String tableName = dbname +".area_fence_data_" + deviceId + "_" + idCard;
+                String key = deviceId + ":" + idCard;
+                if (deviceLocationMap.containsKey(key)) {
+                    continue; // 避免重复
+                }
+
+                long startTime = warningTime.getTime() - 10 * 60 * 1000;
+                long endTime = warningTime.getTime() + 10 * 60 * 1000;
+
+                String sql = String.format(
+                        "SELECT area_name, device_id, id_card, time " +
+                                "FROM %s WHERE time >= %d AND time <= %d " +
+                                "ORDER BY time DESC",
+                        tableName, startTime, endTime
+                );
+
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+                        if (result.getCode() != R.SUCCESS || result.getData() == null) return;
+
+                        JSONObject data = result.getData();
+                        JSONArray rows = data.getJSONArray("data");
+                        JSONArray columnMeta = data.getJSONArray("column_meta");
+                        if (rows == null || rows.isEmpty() || columnMeta == null) return;
+
+                        // 提取列索引
+                        int areaNameIdx = -1, deviceIdIdx = -1, idCardIdx = -1;
+
+                        for (int i = 0; i < columnMeta.size(); i++) {
+                            JSONArray column = columnMeta.getJSONArray(i);
+                            if (column == null || column.isEmpty()) continue;
+                            String name = column.getStr(0);
+                            if ("area_name".equals(name)) areaNameIdx = i;
+                            else if ("device_id".equals(name)) deviceIdIdx = i;
+                            else if ("id_card".equals(name)) idCardIdx = i;
+                        }
+
+                        JSONArray row = rows.getJSONArray(0);
+                        if (row != null && areaNameIdx >= 0) {
+                            String dev = (deviceIdIdx >= 0) ? row.getStr(deviceIdIdx) : deviceId;
+                            String id = (idCardIdx >= 0) ? row.getStr(idCardIdx) : idCard;
+                            String areaName = row.getStr(areaNameIdx);
+
+                            if (StringUtils.isNotBlank(areaName)) {
+                                Map<String, String> location = new HashMap<>();
+                                location.put("areaName", areaName);
+                                deviceLocationMap.put(dev + ":" + id, location);
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.error("查询子表失败：" + tableName, e);
+                    }
+                }, swmExecutor);
+
+                futures.add(future);
+            }
+
+            // 等待全部任务完成
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+            // 填充结果
+            for (SwmWarningManagement warning : warningList) {
+                String deviceId = warning.getDeviceId();
+                String idCard = warning.getIdCard();
+                if (StringUtils.isBlank(deviceId) || StringUtils.isBlank(idCard)) continue;
+
+                String key = deviceId + ":" + idCard;
+                Map<String, String> location = deviceLocationMap.get(key);
+                if (location != null) {
+                    String areaName = location.get("areaName");
+                    if (StringUtils.isNotBlank(areaName)) {
+                        warning.setAreaName(areaName);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error("并发填充位置信息失败", e);
         }
     }
 

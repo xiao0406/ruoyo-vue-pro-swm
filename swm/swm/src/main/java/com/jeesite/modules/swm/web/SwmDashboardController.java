@@ -488,7 +488,8 @@ public class SwmDashboardController extends BaseController {
         swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
 
         // 填充位置信息
-        swmWarningManagementService.fillLocationInfo(latestWarnings);
+//        swmWarningManagementService.fillLocationInfo(latestWarnings);
+        swmWarningManagementService.fillLocationInfoV1(latestWarnings);
 
         map.put("record", latestWarnings);
 

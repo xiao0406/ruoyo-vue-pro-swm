@@ -1,12 +1,13 @@
-package com.jeesite.modules.swm.service;
+package com.jeesite.modules.swm.cache;
 
 
-import com.jeesite.common.entity.Page;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmHazardSource;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.swm.service.SwmHazardSourceService;
+import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class SwmHazardSourceCacheService {
+public class SwmHazardSourceCache {
 
     @Autowired
     private RedisService redisService;
@@ -101,6 +102,39 @@ public class SwmHazardSourceCacheService {
         } catch (Exception e) {
             log.error("初始化在职人员缓存失败", e);
         }
+    }
+
+
+    /**
+     * 获取缓存数据
+     */
+
+    public Set<String> getHazardSourceCache(String  hazardId){
+        Set<String> devices = new HashSet<>();
+        // 从 Redis Hash 获取该危险源对应的设备集合
+        Object cacheObj = redisService.hget(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, hazardId);
+
+        if (cacheObj instanceof Set) {
+            devices = (Set<String>) cacheObj;
+        }
+        return devices;
+    }
+
+    /**
+     * 插入缓存数据
+     * @param hazardId
+     */
+    public void insertHazardSourceCache(String hazardId,String filterIdentityCard){
+        //分割为多个人员身份证
+        String[] identityCard = filterIdentityCard.split(",");
+        //通过人员身份证去查询设备id ,deviceId
+        SwmHelmetDevice query = new SwmHelmetDevice();
+        query.getSqlMap().getWhere().and("assigned_person", QueryType.IN, identityCard);
+        query.setStatus(SwmHelmetDevice.STATUS_NORMAL);
+        List<SwmHelmetDevice> list = swmHelmetDeviceService.findList(query);
+        Set<String> deviceIds = list.stream().map(SwmHelmetDevice::getDeviceId).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+
+        redisService.hset(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, hazardId, deviceIds);
     }
 
 

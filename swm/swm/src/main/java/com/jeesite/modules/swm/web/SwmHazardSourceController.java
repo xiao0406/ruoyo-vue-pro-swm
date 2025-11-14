@@ -9,8 +9,7 @@ import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.cache.service.RedisService;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.swm.cache.SwmHazardSourceCache;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.entity.DictData;
@@ -52,9 +51,10 @@ public class SwmHazardSourceController extends BaseController {
     private SwmBeaconStationService swmBeaconStationService; // 注入信标服务
 
     @Autowired
-    private RedisService redisService;
-    @Autowired
     private SwmHelmetDeviceService swmHelmetDeviceService;
+
+    @Autowired
+    private SwmHazardSourceCache hazardSourceCache;
 
     /**
      * 获取数据
@@ -349,30 +349,11 @@ public class SwmHazardSourceController extends BaseController {
 
         // 判断这个危险源是否有报警标识，存入redis,永不过期
         String filterIdentityCard = swmHazardSource.getFilterIdentityCard();
-        Map<String, Set<String>> hazardDeviceMap = new HashMap<>();
-        hazardDeviceMap.put(swmHazardSource.getId(), new HashSet<>());
-        Set<String> deviceIds = new HashSet<>();
         if (StringUtils.isNotBlank(filterIdentityCard)) {
-            //分割为多个人员身份证
-            String[] identityCard = filterIdentityCard.split(",");
-            //通过人员身份证去查询设备id ,deviceId
-            SwmHelmetDevice query = new SwmHelmetDevice();
-            query.getSqlMap().getWhere().and("assigned_person", QueryType.IN, identityCard);
-            query.setStatus(SwmHelmetDevice.STATUS_NORMAL);
-            List<SwmHelmetDevice> list = swmHelmetDeviceService.findList(query);
-            deviceIds = list.stream().map(SwmHelmetDevice::getDeviceId).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
-
-            // 从Redis取出已有设备ID（如果有）
-            Object cacheObj = redisService.get(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON);
-
-            if (cacheObj instanceof Map) {
-                hazardDeviceMap = (Map<String, Set<String>>) cacheObj;
-            }
-            // 3. 更新当前危险源对应的设备集合（覆盖旧的）
-            hazardDeviceMap.put(swmHazardSource.getId(), deviceIds);
-//            redisService.set(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, hazardDeviceMap);
+            //插入缓存
+            hazardSourceCache.insertHazardSourceCache(swmHazardSource.getId(), filterIdentityCard);
         }
-        redisService.hset(SwmRedisConstant.HazardSource.Hazard_ISALARM_BEACON, swmHazardSource.getId(), deviceIds);
+
 
         // 如果设置为加入巡检且不是草稿状态
         if ("1".equals(swmHazardSource.getIsPatrolIncluded()) && !"1".equals(swmHazardSource.getIsDraft())) {

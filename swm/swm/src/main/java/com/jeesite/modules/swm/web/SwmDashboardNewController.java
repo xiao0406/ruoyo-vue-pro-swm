@@ -775,13 +775,24 @@ public class SwmDashboardNewController extends BaseController {
         Page<Person> resultPage = new Page<>();
         // Date date = new Date(2025 - 1900, 8, 20);
         Date date = new Date();
-        // 获取1小时前的时间字符串
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.HOUR_OF_DAY, -1); // 减去1小时
-        String oneHourAgo = sdf.format(calendar.getTime());
+//        // 获取1小时前的时间字符串
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//        Calendar calendar = Calendar.getInstance();
+//        calendar.add(Calendar.HOUR_OF_DAY, -1); // 减去1小时
+//        String oneHourAgo = sdf.format(calendar.getTime());
         // 从TDengine获取1小时内的唯一身份证集合
-        Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
+//        Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
+
+        //身份证从redis里获取，先获取到所有的设备，然后在获取设备对应的身份证
+        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        Set<String> uniqueIdCards = new HashSet<>();
+        if (deviceIds != null) {
+            for (Object deviceId : deviceIds) {
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                uniqueIdCards.add(currentPerson);
+            }
+        }
+
         if (!uniqueIdCards.isEmpty()) {
 
             swmPersonPage.setIdCards(new ArrayList<>(uniqueIdCards));
