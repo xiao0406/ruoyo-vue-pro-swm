@@ -1431,61 +1431,63 @@ public class SwmPersonController extends BaseController {
             for (Object deviceId : deviceIds) {
                 String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
                 idCards.add(currentPerson);
+                result.add(currentPerson);
             }
-        }
-
-        try {
-            // 获取当前日期的开始和结束时间
-//            String currentDate = cn.hutool.core.date.DateUtil.today();
-//            String startTime = currentDate + " 00:00:00";
-//            String endTime = currentDate + " 23:59:59";
-            Date now = new Date();
-            Date oneMinuteAgo = DateUtil.offsetDay(now, -7);
-            String startTime = DateUtil.formatDateTime(oneMinuteAgo);
-            String endTime = DateUtil.formatDateTime(now);
-
-            // 构建批量查询SQL，使用IN子句
-            StringBuilder sqlBuilder = new StringBuilder();
-            sqlBuilder.append("SELECT DISTINCT id_card FROM ").append(tdengineDbName)
-                    .append(".external_coordinate_data WHERE id_card IN (");
-
-            // 添加身份证号列表
-            for (int i = 0; i < idCards.size(); i++) {
-                if (i > 0) {
-                    sqlBuilder.append(",");
-                }
-                sqlBuilder.append("'").append(idCards.get(i)).append("'");
-            }
-//
-            sqlBuilder.append(") AND time >= '").append(startTime)
-                    .append("' AND time <= '").append(endTime).append("'");
-
-            logger.debug("批量检查坐标数据SQL: {}", sqlBuilder.toString());
-
-            // 执行查询
-            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
-
-            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
-                cn.hutool.json.JSONObject data = queryResult.getData();
-                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
-
-                if (rows != null) {
-                    for (int i = 0; i < rows.size(); i++) {
-                        cn.hutool.json.JSONArray row = rows.getJSONArray(i);
-                        if (row != null && row.size() > 0) {
-                            String idCard = row.getStr(0);
-                            if (idCard != null && !idCard.isEmpty()) {
-                                result.add(idCard);
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.error("批量检查坐标数据异常", e);
         }
 
         return result;
+//        try {
+//            // 获取当前日期的开始和结束时间
+////            String currentDate = cn.hutool.core.date.DateUtil.today();
+////            String startTime = currentDate + " 00:00:00";
+////            String endTime = currentDate + " 23:59:59";
+//            Date now = new Date();
+//            Date oneMinuteAgo = DateUtil.offsetDay(now, -7);
+//            String startTime = DateUtil.formatDateTime(oneMinuteAgo);
+//            String endTime = DateUtil.formatDateTime(now);
+//
+//            // 构建批量查询SQL，使用IN子句
+//            StringBuilder sqlBuilder = new StringBuilder();
+//            sqlBuilder.append("SELECT DISTINCT id_card FROM ").append(tdengineDbName)
+//                    .append(".external_coordinate_data WHERE id_card IN (");
+//
+//            // 添加身份证号列表
+//            for (int i = 0; i < idCards.size(); i++) {
+//                if (i > 0) {
+//                    sqlBuilder.append(",");
+//                }
+//                sqlBuilder.append("'").append(idCards.get(i)).append("'");
+//            }
+////
+//            sqlBuilder.append(") AND time >= '").append(startTime)
+//                    .append("' AND time <= '").append(endTime).append("'");
+//
+//            logger.debug("批量检查坐标数据SQL: {}", sqlBuilder.toString());
+//
+//            // 执行查询
+//            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+//
+//            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+//                cn.hutool.json.JSONObject data = queryResult.getData();
+//                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+//
+//                if (rows != null) {
+//                    for (int i = 0; i < rows.size(); i++) {
+//                        cn.hutool.json.JSONArray row = rows.getJSONArray(i);
+//                        if (row != null && row.size() > 0) {
+//                            String idCard = row.getStr(0);
+//                            if (idCard != null && !idCard.isEmpty()) {
+//                                result.add(idCard);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        } catch (Exception e) {
+//            logger.error("批量检查坐标数据异常", e);
+//        }
+//
+//        return result;
     }
 
     /**

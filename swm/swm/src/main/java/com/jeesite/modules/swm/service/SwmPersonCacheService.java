@@ -119,7 +119,13 @@ public class SwmPersonCacheService {
      */
     private Map<String, Object> buildPersonCacheInfo(SwmPerson person) {
         Map<String, Object> personInfo = new HashMap<>();
-
+        SwmPerson swmPerson = new SwmPerson();
+        swmPerson.setIdentityCard(person.getIdentityCard());
+        List<SwmPerson> list = swmPersonDao.findList(swmPerson);
+        if (list == null) {
+            return null;
+        }
+        person = list.get(0);
         // 只缓存需要的字段
         personInfo.put("id", person.getId()); // 人员ID
         personInfo.put("name", person.getName()); // 姓名
