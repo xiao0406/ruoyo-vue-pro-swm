@@ -1417,6 +1417,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         // 注意：默认已经排除一键SOS、考勤打卡、进入大门预警
 
         // 调用混合分页查询方法
+
+        swmWarningManagement.setMasterDataAlarm( true);
         return hybridFindPage(page, swmWarningManagement);
     }
 

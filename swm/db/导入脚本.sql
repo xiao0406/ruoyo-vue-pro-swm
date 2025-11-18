@@ -57,3 +57,11 @@ INSERT INTO `swm`.`fms_work_group` (`id`, `work_group_name`, `work_group_code`, 
 INSERT INTO `swm`.`fms_work_group` (`id`, `work_group_name`, `work_group_code`, `head_id`, `prod_line_id`, `work_shop_id`, `proc_id`, `create_by`, `create_date`, `update_by`, `update_date`, `remarks`, `corp_code`, `corp_name`, `make_unit`, `work_shop_name`, `office_work_code`) VALUES (REPLACE(UUID(), '-', ''), '刘洋班组', 'LY_BZ', '13794508580', '1762161057997701', '1745710598073368576', NULL, 'ZJGG_adminZJGG', NOW(), 'ZJGG_adminZJGG', NOW(), NULL, 'ZJGG', '中建钢构股份有限公司', '0001A110000000002ZWA', NULL, '');
 -- 何望辉班组  二车间桥梁线
 INSERT INTO `swm`.`fms_work_group` (`id`, `work_group_name`, `work_group_code`, `head_id`, `prod_line_id`, `work_shop_id`, `proc_id`, `create_by`, `create_date`, `update_by`, `update_date`, `remarks`, `corp_code`, `corp_name`, `make_unit`, `work_shop_name`, `office_work_code`) VALUES (REPLACE(UUID(), '-', ''), '何望辉班组', 'HWH_BZ', '13794508580', '1762161057997701', '1745710598073368576', NULL, 'ZJGG_adminZJGG', NOW(), 'ZJGG_adminZJGG', NOW(), NULL, 'ZJGG', '中建钢构股份有限公司', '0001A110000000002ZWA', NULL, '');
+
+-- 2025/11/10 导入人员 ===================================================
+-- 产线 ===================================
+-- 一车间六工段
+INSERT INTO `swm`.`fms_prod_line` (`id`, `prod_line_name`, `prod_line_code`, `head_id`, `head_name`, `work_shop_id`, `work_shop_name`, `create_by`, `create_date`, `update_by`, `update_date`, `remarks`, `corp_code`, `corp_name`, `make_unit`) VALUES ('2160917fc46711f0b42f000c29a89b40', '一车间六工段', 'YCJ_LGD', '', NULL, '1745709611073945600', NULL, 'ZJGGGD_wangning_x3wg', '2025-11-18 18:12:46', 'rugaoming', '2025-11-18 18:12:46', NULL, 'ZJGG', '中建钢构工程有限公司', '0001A110000000002ZWA');
+-- 班组 ===================================
+-- 中科班组
+INSERT INTO `swm`.`fms_work_group` (`id`, `work_group_name`, `work_group_code`, `head_id`, `prod_line_id`, `work_shop_id`, `proc_id`, `create_by`, `create_date`, `update_by`, `update_date`, `remarks`, `corp_code`, `corp_name`, `make_unit`, `work_shop_name`, `office_work_code`) VALUES ('5818148ac46711f0b42f000c29a89b40', '中科班组', 'ZK_BZ', '13794508580', '2160917fc46711f0b42f000c29a89b40', '1745709611073945600', NULL, 'ZJGG_adminZJGG', '2025-11-18 18:14:18', 'ZJGG_adminZJGG', '2025-11-18 18:14:18', NULL, 'ZJGG', '中建钢构股份有限公司', '0001A110000000002ZWA', NULL, '');

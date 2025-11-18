@@ -9,14 +9,10 @@
                a.name AS "name",
                a.person_type AS "personType",
                a.gender AS "gender",
-               -- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
-#                COALESCE(o.office_name, backup_o.office_name) AS "company",
                 COALESCE(backup_o.office_name, o.office_name) AS "company",
                COALESCE(p.position_name, backup_p.position_name) AS "department",
                COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
                COALESCE(backup_wg.work_group_name, wg.work_group_name) AS "team",
-#                 COALESCE(a.team, backup_wg.work_group_name) AS "team",
-               -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
                COALESCE(
                    NULLIF(TRIM(f.work_type), ''),
                    NULLIF(TRIM(backup_wt.work_type), ''),
@@ -41,7 +37,6 @@
                a.dept ,
                a.position
         FROM ${sqlMap.table.toSql()}
-        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
             AND NOT EXISTS (
                 SELECT 1
@@ -53,14 +48,12 @@
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
         LEFT JOIN fms_prod_line fpl on fpl.id = wg.prod_line_id
-        -- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
         LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
         LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
         <where>
-            <!-- 组织结构字段使用COALESCE匹配，与SELECT显示逻辑保持一致 -->
             <if test="company != null and company != ''">
                 AND COALESCE(o.office_name, backup_o.office_name) LIKE CONCAT('%', #{company}, '%')
             </if>
