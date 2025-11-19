@@ -206,6 +206,12 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 //                            String attendanceStatus = getAttendanceStatusFromAttendance(identityCard);
                             String workHours = workHoursMap.get(identityCard);
                             String attendanceStatus = attendanceStatusMap.get(identityCard);
+                            if (workHours == null){
+                                workHours = "0.0";
+                            }
+                            if (attendanceStatus == null){
+                                attendanceStatus = "未知状态";
+                            }
 
                             // 创建人员位置信息，包含颜色信息 2025/06/24 Shawn 修改
                             Map<String, Object> position = createPersonPositionWithColors(
@@ -490,7 +496,6 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
             // 1. 通过身份证获取员工信息
             List<String> employeeIds = new ArrayList<>();
-            Date date3 = new Date();
             Map<String, Map<String, Object>> personInfos = swmPersonCacheService.getActivePersonByIdentityCardBatch(identityCards);
 
             for (String identityCard : identityCards) {
@@ -510,8 +515,6 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                 }
                 employeeIds.add(employeeId);
             }
-            System.out.println("查询3用时" + (new Date().getTime() - date3.getTime()) / 1000.0 + "s");
-
 
 
             // 2. 查询当日考勤记录
@@ -550,7 +553,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         }catch (Exception e){
             logger.error("获取身份证 {} 的工作时长失败", identityCards, e);
         }
-        return null;
+        return result;
     }
 
     /**
