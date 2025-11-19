@@ -489,70 +489,66 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
      */
     private Map<String, String> getWorkHoursFromAttendanceBatch(List<String> identityCards) {
         Map<String, String> result = new HashMap<>();
-        try {
-            if (identityCards == null) {
-                return result;
-            }
+        if (identityCards == null || identityCards.isEmpty()) {
+            return result;
+        }
 
-            // 1. 通过身份证获取员工信息
-            List<String> employeeIds = new ArrayList<>();
+        try {
+            // 1. 批量获取人员信息
             Map<String, Map<String, Object>> personInfos = swmPersonCacheService.getActivePersonByIdentityCardBatch(identityCards);
+            List<String> employeeIds = new ArrayList<>();
+            Map<String, String> identityToEmployeeId = new HashMap<>();
 
             for (String identityCard : identityCards) {
                 Map<String, Object> personInfo = personInfos.get(identityCard);
-
-//                Map<String, Object> personInfo = swmPersonCacheService.getActivePersonByIdentityCard(identityCard);
-
-                if (personInfo == null) {
+                if (personInfo == null || personInfo.get("id") == null) {
                     result.put(identityCard, "0小时");
-                    return result;
-                }
-
-                String employeeId = (String) personInfo.get("id");
-                if (employeeId == null) {
-                    result.put(identityCard, "0小时");
-                    return result;
-                }
-                employeeIds.add(employeeId);
-            }
-
-
-            // 2. 查询当日考勤记录
-            Date today = new Date();
-//            SwmDailyAttendance attendance = swmDailyAttendanceService.findByEmployeeIdAndDate(employeeId, today);
-            List<SwmDailyAttendance> attendances = swmDailyAttendanceService.findByEmployeeIdAndDateBatch(employeeIds, today);
-            for (SwmDailyAttendance attendance : attendances) {
-                if (attendance == null) {
-                    logger.debug("员工ID {} 当日无考勤记录", attendance.getEmployeeId());
-                    result.put(attendance.getIdentityCard(), "0小时");
-                    return result;
-                }
-
-                // 3. 获取实际工作时长
-                BigDecimal effectiveWorkHours = attendance.getEffectiveWorkHours();
-                if (effectiveWorkHours == null) {
-                    result.put(attendance.getIdentityCard(), "0小时");
-                    return result;
-                }
-
-                // 4. 格式化返回
-                double hours = effectiveWorkHours.doubleValue();
-                if (hours == 0) {
-                    result.put(attendance.getIdentityCard(), "0小时");
-                    return result;
-                } else if (hours == (int) hours) {
-                    // 整数小时
-                    result.put(attendance.getIdentityCard(), String.format("%.0f小时", hours));
-                    return result;
                 } else {
-                    // 带小数的小时
-                    result.put(attendance.getIdentityCard(), String.format("%.1f小时", hours));
-                    return result;
+                    String employeeId = (String) personInfo.get("id");
+                    employeeIds.add(employeeId);
+                    identityToEmployeeId.put(employeeId, identityCard);
                 }
             }
-        }catch (Exception e){
+
+            if (employeeIds.isEmpty()) {
+                return result;
+            }
+
+            // 2. 批量查询考勤记录
+            Date today = new Date();
+            List<SwmDailyAttendance> attendances = swmDailyAttendanceService.findByEmployeeIdAndDateBatch(employeeIds, today);
+
+            // 3. 填充工作时长
+            for (SwmDailyAttendance attendance : attendances) {
+                if (attendance == null || attendance.getEmployeeId() == null) {
+                    continue;
+                }
+                String identityCard = identityToEmployeeId.get(attendance.getEmployeeId());
+                if (identityCard == null) {
+                    continue;
+                }
+
+                BigDecimal effectiveWorkHours = attendance.getEffectiveWorkHours();
+                double hours = effectiveWorkHours != null ? effectiveWorkHours.doubleValue() : 0;
+
+                if (hours == 0) {
+                    result.put(identityCard, "0小时");
+                } else if (hours == (int) hours) {
+                    result.put(identityCard, String.format("%.0f小时", hours));
+                } else {
+                    result.put(identityCard, String.format("%.1f小时", hours));
+                }
+            }
+
+            // 4. 如果某些员工没有考勤记录，默认 0 小时
+            for (String identityCard : identityCards) {
+                result.putIfAbsent(identityCard, "0小时");
+            }
+
+        } catch (Exception e) {
             logger.error("获取身份证 {} 的工作时长失败", identityCards, e);
         }
+
         return result;
     }
 
@@ -624,61 +620,54 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
      */
     private Map<String,String> getAttendanceStatusFromAttendanceBatch(List<String> identityCards) {
         Map<String, String> result = new HashMap<>();
-        List<String> employeeIds = new ArrayList<>();
-        try {
-            if (identityCards == null ) {
-                return result;
-            }
-            Map<String, Map<String, Object>> personInfos = swmPersonCacheService.getActivePersonByIdentityCardBatch(identityCards);
-            for (String identityCard : identityCards) {
-                // 1. 通过身份证获取员工信息
-                Map<String, Object> personInfo = personInfos.get(identityCard);
-                if (personInfo == null) {
-                    result.put(identityCard, "未知状态");
-                    return result;
-                }
-
-                String employeeId = (String) personInfo.get("id");
-                if (employeeId == null) {
-                    result.put(identityCard, "未知状态");
-                    return result;
-                }
-                employeeIds.add(employeeId);
-            }
-
-
-            // 2. 查询当日考勤记录
-            Date today = new Date();
-            List<SwmDailyAttendance> attendances = swmDailyAttendanceService.findByEmployeeIdAndDateBatch(employeeIds, today);
-            for (SwmDailyAttendance attendance : attendances) {
-                if (attendance == null) {
-                    result.put(attendance.getIdentityCard(), "无考勤记录");
-                    return result;
-                }
-
-                // 3. 获取考勤状态
-                String attendanceNormal = attendance.getAttendanceNormal();
-                if (attendanceNormal == null) {
-                    result.put(attendance.getIdentityCard(), "正常考勤");
-                    return result;
-                }
-
-                // 4. 根据状态码返回描述
-                switch (attendanceNormal) {
-                    case "0":
-                        result.put(attendance.getIdentityCard(), "正常考勤");
-                        return result;
-                    case "1":
-                        result.put(attendance.getIdentityCard(), "异常考勤");
-                        return result;
-                    default:
-                        result.put(attendance.getIdentityCard(), "正常考勤");
-                        return result;
-                }
-            }
-        }catch (Exception e) {
+        if (identityCards == null || identityCards.isEmpty()) {
             return result;
         }
+
+        try {
+            // 1. 批量获取人员信息
+            Map<String, Map<String, Object>> personInfos = swmPersonCacheService.getActivePersonByIdentityCardBatch(identityCards);
+            List<String> employeeIds = new ArrayList<>();
+
+            for (String identityCard : identityCards) {
+                Map<String, Object> personInfo = personInfos.get(identityCard);
+                if (personInfo == null || personInfo.get("id") == null) {
+                    result.put(identityCard, "未知状态");
+                } else {
+                    employeeIds.add((String) personInfo.get("id"));
+                }
+            }
+
+            if (employeeIds.isEmpty()) {
+                return result;
+            }
+
+            // 2. 批量查询考勤记录
+            Date today = new Date();
+            List<SwmDailyAttendance> attendances = swmDailyAttendanceService.findByEmployeeIdAndDateBatch(employeeIds, today);
+
+            // 3. 填充考勤状态
+            Map<String, SwmDailyAttendance> attendanceMap = attendances.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(SwmDailyAttendance::getIdentityCard, a -> a));
+
+            for (String identityCard : identityCards) {
+                SwmDailyAttendance attendance = attendanceMap.get(identityCard);
+                if (attendance == null) {
+                    result.put(identityCard, "无考勤记录");
+                } else {
+                    String attendanceNormal = attendance.getAttendanceNormal();
+                    if ("1".equals(attendanceNormal)) {
+                        result.put(identityCard, "异常考勤");
+                    } else {
+                        result.put(identityCard, "正常考勤");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return result;
     }
 }
