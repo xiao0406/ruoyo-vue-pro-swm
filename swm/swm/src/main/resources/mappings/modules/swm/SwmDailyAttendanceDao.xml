@@ -727,4 +727,23 @@
           and a.attendance_date = #{date}
           and a.clock_in_time is not null
     </select>
+    <select id="findByEmployeeIdAndDateBatch" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
+        SELECT
+        a.id AS "id",
+        a.employee_id AS "employeeId",
+        a.identity_card AS "identityCard",
+        a.effective_work_hours AS "effectiveWorkHours",
+        a.attendance_normal AS "attendanceNormal"
+        FROM swm_daily_attendance a
+        <where>
+            <if test="employeeIds != null and employeeIds.size() > 0">
+                 a.employee_id IN
+                <foreach collection="employeeIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
 </mapper>

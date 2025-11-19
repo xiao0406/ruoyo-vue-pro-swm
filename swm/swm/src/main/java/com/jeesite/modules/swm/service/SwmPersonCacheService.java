@@ -6,12 +6,12 @@ import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 人员Redis缓存服务
@@ -177,30 +177,66 @@ public class SwmPersonCacheService {
         if (identityCard == null || identityCard.trim().isEmpty()) {
             return null;
         }
-
         try {
             // 先从身份证映射中获取人员ID
             String personId = (String) redisService.hget(IDENTITY_CARD_MAP_KEY, identityCard);
-
             if (personId == null) {
-                log.debug("缓存中未找到身份证{}对应的人员ID", identityCard);
                 return null;
             }
 
             // 根据人员ID获取人员信息
             Map<String, Object> personInfo = (Map<String, Object>) redisService.hget(ACTIVE_PERSON_CACHE_KEY, personId);
-
             if (personInfo != null) {
-                log.debug("从缓存中获取到身份证{}对应的人员信息：{}", identityCard, personInfo.get("name"));
             }
 
             return personInfo;
-
         } catch (Exception e) {
             log.error("从缓存中查询身份证{}对应的人员信息失败", identityCard, e);
             return null;
         }
     }
+
+    /**
+     * 批量根据身份证获取活跃人员信息
+     *
+     * @param identityCards 身份证集合
+     * @return Map<身份证, 人员信息>
+     */
+    public Map<String, Map<String, Object>>  getActivePersonByIdentityCardBatch(List<String> identityCards) {
+        if (identityCards == null || identityCards.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, Map<String, Object>> resultMap = new HashMap<>();
+
+        try {
+            // 先从身份证映射中批量获取人员ID
+            Map<Object, Object> personIdMap = redisService.hmget(IDENTITY_CARD_MAP_KEY);
+
+            for (String idCard : identityCards) {
+                if (idCard == null || idCard.trim().isEmpty()) {
+                    continue;
+                }
+
+                Object personIdObj = personIdMap.get(idCard);
+                if (personIdObj == null) {
+                    continue;
+                }
+                String personId = String.valueOf(personIdObj);
+
+                // 根据人员ID获取人员信息
+                Map<String, Object> personInfo = (Map<String, Object>) redisService.hget(ACTIVE_PERSON_CACHE_KEY, personId);
+                if (personInfo != null) {
+                    resultMap.put(idCard, personInfo);
+                }
+            }
+        } catch (Exception e) {
+            log.error("从缓存中批量查询身份证对应的人员信息失败", e);
+        }
+
+        return resultMap;
+    }
+
 
     /**
      * 根据人员ID获取缓存的人员信息

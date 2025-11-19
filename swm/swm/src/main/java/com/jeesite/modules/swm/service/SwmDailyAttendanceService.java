@@ -915,4 +915,11 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         endDate = truncateTime(endDate);
         return dao.findByDateRange(beginDate, endDate);
     }
+
+    public List<SwmDailyAttendance> findByEmployeeIdAndDateBatch(List<String> employeeIds, Date attendanceDate) {
+        // 处理日期，去除时间部分
+        attendanceDate = truncateTime(attendanceDate);
+//        return dao.findByEmployeeIdAndDate(employeeId, attendanceDate);
+        return dao.findByEmployeeIdAndDateBatch(employeeIds, attendanceDate);
+    }
 }
