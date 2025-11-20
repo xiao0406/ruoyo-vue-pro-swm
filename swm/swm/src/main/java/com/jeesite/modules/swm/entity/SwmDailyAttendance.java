@@ -42,6 +42,7 @@ import java.util.Date;
         @Column(name = "daily_achievement_rate", attrName = "dailyAchievementRate", label = "今日达成率"),
         @Column(name = "attendance_normal", attrName = "attendanceNormal", label = "考勤是否正常(0正常 1异常)"),
         @Column(name = "current_position", attrName = "currentPosition", label = "当前位置(0工作区 1休息区)"),
+        @Column(name = "pending_clock_out_compensate", attrName = "pendingClockOutCompensate", label = "当天该员工是否已经触发过补偿并且未恢复"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.attendance_date DESC")
 public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
@@ -75,6 +76,9 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     // 查询条件字段
     private Date beginAttendanceDate; // 查询开始考勤日期
     private Date endAttendanceDate; // 查询结束考勤日期
+
+    /** 当天该员工是否已经触发过补偿并且未恢复， true -已经补卡了 */
+    private boolean pendingClockOutCompensate;
 
     public SwmDailyAttendance() {
         this(null);
@@ -296,5 +300,13 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     // 判断是否为有效未打卡（非休息状态且未打卡）
     public boolean isEffectiveAbsence() {
         return "0".equals(status) && clockInTime == null;
+    }
+
+    public boolean isPendingClockOutCompensate() {
+        return pendingClockOutCompensate;
+    }
+
+    public void setPendingClockOutCompensate(boolean pendingClockOutCompensate) {
+        this.pendingClockOutCompensate = pendingClockOutCompensate;
     }
 }

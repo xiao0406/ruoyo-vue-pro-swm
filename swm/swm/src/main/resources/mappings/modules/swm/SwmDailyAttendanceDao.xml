@@ -31,6 +31,7 @@
         <result property="updateDate" column="update_date"/>
         <result property="remarks" column="remarks"/>
         <result property="status" column="status"/>
+        <result property="pendingClockOutCompensate" column="pending_clock_out_compensate"/>
     </resultMap>
 
     <resultMap id="swmMonthlyAttendanceResult" type="com.jeesite.modules.swm.entity.SwmMonthlyAttendance">
@@ -429,6 +430,30 @@
             `update_date` = #{updateDate},
             `remarks` = #{remarks}
         WHERE `id` = #{id}
+    </update>
+    <update id="updateBatch">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE swm_daily_attendance
+            <set>
+                <if test="item.clockInDate != null">
+                    clock_in_date = #{item.clockInDate},
+                </if>
+                <if test="item.clockInTime != null">
+                    clock_in_time = #{item.clockInTime},
+                </if>
+                <if test="item.clockOutTime != null">
+                    clock_out_time = #{item.clockOutTime},
+                </if>
+                <if test="item.clockOutDate != null">
+                    clock_out_date = #{item.clockOutDate},
+                </if>
+                <if test="item.pendingClockOutCompensate != null">
+                    pending_clock_out_compensate = #{item.pendingClockOutCompensate},
+                </if>
+                update_date = NOW()
+            </set>
+            WHERE id = #{item.id}
+        </foreach>
     </update>
 
     <!-- 根据身份证和日期查询考勤记录 -->

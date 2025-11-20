@@ -4,29 +4,29 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.lang.StringUtils;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.fms.entity.FmsGeneralProject;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
+import com.jeesite.modules.util.BatchOperationsUtil;
 import com.jeesite.modules.utils.R;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -57,6 +57,13 @@ public class AttendanceTask {
     
     @Value("${tdengine.dbname:swm_db}")
     private String dbname;
+
+    @Autowired
+    private RedisService redisService;
+
+    @Qualifier("swmExecutor")
+    @Autowired
+    private ThreadPoolTaskExecutor swmExecutor;
     
     // 定义常量
     private static final long CONTINUITY_THRESHOLD_MS = 10 * 60 * 1000; // 10分钟连续性阈值
@@ -1290,11 +1297,11 @@ public class AttendanceTask {
             jobLog.setIsNewRecord(false);
             
             // 1. 解析参数
-            AttendanceParams params = parseAttendanceParams();
-            
+            SwmDailyAttendance params = new SwmDailyAttendance();
+            params.setAttendanceDate(new Date());
             // 2. 查询待处理记录
-            List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
-            
+            List<SwmDailyAttendance> records = swmDailyAttendanceService.findList(params);
+
             if (records.isEmpty()) {
                 XxlJobHelper.log("没有找到待处理的考勤记录");
                 jobLog.setExecuteStatus("0"); // 成功
@@ -1318,6 +1325,245 @@ public class AttendanceTask {
             jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
             swmJobLogService.save(jobLog);
         }
+    }
+
+    /**
+     * 补打上下班卡
+     *
+     * 补卡机制：
+     * 上班卡： 首先判断当天的人员是否有未打上班卡，有则判断未打卡的人员安全帽是否进入厂区（信号至少持续三分钟），进入则考勤正常，补打卡。
+     * 下班卡：判断当天人员是否有未打下班卡，有则判断未打卡的人员安全帽在当天是否有数据，有则说明今天来了，然后再
+     * 判断最近三分钟有没有安全帽数据，没有则说明离开车间，补打下班卡
+     *
+     * @author Shawn
+     * @date 2025-08-11
+     */
+    @XxlJob("replacementCard")
+    @Transactional(readOnly = false)
+    public void replacementCard() {
+        Date date = new Date();
+        SwmJobLog jobLog = new SwmJobLog();
+        jobLog.setJobName("replacementCard");
+        jobLog.setStartTime(date);
+        jobLog.setExecuteStatus("1"); // 默认失败
+
+        try {
+            XxlJobHelper.log("开始进行补卡任务...");
+
+            // 保存任务参数
+            String jobParam = XxlJobHelper.getJobParam();
+            jobLog.setJobParam(jobParam);
+            swmJobLogService.save(jobLog);
+            jobLog.setIsNewRecord(false);
+
+
+            // 1. 处理未打上班卡的数据  clockInTime=null
+           processclockInCard();
+
+            // 2. 处理未打下班卡的数据 clockOutTime=null
+            processclockOutCard();
+
+            XxlJobHelper.log("自定义时间范围考勤计算任务执行成功");
+            jobLog.setExecuteStatus("0");
+
+        } catch (Exception e) {
+            XxlJobHelper.log("自定义时间范围考勤计算任务执行异常", e);
+            jobLog.setExceptionInfo(e.getMessage());
+        } finally {
+            jobLog.setEndTime(new Date());
+            jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
+            swmJobLogService.save(jobLog);
+        }
+    }
+
+
+    /**
+     * 批量补上班卡
+     * 上班卡： 首先判断当天的人员是否有未打上班卡，有则判断未打卡的人员安全帽是否进入厂区（信号至少持续三分钟），进入则考勤正常，补打卡。
+     *
+     * @return 处理结果统计
+     */
+    @Transactional(readOnly = false)
+    public void processclockInCard() {
+        Date Date = new Date();
+        XxlJobHelper.log("开始执行上班卡补卡任务...");
+
+        //设置请求参数，只查当天的数据
+        AttendanceParams params = parseAttendanceParams();
+        params.startTime = DateUtil.beginOfDay( Date);
+        params.endTime = DateUtil.endOfDay(Date);
+        // 1. 查询当天所有的打卡记录
+        List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
+
+        if (records.isEmpty()) {
+            XxlJobHelper.log("没有找到待处理的考勤记录");
+            return;
+        }
+
+        List<SwmDailyAttendance> onlineDevices = Collections.synchronizedList(new ArrayList<>());
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (SwmDailyAttendance item : records) {
+            if (item.getClockInDate() == null) {
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        String deviceId = item.getDeviceId();
+                        Date clockStartTime = item.getClockStartTime();
+                        if (clockStartTime != null){
+                            //看看当前时间是否在应该打卡时间范围之内
+                            String startTime = DateUtil.formatDateTime(clockStartTime);
+                            String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 7));
+                            Integer count = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
+                            if (count != null && count > 0) {
+                                item.setClockInDate(Date);
+                                item.setClockInTime(Date);
+                                onlineDevices.add(item);
+                                XxlJobHelper.log("上班补卡人员{}", item.getEmployeeName());
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("处理设备 {} 下班补卡失败", item.getDeviceId(), e);
+                    }
+                }, swmExecutor);
+                futures.add(future);
+            }
+        }
+
+        // 等待全部执行完
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        //批量更新
+        List<List<SwmDailyAttendance>> lists = BatchOperationsUtil.batchCutting(onlineDevices, 50);
+        for (List<SwmDailyAttendance> list : lists) {
+            swmDailyAttendanceService.updateBatch(list);
+        }
+    }
+
+    /**
+     * 批量补下班卡
+     *
+    1.接受不到蓝牙信号持续3分钟，补偿打下班卡1次，之后当天不再触发第二次（再次触发的条件：当天再次接收到有效信号后，
+    可再次触发下班打卡补偿机制）
+    2.补偿打卡机制不影响信标打卡机制，信标打卡依旧可以持续更新下班打卡时间
+     */
+    @Transactional(readOnly = false)
+    public void processclockOutCard() {
+
+        Date date = new Date();
+        XxlJobHelper.log("开始执行下班卡补卡任务...");
+
+        //设置请求参数，只查当天的数据
+        AttendanceParams params = parseAttendanceParams();
+        params.startTime = DateUtil.beginOfDay(DateUtil.offsetDay(date, -1));
+        params.endTime = DateUtil.endOfDay(date);
+        // 1. 查询两天所有的打卡记录
+        List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
+
+        if (records.isEmpty()) {
+            XxlJobHelper.log("没有找到待处理的考勤记录");
+            return;
+        }
+
+        List<SwmDailyAttendance> clockOutRecords = Collections.synchronizedList(new ArrayList<>());
+
+        Date now = new Date();
+        Date threeMinutesAgo = DateUtil.offsetMinute(now, -3);
+        String startTime = DateUtil.formatDateTime(threeMinutesAgo);
+        String endTime = DateUtil.formatDateTime(now);
+
+        String startDay = DateUtil.formatDateTime(DateUtil.beginOfDay(now));
+        String nowDay = DateUtil.formatDateTime(now);
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (SwmDailyAttendance item : records) {
+
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                try {
+                    String deviceId = item.getDeviceId();
+
+                    //1.先判断是否有打上班卡，没有打则跳过
+                    if (item.getClockInDate() == null) {
+                        return;
+                    }
+
+                    //2.判断今天有没有数据，没有则跳过
+                    Integer dayCount = getLast3MinutesBluetoothCount(deviceId, startDay, nowDay);
+                    if (dayCount == null || dayCount == 0) {
+                        return;
+                    }
+
+                    // 3. 查询最近3分钟蓝牙信号
+                    Integer count = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
+                    // ============= 【A. 有信号 → 重置补偿状态】 =============
+                    if (count != null && count > 0) {
+                        // 说明员工又出现了 → 补偿机制恢复可再次触发
+                        item.setPendingClockOutCompensate(false);
+                        // 这里不做下班打卡动作，因为信标机制会更新
+                        clockOutRecords.add( item);
+                        return;
+                    }
+                    // ============= 【B. 无信号 → 判断是否要补卡】 =============
+                    // 无信号超过3分钟，但之前已经补偿过但未恢复 → 不能再补
+                    if (Boolean.TRUE.equals(item.isPendingClockOutCompensate())) {
+                        return;
+                    }
+
+                    // 无信号，未补偿过 → 触发补卡
+                    if (count != null && count == 0) {
+                        // 补偿下班卡
+                        item.setClockOutDate(now);
+                        item.setClockOutTime(now);
+                        // 标记今天已补偿
+                        item.setPendingClockOutCompensate(true);
+                        clockOutRecords.add(item);
+                        XxlJobHelper.log("下班补卡人员", item.getEmployeeName());
+                    }
+                } catch (Exception e) {
+                    log.error("处理人员 {} 下班补卡失败", item.getEmployeeName(), e);
+                }
+            }, swmExecutor);
+            futures.add(future);
+        }
+        // 等待全部执行完
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        //批量更新
+        List<List<SwmDailyAttendance>> lists = BatchOperationsUtil.batchCutting(clockOutRecords, 50);
+        for (List<SwmDailyAttendance> list : lists) {
+            swmDailyAttendanceService.updateBatch(list);
+        }
+    }
+
+
+    /**
+     * 查询某设备最近 3 分钟 TDengine 记录数量
+     */
+    private Integer getLast3MinutesBluetoothCount(String deviceId, String start, String end) {
+
+        Integer res  = null;
+
+        try {
+            String sql = "SELECT count(1) FROM " + dbname + ".raw_message_log_" + deviceId +
+                    " WHERE time BETWEEN '" + start + "' AND '" + end + "'";
+
+            log.info("查询最近 3 分钟 TDengine 记录数量 SQL: {}", sql);
+
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+                JSONArray rows = result.getData().getJSONArray("data");
+                if (rows != null && !rows.isEmpty()) {
+                    JSONArray firstRow = (JSONArray) rows.get(0);
+                    Object val = firstRow.get(0);
+                    res = Integer.parseInt(val.toString());
+                    return res;
+                }
+            }
+        } catch (Exception e) {
+            log.error("查询 TDengine 失败，deviceId={}", deviceId, e);
+        }
+
+        return res;
     }
 
     /**

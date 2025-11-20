@@ -922,4 +922,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 //        return dao.findByEmployeeIdAndDate(employeeId, attendanceDate);
         return dao.findByEmployeeIdAndDateBatch(employeeIds, attendanceDate);
     }
+
+    public void updateBatch(List<SwmDailyAttendance> records) {
+        dao.updateBatch(records);
+    }
 }

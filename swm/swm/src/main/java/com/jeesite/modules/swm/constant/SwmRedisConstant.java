@@ -53,6 +53,7 @@ public class SwmRedisConstant {
     public static class Device {
         /**
          * Redis在线设备集合Key
+         * SMEMBERS online_devices
          */
         public static final String ONLINE_DEVICES_KEY = "iot:devices:online";
     }

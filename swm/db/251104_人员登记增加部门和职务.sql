@@ -46,3 +46,9 @@ ALTER TABLE swm_hazard_source
     ADD filter_identity_card TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '白名单人员（这里的人员不收到报警信号）' AFTER beacon_tag;
 ALTER TABLE swm_hazard_source
     ADD filter_personnel TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '白名单人员（这里的人员不收到报警信号）' AFTER filter_identity_card;
+
+
+-- 日考勤统计表实体类
+ALTER TABLE swm_daily_attendance
+    ADD pending_clock_out_compensate BOOLEAN NOT NULL DEFAULT FALSE COMMENT '当天该员工是否已经触发过补偿且未恢复，true = 已补卡' AFTER chock_out_date;
+
