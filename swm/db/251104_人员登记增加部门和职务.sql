@@ -50,5 +50,5 @@ ALTER TABLE swm_hazard_source
 
 -- 日考勤统计表实体类
 ALTER TABLE swm_daily_attendance
-    ADD pending_clock_out_compensate BOOLEAN NOT NULL DEFAULT FALSE COMMENT '当天该员工是否已经触发过补偿且未恢复，true = 已补卡' AFTER chock_out_date;
+    ADD pending_clock_out_compensate BOOLEAN NOT NULL DEFAULT FALSE COMMENT '当天该员工是否已经触发过补偿且未恢复，true = 已补卡' AFTER clock_out_date;
 

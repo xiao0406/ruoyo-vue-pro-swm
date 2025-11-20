@@ -1394,7 +1394,7 @@ public class AttendanceTask {
         params.endTime = DateUtil.endOfDay(Date);
         // 1. 查询当天所有的打卡记录
         List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
-
+        XxlJobHelper.log("查询范围{}，{}，条数{}" + params.startTime, params.endTime, records.size());
         if (records.isEmpty()) {
             XxlJobHelper.log("没有找到待处理的考勤记录");
             return;
@@ -1417,7 +1417,7 @@ public class AttendanceTask {
                                 item.setClockInDate(Date);
                                 item.setClockInTime(Date);
                                 onlineDevices.add(item);
-                                XxlJobHelper.log("上班补卡人员{}", item.getEmployeeName());
+                                XxlJobHelper.log("上班补卡人员：{}", item.getEmployeeName());
                             }
                         }
                     } catch (Exception e) {
@@ -1457,6 +1457,7 @@ public class AttendanceTask {
         params.endTime = DateUtil.endOfDay(date);
         // 1. 查询两天所有的打卡记录
         List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
+        XxlJobHelper.log("查询范围{}，{}，条数{}" + params.startTime, params.endTime, records.size());
 
         if (records.isEmpty()) {
             XxlJobHelper.log("没有找到待处理的考勤记录");
@@ -1516,7 +1517,7 @@ public class AttendanceTask {
                         // 标记今天已补偿
                         item.setPendingClockOutCompensate(true);
                         clockOutRecords.add(item);
-                        XxlJobHelper.log("下班补卡人员", item.getEmployeeName());
+                        XxlJobHelper.log("下班补卡人员：{}", item.getEmployeeName());
                     }
                 } catch (Exception e) {
                     log.error("处理人员 {} 下班补卡失败", item.getEmployeeName(), e);
