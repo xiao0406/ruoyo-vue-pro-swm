@@ -1348,7 +1348,6 @@ public class AttendanceTask {
         jobLog.setExecuteStatus("1"); // 默认失败
 
         try {
-            XxlJobHelper.log("开始进行补卡任务...");
 
             // 保存任务参数
             String jobParam = XxlJobHelper.getJobParam();
@@ -1363,11 +1362,9 @@ public class AttendanceTask {
             // 2. 处理未打下班卡的数据 clockOutTime=null
             processclockOutCard();
 
-            XxlJobHelper.log("自定义时间范围考勤计算任务执行成功");
             jobLog.setExecuteStatus("0");
 
         } catch (Exception e) {
-            XxlJobHelper.log("自定义时间范围考勤计算任务执行异常", e);
             jobLog.setExceptionInfo(e.getMessage());
         } finally {
             jobLog.setEndTime(new Date());
@@ -1386,7 +1383,7 @@ public class AttendanceTask {
     @Transactional(readOnly = false)
     public void processclockInCard() {
         Date Date = new Date();
-        XxlJobHelper.log("开始执行上班卡补卡任务...");
+        XxlJobHelper.log("开始执行上班卡补卡任务...................");
 
         //设置请求参数，只查当天的数据
         AttendanceParams params = parseAttendanceParams();
@@ -1394,7 +1391,11 @@ public class AttendanceTask {
         params.endTime = DateUtil.endOfDay(Date);
         // 1. 查询当天所有的打卡记录
         List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
-        XxlJobHelper.log("查询范围{}，{}，条数{}" + params.startTime, params.endTime, records.size());
+        XxlJobHelper.log("上班卡查询范围{}，{}，条数{}",
+                DateUtil.formatDateTime(params.startTime),
+                DateUtil.formatDateTime(params.endTime),
+                records.size());
+
         if (records.isEmpty()) {
             XxlJobHelper.log("没有找到待处理的考勤记录");
             return;
@@ -1449,7 +1450,7 @@ public class AttendanceTask {
     public void processclockOutCard() {
 
         Date date = new Date();
-        XxlJobHelper.log("开始执行下班卡补卡任务...");
+        XxlJobHelper.log("开始执行下班卡补卡任务............................");
 
         //设置请求参数，只查当天的数据
         AttendanceParams params = parseAttendanceParams();
@@ -1457,7 +1458,10 @@ public class AttendanceTask {
         params.endTime = DateUtil.endOfDay(date);
         // 1. 查询两天所有的打卡记录
         List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
-        XxlJobHelper.log("查询范围{}，{}，条数{}" + params.startTime, params.endTime, records.size());
+        XxlJobHelper.log("下班卡查询范围{}，{}，条数{}",
+                DateUtil.formatDateTime(params.startTime),
+                DateUtil.formatDateTime(params.endTime),
+                records.size());
 
         if (records.isEmpty()) {
             XxlJobHelper.log("没有找到待处理的考勤记录");
