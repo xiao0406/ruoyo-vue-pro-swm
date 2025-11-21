@@ -206,4 +206,7 @@ public interface SwmWarningManagementDao extends CrudDao<SwmWarningManagement> {
      * @date 2025-01-24
      */
     long countTodayHandledWarnings();
+
+    List<SwmWarningManagement> getWarningManagementList();
+
 }

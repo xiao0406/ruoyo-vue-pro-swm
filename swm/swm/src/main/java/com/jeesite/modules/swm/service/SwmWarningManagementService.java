@@ -1876,6 +1876,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         List<SwmWarningManagement> notificationList = new ArrayList<>(); // 需要消息提示但不需要确认的告警
         Map<String, Object> result = new HashMap<>();
 
+        //查询front_alarm != '0'
+        List<SwmWarningManagement> warningList = this.dao.getWarningManagementList();
+        Map<String, SwmWarningManagement> warningMap = warningList.stream()
+                .collect(Collectors.toMap(
+                        w -> w.getId() + "_" + (w.getIdCard() == null ? "" : w.getIdCard()),
+                        w -> w,
+                        (v1, v2) -> v1
+                ));
+
+
         try {
             // 1. 获取所有需要弹窗确认的告警配置
             List<SwmAlarmConfig> needConfirmConfigs = alarmConfigDao.findAllNeedConfirm();
@@ -1945,13 +1955,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 tdEntity.setWarningTime(calendar.getTime());
                             }
 
-                            // 2. 在MySQL中检查是否存在相同ID和身份证号的记录
-                            SwmWarningManagement query = new SwmWarningManagement();
-                            query.setId(tdEntity.getId());
-                            if (tdEntity.getIdCard() != null) {
-                                query.setIdCard(tdEntity.getIdCard());
-                            }
-                            SwmWarningManagement mysqlEntity = super.get(query);
+//                            // 2. 在MySQL中检查是否存在相同ID和身份证号的记录
+//                            SwmWarningManagement query = new SwmWarningManagement();
+//                            query.setId(tdEntity.getId());
+//                            if (tdEntity.getIdCard() != null) {
+//                                query.setIdCard(tdEntity.getIdCard());
+//                            }
+//                            SwmWarningManagement mysqlEntity = super.get(query);
+
+                            String key = tdEntity.getId() + "_" + (tdEntity.getIdCard() == null ? "" : tdEntity.getIdCard());
+                            SwmWarningManagement mysqlEntity = warningMap.get(key);
 
                             // 如果MySQL中存在且front_alarm=0，则不需要告警
                             if (mysqlEntity != null && "0".equals(mysqlEntity.getFrontAlarm())) {
