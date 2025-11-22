@@ -204,4 +204,12 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
     public int countDistinctPersonByYearAndMonth(String yearMonth) {
         return dao.countDistinctPersonByYearAndMonth(yearMonth);
     }
+
+    /**
+     * 批量插入数据
+     * @param list
+     */
+    public void insertBatch(List<SwmPersonSchedule> list) {
+        dao.insertBatch(list);
+    }
 }

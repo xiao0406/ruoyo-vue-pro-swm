@@ -18,7 +18,7 @@ import javax.validation.constraints.Pattern;
 @Table(name = "swm_person_schedule", alias = "a", label = "人员排班表", columns = {
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "person_name", attrName = "personName", label = "人员姓名", queryType = QueryType.LIKE),
-        @Column(name = "month", attrName = "month", label = "排班月份"),
+        @Column(name = "month", attrName = "month", label = "排班月份", queryType = QueryType.EQ),
         @Column(name = "classes", attrName = "classes", label = "班次"),
         @Column(name = "id_card", attrName = "idCard", label = "身份证号码", queryType = QueryType.LIKE),
         @Column(name = "employee_id", attrName = "employeeId", label = "员工ID"),
