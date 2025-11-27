@@ -6,6 +6,7 @@ import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.*;
 
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
+import com.jeesite.modules.vo.AiDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -926,4 +927,13 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     public void updateBatch(List<SwmDailyAttendance> records) {
         dao.updateBatch(records);
     }
+
+    public List<SwmDailyAttendance> findAllList(String startDate, String endDate) {
+        return dao.findAllList(startDate, endDate);
+    }
+
+    public List<AiDto.WorkerFatigue> workerFatigue(AiDto.WorkerFatigue vo) {
+        return dao.workerFatigue(vo);
+    }
+
 }

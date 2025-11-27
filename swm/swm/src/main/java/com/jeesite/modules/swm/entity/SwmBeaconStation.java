@@ -8,6 +8,8 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.common.utils.excel.annotation.ExcelField;
+import com.jeesite.common.utils.excel.annotation.ExcelFields;
 import com.jeesite.modules.sys.utils.DictUtils;
 import org.hibernate.validator.constraints.Length;
 
@@ -121,6 +123,11 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     public SwmBeaconStation() {
         super();
     }
+
+    @ExcelFields({
+            @ExcelField(title = "MAC地址", attrName = "beaconId", align = ExcelField.Align.CENTER, sort = 10,width = 256*30),
+            @ExcelField(title = "所属区域", attrName = "area", align = ExcelField.Align.CENTER, sort = 20,width = 256*30),
+    })
 
     public SwmBeaconStation(String id) {
         super(id);

@@ -243,14 +243,21 @@ public class SwmDashboardNewController extends BaseController {
         // 今日出勤人数
         long todayAttendanceCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null).count();
         result.put("todayAttendanceCount", todayAttendanceCount);
-        // 今日出勤工人数
-        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
-                && a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
-        result.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
-        // 今日出勤管理员数
-        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
-                && a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
-        result.put("todayAttendanceManagerCount", todayAttendanceManagerCount);
+//        // 今日出勤工人数
+//        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
+//                && a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
+//        result.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
+//        // 今日出勤管理员数
+//        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
+//                && a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
+//        result.put("todayAttendanceManagerCount", todayAttendanceManagerCount);
+
+        //今日出勤白班人数   classes = 1
+        long todayAttendanceWhiteCount = todayAttendances.stream().filter(a -> "1".equals(a.getClasses())).count();
+        //今日出勤夜班人数   classes = 3
+        long todayAttendanceNightCount = todayAttendances.stream().filter(a -> "3".equals(a.getClasses())).count();
+
+
 
         // 工作中人数：从TDengine查询1小时内有位置数据的人数（按类型分类）
         //这里改下逻辑，取最近5分钟的数据

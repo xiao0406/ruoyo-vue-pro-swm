@@ -8,6 +8,7 @@ import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.vo.AiDto;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -107,4 +108,8 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
     List<SwmPerson> findByIdCardsPage(SwmPerson swmPersonPage);
 
     Long findByIdCardsCount(SwmPerson swmPersonPage);
+
+    List<AiDto.RiskStatistics> findTableName();
+
+    List<AiDto.Trajectory> findPersonList();
 }

@@ -4,6 +4,8 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -45,6 +47,7 @@ import java.util.Date;
         @Column(name = "pending_clock_out_compensate", attrName = "pendingClockOutCompensate", label = "当天该员工是否已经触发过补偿并且未恢复"),
         @Column(includeEntity = DataEntity.class)
 }, orderBy = "a.attendance_date DESC")
+@Data
 public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     private static final long serialVersionUID = 1L;
@@ -79,6 +82,16 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     /** 当天该员工是否已经触发过补偿并且未恢复， true -已经补卡了 */
     private boolean pendingClockOutCompensate;
+
+
+    @ApiModelProperty(value = "所属车间")
+    private String department;
+    @ApiModelProperty(value = "所属车间")
+    private String departmentName;
+    @ApiModelProperty(value = "所属班组")
+    private String team;
+    @ApiModelProperty(value = "所属班组")
+    private String teamName;
 
     public SwmDailyAttendance() {
         this(null);

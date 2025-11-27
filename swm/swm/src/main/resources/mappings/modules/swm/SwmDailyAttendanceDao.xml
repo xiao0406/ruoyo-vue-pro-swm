@@ -771,4 +771,56 @@
         </where>
         ORDER BY a.attendance_date ASC
     </select>
+    <select id="findAllList" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
+        SELECT
+        sda.id,
+        sda.classes,
+        sda.attendance_date,
+        sda.employee_name,
+        sda.identity_card,
+        sda.clock_in_date,
+        sda.clock_out_date,
+        sda.scheduled_hours,
+        sda.actual_hours,
+        sp.department,
+        fpa.position_name as departmentName,
+        sp.team,
+        fwg.work_group_name as teamName
+        FROM
+        swm_daily_attendance sda
+        LEFT JOIN swm_person sp ON sda.identity_card = sp.identity_card
+        LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group fwg ON sp.team = fwg.id  COLLATE utf8mb4_general_ci
+        WHERE
+        sda.STATUS = 0
+        AND sp.STATUS = 0
+        AND sda.attendance_date >= #{startDate}
+        AND sda.attendance_date &lt;= #{endDate}
+    </select>
+    <select id="workerFatigue" resultType="com.jeesite.modules.vo.AiDto$WorkerFatigue">
+        SELECT
+#         sda.id,
+        sda.employee_name,
+#         sda.device_id,
+        sp.phone_number,
+        sda.actual_hours,
+#         sp.department,
+        fpa.position_name AS departmentName,
+#         sp.team,
+        fwg.work_group_name AS teamName
+        FROM
+        swm_daily_attendance sda
+        LEFT JOIN swm_person sp ON sda.identity_card = sp.identity_card
+        LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+        sda.STATUS = 0
+        AND sp.STATUS = 0
+          AND sda.attendance_date >= #{startDate}
+          AND sda.attendance_date &lt;= #{endDate}
+        AND sda.actual_hours >= #{actualHours}
+        ORDER BY
+        sda.actual_hours DESC
+    </select>
+
 </mapper>

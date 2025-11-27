@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.service;
 
+import com.jeesite.modules.vo.AiDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -547,5 +548,9 @@ public class SwmAreaService extends CrudService<SwmAreaDao, SwmArea> {
 
         logger.info("信标ID冲突检查完成，共发现 {} 个冲突", conflicts.size());
         return conflicts;
+    }
+
+    public List<AiDto.Trajectory> findAddressList() {
+        return this.dao.findAddressList();
     }
 }

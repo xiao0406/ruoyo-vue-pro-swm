@@ -11,5 +11,19 @@
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
-    
+    <select id="findAddressList" resultType="com.jeesite.modules.vo.AiDto$Trajectory">
+        SELECT
+            sbs.location as address,
+            sa.area_name
+        FROM
+            swm_beacon_station sbs
+                Left JOIN swm_area sa ON sbs.area = sa.id
+        WHERE
+            sbs.`status` = 0
+          AND sa.status = 0
+          AND sbs.location IS NOT NULL
+          AND TRIM(sbs.location) != ''
+        order by sbs.location
+    </select>
+
 </mapper> 
