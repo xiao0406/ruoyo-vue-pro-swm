@@ -1,4 +1,4 @@
-package com.jeesite.modules.vo;
+package com.jeesite.modules.entity;
 
 import com.jeesite.common.utils.excel.annotation.ExcelField;
 import com.jeesite.common.utils.excel.annotation.ExcelFields;

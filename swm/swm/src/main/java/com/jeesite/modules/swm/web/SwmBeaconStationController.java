@@ -11,7 +11,7 @@ import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.SwmBeaconStationService;
 import com.jeesite.modules.sys.utils.ExcelExportUtil;
-import com.jeesite.modules.vo.SwmBeaconStationExport;
+import com.jeesite.modules.entity.SwmBeaconStationExport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
