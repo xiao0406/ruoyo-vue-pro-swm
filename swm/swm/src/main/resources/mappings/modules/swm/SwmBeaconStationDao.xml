@@ -319,6 +319,18 @@
         </foreach>
         AND status = '0'
     </update>
+    <update id="updateBatch">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE swm_beacon_station
+            <set>
+                <if test="item.area != null">
+                    area = #{item.area},
+                </if>
+                update_date = NOW()
+            </set>
+            WHERE beacon_id = #{item.beaconId}
+        </foreach>
+    </update>
 
     <!-- 查询没有区域ID的信标列表 -->
     <select id="findBeaconsWithoutArea" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">

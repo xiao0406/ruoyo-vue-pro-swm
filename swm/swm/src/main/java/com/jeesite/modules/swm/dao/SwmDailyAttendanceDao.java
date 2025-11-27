@@ -5,6 +5,7 @@ import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmMonthlyAttendance;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
+import com.jeesite.modules.vo.AiDto;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Date;
@@ -177,4 +178,10 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
     List<SwmDailyAttendance> findByEmployeeIdAndDateBatch(@Param("employeeIds") List<String> employeeIds, @Param("attendanceDate") Date attendanceDate);
 
     void updateBatch(List<SwmDailyAttendance> records);
+
+    List<SwmDailyAttendance> findAllList(@Param("startDate") String startDate, @Param("endDate") String endDate);
+
+    List<AiDto.WorkerFatigue> workerFatigue(AiDto.WorkerFatigue vo);
+
+    Long countWorkerFatigue(AiDto.WorkerFatigue vo);
 }

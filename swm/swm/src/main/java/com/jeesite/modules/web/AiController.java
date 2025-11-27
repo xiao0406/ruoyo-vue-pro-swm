@@ -1,0 +1,120 @@
+package com.jeesite.modules.web;
+
+
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUtil;
+import com.alibaba.cloud.commons.lang.StringUtils;
+import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.ObjectUtils;
+import com.jeesite.modules.service.AiServiceImpl;
+import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
+import com.jeesite.modules.vo.AiDto;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Controller
+@RequestMapping(value = "${adminPath}/ai")
+@Api(value = "ai接口")
+public class AiController {
+
+    @Autowired
+    private AiServiceImpl aiServiceImpl;
+
+
+    /**
+     * 白班应到、白班实到、白班出勤率、白班有效作业时长，
+     * 夜班应到、夜班实到、夜班出勤率、夜班有效作业时长，
+     * 全天应到、全天实到、全天出勤率、全天有效作业时长
+     *
+     * @return
+     */
+    @PostMapping("workEfficiencyTask")
+    @ResponseBody
+    @ApiOperation(value = "工效统计")
+    public Map<String, Object> workEfficiencyTask(String startDate, String endDate) {
+        Map<String, Object> result =  aiServiceImpl.workEfficiencyTask(startDate,endDate);
+        return result;
+    }
+
+
+    @PostMapping("workerFatigue")
+    @ResponseBody
+    @ApiOperation(value = "工人疲劳")
+    public Page<AiDto.WorkerFatigue> workerFatigue(AiDto.WorkerFatigue vo ) {
+        Page<AiDto.WorkerFatigue> result =  aiServiceImpl.workerFatigue(vo);
+        return result;
+    }
+
+    @PostMapping("riskStatistics")
+    @ResponseBody
+    @ApiOperation(value = "风险统计-工人")
+    public Page<AiDto.RiskStatistics> riskStatistics(AiDto.RiskStatistics vo ) {
+        initPage(vo);
+        Page<AiDto.RiskStatistics> result =  aiServiceImpl.riskStatistics(vo);
+        return result;
+    }
+
+    @PostMapping("riskStatisticsArea")
+    @ResponseBody
+    @ApiOperation(value = "风险统计-区域")
+    public Page<AiDto.RiskStatistics> riskStatisticsArea(AiDto.RiskStatistics vo ) {
+        initPage(vo);
+        Page<AiDto.RiskStatistics> result =  aiServiceImpl.riskStatisticsArea(vo);
+        return result;
+    }
+
+
+    @PostMapping("riskStatisticsDate")
+    @ResponseBody
+    @ApiOperation(value = "风险统计-时间段")
+    public Page<AiDto.RiskStatistics> riskStatisticsDate(AiDto.RiskStatistics vo ) {
+//        initPage(vo);
+        Page<AiDto.RiskStatistics> result =  aiServiceImpl.riskStatisticsDate(vo);
+        return result;
+    }
+
+    @PostMapping("riskStatisticsAreaDate")
+    @ResponseBody
+    @ApiOperation(value = "风险统计-时间段+区域")
+    public Page<AiDto.RiskStatisticsAreaDate> riskStatisticsAreaDate(AiDto.RiskStatisticsAreaDate vo ) {
+        Page<AiDto.RiskStatisticsAreaDate> result =  aiServiceImpl.riskStatisticsAreaDate(vo);
+        return result;
+    }
+
+    private void initPage(AiDto.RiskStatistics vo) {
+        if (vo.getPageNo() == null || vo.getPageNo() < 1) vo.setPageNo(1);
+        if (vo.getPageSize() == null || vo.getPageSize() < 1) vo.setPageSize(10);
+    }
+
+
+    @PostMapping("trajectory")
+    @ResponseBody
+    @ApiOperation(value = "轨迹定位")
+    public Page<AiDto.Trajectory> trajectory(AiDto.Trajectory vo ) {
+        Page<AiDto.Trajectory> result =  aiServiceImpl.trajectory(vo);
+        return result;
+    }
+
+    @PostMapping("teamActualHours")
+    @ResponseBody
+    @ApiOperation(value = "班组有效时长")
+    public List<AiDto.TeamActualHours> teamActualHours(AiDto.TeamActualHours vo ) {
+        List<AiDto.TeamActualHours> result =  aiServiceImpl.teamActualHours(vo);
+        return result;
+    }
+}

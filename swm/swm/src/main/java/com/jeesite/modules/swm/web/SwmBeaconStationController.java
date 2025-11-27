@@ -6,9 +6,12 @@ package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.SwmBeaconStationService;
+import com.jeesite.modules.sys.utils.ExcelExportUtil;
+import com.jeesite.modules.vo.SwmBeaconStationExport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +23,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -408,5 +413,27 @@ public class SwmBeaconStationController extends BaseController {
         swmBeaconStation.setBeaconColor(beaconColor);
         swmBeaconStationService.save(swmBeaconStation);
         return renderResult(Global.TRUE, text("更新基站颜色成功！"));
+    }
+
+
+    @ApiOperation("模板下载")
+    @RequestMapping("/export")
+    @ResponseBody
+    public String export() throws IOException {
+        String name;
+        List<SwmBeaconStationExport> list = new ArrayList<>();
+        String fileName = "信标管理导入模板.xlsx";
+        try (ExcelExport ee = new ExcelExport("信标管理设置", SwmBeaconStationExport.class)) {
+            name = ExcelExportUtil.uploadOss(ee.setDataList(list), fileName);
+        }
+        return renderResult(Global.TRUE, text("成功！"), name);
+    }
+
+    @ApiOperation("信标管理excel导入")
+    @RequestMapping("/importData")
+    @ResponseBody
+    public String importData(MultipartFile file) {
+        Integer count = swmBeaconStationService.importData(file);
+        return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
 }

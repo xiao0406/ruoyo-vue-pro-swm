@@ -4,17 +4,29 @@
  */
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.date.DateUtil;
+import com.alibaba.csp.sentinel.util.StringUtil;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.swm.dao.SwmBeaconStationDao;
+import com.jeesite.modules.swm.entity.SwmArea;
 import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.utils.BatchOperationsUtil;
+import com.jeesite.modules.vo.SwmBeaconStationExport;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * 信标基站管理Service
@@ -24,6 +36,10 @@ import java.util.Map;
 @Service
 @Transactional(readOnly = true)
 public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, SwmBeaconStation> {
+
+    @Autowired
+    @Lazy
+    private SwmAreaService swmAreaService;
 
     /**
      * 获取单条数据
@@ -456,5 +472,49 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             }
         }
         return resultList;
+    }
+
+    @Transactional(readOnly = false)
+    public Integer importData(MultipartFile file) {
+        ExcelImport excelImport = null;
+        List<SwmBeaconStation> swmBeaconStationList = new ArrayList<>();
+        Integer count = 0;
+        try {
+            excelImport = new ExcelImport(file, 2, 0);
+            List<SwmBeaconStationExport> list = excelImport.getDataList(SwmBeaconStationExport.class);
+            if (CollectionUtil.isNotEmpty(list)){
+                //获取所有区域
+                List<String> areaNameList = list.stream().map(SwmBeaconStationExport::getArea).collect(Collectors.toList());
+                SwmArea area = new SwmArea();
+                area.getSqlMap().getWhere().and("area_name", QueryType.IN, areaNameList);
+                area.setStatus(SwmArea.STATUS_NORMAL);
+                List<SwmArea> swmAreaList = swmAreaService.findList(area);
+                Map<String, String> areaMap = swmAreaList.stream().collect(Collectors.toMap(SwmArea::getAreaName, SwmArea::getId));
+
+                for (SwmBeaconStationExport production : list) {
+                    if (StringUtil.isBlank(production.getBeaconId())){
+                        throw new RuntimeException("信标不能为空" );
+                    }
+                    if (StringUtil.isBlank(production.getArea())){
+                        throw new RuntimeException("信标：" + production.getBeaconId() + "的区域内容为空");
+                    }
+                    if (StringUtil.isBlank(areaMap.get(production.getArea()))){
+                        throw new RuntimeException("信标：" + production.getBeaconId() + "的区域不存在");
+                    }
+                    SwmBeaconStation swmBeaconStation = new SwmBeaconStation();
+                    swmBeaconStation.setBeaconId(production.getBeaconId());
+                    swmBeaconStation.setArea(areaMap.get(production.getArea()));
+                    swmBeaconStationList.add(swmBeaconStation);
+                }
+                List<List<SwmBeaconStation>> lists = BatchOperationsUtil.batchCutting(swmBeaconStationList, 100);
+                for (List<SwmBeaconStation> list1 : lists) {
+                    this.dao.updateBatch(list1);
+                }
+                count = list.size();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return count;
     }
 }

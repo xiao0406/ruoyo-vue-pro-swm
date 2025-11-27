@@ -477,4 +477,34 @@
             #{idCard}
         </foreach>
     </select>
+    <select id="findTableName" resultType="com.jeesite.modules.vo.AiDto$RiskStatistics">
+        SELECT
+            sp.`name` personName,
+            CONCAT('swm_warning_management_', shd.device_id, '_', shd.assigned_person) tableName
+        FROM
+            swm_helmet_device shd
+                JOIN swm_person sp ON shd.assigned_person = sp.identity_card
+        WHERE
+            shd.`status` = 0
+          AND sp.`status` = 0
+          AND shd.assigned_person IS NOT NULL
+    </select>
+    <select id="findPersonList" resultType="com.jeesite.modules.vo.AiDto$Trajectory">
+        SELECT
+            sp.id,
+            sp.`name` as employeeName,
+            sp.identity_card as idCard,
+            sp.safety_helmet_id as deviceId,
+            sp.phone_number,
+            sp.department,
+            fpa.position_name AS departmentName,
+            sp.team,
+            fwg.work_group_name AS teamName
+        FROM
+            swm_person sp
+                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.STATUS = 0
+    </select>
 </mapper>
