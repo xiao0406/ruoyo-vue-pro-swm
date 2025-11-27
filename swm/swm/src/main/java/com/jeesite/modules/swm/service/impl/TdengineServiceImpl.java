@@ -5,6 +5,7 @@ import cn.hutool.http.HttpRequest;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.jeesite.modules.config.OkHttpClientManager;
 import com.jeesite.modules.swm.constant.DebugConstant;
 import com.jeesite.modules.swm.service.TDengineService;
 import com.jeesite.modules.vo.DeviceDataDTO;
@@ -12,7 +13,10 @@ import com.jeesite.modules.vo.QueryParamDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import com.jeesite.modules.utils.R;
 
@@ -49,6 +53,12 @@ public class TdengineServiceImpl implements TDengineService {
      */
     @Value("${tdengine.retentionPolicy}")
     private String retentionPolicy;
+
+    private final OkHttpClientManager okHttpClientManager;
+
+    @Qualifier("swmExecutor")
+    @Autowired
+    private ThreadPoolTaskExecutor swmExecutor;
 
     /**
      * 项目启动时自动创建数据库
@@ -777,21 +787,40 @@ public class TdengineServiceImpl implements TDengineService {
      * @author Shawn
      * @date 2025-05-30
      */
+//    @Override
+//    public R<JSONObject> executeTDengineSQL(String sql) {
+//        try {
+//            String result = HttpRequest.post(url)
+//                    .header("Authorization", authorization)
+//                    .body(sql)
+//                    .execute()
+//                    .body();
+//
+////            log.debug("执行SQL: {}", sql);
+////            log.debug("执行结果: {}", result);
+//
+//            JSONObject jsonObject = JSONUtil.parseObj(result);
+//            if (!"succ".equals(jsonObject.getStr("status"))
+//                    && (jsonObject.getInt("code") == null || jsonObject.getInt("code") != 0)) { // jsonObject.getInt("code")为空，新版的tdengine返回code为0表示成功
+//                log.error("SQL执行失败: {}", result);
+//                log.error("失败SQL: {}", sql);
+//                return R.fail(jsonObject.getStr("desc"));
+//            }
+//            return R.ok(jsonObject);
+//        } catch (Exception e) {
+//            log.error("执行TDengine SQL异常: {}", sql, e);
+//            return R.fail("SQL执行异常: " + e.getMessage());
+//        }
+//    }
+
     @Override
     public R<JSONObject> executeTDengineSQL(String sql) {
         try {
-            String result = HttpRequest.post(url)
-                    .header("Authorization", authorization)
-                    .body(sql)
-                    .execute()
-                    .body();
-
-//            log.debug("执行SQL: {}", sql);
-//            log.debug("执行结果: {}", result);
+            String result = okHttpClientManager.post(url, authorization, sql);
 
             JSONObject jsonObject = JSONUtil.parseObj(result);
             if (!"succ".equals(jsonObject.getStr("status"))
-                    && (jsonObject.getInt("code") == null || jsonObject.getInt("code") != 0)) { // jsonObject.getInt("code")为空，新版的tdengine返回code为0表示成功
+                    && (jsonObject.getInt("code") == null || jsonObject.getInt("code") != 0)) {
                 log.error("SQL执行失败: {}", result);
                 log.error("失败SQL: {}", sql);
                 return R.fail(jsonObject.getStr("desc"));
@@ -802,6 +831,7 @@ public class TdengineServiceImpl implements TDengineService {
             return R.fail("SQL执行异常: " + e.getMessage());
         }
     }
+
 
     /**
      * 生成复合子表名称，包含设备ID和身份证信息

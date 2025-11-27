@@ -225,10 +225,10 @@ public class AiServiceImpl {
         // ====== 日期处理 ======
         DateTime yesterday = DateUtil.yesterday();
         if (ObjectUtils.isEmpty(vo.getStartDate())) {
-            vo.setStartDate(DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd"));
+            vo.setStartDate(DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd HH:mm:ss"));
         }
         if (ObjectUtils.isEmpty(vo.getEndDate())) {
-            vo.setEndDate(DateUtil.format(DateUtil.endOfDay(yesterday), "yyyy-MM-dd"));
+            vo.setEndDate(DateUtil.format(DateUtil.endOfDay(yesterday), "yyyy-MM-dd HH:mm:ss"));
         }
         String startDate = vo.getStartDate();
         String endDate = vo.getEndDate();
@@ -619,14 +619,6 @@ public class AiServiceImpl {
         Page<AiDto.Trajectory> page = vo.getPage();
 
         // ====== 日期处理 ======
-        DateTime nowDay = DateUtil.date();
-//        if (ObjectUtils.isEmpty(vo.getStartDate())) {
-//            vo.setStartDate(DateUtil.format(nowDay, "yyyy-MM-dd HH:mm:ss"));
-//        }
-//        if (ObjectUtils.isEmpty(vo.getEndDate())) {
-//            vo.setEndDate(DateUtil.format(nowDay, "yyyy-MM-dd HH:mm:ss"));
-//        }
-        // ====== 日期处理 ======
         DateTime now = DateUtil.date();
         if (ObjectUtils.isEmpty(vo.getStartDate())) {
             vo.setStartDate(DateUtil.format(DateUtil.offsetSecond(now, -10), "yyyy-MM-dd HH:mm:ss"));
@@ -634,7 +626,6 @@ public class AiServiceImpl {
         if (ObjectUtils.isEmpty(vo.getEndDate())) {
             vo.setEndDate(DateUtil.format(now, "yyyy-MM-dd HH:mm:ss"));
         }
-
 
         String startDate = vo.getStartDate();
         String endDate = vo.getEndDate();
@@ -669,7 +660,7 @@ public class AiServiceImpl {
 
                 String childTable = dbname + ".external_coordinate_data_" + elderId + "_" + idCard;
 
-                String trackSql = "SELECT x, y, address, time " + "FROM " + childTable + " " + "WHERE time >= '" + startDate + "' " + "AND time <= '" + endDate + "' " + "ORDER BY time";
+                String trackSql = "SELECT x, y, address, time " + "FROM " + childTable + " " + "WHERE time >= '" + vo.getStartDate() + "' " + "AND time <= '" + vo.getEndDate() + "' " + "ORDER BY time desc limit 1";
 
                 System.out.println("trackSql:" + trackSql);
                 R<JSONObject> trackResult = tdengineService.executeTDengineSQL(trackSql);

@@ -18,7 +18,7 @@ spring:
 
   # 当前环境名称（注意：不可设置为 test 它是单元测试专用的名称）
   profiles:
-    active: swm
+    active: wxy
 
   # 分布式配置中心
   cloud:
@@ -27,13 +27,13 @@ spring:
 
       # 云端配置覆盖本地配置
       discovery:
-        server-addr: 10.50.103.166:8848
+        server-addr: 10.50.103.188:8848
 #        server-addr: 10.50.103.188:8848
         namespace: ${spring.profiles.active}
 
       config:
         # 配置中心地址
-        server-addr: 10.50.103.166:8848
+        server-addr: 10.50.103.188:8848
 #        server-addr: 10.50.103.188:8848
         # 命名空间
         namespace: ${spring.profiles.active}
