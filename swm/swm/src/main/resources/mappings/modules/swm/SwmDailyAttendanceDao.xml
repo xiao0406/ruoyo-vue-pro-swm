@@ -797,7 +797,7 @@
         AND sda.attendance_date >= #{startDate}
         AND sda.attendance_date &lt;= #{endDate}
     </select>
-    <select id="workerFatigue" resultType="com.jeesite.modules.vo.AiDto$WorkerFatigue">
+    <select id="workerFatigue" resultType="com.jeesite.modules.entity.AiDto$WorkerFatigue">
         SELECT
 #         sda.id,
         sda.employee_name,

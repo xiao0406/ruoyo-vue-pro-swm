@@ -1,30 +1,19 @@
 package com.jeesite.modules.web;
 
 
-import cn.hutool.core.date.DateTime;
-import cn.hutool.core.date.DateUtil;
-import com.alibaba.cloud.commons.lang.StringUtils;
 import com.jeesite.common.entity.Page;
-import com.jeesite.common.lang.ObjectUtils;
 import com.jeesite.modules.service.AiServiceImpl;
-import com.jeesite.modules.swm.entity.SwmDailyAttendance;
-import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
-import com.jeesite.modules.vo.AiDto;
+import com.jeesite.modules.entity.AiDto;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Controller

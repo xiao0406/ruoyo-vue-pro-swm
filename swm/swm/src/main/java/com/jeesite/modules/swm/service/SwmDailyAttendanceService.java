@@ -6,7 +6,7 @@ import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.*;
 
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
-import com.jeesite.modules.vo.AiDto;
+import com.jeesite.modules.entity.AiDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

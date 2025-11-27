@@ -5,7 +5,7 @@ import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmMonthlyAttendance;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
-import com.jeesite.modules.vo.AiDto;
+import com.jeesite.modules.entity.AiDto;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Date;

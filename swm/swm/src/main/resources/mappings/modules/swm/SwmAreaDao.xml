@@ -11,7 +11,7 @@
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
-    <select id="findAddressList" resultType="com.jeesite.modules.vo.AiDto$Trajectory">
+    <select id="findAddressList" resultType="com.jeesite.modules.entity.AiDto$Trajectory">
         SELECT
             sbs.location as address,
             sa.area_name

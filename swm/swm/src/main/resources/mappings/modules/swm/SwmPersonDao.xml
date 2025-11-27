@@ -477,7 +477,7 @@
             #{idCard}
         </foreach>
     </select>
-    <select id="findTableName" resultType="com.jeesite.modules.vo.AiDto$RiskStatistics">
+    <select id="findTableName" resultType="com.jeesite.modules.entity.AiDto$RiskStatistics">
         SELECT
             sp.`name` personName,
             CONCAT('swm_warning_management_', shd.device_id, '_', shd.assigned_person) tableName
@@ -489,7 +489,7 @@
           AND sp.`status` = 0
           AND shd.assigned_person IS NOT NULL
     </select>
-    <select id="findPersonList" resultType="com.jeesite.modules.vo.AiDto$Trajectory">
+    <select id="findPersonList" resultType="com.jeesite.modules.entity.AiDto$Trajectory">
         SELECT
             sp.id,
             sp.`name` as employeeName,
