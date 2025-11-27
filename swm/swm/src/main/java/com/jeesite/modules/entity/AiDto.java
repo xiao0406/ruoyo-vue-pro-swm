@@ -1,4 +1,4 @@
-package com.jeesite.modules.vo;
+package com.jeesite.modules.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;

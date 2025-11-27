@@ -1,18 +1,12 @@
 package com.jeesite.modules.job.task;
 
 
-import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import com.alibaba.fastjson.JSONObject;
-import com.jeesite.common.lang.ObjectUtils;
-import com.jeesite.common.lang.StringUtils;
-import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmDify;
-import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
 import com.jeesite.modules.swm.service.SwmDifyService;
-import com.jeesite.modules.vo.AiDto;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * AI相关任务

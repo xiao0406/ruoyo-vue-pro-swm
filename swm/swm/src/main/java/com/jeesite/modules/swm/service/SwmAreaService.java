@@ -1,6 +1,6 @@
 package com.jeesite.modules.swm.service;
 
-import com.jeesite.modules.vo.AiDto;
+import com.jeesite.modules.entity.AiDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
