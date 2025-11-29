@@ -27,7 +27,7 @@ import com.jeesite.modules.swm.service.SwmDifyService;
  * @version 2025-11-27
  */
 @Controller
-@RequestMapping(value = "${adminPath}/swm/swmDify")
+@RequestMapping(value = "${adminPath}/swmDify")
 @Api(value = "安全帽：ai日报表接口", tags = "安全帽：ai日报表")
 public class SwmDifyController extends BaseController {
 

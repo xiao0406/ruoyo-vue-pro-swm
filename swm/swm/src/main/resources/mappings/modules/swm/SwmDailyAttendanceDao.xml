@@ -265,7 +265,7 @@
             a.employee_id AS "employeeId",
             a.employee_name AS "employeeName",
             a.identity_card AS "identityCard",
-            a.person_type AS "personType",
+#             a.person_type AS "personType",
             a.attendance_date AS "attendanceDate",
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
@@ -284,8 +284,11 @@
             a.create_date AS "createDate",
             a.update_by AS "updateBy",
             a.update_date AS "updateDate",
-            a.remarks AS "remarks"
+            a.remarks AS "remarks",
+            sp.person_type AS "personType",
+            a.classes as "classes"
         FROM swm_daily_attendance a
+        join swm_person sp  on a.identity_card  = sp.identity_card and sp.`status` = 0
         <where>
             DATE(a.attendance_date) = DATE(#{attendanceDate})
         </where>
@@ -821,6 +824,20 @@
         AND sda.actual_hours >= #{actualHours}
         ORDER BY
         sda.actual_hours DESC
+    </select>
+    <select id="findClockInCardList" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
+        select * from swm_daily_attendance where attendance_date = #{date}
+                                             and clock_in_date is null
+                                             and classes = '1'
+    </select>
+    <select id="findClockOutCardList" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
+        select *
+        from swm_daily_attendance
+        where
+            attendance_date >= #{yestDay}
+          and attendance_date &lt;= #{nowDate}
+          and clock_out_date is null
+          and classes = '3'
     </select>
 
 </mapper>

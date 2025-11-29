@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.List;
 
 import cn.hutool.core.date.DateTime;
+import com.jeesite.common.lang.ObjectUtils;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,10 @@ public class SwmDifyService extends CrudService<SwmDifyDao, SwmDify> {
 	 */
 	@Override
 	public Page<SwmDify> findPage(SwmDify swmDify) {
+		if (ObjectUtils.isNotEmpty(swmDify.getStartDate()) && ObjectUtils.isNotEmpty(swmDify.getEndDate())){
+			swmDify.getSqlMap().getWhere().and("a.date", QueryType.GT, swmDify.getStartDate());
+			swmDify.getSqlMap().getWhere().and("a.date", QueryType.LT, swmDify.getEndDate());
+		}
 		return super.findPage(swmDify);
 	}
 	

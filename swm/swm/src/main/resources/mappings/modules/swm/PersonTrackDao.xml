@@ -53,6 +53,12 @@
         <if test="searchName != null and searchName != ''">
             AND a.name LIKE CONCAT('%', #{searchName}, '%')
         </if>
+        <if test="personTypeList != null and personTypeList.size >0">
+            AND a.person_type IN
+            <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                #{personType}
+            </foreach>
+        </if>
         <if test="organizationKey != null and organizationKey != ''">
             AND (
                 -- 主关联查询条件（通过 fms_worker）

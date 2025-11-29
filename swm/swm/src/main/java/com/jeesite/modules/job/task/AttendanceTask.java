@@ -3,6 +3,7 @@ package com.jeesite.modules.job.task;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
+import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.fms.entity.FmsGeneralProject;
@@ -1382,19 +1383,15 @@ public class AttendanceTask {
      */
     @Transactional(readOnly = false)
     public void processclockInCard() {
-        Date Date = new Date();
         XxlJobHelper.log("开始执行上班卡补卡任务...................");
 
         //设置请求参数，只查当天的数据
-        AttendanceParams params = parseAttendanceParams();
-        params.startTime = DateUtil.beginOfDay( Date);
-        params.endTime = DateUtil.endOfDay(Date);
         // 1. 查询当天所有的打卡记录
-        List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
-        XxlJobHelper.log("上班卡查询范围{}，{}，条数{}",
-                DateUtil.formatDateTime(params.startTime),
-                DateUtil.formatDateTime(params.endTime),
-                records.size());
+        String date = DateUtils.getDate();
+        Date nowDate = new Date();
+        List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockInCardList(date);
+//        List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
+        XxlJobHelper.log("上班卡查询范围{}，{}，条数{}",date,date,records.size());
 
         if (records.isEmpty()) {
             XxlJobHelper.log("没有找到待处理的考勤记录");
@@ -1415,8 +1412,8 @@ public class AttendanceTask {
                             String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 7));
                             Integer count = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
                             if (count != null && count > 0) {
-                                item.setClockInDate(Date);
-                                item.setClockInTime(Date);
+                                item.setClockInDate(nowDate);
+                                item.setClockInTime(nowDate);
                                 onlineDevices.add(item);
                                 XxlJobHelper.log("上班补卡人员：{}", item.getEmployeeName());
                             }
@@ -1453,15 +1450,12 @@ public class AttendanceTask {
         XxlJobHelper.log("开始执行下班卡补卡任务............................");
 
         //设置请求参数，只查当天的数据
-        AttendanceParams params = parseAttendanceParams();
-        params.startTime = DateUtil.beginOfDay(DateUtil.offsetDay(date, -1));
-        params.endTime = DateUtil.endOfDay(date);
+        String nowDate = DateUtils.getDate();
+        String yestDay = DateUtils.formatDate(DateUtil.yesterday());
         // 1. 查询两天所有的打卡记录
-        List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
-        XxlJobHelper.log("下班卡查询范围{}，{}，条数{}",
-                DateUtil.formatDateTime(params.startTime),
-                DateUtil.formatDateTime(params.endTime),
-                records.size());
+        List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockOutCardList(yestDay, nowDate);
+        //List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
+        XxlJobHelper.log("下班卡查询范围{}，{}，条数{}", yestDay, nowDate, records.size());
 
         if (records.isEmpty()) {
             XxlJobHelper.log("没有找到待处理的考勤记录");

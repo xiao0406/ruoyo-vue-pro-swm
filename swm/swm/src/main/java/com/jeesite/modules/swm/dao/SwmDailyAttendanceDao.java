@@ -184,4 +184,8 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
     List<AiDto.WorkerFatigue> workerFatigue(AiDto.WorkerFatigue vo);
 
     Long countWorkerFatigue(AiDto.WorkerFatigue vo);
+
+    List<SwmDailyAttendance> findClockInCardList(String date);
+
+    List<SwmDailyAttendance> findClockOutCardList(String yestDay, String nowDate);
 }

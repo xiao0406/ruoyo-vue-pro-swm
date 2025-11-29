@@ -60,12 +60,12 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
      * @author Shawn
      * @date 2025-01-14
      */
-    public List<Map<String, Object>> queryPersonsFromDatabase(String searchName, String organizationKey) {
+    public List<Map<String, Object>> queryPersonsFromDatabase(String searchName, String organizationKey,List<String> personTypeList) {
         List<Map<String, Object>> positions = new ArrayList<>();
 
         try {
             // 使用MyBatis查询数据
-            List<PersonTrackInfo> dbResults = personTrackDao.findPersonTrackInfo(searchName, organizationKey);
+            List<PersonTrackInfo> dbResults = personTrackDao.findPersonTrackInfo(searchName, organizationKey,personTypeList);
 
             if (dbResults.isEmpty()) {
                 logger.info("未查询到人员数据，searchName: {}, organizationKey: {}", searchName, organizationKey);

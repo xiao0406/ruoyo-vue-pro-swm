@@ -53,5 +53,5 @@ public interface SwmOrganizationTreeDao {
      * @param workGroupId 班组ID
      * @return 员工节点列表
      */
-    List<TreeNode> getWorkerNodes(@Param("workGroupId") String workGroupId);
+    List<TreeNode> getWorkerNodes(@Param("workGroupId") String workGroupId, @Param("personTypeList") List<String> personTypeList);
 } 

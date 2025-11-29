@@ -41,8 +41,9 @@ public class SwmOrganizationTreeController extends BaseController {
     @ApiOperation("获取组织树节点数据")
     public List<TreeNode> getNodes(
             @ApiParam(value = "节点类型", required = true) @RequestParam String nodeType,
-            @ApiParam(value = "父节点ID") @RequestParam(required = false) String parentId) {
+            @ApiParam(value = "父节点ID") @RequestParam(required = false) String parentId,
+            @ApiParam(value = "人员类型") @RequestParam(required = false) List<String> personTypeList) {
         
-        return swmOrganizationTreeService.getNodes(nodeType, parentId);
+        return swmOrganizationTreeService.getNodes(nodeType, parentId,personTypeList);
     }
 } 

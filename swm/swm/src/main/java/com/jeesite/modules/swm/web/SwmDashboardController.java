@@ -1,6 +1,8 @@
 package com.jeesite.modules.swm.web;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.utils.R;
@@ -13,12 +15,15 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import sun.text.resources.FormatData;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -28,6 +33,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 /**
  * 大屏数据看板Controller
@@ -58,6 +65,10 @@ public class SwmDashboardController extends BaseController {
 
     @Value("${tdengine.dbname}")
     private String dbname;
+
+    @Qualifier("swmExecutor")
+    @Autowired
+    private ThreadPoolTaskExecutor swmExecutor;
 
     /**
      * 获取启用状态的地图路径
@@ -192,6 +203,81 @@ public class SwmDashboardController extends BaseController {
         return result;
     }
 
+
+    /**
+     * 近七日预警报警统计
+     */
+    @GetMapping(value = "warningStatisticsForPast7DaysNew")
+    @ResponseBody
+    @ApiOperation("近七日预警报警统计")
+    public Map<String, Object> warningStatisticsForPast7DaysNew() {
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 获取近7天的预警数据
+        List<SwmWarningManagement> warnings = swmWarningManagementService.warningStatisticsForPast7DaysNew();
+
+        // 2. 统计每种预警内容的总数
+        Map<String, Long> warningMap = warnings.stream()
+                .collect(Collectors.groupingBy(
+                        SwmWarningManagement::getWarningContent,
+                        Collectors.counting()));
+
+        Map<String, Long> warningMapNew= new HashMap<>();
+
+        String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+        String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
+        String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+        String dictLabel4 = DictUtils.getDictLabel("warning_content_enum", "危险区域闯入提示", "危险区域闯入提示");
+        String dictLabel5 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+        warningMapNew.put(dictLabel5, warningMap.get(dictLabel5));
+        warningMapNew.put(dictLabel4, warningMap.get(dictLabel4));
+        warningMapNew.put("异常行为预警", warningMap.get(dictLabel3) + warningMap.get(dictLabel2)+ warningMap.get(dictLabel1));
+
+        result.put("warning", warningMapNew);
+
+
+        // 3. 按日期和预警内容分组统计
+        Map<String, Map<String, Long>> dailyWarningStats = warnings.stream()
+                .collect(Collectors.groupingBy(
+                        w -> {
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                            return sdf.format(w.getWarningTime());
+                        }, // 按日期分组
+                        Collectors.groupingBy(
+                                SwmWarningManagement::getWarningContent, // 按预警内容分组
+                                Collectors.counting() // 统计数量
+                        )));
+
+
+        // 4. 确保7天都有数据，没有的日期补0
+        Map<String, Map<String, Long>> fullWeekStats = ensureFullWeekData(dailyWarningStats);
+        Map<String, Map<String, Long>> fullWeekStatsNew = new LinkedHashMap<>();
+
+        for (Map.Entry<String, Map<String, Long>> entry : fullWeekStats.entrySet()) {
+
+            String day = entry.getKey();
+            Map<String, Long> value = entry.getValue();
+            // ✔ 每一天都创建一个新的 map
+            Map<String, Long> valueNew = new HashMap<>();
+
+            valueNew.put(dictLabel5, value.getOrDefault(dictLabel5, 0L));
+            valueNew.put(dictLabel4, value.getOrDefault(dictLabel4, 0L));
+            valueNew.put("异常行为预警",
+                    value.getOrDefault(dictLabel3, 0L)
+                            + value.getOrDefault(dictLabel2, 0L)
+                            + value.getOrDefault(dictLabel1, 0L)
+            );
+            fullWeekStatsNew.put(day, valueNew);
+        }
+
+
+        // 5. 转换为前端需要的格式
+        Map<String, Object> chartData = prepareChartData(fullWeekStatsNew);
+        result.put("chartData", chartData);
+        return result;
+
+    }
+
     /**
      * 近七日预警报警记录（分页）
      */
@@ -202,6 +288,19 @@ public class SwmDashboardController extends BaseController {
             Page<SwmWarningManagement> page) {
         // 获取近7天的预警数据（分页）
         return swmWarningManagementService.findPast7DaysWarningPage(swmWarningManagement, page);
+
+    }
+
+    /**
+     * 近七日预警报警记录（分页）
+     */
+    @GetMapping(value = "warningRecordsForPast7DaysNew")
+    @ResponseBody
+    @ApiOperation("近七日预警报警记录（分页）")
+    public Page<SwmWarningManagement> warningRecordsForPast7DaysNew(SwmWarningManagement swmWarningManagement,
+                                                                 Page<SwmWarningManagement> page) {
+        // 获取近7天的预警数据（分页）
+        return swmWarningManagementService.findPast7DaysWarningPageNew(swmWarningManagement, page);
 
     }
 
@@ -497,6 +596,135 @@ public class SwmDashboardController extends BaseController {
     }
 
     /**
+     * 今日预警统计
+     * 已处置累计报警数/累计报警数、已处置今日报警数/今日报警数、已处置当前报警数/当前报警数（近5分钟）
+     */
+    @GetMapping("warningStatisticsForTodayNew")
+    @ResponseBody
+    @ApiOperation("今日预警统计")
+    public Map<String, Object> warningStatisticsForTodayNew() {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> warningMap = new ConcurrentHashMap<>(); // 线程安全
+        Date now = new Date();
+        String format = "yyyy-MM-dd HH:mm:ss";
+
+        try {
+            // 统一计算时间
+            String nowDayStartTime = DateUtil.format(DateUtil.beginOfDay(now), format);
+            String nowDayEndTime = DateUtil.format(DateUtil.endOfDay(now), format);
+            String fiveMinuteStartTime = DateUtil.format(DateUtil.offsetMinute(now, -5), format);
+
+            // 异步任务
+            CompletableFuture<Void> totalFuture = CompletableFuture.runAsync(() -> {
+                try {
+                    String totalAlarmNumber = warningStatistics(null, null);
+                    warningMap.put("累计报警数", totalAlarmNumber);
+                } catch (Exception e) {
+                    logger.error("统计累计报警数异常", e);
+                }
+            }, swmExecutor);
+
+            CompletableFuture<Void> todayFuture = CompletableFuture.runAsync(() -> {
+                try {
+                    String nowDayAlarmNumber = warningStatistics(nowDayStartTime, nowDayEndTime);
+                    warningMap.put("今日报警数", nowDayAlarmNumber);
+                } catch (Exception e) {
+                    logger.error("统计今日报警数异常", e);
+                }
+            }, swmExecutor);
+
+            CompletableFuture<Void> fiveMinuteFuture = CompletableFuture.runAsync(() -> {
+                try {
+                    String fiveMinuteAlarmNumber = warningStatistics(fiveMinuteStartTime, nowDayEndTime);
+                    warningMap.put("当前报警数", fiveMinuteAlarmNumber);
+                } catch (Exception e) {
+                    logger.error("统计近五分钟报警数异常", e);
+                }
+            }, swmExecutor);
+
+            CompletableFuture<Void> recordFuture = CompletableFuture.runAsync(() -> {
+                try {
+                    String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+                    String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
+                    String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+                    List<SwmWarningManagement> latestWarnings = swmWarningManagementService.findTodayWarningWithHybrid();
+                    swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
+                    swmWarningManagementService.fillLocationInfoV1(latestWarnings);
+                    for (SwmWarningManagement warning : latestWarnings) {
+                        if (Arrays.asList(dictLabel1, dictLabel2, dictLabel3).contains(warning.getWarningContent())){
+                            warning.setWarningContent("异常行为预警");
+                        }
+                    }
+                    result.put("record", latestWarnings);
+                } catch (Exception e) {
+                    logger.error("获取已处置数据异常", e);
+                }
+            }, swmExecutor);
+
+            // 等待所有任务完成
+            CompletableFuture.allOf(totalFuture, todayFuture, fiveMinuteFuture, recordFuture).join();
+
+            result.put("warning", warningMap);
+
+        } catch (Exception e) {
+            logger.error("获取今日预警统计数据异常", e);
+        }
+
+        return result;
+    }
+
+
+
+    /**
+     * 查询报警统计
+     */
+
+    private String warningStatistics(String startTime, String endTime) {
+
+        Long totalAlarmNumber = 0L;
+
+        try {
+
+            // TDengine SQL：必须 WHERE 开头
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT COUNT(1) FROM ")
+                    .append(dbname).append(".swm_warning_management")
+                    .append(" WHERE status = '0'");
+
+            // 时间条件
+            if (StringUtils.isNotEmpty(startTime) && StringUtils.isNotEmpty(endTime)) {
+                sqlBuilder.append(" AND warning_time >= '").append(startTime).append("'")
+                        .append(" AND warning_time <= '").append(endTime).append("'");
+            }
+
+            // 执行
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+
+                JSONArray rows = result.getData().getJSONArray("data");
+
+                if (rows != null && rows.size() > 0) {
+                    // TDengine 的 COUNT 返回格式： [["12345"]]
+                    totalAlarmNumber = rows.getJSONArray(0).getLong(0);
+                }
+            } else {
+                logger.error("TDengine统计查询失败: {}", result.getMsg());
+            }
+        } catch (Exception e) {
+            logger.error("执行TDengine查询异常: {}", e.getMessage());
+        }
+
+
+        //2.查询一处置的报警
+        Long theTotalAlarmNumber = swmWarningManagementService.theAlarmHasBeenDealtWith(startTime, endTime);
+        String result = theTotalAlarmNumber+"/"+totalAlarmNumber;
+
+        return result;
+    }
+
+
+    /**
      * 告警总数
      */
     @GetMapping("/warning/count")
@@ -649,26 +877,26 @@ public class SwmDashboardController extends BaseController {
                         person -> person,
                         (existing, replacement) -> existing));
         // 3. 并行处理各项统计
-        CompletableFuture<Map<String, Object>> todayStats = CompletableFuture.supplyAsync(
-                () -> getTodayAttendanceStats(monthlyAttendance, personMap));
+        CompletableFuture<Map<String, Object>> todayStats = supplyAsync(
+                () -> getTodayAttendanceStats(monthlyAttendance, personMap),swmExecutor);
 
-        CompletableFuture<Map<String, Object>> monthlyEfficiency = CompletableFuture.supplyAsync(
-                () -> getMonthlyEfficiencyStats(monthlyAttendance));
+        CompletableFuture<Map<String, Object>> monthlyEfficiency = supplyAsync(
+                () -> getMonthlyEfficiencyStats(monthlyAttendance),swmExecutor);
 
-        CompletableFuture<Map<String, Object>> monthlyAttendanceChart = CompletableFuture.supplyAsync(
-                () -> getMonthlyAttendanceChartData(monthlyAttendance, currentMonth));
+        CompletableFuture<Map<String, Object>> monthlyAttendanceChart = supplyAsync(
+                () -> getMonthlyAttendanceChartData(monthlyAttendance, currentMonth),swmExecutor);
 
-        CompletableFuture<Map<String, Object>> monthlyEfficiencyChart = CompletableFuture.supplyAsync(
-                () -> getMonthlyEfficiencyChartData(monthlyAttendance, currentMonth));
+        CompletableFuture<Map<String, Object>> monthlyEfficiencyChart = supplyAsync(
+                () -> getMonthlyEfficiencyChartData(monthlyAttendance, currentMonth),swmExecutor);
 
-        CompletableFuture<List<Map<String, Object>>> todayTeamRanking = CompletableFuture.supplyAsync(
-                () -> getTeamRanking(monthlyAttendance, personMap, true, 10));
+        CompletableFuture<List<Map<String, Object>>> todayTeamRanking = supplyAsync(
+                () -> getTeamRanking(monthlyAttendance, personMap, true, 10),swmExecutor);
 
-        CompletableFuture<List<Map<String, Object>>> todayJobDistribution = CompletableFuture.supplyAsync(
-                () -> getJobDistribution(monthlyAttendance, personMap, true, 10));
+        CompletableFuture<List<Map<String, Object>>> todayJobDistribution = supplyAsync(
+                () -> getJobDistribution(monthlyAttendance, personMap, true, 10),swmExecutor);
 
-        CompletableFuture<List<Map<String, Object>>> monthlyTeamRanking = CompletableFuture.supplyAsync(
-                () -> getTeamRanking(monthlyAttendance, personMap, false, 10));
+        CompletableFuture<List<Map<String, Object>>> monthlyTeamRanking = supplyAsync(
+                () -> getTeamRanking(monthlyAttendance, personMap, false, 10),swmExecutor);
 
         // 等待所有任务完成
         CompletableFuture.allOf(todayStats, monthlyEfficiency, monthlyAttendanceChart,

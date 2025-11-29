@@ -28,7 +28,6 @@ import lombok.Data;
 		@Column(name="team_actual_hours", attrName="teamActualHours", label="班组的有效作业时长", isUpdateForce=true),
 		@Column(name="text", attrName="text", label="文本"),
 		@Column(includeEntity=DataEntity.class),
-		@Column(includeEntity=BaseEntity.class),
 		@Column(name="manufacture", attrName="manufacture", label="制造单位"),
 	}, orderBy="a.update_date DESC"
 )
@@ -52,5 +51,7 @@ public class SwmDify extends DataEntity<SwmDify> {
 	@ApiModelProperty(value = "制造单位")
 	private String manufacture;
 
+	private Date startDate;
+	private Date endDate;
 	
 }
