@@ -12,6 +12,7 @@ import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.entity.AiDto;
+import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -330,4 +331,10 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         return  dao.findPersonList();
     }
 
+    public Page<SwmDashboardNewController.Person> findTodayAttendance(SwmDashboardNewController.Person vo) {
+        Page<SwmDashboardNewController.Person> page = vo.getPage();
+        List<SwmDashboardNewController.Person> list = dao.findTodayAttendance(vo);
+        page.setList(list);
+        return page;
+    }
 }

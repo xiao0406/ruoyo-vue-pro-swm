@@ -508,4 +508,16 @@
         WHERE
             front_alarm != '0'
     </select>
+    <select id="theAlarmHasBeenDealtWith" resultType="java.lang.Long">
+        SELECT
+            count(1)
+        FROM
+            swm_warning_management
+        <where>
+            handle_status = '1'
+        <if test="startTime != null and endTime !=  null ">
+            and handle_time BETWEEN #{startTime} and #{endTime}
+        </if>
+        </where>
+    </select>
 </mapper>

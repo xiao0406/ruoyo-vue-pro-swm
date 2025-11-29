@@ -6,6 +6,7 @@ import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
@@ -21,10 +22,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -74,6 +77,10 @@ public class SwmDashboardNewController extends BaseController {
     @Autowired
     private RedisService redisService;
 
+    @Qualifier("swmExecutor")
+    @Autowired
+    private ThreadPoolTaskExecutor swmExecutor;
+
 
 
     //******************************************************************************数据看板-人员分布******************************************************************//
@@ -90,10 +97,10 @@ public class SwmDashboardNewController extends BaseController {
         List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(date);
         // 人员数据统计
         CompletableFuture<Map<String, Object>> todayAttendanceCount = CompletableFuture.supplyAsync(
-                () -> getPersonCount(todayAttendances, swmPersonList));
+                () -> getPersonCount(todayAttendances, swmPersonList),swmExecutor);
         // 异常数据统计
         CompletableFuture<Map<String, Object>> todayAbnormalCount = CompletableFuture.supplyAsync(
-                () -> getAbnormalCount(swmPersonList));
+                () -> getAbnormalCount(swmPersonList),swmExecutor);
         // 实时作业人员变化趋势-每小时统计
         CompletableFuture<Map<String, Object>> hourWorkingCount = CompletableFuture.supplyAsync(
                 this::getHourWorkingCount);
@@ -241,22 +248,37 @@ public class SwmDashboardNewController extends BaseController {
     private Map<String, Object> getPersonCount(List<SwmDailyAttendance> todayAttendances, List<SwmPerson> swmPersonList) {
         Map<String, Object> result = new HashMap<>();
         // 今日出勤人数
-        long todayAttendanceCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null).count();
+        long todayAttendanceCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null).count();
         result.put("todayAttendanceCount", todayAttendanceCount);
         // 今日出勤工人数
-        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
+        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
                 && a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
         result.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
         // 今日出勤管理员数
-        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
+        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
                 && a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
         result.put("todayAttendanceManagerCount", todayAttendanceManagerCount);
 
-//        //今日出勤白班人数   classes = 1
-//        long todayAttendanceWhiteCount = todayAttendances.stream().filter(a -> "1".equals(a.getClasses())).count();
-//        //今日出勤夜班人数   classes = 3
-//        long todayAttendanceNightCount = todayAttendances.stream().filter(a -> "3".equals(a.getClasses())).count();
-//
+        //今日出勤白班人数   classes = 1
+     long todayAttendanceWhiteCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
+                && "1".equals(a.getClasses())).count();
+        result.put("todayAttendanceWhiteCount", todayAttendanceWhiteCount);
+
+        //今日出勤夜班人数   classes = 3
+        long todayAttendanceNightCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
+                && "3".equals(a.getClasses())).count();
+        result.put("todayAttendanceNightCount", todayAttendanceNightCount);
+
+        //工人今日在厂
+        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.TEAMLEADER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
+        long todayAttendanceWorkerWhiteCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
+                && Arrays.asList(managerIds).contains(a.getPersonType())).count();
+        result.put("todayAttendanceWorkerWhiteCount", todayAttendanceWorkerWhiteCount);
+
+        //管理员今日在厂
+        long todayAttendanceManagerWhiteCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
+                && SwmPerson.PersonTypeEnum.MANAGER.equals(a.getPersonType())).count();
+        result.put("todayAttendanceManagerWhiteCount", todayAttendanceManagerWhiteCount);
 
 
         // 工作中人数：从TDengine查询1小时内有位置数据的人数（按类型分类）
@@ -443,9 +465,11 @@ public class SwmDashboardNewController extends BaseController {
             int managerCount = 0;
 
             for (SwmPerson person : persons) {
-                if ("0".equals(person.getPersonType())) {
+                if (SwmPerson.PersonTypeEnum.WORKER.equals(person.getPersonType())
+                ||SwmPerson.PersonTypeEnum.TEAMLEADER.equals(person.getPersonType())
+                ||SwmPerson.PersonTypeEnum.SPECIALTRADES.equals(person.getPersonType())) {
                     workerCount++; // 工人
-                } else if ("1".equals(person.getPersonType())) {
+                } else if (SwmPerson.PersonTypeEnum.MANAGER.equals(person.getPersonType())) {
                     managerCount++; // 管理员
                 }
             }
@@ -493,16 +517,16 @@ public class SwmDashboardNewController extends BaseController {
         List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(date);
         // 工厂人员工种类型分布
         CompletableFuture<List<JobTypeCount>> personJobTypeStatistics = CompletableFuture.supplyAsync(
-                () -> swmDailyAttendanceService.statisticsPersonJobType(DateUtils.formatDate(date)));
+                () -> swmDailyAttendanceService.statisticsPersonJobType(DateUtils.formatDate(date)),swmExecutor);
         // 进出场记录
         CompletableFuture<List<EntryAndExitRecord>> entryAndExitRecord = CompletableFuture.supplyAsync(
-                () -> getEntryAndExitRecord(todayAttendances));
+                () -> getEntryAndExitRecord(todayAttendances),swmExecutor);
         // 近七日考勤人数和考勤率分析
         CompletableFuture<Map<String, Object>> last7DaysAttendance = CompletableFuture.supplyAsync(
-                () -> getLast7DaysAttendance(swmPersonList));
+                () -> getLast7DaysAttendance(swmPersonList),swmExecutor);
         // 近十日出勤人数统计变化趋势
         CompletableFuture<Map<String, Object>> last10DaysAttendance = CompletableFuture.supplyAsync(
-                this::getLast10DaysAttendance);
+                this::getLast10DaysAttendance,swmExecutor);
         // 等待所有任务完成
         CompletableFuture.allOf(personJobTypeStatistics, entryAndExitRecord, last7DaysAttendance, last10DaysAttendance).join();
         // 组装结果
@@ -547,7 +571,7 @@ public class SwmDashboardNewController extends BaseController {
     private List<AttendanceAnalysis> getWorkshopAttendanceAnalysis(String companyCode, String companyName, String date) {
         List<AttendanceAnalysis> result = new ArrayList<>();
         // 根据工厂查询车间数据
-        List<TreeNode> workshopList = swmOrganizationTreeService.getNodes("office", companyCode);
+        List<TreeNode> workshopList = swmOrganizationTreeService.getNodes("office", companyCode,null);
         for (TreeNode treeNode : workshopList) {
             AttendanceAnalysis attendanceAnalysis = new AttendanceAnalysis();
             String workshopName = treeNode.getTitle();
@@ -576,13 +600,13 @@ public class SwmDashboardNewController extends BaseController {
     private List<AttendanceAnalysis> getTeamAttendanceAnalysis(String companyCode, String companyName, String date) {
         List<AttendanceAnalysis> result = new ArrayList<>();
         // 根据工厂查询车间数据
-        List<TreeNode> workshopList = swmOrganizationTreeService.getNodes("office", companyCode);
+        List<TreeNode> workshopList = swmOrganizationTreeService.getNodes("office", companyCode,null);
         for (TreeNode workshop : workshopList) {
             // 查询产线数据
-            List<TreeNode> lineList = swmOrganizationTreeService.getNodes("workshop", workshop.getId());
+            List<TreeNode> lineList = swmOrganizationTreeService.getNodes("workshop", workshop.getId(),null);
             for (TreeNode line : lineList) {
                 // 查询班组数据
-                List<TreeNode> teamList = swmOrganizationTreeService.getNodes("prodLine", line.getId());
+                List<TreeNode> teamList = swmOrganizationTreeService.getNodes("prodLine", line.getId(),null);
                 for (TreeNode team : teamList) {
                     AttendanceAnalysis attendanceAnalysis = new AttendanceAnalysis();
                     String workshopName = workshop.getTitle();
@@ -1037,7 +1061,7 @@ public class SwmDashboardNewController extends BaseController {
     }
 
     @Data
-    public static class Person extends BaseEntity {
+    public static class Person extends BaseEntity<Person> {
         private String name;
         private String gender;
         private String phone;
@@ -1045,9 +1069,34 @@ public class SwmDashboardNewController extends BaseController {
         private Date clockInDate;
         private String battery;
         private String date;
+        List<String> personTypeList;
 
     }
     //******************************************************************************数据看板-列表查询******************************************************************//
 
+
+    @GetMapping("/worker/todayAttendanceManagerList")
+    @ResponseBody
+    @ApiOperation("管理员今日在厂")
+    public Page<Person> todayAttendanceManagerList(Person vo,  HttpServletRequest request, HttpServletResponse response) {
+        String[] managerIds = {SwmPerson.PersonTypeEnum.MANAGER};
+        vo.setPersonTypeList(Arrays.asList(managerIds));
+        String date = DateUtils.getDate();
+        vo.setDate(date);
+        Page<SwmDashboardNewController.Person> page = swmPersonService.findTodayAttendance(vo);
+        return page;
+    }
+
+    @GetMapping("/worker/todayAttendanceWorkerList")
+    @ResponseBody
+    @ApiOperation("工人今日在厂")
+    public Page<SwmDashboardNewController.Person> todayAttendanceWorkerList(Person vo, HttpServletRequest request, HttpServletResponse response) {
+        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.TEAMLEADER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
+        vo.setPersonTypeList(Arrays.asList(managerIds));
+        String date = DateUtils.getDate();
+        vo.setDate(date);
+        Page<SwmDashboardNewController.Person> page = swmPersonService.findTodayAttendance(vo);
+        return page;
+    }
 
 }

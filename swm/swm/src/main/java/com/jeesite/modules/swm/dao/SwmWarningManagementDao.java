@@ -209,4 +209,5 @@ public interface SwmWarningManagementDao extends CrudDao<SwmWarningManagement> {
 
     List<SwmWarningManagement> getWarningManagementList();
 
+    Long theAlarmHasBeenDealtWith(String startTime, String endTime);
 }

@@ -30,7 +30,7 @@ public class SwmOrganizationTreeService {
      * @param parentId 父节点ID
      * @return 树节点列表
      */
-    public List<TreeNode> getNodes(String nodeType, String parentId) {
+    public List<TreeNode> getNodes(String nodeType, String parentId,List<String> personTypeList) {
         List<TreeNode> nodes = new ArrayList<>();
         
         switch (nodeType) {
@@ -52,7 +52,7 @@ public class SwmOrganizationTreeService {
                 break;
             case "workGroup":
                 // 请求班组的下级节点，返回员工数据
-                nodes = getWorkerNodes(parentId);
+                nodes = getWorkerNodes(parentId,personTypeList);
                 break;
             default:
                 break;
@@ -156,10 +156,10 @@ public class SwmOrganizationTreeService {
      * @param workGroupId 班组ID
      * @return 员工节点列表
      */
-    private List<TreeNode> getWorkerNodes(String workGroupId) {
+    private List<TreeNode> getWorkerNodes(String workGroupId,List<String> personTypeList) {
         System.out.println("正在获取员工节点，班组ID: " + workGroupId);
         
-        List<TreeNode> nodes = swmOrganizationTreeDao.getWorkerNodes(workGroupId);
+        List<TreeNode> nodes = swmOrganizationTreeDao.getWorkerNodes(workGroupId,personTypeList);
         
         // 设置节点属性
         for (TreeNode node : nodes) {

@@ -13,6 +13,7 @@ import com.jeesite.modules.swm.entity.SwmAlarmConfig;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
 import com.jeesite.modules.swm.service.SwmPersonScheduleService;
+import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
 import com.jeesite.common.utils.SpringUtils;
@@ -27,10 +28,14 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.PreDestroy;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.TimeZone;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * 预警管理Service
@@ -222,8 +227,10 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
             String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
             String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+            String dictLabel4 = DictUtils.getDictLabel("warning_content_enum", "危险区域闯入提示", "危险区域闯入提示");
+            String dictLabel5 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
             // 使用IN条件
-            String inCondition = String.format("warning_content IN ('%s','%s','%s')", dictLabel1, dictLabel2, dictLabel3);
+            String inCondition = String.format("warning_content IN ('%s','%s','%s','%s','%s')", dictLabel1, dictLabel2, dictLabel3,dictLabel4,dictLabel5);
             conditions.add(inCondition);
         }
 
@@ -1422,6 +1429,124 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         return hybridFindPage(page, swmWarningManagement);
     }
 
+
+    /**
+     * 获取近七天预警数据（分页）
+     *
+     * @param swmWarningManagement 查询条件
+     * @param page                 分页参数
+     * @return 分页结果
+     */
+    public Page<SwmWarningManagement> findPast7DaysWarningPageNew(SwmWarningManagement swmWarningManagement,
+                                                               Page<SwmWarningManagement> page) {
+        // 设置基础查询条件
+        if (swmWarningManagement == null) {
+            swmWarningManagement = new SwmWarningManagement();
+        }
+
+        // 设置查询近7天的条件
+        LocalDate today = LocalDate.now();
+
+        LocalDate startLocalDate = today.minusDays(6);
+        LocalDate endLocalDate = today;
+
+        Date startDate = Date.from(startLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date endDate = Date.from(endLocalDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+
+        swmWarningManagement.setMasterDataAlarm( true);
+
+        if (page == null) {
+            page = new Page<>();
+        }
+
+        // 构建TDengine查询SQL
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT id, person_name, warning_type, warning_content,create_date  as warning_time ")
+                .append("FROM ").append(dbname).append(".swm_warning_management");
+
+        // 添加查询条件
+        List<String> conditions = new ArrayList<>();
+
+        conditions.add("status = '0' ");
+        if (swmWarningManagement.getWarningType() != null && !swmWarningManagement.getWarningType().isEmpty()) {
+            conditions.add("warning_type = '" + swmWarningManagement.getWarningType() + "'");
+        }
+        if (swmWarningManagement.getWarningContent() != null && !swmWarningManagement.getWarningContent().isEmpty()) {
+            conditions.add("warning_content = '" + swmWarningManagement.getWarningContent() + "'");
+        }
+
+        // 添加时间范围条件
+        conditions.add("create_date >= '" + DateUtils.formatDateTime(startDate) + "'");
+        conditions.add("create_date <= '" + DateUtils.formatDateTime(endDate) + "'");
+
+        //新增条件，主数据看板，今日报警总数只统计：静默、跌落、应急呼叫这三个预警类型
+        List<String> warningLabels = DictUtils.getDictList("warning_content_enum").stream().map(DictData::getDictLabel).collect(Collectors.toList());
+
+        String inCondition = "warning_content IN ('" + String.join("','", warningLabels) + "')";
+        conditions.add(inCondition);
+
+        if (!conditions.isEmpty()) {
+            sqlBuilder.append(" WHERE ");
+            for (int i = 0; i < conditions.size(); i++) {
+                sqlBuilder.append(conditions.get(i));
+                if (i < conditions.size() - 1) {
+                    sqlBuilder.append(" AND ");
+                }
+            }
+        }
+
+        // 计算总记录数
+        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
+        R<JSONObject> countResult = tdengineService.executeTDengineSQL(countSql);
+        long total = 0;
+
+        if (countResult.getCode() == R.SUCCESS && countResult.getData() != null) {
+            JSONObject data = countResult.getData();
+            JSONArray rows = data.getJSONArray("data");
+
+            if (rows != null && rows.size() > 0) {
+                total = rows.getJSONArray(0).getLong(0);
+            }
+        }
+
+        // 添加排序和分页
+        sqlBuilder.append(" ORDER BY create_date DESC");
+        sqlBuilder.append(" LIMIT ").append(page.getPageSize());
+        sqlBuilder.append(" OFFSET ").append((page.getPageNo() - 1) * page.getPageSize());
+
+        logger.info("执行SQL: {}", sqlBuilder.toString());
+
+        // 执行查询
+        R<JSONObject> result = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+        List<SwmWarningManagement> list = new ArrayList<>();
+
+        if (result.getCode() == R.SUCCESS && result.getData() != null) {
+            JSONObject data = result.getData();
+            JSONArray rows = data.getJSONArray("data");
+            JSONArray columnMeta = data.getJSONArray("column_meta");
+
+            if (rows != null) {
+                for (int i = 0; i < rows.size(); i++) {
+                    try {
+                        JSONArray row = rows.getJSONArray(i);
+                        SwmWarningManagement entity = convertToEntity(row, columnMeta);
+                        if (entity != null) {
+                            list.add(entity);
+                        }
+                    } catch (Exception e) {
+                        logger.error("转换行数据异常: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+
+        // 设置分页结果
+        page.setCount(total);
+        page.setList(list);
+        return page;
+    }
+
     /**
      * 获取今日的预警记录
      */
@@ -1832,11 +1957,11 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
         // 注意：默认已经排除一键SOS、考勤打卡、进入大门的记录
 
-
-        String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
-        String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
-        String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
-        swmWarningManagement.setWarningContentList(Arrays.asList(dictLabel1, dictLabel2, dictLabel3));
+        List<String> warningLabels = DictUtils.getDictList("warning_content_enum").stream().map(DictData::getDictLabel).collect(Collectors.toList());
+//        String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+//        String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+//        String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+        swmWarningManagement.setWarningContentList(warningLabels);
 
         swmWarningManagement.setMasterDataAlarm( true);
 
@@ -2497,6 +2622,108 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
         return list;
     }
 
+    public List<SwmWarningManagement> warningStatisticsForPast7DaysNew() {
+
+        long totalStart = System.currentTimeMillis();
+
+        // 获取最近 7 天 yyyy-MM-dd 列表
+        List<String> days = IntStream.range(0, 7)
+                .mapToObj(i -> LocalDate.now().minusDays(i).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .collect(Collectors.toList());
+
+        // 预先缓存字典，避免每个任务重复请求
+        List<String> warningLabels = DictUtils.getDictList("warning_content_enum")
+                .stream()
+                .map(DictData::getDictLabel)
+                .collect(Collectors.toList());
+
+        String dictInCondition = "warning_content IN ('" + String.join("','", warningLabels) + "')";
+
+        // 并行任务列表
+        List<CompletableFuture<List<SwmWarningManagement>>> futures = new ArrayList<>();
+
+        for (String day : days) {
+
+            String start = day + " 00:00:00";
+            String end   = day + " 23:59:59";
+
+            CompletableFuture<List<SwmWarningManagement>> future =
+                    CompletableFuture.supplyAsync(() -> queryOneDay(start, end, dictInCondition), swmExecutor);
+
+            futures.add(future);
+        }
+
+        // 等待全部任务
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        // 合并所有结果
+        List<SwmWarningManagement> resultList = futures.stream()
+                .flatMap(f -> f.join().stream())
+                .collect(Collectors.toList());
+
+        logger.info("查询7日记录完成，总耗时：{} ms，总记录数：{}",
+                (System.currentTimeMillis() - totalStart),
+                resultList.size());
+
+        return resultList;
+    }
 
 
+
+
+    private List<SwmWarningManagement> queryOneDay(String start, String end, String inCondition) {
+
+        long startTime = System.currentTimeMillis();
+
+        String sql = "SELECT id, person_name, warning_type, warning_content, create_date AS warning_time " +
+                "FROM " + dbname + ".swm_warning_management " +
+                "WHERE " + inCondition +
+                " AND create_date >= '" + start + "'" +
+                " AND create_date <= '" + end + "'" +
+                "AND status = '0' "+
+                " ORDER BY warning_time DESC";
+
+        logger.info("单日SQL: {}", sql);
+
+        List<SwmWarningManagement> list = new ArrayList<>();
+
+        try {
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+
+                JSONArray rows = result.getData().getJSONArray("data");
+                JSONArray columnMeta = result.getData().getJSONArray("column_meta");
+
+                if (rows != null) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        try {
+                            SwmWarningManagement entity =
+                                    convertToEntity(rows.getJSONArray(i), columnMeta);
+
+                            if (entity != null) list.add(entity);
+
+                        } catch (Exception e) {
+                            logger.error("单日数据转换异常: {}", e.getMessage());
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception ex) {
+            logger.error("统计单日警告失败: {}", ex.getMessage());
+        }
+
+        logger.info("完成日期 {} 查询，记录数：{}，耗时 {} ms",
+                start.substring(0, 10),
+                list.size(),
+                (System.currentTimeMillis() - startTime));
+
+        return list;
+    }
+
+
+    public Long theAlarmHasBeenDealtWith(String startTime, String endTime) {
+        return this.dao.theAlarmHasBeenDealtWith(startTime, endTime);
+    }
 }

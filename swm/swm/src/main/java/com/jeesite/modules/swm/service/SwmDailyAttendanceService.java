@@ -2,6 +2,7 @@ package com.jeesite.modules.swm.service;
 
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.job.task.AttendanceTask;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.*;
 
@@ -936,4 +937,11 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         return dao.workerFatigue(vo);
     }
 
+    public List<SwmDailyAttendance> findClockInCardList(String date) {
+        return dao.findClockInCardList(date);
+    }
+
+    public List<SwmDailyAttendance> findClockOutCardList(String yestDay, String nowDate) {
+        return dao.findClockOutCardList(yestDay, nowDate);
+    }
 }

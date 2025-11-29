@@ -507,4 +507,25 @@
         WHERE
             sp.STATUS = 0
     </select>
+    <select id="findTodayAttendance" resultType="com.jeesite.modules.swm.web.SwmDashboardNewController$Person">
+        SELECT
+            sp.`name`,
+            sp.gender,
+            sp.phone_number,
+            sp.person_type
+        FROM
+            swm_daily_attendance sda
+                join swm_person sp on sda.identity_card = sp.identity_card
+        <where>
+             sda.`status` = '0' and sp.`status` ='0'
+            and sda.clock_in_date  is not  NULL
+            and sda.attendance_date  = #{date}
+              <if test="personTypeList != null and personTypeList.size >0">
+                and sp.person_type in
+                  <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                    #{personType}
+                </foreach>
+            </if>
+        </where>
+    </select>
 </mapper>

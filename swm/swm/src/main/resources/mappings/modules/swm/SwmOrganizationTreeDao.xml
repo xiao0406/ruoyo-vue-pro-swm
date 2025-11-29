@@ -64,10 +64,18 @@
             sp.id AS personId
         FROM swm_person sp
         LEFT JOIN fms_worker fw ON sp.identity_card COLLATE utf8mb4_general_ci = fw.identity_code COLLATE utf8mb4_general_ci
-        WHERE (fw.work_group_id = #{workGroupId} OR sp.team = #{workGroupId})
-        AND sp.identity_card IS NOT NULL
-        AND sp.status = '0'
-        AND sp.personnel_status = '1'
+        <where>
+            (fw.work_group_id = #{workGroupId} OR sp.team = #{workGroupId})
+            AND sp.identity_card IS NOT NULL
+            AND sp.status = '0'
+            AND sp.personnel_status = '1'
+            <if test="personTypeList != null and personTypeList.size >0">
+                AND sp.person_type IN
+                <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                    #{personType}
+                </foreach>
+            </if>
+        </where>
     </select>
     
 </mapper> 

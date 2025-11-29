@@ -197,14 +197,15 @@ public class PersonTrackController extends BaseController {
     public Map<String, Object> getPersonPositions(
             @ApiParam(value = "组织节点key") @RequestParam(required = false) String organizationKey,
             @ApiParam(value = "搜索人员姓名") @RequestParam(required = false) String searchName,
-            @ApiParam(value = "展示类型") @RequestParam(required = false) String displayType) {
+            @ApiParam(value = "展示类型") @RequestParam(required = false) String displayType,
+            @ApiParam(value = "人员类型") @RequestParam(required = false) List<String> personTypeList) {
 
         Map<String, Object> result = new HashMap<>();
         List<Map<String, Object>> positions = new ArrayList<>();
 
         try {
             // 从数据库查询人员数据
-            List<Map<String, Object>> allPositions = queryPersonsFromDatabase(searchName, organizationKey);
+            List<Map<String, Object>> allPositions = queryPersonsFromDatabase(searchName, organizationKey,personTypeList);
 
             // 根据搜索条件过滤数据
             for (Map<String, Object> position : allPositions) {
@@ -251,9 +252,9 @@ public class PersonTrackController extends BaseController {
      * @author Shawn
      * @date 2025-01-14
      */
-    private List<Map<String, Object>> queryPersonsFromDatabase(String searchName, String organizationKey) {
+    private List<Map<String, Object>> queryPersonsFromDatabase(String searchName, String organizationKey,List<String> personTypeList) {
         // 使用Service层处理查询逻辑
-        return personTrackService.queryPersonsFromDatabase(searchName, organizationKey);
+        return personTrackService.queryPersonsFromDatabase(searchName, organizationKey,personTypeList);
     }
 
     /**
@@ -271,7 +272,7 @@ public class PersonTrackController extends BaseController {
             @ApiParam(value = "人员姓名", required = true) @RequestParam String name) {
 
         // 直接调用getPersonPositions方法，使用数据库查询
-        return getPersonPositions(null, name, null);
+        return getPersonPositions(null, name, null,null);
     }
 
     /**

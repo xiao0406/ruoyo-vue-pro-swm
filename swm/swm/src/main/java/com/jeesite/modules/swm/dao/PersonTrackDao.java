@@ -27,7 +27,7 @@ public interface PersonTrackDao extends CrudDao<PersonTrackInfo> {
      * @date 2025-01-14
      */
     List<PersonTrackInfo> findPersonTrackInfo(@Param("searchName") String searchName,
-            @Param("organizationKey") String organizationKey);
+                                              @Param("organizationKey") String organizationKey, @Param("personTypeList") List<String> personTypeList);
 
     /**
      * 根据身份证号码查询人员信息
