@@ -10,6 +10,7 @@ import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -199,6 +200,76 @@ public class PersonTrackController extends BaseController {
             @ApiParam(value = "搜索人员姓名") @RequestParam(required = false) String searchName,
             @ApiParam(value = "展示类型") @RequestParam(required = false) String displayType,
             @ApiParam(value = "人员类型") @RequestParam(required = false) List<String> personTypeList) {
+
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> positions = new ArrayList<>();
+
+        try {
+            // 从数据库查询人员数据
+            List<Map<String, Object>> allPositions = queryPersonsFromDatabase(searchName, organizationKey,personTypeList);
+
+            // 根据搜索条件过滤数据
+            for (Map<String, Object> position : allPositions) {
+                boolean shouldInclude = true;
+
+                // 按姓名搜索过滤
+                if (searchName != null && !searchName.trim().isEmpty()) {
+                    String name = (String) position.get("name");
+                    if (name == null || !name.contains(searchName.trim())) {
+                        shouldInclude = false;
+                    }
+                }
+
+                // 按组织结构过滤（这里可以根据实际需求扩展）
+                if (organizationKey != null && !organizationKey.trim().isEmpty()) {
+                    // 可以根据organizationKey来过滤相应的人员
+                }
+
+                if (shouldInclude) {
+                    positions.add(position);
+                }
+            }
+
+            result.put("success", true);
+            result.put("data", positions);
+            result.put("total", positions.size());
+            result.put("message", "获取人员位置数据成功");
+
+        } catch (Exception e) {
+            logger.error("获取人员位置数据失败", e);
+            result.put("success", false);
+            result.put("message", "获取人员位置数据失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    @Data
+    private static class PersonPositions {
+        private String organizationKey;
+        private String searchName;
+        private String displayType;
+        private List<String> personTypeList;
+    }
+
+    /**
+     * 获取人员位置数据
+     *
+     * @param organizationKey 组织节点key
+     * @param searchName      搜索的人员姓名
+     * @param displayType     展示类型
+     * @return 人员位置数组
+     * @author Shawn
+     * @date 2025-01-14
+     */
+    @PostMapping("/getPersonPositionsNew")
+    @ResponseBody
+    @ApiOperation("获取人员位置数据")
+    public Map<String, Object> getPersonPositionsNew(@RequestBody PersonPositions personPositions) {
+        String searchName = personPositions.getSearchName();
+        String organizationKey = personPositions.getOrganizationKey();
+        List<String> personTypeList = personPositions.getPersonTypeList();
+        String displayType = personPositions.getDisplayType();
 
         Map<String, Object> result = new HashMap<>();
         List<Map<String, Object>> positions = new ArrayList<>();

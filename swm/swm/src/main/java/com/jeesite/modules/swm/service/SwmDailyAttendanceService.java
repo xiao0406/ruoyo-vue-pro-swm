@@ -944,4 +944,12 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     public List<SwmDailyAttendance> findClockOutCardList(String yestDay, String nowDate) {
         return dao.findClockOutCardList(yestDay, nowDate);
     }
+
+    public List<SwmDashboardNewController.AttendanceAnalysis> getAllTeamNumber(String companyCode) {
+        return dao.getAllTeamNumber(companyCode);
+    }
+
+    public List<SwmDashboardNewController.AttendanceAnalysis> getTeamAttendance(String companyCode, String date) {
+        return dao.getTeamAttendance(companyCode, date);
+    }
 }
