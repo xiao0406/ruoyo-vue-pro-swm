@@ -50,6 +50,14 @@ public class SwmPersonExcelEnhancedModel {
     @ExcelProperty("备注")
     private String remarks;
 
+    @ExcelProperty("部门")
+    //字典：swm_dept
+    private String dept;
+
+    @ExcelProperty("职务")
+    //字典：swm_position
+    private String position;
+
     @ExcelProperty("安全帽编码")
     private String safetyHelmetCode;
 
@@ -93,6 +101,8 @@ public class SwmPersonExcelEnhancedModel {
         jobType = trim(jobType);
         remarks = trim(remarks);
         safetyHelmetCode = trim(safetyHelmetCode);
+        dept = trim(dept);
+        position = trim(position);
     }
 
     /**

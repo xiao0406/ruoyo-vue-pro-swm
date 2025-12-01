@@ -8,6 +8,8 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.dao.SwmCommonOptionsDao;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.sys.entity.DictData;
+import com.jeesite.modules.sys.utils.DictUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -370,9 +372,28 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
 
         // 查询验证工种是否存在
         try {
-            String code = swmCommonOptionsDao.getWorkTypeCodeByName(jobTypeInput);
+
+            List<DictData> deptDictList1 = DictUtils.getDictList("swm_job_type_0");
+            List<DictData> deptDictList2 = DictUtils.getDictList("swm_job_type_1");
+            List<DictData> deptDictList3 = DictUtils.getDictList("swm_job_type_2");
+            List<DictData> deptDictList4 = DictUtils.getDictList("swm_job_type_3");
+            List<DictData> deptDictList = new ArrayList<>();
+            deptDictList.addAll(deptDictList1);
+            deptDictList.addAll(deptDictList2);
+            deptDictList.addAll(deptDictList3);
+            deptDictList.addAll(deptDictList4);
+            if (deptDictList == null){
+                return new NameConversionResult(jobTypeInput, "未找到工种: " + jobTypeInput);
+            }
+            Map<String, String> jobDictMap = deptDictList.stream()
+                    .collect(Collectors.toMap(
+                            DictData::getDictLabelRaw,
+                            DictData::getDictLabelRaw,
+                            (v1, v2) -> v2));
+
+            String code = jobDictMap.get(jobTypeInput);
             if (StringUtils.isNotBlank(code)) {
-                return new NameConversionResult(jobTypeInput, code, false); // 工种编码和名称相同，不算转换
+                return new NameConversionResult(jobTypeInput, jobTypeInput, true);
             } else {
                 return new NameConversionResult(jobTypeInput, "未找到工种: " + jobTypeInput);
             }
@@ -419,6 +440,74 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
         }
     }
 
+
+    /**
+     * 转换部门名称为编码
+     * @param deptInput
+     * @return
+     */
+    private NameConversionResult convertDeptNameToCode(String deptInput) {
+        if (StringUtils.isBlank(deptInput)) {
+            return new NameConversionResult(deptInput, deptInput, false);
+        }
+
+        // 查询验证部门是否存在
+        try {
+            List<DictData> deptDictList = DictUtils.getDictList("swm_dept");
+            if (deptDictList == null){
+                return new NameConversionResult(deptInput, "未找到部门: " + deptInput);
+            }
+            Map<String, String> deptDictMap = deptDictList.stream()
+                    .collect(Collectors.toMap(
+                            DictData::getDictLabelRaw,
+                            DictData::getDictValue,
+                            (v1, v2) -> v2));
+            String code = deptDictMap.get(deptInput);
+            if (StringUtils.isNotBlank(code)) {
+                return new NameConversionResult(deptInput, code, true);
+            } else {
+                return new NameConversionResult(deptInput, "未找到部门: " + deptInput);
+            }
+        } catch (Exception e) {
+            return new NameConversionResult(deptInput, "查询部门时发生错误: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 转换职务名称为编码
+     * @param positionInput
+     * @return
+     */
+    private NameConversionResult convertPositionNameToCode(String positionInput) {
+        if (StringUtils.isBlank(positionInput)) {
+            return new NameConversionResult(positionInput, positionInput, false);
+        }
+
+        // 查询验证职务是否存在
+        try {
+            List<DictData> deptDictList = DictUtils.getDictList("swm_position");
+            if (deptDictList == null){
+                return new NameConversionResult(positionInput, "未找到职务: " + positionInput);
+            }
+            Map<String, String> deptDictMap = deptDictList.stream()
+                    .collect(Collectors.toMap(
+                            DictData::getDictLabelRaw,
+                            DictData::getDictValue,
+                            (v1, v2) -> v2));
+
+            String code = deptDictMap.get(positionInput);
+            if (StringUtils.isNotBlank(code)) {
+                return new NameConversionResult(positionInput, code, true);
+            } else {
+                return new NameConversionResult(positionInput, "未找到职务: " + positionInput);
+            }
+        } catch (Exception e) {
+            return new NameConversionResult(positionInput, "查询职务时发生错误: " + e.getMessage());
+        }
+    }
+
+
+
     /**
      * 标准化人员类型输入
      * 支持多种输入格式的快速转换
@@ -456,6 +545,8 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
         private String personTypeId;
         private boolean success;
         private String errorMessage;
+        private String dept;
+        private String position;
         private List<String> conversionMessages = new ArrayList<>();
 
         public HierarchyConversionResult() {
@@ -542,6 +633,22 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
         public void addConversionMessage(String message) {
             this.conversionMessages.add(message);
         }
+
+        public String getDept() {
+            return dept;
+        }
+
+        public void setDept(String dept) {
+            this.dept = dept;
+        }
+
+        public String getPosition() {
+            return position;
+        }
+
+        public void setPosition(String position) {
+            this.position = position;
+        }
     }
 
     /**
@@ -557,7 +664,7 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
      */
     public HierarchyConversionResult convertHierarchyNamesToCodes(
             String companyName, String departmentName, String prodLineName, String teamName, String jobTypeName,
-            String personTypeName) {
+            String personTypeName,String dept,String position) {
 
         HierarchyConversionResult result = new HierarchyConversionResult();
 
@@ -655,9 +762,38 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
             }
         }
 
+        // 7. 转换部门名称为编码
+        if (StringUtils.isNotBlank(dept)) {
+            NameConversionResult deptResult = convertDeptNameToCode(dept);
+            if (!deptResult.isConverted() && StringUtils.isNotBlank(deptResult.getErrorMessage())) {
+                result.setSuccess(false);
+                result.setErrorMessage("部门转换失败: " + deptResult.getErrorMessage());
+                return result;
+            }
+            result.setDept(deptResult.getConvertedValue());
+            if (deptResult.isConverted()) {
+                result.addConversionMessage("部门名称 '" + jobTypeName + "' 转换为编码: " + deptResult.getConvertedValue());
+            }
+        }
+
+        // 8. 转换职务名称为编码
+        if (StringUtils.isNotBlank(position)) {
+            NameConversionResult positionResult = convertPositionNameToCode(position);
+            if (!positionResult.isConverted() && StringUtils.isNotBlank(positionResult.getErrorMessage())) {
+                result.setSuccess(false);
+                result.setErrorMessage("职务转换失败: " + positionResult.getErrorMessage());
+                return result;
+            }
+            result.setPosition(positionResult.getConvertedValue());
+            if (positionResult.isConverted()) {
+                result.addConversionMessage("职务名称 '" + jobTypeName + "' 转换为编码: " + positionResult.getConvertedValue());
+            }
+        }
+
         result.setSuccess(true);
         return result;
     }
+
 
     /**
      * 生成模板选项
@@ -705,7 +841,7 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
         result.append("人员类型: ").append(personTypeName).append("\n\n");
 
         HierarchyConversionResult conversionResult = convertHierarchyNamesToCodes(
-                companyName, departmentName, prodLineName, teamName, jobTypeName, personTypeName);
+                companyName, departmentName, prodLineName, teamName, jobTypeName, personTypeName,null,null);
 
         if (conversionResult.isSuccess()) {
             result.append("转换成功！\n");

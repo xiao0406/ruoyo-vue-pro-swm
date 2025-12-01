@@ -77,6 +77,8 @@ public class SwmOneClickRecall extends DataEntity<SwmOneClickRecall> {
         public static final String BY_AREA = "4";
         /** 按人员撤离 */
         public static final String BY_PERSON = "5";
+        /** 按人员类型撤离 */
+        public static final String BY_PERSON_TYPE = "6";
 
         /**
          * 获取撤离方案显示文本

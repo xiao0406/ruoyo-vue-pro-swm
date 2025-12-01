@@ -28,11 +28,15 @@ import sun.text.resources.FormatData;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
@@ -213,70 +217,110 @@ public class SwmDashboardController extends BaseController {
     public Map<String, Object> warningStatisticsForPast7DaysNew() {
         Map<String, Object> result = new HashMap<>();
 
-        // 1. 获取近7天的预警数据
-        List<SwmWarningManagement> warnings = swmWarningManagementService.warningStatisticsForPast7DaysNew();
-
-        // 2. 统计每种预警内容的总数
-        Map<String, Long> warningMap = warnings.stream()
-                .collect(Collectors.groupingBy(
-                        SwmWarningManagement::getWarningContent,
-                        Collectors.counting()));
-
-        Map<String, Long> warningMapNew= new HashMap<>();
-
+        // 1. 取字典标签（这就是 DB 中的 warning_content 值）
         String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
         String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
         String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
         String dictLabel4 = DictUtils.getDictLabel("warning_content_enum", "危险区域闯入提示", "危险区域闯入提示");
         String dictLabel5 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
-        warningMapNew.put(dictLabel5, warningMap.get(dictLabel5));
-        warningMapNew.put(dictLabel4, warningMap.get(dictLabel4));
-        warningMapNew.put("异常行为预警", warningMap.get(dictLabel3) + warningMap.get(dictLabel2)+ warningMap.get(dictLabel1));
+
+        List<String> labels = Arrays.asList(dictLabel1, dictLabel2, dictLabel3, dictLabel4, dictLabel5);
+
+        // 查询范围：最近 7 天（包含今天），格式 yyyy-MM-dd HH:mm:ss
+        LocalDate today = LocalDate.now();
+        String startDate = today.minusDays(6).atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String endDate   = today.atTime(LocalTime.MAX).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+        // 2. 使用单条聚合 SQL：按日期（yyyy-MM-dd）和 warning_content 聚合计数
+        // 注意：TO_CHAR 用法沿用你项目中其它地方的风格
+        String inClause = labels.stream().map(s -> "'" + s + "'").collect(Collectors.joining(","));
+        String sql = "SELECT TO_CHAR(create_date, 'yyyy-MM-dd') AS day, warning_content, COUNT(1) AS cnt " +
+                "FROM " + dbname + ".swm_warning_management " +
+                "WHERE create_date >= '" + startDate + "' " +
+                "AND create_date <= '" + endDate + "' " +
+                "AND status = '0' " +
+                "AND warning_content IN (" + inClause + ") " +
+                "GROUP BY TO_CHAR(create_date, 'yyyy-MM-dd'), warning_content " +
+                "ORDER BY day, warning_content";
+
+        R<JSONObject> r = tdengineService.executeTDengineSQL(sql);
+
+        // 建立 date -> (type -> count) 地图
+        Map<String, Map<String, Long>> dailyMap = new LinkedHashMap<>();
+
+        if (r.getCode() == R.SUCCESS && r.getData() != null) {
+            JSONArray data = r.getData().getJSONArray("data");
+            if (data != null) {
+                for (int i = 0; i < data.size(); i++) {
+                    JSONArray row = data.getJSONArray(i);
+                    String day = row.getStr(0);
+                    String type = row.getStr(1);
+                    long cnt = row.getLong(2);
+
+                    dailyMap.computeIfAbsent(day, k -> new HashMap<>())
+                            .put(type, cnt);
+                }
+            }
+        }
+
+        // 3. 确保过去7天的每一天都有条目（补 0）
+        List<String> last7Days = IntStream.rangeClosed(0, 6)
+                .mapToObj(i -> LocalDate.now().minusDays(6 - i).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .collect(Collectors.toList());
+
+        Map<String, Map<String, Long>> fullWeek = new LinkedHashMap<>();
+        for (String day : last7Days) {
+            Map<String, Long> dayMap = dailyMap.getOrDefault(day, Collections.emptyMap());
+            Map<String, Long> filled = new LinkedHashMap<>();
+            // 只保留你要展示的三类/两类（你的业务需要）
+            filled.put(dictLabel5, dayMap.getOrDefault(dictLabel5, 0L)); // 应急呼叫
+            filled.put(dictLabel4, dayMap.getOrDefault(dictLabel4, 0L)); // 危险区域闯入提示
+            // 异常行为预警 = dictLabel3 + dictLabel2 + dictLabel1
+            long abnormal = dayMap.getOrDefault(dictLabel3, 0L)
+                    + dayMap.getOrDefault(dictLabel2, 0L)
+                    + dayMap.getOrDefault(dictLabel1, 0L);
+            filled.put("异常行为预警", abnormal);
+            fullWeek.put(day, filled);
+        }
+
+        // 4. 汇总各类总数（全周期）
+        Map<String, Long> warningMapNew = new LinkedHashMap<>();
+        long totalEmergency = fullWeek.values().stream().mapToLong(m -> m.getOrDefault(dictLabel5, 0L)).sum();
+        long totalDanger = fullWeek.values().stream().mapToLong(m -> m.getOrDefault(dictLabel4, 0L)).sum();
+        long totalAbnormal = fullWeek.values().stream().mapToLong(m -> m.getOrDefault("异常行为预警", 0L)).sum();
+
+        warningMapNew.put(dictLabel5, totalEmergency);
+        warningMapNew.put(dictLabel4, totalDanger);
+        warningMapNew.put("异常行为预警", totalAbnormal);
 
         result.put("warning", warningMapNew);
 
+        // 5. 构造 chartData（dates + series）
+        Map<String, Object> chartData = new HashMap<>();
+        List<String> dates = new ArrayList<>(fullWeek.keySet());
+        chartData.put("dates", dates);
 
-        // 3. 按日期和预警内容分组统计
-        Map<String, Map<String, Long>> dailyWarningStats = warnings.stream()
-                .collect(Collectors.groupingBy(
-                        w -> {
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                            return sdf.format(w.getWarningTime());
-                        }, // 按日期分组
-                        Collectors.groupingBy(
-                                SwmWarningManagement::getWarningContent, // 按预警内容分组
-                                Collectors.counting() // 统计数量
-                        )));
-
-
-        // 4. 确保7天都有数据，没有的日期补0
-        Map<String, Map<String, Long>> fullWeekStats = ensureFullWeekData(dailyWarningStats);
-        Map<String, Map<String, Long>> fullWeekStatsNew = new LinkedHashMap<>();
-
-        for (Map.Entry<String, Map<String, Long>> entry : fullWeekStats.entrySet()) {
-
-            String day = entry.getKey();
-            Map<String, Long> value = entry.getValue();
-            // ✔ 每一天都创建一个新的 map
-            Map<String, Long> valueNew = new HashMap<>();
-
-            valueNew.put(dictLabel5, value.getOrDefault(dictLabel5, 0L));
-            valueNew.put(dictLabel4, value.getOrDefault(dictLabel4, 0L));
-            valueNew.put("异常行为预警",
-                    value.getOrDefault(dictLabel3, 0L)
-                            + value.getOrDefault(dictLabel2, 0L)
-                            + value.getOrDefault(dictLabel1, 0L)
-            );
-            fullWeekStatsNew.put(day, valueNew);
+        Map<String, List<Long>> series = new LinkedHashMap<>();
+        // series keys: dictLabel5, dictLabel4, "异常行为预警"
+        List<Long> sEmergency = new ArrayList<>();
+        List<Long> sDanger = new ArrayList<>();
+        List<Long> sAbnormal = new ArrayList<>();
+        for (String d : dates) {
+            Map<String, Long> m = fullWeek.get(d);
+            sEmergency.add(m.getOrDefault(dictLabel5, 0L));
+            sDanger.add(m.getOrDefault(dictLabel4, 0L));
+            sAbnormal.add(m.getOrDefault("异常行为预警", 0L));
         }
+        series.put(dictLabel5, sEmergency);
+        series.put(dictLabel4, sDanger);
+        series.put("异常行为预警", sAbnormal);
 
-
-        // 5. 转换为前端需要的格式
-        Map<String, Object> chartData = prepareChartData(fullWeekStatsNew);
+        chartData.put("series", series);
         result.put("chartData", chartData);
-        return result;
 
+        return result;
     }
+
 
     /**
      * 近七日预警报警记录（分页）

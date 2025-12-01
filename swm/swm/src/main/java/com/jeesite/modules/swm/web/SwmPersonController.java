@@ -59,6 +59,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 人员登记表controller
@@ -494,11 +496,16 @@ public class SwmPersonController extends BaseController {
             List<String> duplicateIdentityCards = new ArrayList<>();
             Map<String, String> duplicatePersons = new HashMap<>();
 
+            SwmPerson person = new SwmPerson();
+            person.setStatus(SwmPerson.STATUS_NORMAL);
+            List<SwmPerson> personList = swmPersonService.findList(person);
+            Map<String, SwmPerson> personMap = personList.stream().collect(Collectors.toMap(SwmPerson::getIdentityCard, Function.identity(), (existing, replacement) -> existing));
             for (SwmPersonExcelEnhancedModel model : excelData) {
                 // 只检查具有身份证号的数据
                 if (StringUtils.isNotBlank(model.getIdentityCard())) {
                     // 查询数据库中是否已存在相同身份证的在职人员
-                    SwmPerson existingPerson = swmPersonService.getByIdentityCard(model.getIdentityCard());
+                    //SwmPerson existingPerson = swmPersonService.getByIdentityCard(model.getIdentityCard());
+                    SwmPerson existingPerson = personMap.get(model.getIdentityCard());
                     if (existingPerson != null
                             && SwmPerson.PersonStatusEnum.ACTIVE.equals(existingPerson.getPersonnelStatus())) {
                         duplicateIdentityCards.add(model.getIdentityCard());
@@ -1238,6 +1245,14 @@ public class SwmPersonController extends BaseController {
                         if (!matched) {
                             String jobType = (String) personData.get("jobType");
                             if (jobType != null && jobType.toLowerCase().contains(lowerKeyword)) {
+                                matched = true;
+                            }
+                        }
+
+                        // 匹配设备编号
+                        if (!matched) {
+                            String department = (String) personData.get("deviceId");
+                            if (department != null && department.toLowerCase().contains(lowerKeyword)) {
                                 matched = true;
                             }
                         }
