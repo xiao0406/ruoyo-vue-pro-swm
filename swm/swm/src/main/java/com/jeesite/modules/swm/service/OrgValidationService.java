@@ -372,7 +372,9 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
 
         // 查询验证工种是否存在
         try {
-
+//            String code = swmCommonOptionsDao.getWorkTypeCodeByName(jobTypeInput);
+//            if (StringUtils.isNotBlank(code)) {
+//                return new NameConversionResult(jobTypeInput, code, false); // 工种编码和名称相同，不算转换
             List<DictData> deptDictList1 = DictUtils.getDictList("swm_job_type_0");
             List<DictData> deptDictList2 = DictUtils.getDictList("swm_job_type_1");
             List<DictData> deptDictList3 = DictUtils.getDictList("swm_job_type_2");

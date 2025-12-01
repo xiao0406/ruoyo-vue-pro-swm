@@ -469,9 +469,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
                 EnhancedRowContext context = buildRowContext(excelModel);
                 validateHelmetBinding(context, rowIndex);
 
-                SwmPerson person = context.getPerson();
-                person.setSafetyEducation("1");
-                swmPersonService.save(person);
+                swmPersonService.save(context.getPerson());
                 successCount++;
 
                 processHelmetBinding(context, rowIndex);
@@ -498,7 +496,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         if (newRecord) {
             person.setIsNewRecord(true);
             person.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
-            person.setSafetyEducation(SwmPerson.SafetyEducationEnum.NOT_STARTED);
+            person.setSafetyEducation(SwmPerson.SafetyEducationEnum.COMPLETED);
             person.setHelmetReturned(SwmPerson.HelmetReturnedEnum.NO);
             person.setStatus("0");
         } else {

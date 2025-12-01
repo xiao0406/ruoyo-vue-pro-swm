@@ -616,7 +616,7 @@ public class AiServiceImpl {
         // ====== 日期处理 ======
         DateTime now = DateUtil.date();
         if (ObjectUtils.isEmpty(vo.getStartDate())) {
-            vo.setStartDate(DateUtil.format(DateUtil.offsetSecond(now, -10), "yyyy-MM-dd HH:mm:ss"));
+            vo.setStartDate(DateUtil.format(DateUtil.offsetSecond(now, -120), "yyyy-MM-dd HH:mm:ss"));
         }
         if (ObjectUtils.isEmpty(vo.getEndDate())) {
             vo.setEndDate(DateUtil.format(now, "yyyy-MM-dd HH:mm:ss"));
