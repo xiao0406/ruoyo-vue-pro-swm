@@ -1,6 +1,7 @@
 package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.date.DateUtil;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.PersonTrackDao;
 import com.jeesite.modules.swm.entity.PersonTrackInfo;
@@ -62,6 +63,11 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
      */
     public List<Map<String, Object>> queryPersonsFromDatabase(String searchName, String organizationKey,List<String> personTypeList) {
         List<Map<String, Object>> positions = new ArrayList<>();
+
+        if (CollectionUtils.isEmpty(personTypeList)){
+            logger.info("未查询到人员数据，searchName: {}, organizationKey: {}", searchName, organizationKey);
+            return positions;
+        }
 
         try {
             // 使用MyBatis查询数据

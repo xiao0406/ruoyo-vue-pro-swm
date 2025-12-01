@@ -87,7 +87,7 @@ public class SwmOneClickRecallServiceImpl extends CrudService<SwmOneClickRecallD
         swmOneClickRecall.setRecallSuccessCount(0);
         swmOneClickRecall.setRecallFailCount(0);
         // 非全体人员撤离
-        if(!evacuationPlan.equals(SwmOneClickRecall.EvacuationPlanEnum.ALL)){
+        if(!evacuationPlan.equals(SwmOneClickRecall.EvacuationPlanEnum.ALL) && !evacuationPlan.equals(SwmOneClickRecall.EvacuationPlanEnum.BY_PERSON_TYPE)){
             List<String> selectedTargets = param.getSelectedTargets();
             List<Map<String, Object>> originalTreeData = param.getOriginalTreeData();
             List<Map<String, Object>> deviceList = sendRecallToSelectedTargets(selectedTargets, originalTreeData);
@@ -111,6 +111,21 @@ public class SwmOneClickRecallServiceImpl extends CrudService<SwmOneClickRecallD
                 swmOneClickRecall.setEvacueeCount(allTargetPersonnel.size());
             }
         }
+
+        //人员类型撤回
+        if(evacuationPlan.equals(SwmOneClickRecall.EvacuationPlanEnum.BY_PERSON_TYPE)){
+            List<String> personTypeList = param.getSelectedTargets();
+            List<Map<String, Object>> allTargetPersonnel = swmOneClickRecallDao.findAllTargetPersonnelForBroadcastByPersonType(personTypeList);
+            if(Objects.isNull(allTargetPersonnel) || allTargetPersonnel.isEmpty()){
+                result.put("success", false);
+                result.put("message", "未找到推送目标");
+                return result;
+            }else {
+                swmOneClickRecall.setDeviceList(JSON.toJSONString(allTargetPersonnel));
+                swmOneClickRecall.setEvacueeCount(allTargetPersonnel.size());
+            }
+        }
+
         super.save(swmOneClickRecall);
 
         String pushMethods = swmOneClickRecall.getPushMethod();

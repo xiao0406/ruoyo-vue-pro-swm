@@ -197,5 +197,29 @@
 		  AND hd.status = '0'              -- 设备有效
 		ORDER BY sp.name
 	</select>
-	
+
+	<select id="findAllTargetPersonnelForBroadcastByPersonType" resultType="java.util.Map">
+		SELECT DISTINCT
+		hd.device_id AS "deviceId",
+		hd.assigned_person AS "identityCard",
+		sp.name AS "personName",
+		sp.gender AS "gender",
+		sp.phone_number AS "phoneNumber",
+		hd.status AS "deviceStatus"
+		FROM swm_person sp
+		INNER JOIN swm_helmet_device hd ON sp.identity_card = hd.assigned_person
+		<where>
+			sp.personnel_status = '1'
+			AND sp.status = '0'
+			AND hd.status = '0'
+			<if test="personTypeList != null and personTypeList.size > 0">
+				AND sp.person_type IN
+				<foreach collection="personTypeList" item="personType" separator="," open="(" close=")">
+					#{personType}
+				</foreach>
+			</if>
+		</where>
+		ORDER BY sp.name
+	</select>
+
 </mapper> 

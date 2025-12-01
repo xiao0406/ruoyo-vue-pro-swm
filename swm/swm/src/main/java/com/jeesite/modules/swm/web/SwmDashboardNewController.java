@@ -251,11 +251,11 @@ public class SwmDashboardNewController extends BaseController {
         long todayAttendanceCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null).count();
         result.put("todayAttendanceCount", todayAttendanceCount);
         // 今日出勤工人数
-        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
+        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
                 && a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
         result.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
         // 今日出勤管理员数
-        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
+        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
                 && a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
         result.put("todayAttendanceManagerCount", todayAttendanceManagerCount);
 
@@ -271,12 +271,12 @@ public class SwmDashboardNewController extends BaseController {
 
         //工人今日在厂
         String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.TEAMLEADER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
-        long todayAttendanceWorkerWhiteCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
+        long todayAttendanceWorkerWhiteCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
                 && Arrays.asList(managerIds).contains(a.getPersonType())).count();
         result.put("todayAttendanceWorkerWhiteCount", todayAttendanceWorkerWhiteCount);
 
         //管理员今日在厂
-        long todayAttendanceManagerWhiteCount = todayAttendances.stream().filter(a -> a.getClockInTime() != null
+        long todayAttendanceManagerWhiteCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
                 && SwmPerson.PersonTypeEnum.MANAGER.equals(a.getPersonType())).count();
         result.put("todayAttendanceManagerWhiteCount", todayAttendanceManagerWhiteCount);
 
@@ -568,6 +568,20 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
+
+    @GetMapping("/team/attendance/analysisNew")
+    @ResponseBody
+    @ApiOperation("班组考勤分析")
+    public Map<String, Object> teamNew(@RequestParam("companyCode") String companyCode, @RequestParam("companyName") String companyName) {
+        Map<String, Object> result = new HashMap<>();
+        // Date date = new Date(2025 - 1900, 8, 20);
+        Date date = new Date();
+        // 班组考勤分析
+        List<AttendanceAnalysis> teamAttendanceAnalysis = getTeamAttendanceAnalysisNew(companyCode, companyName, DateUtils.formatDate(date));
+        result.put("teamAttendanceAnalysis", teamAttendanceAnalysis);
+        return result;
+    }
+
     private List<AttendanceAnalysis> getWorkshopAttendanceAnalysis(String companyCode, String companyName, String date) {
         List<AttendanceAnalysis> result = new ArrayList<>();
         // 根据工厂查询车间数据
@@ -636,6 +650,34 @@ public class SwmDashboardNewController extends BaseController {
             }
         }
         return result;
+    }
+
+    private List<AttendanceAnalysis> getTeamAttendanceAnalysisNew(String companyCode, String companyName, String date) {
+
+        //1.先查这个班组下有多少人
+        List<AttendanceAnalysis>  allTeam =  swmDailyAttendanceService.getAllTeamNumber(companyCode);
+
+        //2，在查班组出勤人数
+        String format = DateUtil.format(new Date(), "yyyy-MM-dd");
+        List<AttendanceAnalysis>  teamAttendance =  swmDailyAttendanceService.getTeamAttendance(companyCode, format);
+        Map<String, Long> attendanceMap = teamAttendance.stream()
+                .collect(Collectors.toMap(
+                        AttendanceAnalysis::getName,
+                        AttendanceAnalysis::getAttendanceCount
+                ));
+
+        // 3. 合并数据，计算出勤率
+        for (AttendanceAnalysis team : allTeam) {
+            // 班组总人数
+            Long totalCount = team.getCount();
+            // 若今天没人打卡，则默认为 0
+            Long attendance = attendanceMap.getOrDefault(team.getName(), 0L);
+            team.setAttendanceCount(attendance); // 设置出勤人数
+            //计算出勤率
+            double rate = (attendance * 100.0) / totalCount;
+            team.setAttendanceRate(String.format("%.2f", rate));
+        }
+        return allTeam;
     }
 
     private Map<String, Object> getLast10DaysAttendance() {

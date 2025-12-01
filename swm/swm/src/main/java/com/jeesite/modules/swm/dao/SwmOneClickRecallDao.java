@@ -50,5 +50,6 @@ public interface SwmOneClickRecallDao extends CrudDao<SwmOneClickRecall> {
      * @date 2025-08-23
      */
     List<Map<String, Object>> findAllTargetPersonnelForBroadcast();
-    
-} 
+
+    List<Map<String, Object>> findAllTargetPersonnelForBroadcastByPersonType(List<String> personTypeList);
+}

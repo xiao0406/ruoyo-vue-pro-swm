@@ -163,7 +163,9 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
                         data.getProdLine(),
                         data.getTeam(),
                         data.getJobType(),
-                        data.getPersonType());
+                        data.getPersonType(),
+                        data.getDept(),
+                        data.getPosition());
 
         if (!hierarchyResult.isSuccess()) {
             errors.add("第" + rowIndex + "行，字段[组织架构]：转换失败 - " + hierarchyResult.getErrorMessage());
@@ -188,6 +190,12 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         }
         if (StringUtils.isNotBlank(hierarchyResult.getPersonTypeId())) {
             data.setPersonType(hierarchyResult.getPersonTypeId());
+        }
+        if (StringUtils.isNotBlank(hierarchyResult.getDept())) {
+            data.setDept(hierarchyResult.getDept());
+        }
+        if (StringUtils.isNotBlank(hierarchyResult.getPosition())) {
+            data.setPosition(hierarchyResult.getPosition());
         }
 
         // 记录转换信息
@@ -267,28 +275,30 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
                 errors.add("第" + rowIndex + "行，字段[所属单位]：厂内员工此字段不能为空");
                 valid = false;
             }
-            if (StringUtils.isBlank(data.getDepartment())) {
-                errors.add("第" + rowIndex + "行，字段[所属车间]：厂内员工此字段不能为空");
-                valid = false;
-            }
-            if (StringUtils.isBlank(data.getProdLine())) {
-                errors.add("第" + rowIndex + "行，字段[所属产线]：厂内员工此字段不能为空");
-                valid = false;
-            }
-            if (StringUtils.isBlank(data.getTeam())) {
-                errors.add("第" + rowIndex + "行，字段[所属班组]：厂内员工此字段不能为空");
-                valid = false;
-            }
-            if (StringUtils.isBlank(data.getJobType())) {
-                errors.add("第" + rowIndex + "行，字段[所属工种]：厂内员工此字段不能为空");
-                valid = false;
-            }
+//            if (StringUtils.isBlank(data.getDepartment())) {
+//                errors.add("第" + rowIndex + "行，字段[所属车间]：厂内员工此字段不能为空");
+//                valid = false;
+//            }
+//            if (StringUtils.isBlank(data.getProdLine())) {
+//                errors.add("第" + rowIndex + "行，字段[所属产线]：厂内员工此字段不能为空");
+//                valid = false;
+//            }
+//            if (StringUtils.isBlank(data.getTeam())) {
+//                errors.add("第" + rowIndex + "行，字段[所属班组]：厂内员工此字段不能为空");
+//                valid = false;
+//            }
+//            if (StringUtils.isBlank(data.getJobType())) {
+//                errors.add("第" + rowIndex + "行，字段[所属工种]：厂内员工此字段不能为空");
+//                valid = false;
+//            }
         }
 
         // 人员类型验证
         if (StringUtils.isNotBlank(data.getPersonType())) {
             if (!SwmPerson.PersonTypeEnum.WORKER.equals(data.getPersonType()) &&
-                    !SwmPerson.PersonTypeEnum.MANAGER.equals(data.getPersonType())) {
+                    !SwmPerson.PersonTypeEnum.MANAGER.equals(data.getPersonType())
+                    && !SwmPerson.PersonTypeEnum.TEAMLEADER.equals(data.getPersonType())
+                    && !SwmPerson.PersonTypeEnum.SPECIALTRADES.equals(data.getPersonType())) {
                 errors.add("第" + rowIndex + "行，字段[人员类型]：只能是0（工人）或1（管理者）");
                 valid = false;
             }
@@ -459,7 +469,9 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
                 EnhancedRowContext context = buildRowContext(excelModel);
                 validateHelmetBinding(context, rowIndex);
 
-                swmPersonService.save(context.getPerson());
+                SwmPerson person = context.getPerson();
+                person.setSafetyEducation("1");
+                swmPersonService.save(person);
                 successCount++;
 
                 processHelmetBinding(context, rowIndex);
@@ -518,12 +530,16 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
             person.setProdLine(trimToNull(excelModel.getProdLine()));
             person.setTeam(trimToNull(excelModel.getTeam()));
             person.setJobType(trimToNull(excelModel.getJobType()));
+            person.setDept(trimToNull(excelModel.getDept()));
+            person.setPosition(trimToNull(excelModel.getPosition()));
         } else {
             person.setCompany(null);
             person.setDepartment(null);
             person.setProdLine(null);
             person.setTeam(null);
             person.setJobType(null);
+            person.setDept(null);
+            person.setPosition(null);
         }
 
         person.setRemarks(trimToNull(excelModel.getRemarks()));
