@@ -295,7 +295,7 @@ public class SwmDashboardNewController extends BaseController {
         result.put("totalWorkingCount", workingPersonCount);
 
         // 在场工人数
-        long workerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
+        long workerCount = swmPersonList.stream().filter(a -> !a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
         result.put("workerCount", workerCount);
         // 在场管理员数
         long managerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
