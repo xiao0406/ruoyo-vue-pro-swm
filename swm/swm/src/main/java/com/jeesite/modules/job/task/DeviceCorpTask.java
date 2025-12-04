@@ -16,6 +16,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -47,6 +48,8 @@ public class DeviceCorpTask {
             return;
         }
 
+        List<SwmHelmetDevice> deviceListAll = new ArrayList<>();
+
         //查询每个租户的设备信息
         for (User user : corpList) {
             String corpCode = user.getCorpCode();
@@ -62,12 +65,14 @@ public class DeviceCorpTask {
                 XxlJobHelper.log("租户 {} 没有设备", corpCode);
                 continue;
             }
+            deviceListAll.addAll(deviceList);
+        }
 
-            // 写入 Redis：设备 -> 租户
-            for (SwmHelmetDevice d : deviceList) {
-                String deviceId = d.getDeviceId();
-                redisTemplate.opsForHash().put(SwmRedisConstant.Device.DEVICE_TO_CORP, deviceId, corpCode);
-            }
+        // 写入 Redis：设备 -> 租户
+        for (SwmHelmetDevice d : deviceListAll) {
+            String deviceId = d.getDeviceId();
+            String corpCode = d.getCorpCode();
+            redisTemplate.opsForHash().put(SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP, deviceId, corpCode);
         }
 
         XxlJobHelper.log("设备租户映射关系生成完成");

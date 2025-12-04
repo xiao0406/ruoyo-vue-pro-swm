@@ -47,13 +47,13 @@ public class SwmHelmetCacheService {
             // 批量缓存映射关系（永不过期）
             if (!devicePersonMap.isEmpty()) {
                 Map<String, Object> devicePersonMapObj = new HashMap<>(devicePersonMap);
-                redisService.hmset(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, devicePersonMapObj);
+                redisService.hmset(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, devicePersonMapObj);
                 log.info("已缓存设备到人员映射关系，共{}条", devicePersonMap.size());
             }
 
             if (!personDeviceMap.isEmpty()) {
                 Map<String, Object> personDeviceMapObj = new HashMap<>(personDeviceMap);
-                redisService.hmset(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, personDeviceMapObj);
+                redisService.hmset(SwmRedisConstant.RedisGlobalKey.PERSON_DEVICE_MAP, personDeviceMapObj);
                 log.info("已缓存人员到设备映射关系，共{}条", personDeviceMap.size());
             }
 
@@ -77,32 +77,32 @@ public class SwmHelmetCacheService {
 
         try {
             // 获取当前映射关系
-            String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId);
+            String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, deviceId);
 
             // 清除旧的映射关系
             if (currentPerson != null && !currentPerson.trim().isEmpty()) {
-                redisService.hdel(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, currentPerson);
+                redisService.hdel(SwmRedisConstant.RedisGlobalKey.PERSON_DEVICE_MAP, currentPerson);
                 log.debug("已清除旧的人员映射：{} -> {}", currentPerson, deviceId);
             }
 
             // 设置新的映射关系
             if (assignedPerson != null && !assignedPerson.trim().isEmpty()) {
                 // 检查该人员是否已绑定其他设备
-                String existingDevice = (String) redisService.hget(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP,
+                String existingDevice = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.PERSON_DEVICE_MAP,
                         assignedPerson);
                 if (existingDevice != null && !existingDevice.equals(deviceId)) {
                     // 清除该人员的旧设备绑定
-                    redisService.hdel(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, existingDevice);
+                    redisService.hdel(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, existingDevice);
                     log.debug("清除人员旧设备绑定：{} -> {}", assignedPerson, existingDevice);
                 }
 
                 // 建立新的双向映射（永不过期）
-                redisService.hset(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId, assignedPerson);
-                redisService.hset(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, assignedPerson, deviceId);
+                redisService.hset(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, deviceId, assignedPerson);
+                redisService.hset(SwmRedisConstant.RedisGlobalKey.PERSON_DEVICE_MAP, assignedPerson, deviceId);
                 log.info("已更新设备分配关系：{} -> {}", deviceId, assignedPerson);
             } else {
                 // 解绑操作，清除设备映射
-                redisService.hdel(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId);
+                redisService.hdel(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, deviceId);
                 log.info("已解绑设备：{}", deviceId);
             }
         } catch (Exception e) {
@@ -124,7 +124,7 @@ public class SwmHelmetCacheService {
 
         try {
             // 先从缓存中查找
-            String cachedPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId);
+            String cachedPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, deviceId);
             if (cachedPerson != null) {
                 log.debug("从缓存中获取设备分配人员：{} -> {}", deviceId, cachedPerson);
                 return cachedPerson;
@@ -160,7 +160,7 @@ public class SwmHelmetCacheService {
 
         try {
             // 先从缓存中查找
-            String cachedDevice = (String) redisService.hget(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, personId);
+            String cachedDevice = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.PERSON_DEVICE_MAP, personId);
             if (cachedDevice != null) {
                 log.debug("从缓存中获取人员分配设备：{} -> {}", personId, cachedDevice);
                 return cachedDevice;
@@ -190,7 +190,7 @@ public class SwmHelmetCacheService {
      */
     public Map<String, String> getAllDevicePersonMappings() {
         try {
-            Map<Object, Object> mappings = redisService.hmget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP);
+            Map<Object, Object> mappings = redisService.hmget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP);
             Map<String, String> result = new HashMap<>();
             if (mappings != null) {
                 for (Map.Entry<Object, Object> entry : mappings.entrySet()) {
@@ -211,7 +211,7 @@ public class SwmHelmetCacheService {
      */
     public Map<String, String> getAllPersonDeviceMappings() {
         try {
-            Map<Object, Object> mappings = redisService.hmget(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP);
+            Map<Object, Object> mappings = redisService.hmget(SwmRedisConstant.RedisGlobalKey.PERSON_DEVICE_MAP);
             Map<String, String> result = new HashMap<>();
             if (mappings != null) {
                 for (Map.Entry<Object, Object> entry : mappings.entrySet()) {
@@ -237,12 +237,12 @@ public class SwmHelmetCacheService {
 
         try {
             // 获取当前分配的人员
-            String assignedPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId);
+            String assignedPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, deviceId);
 
             // 清除映射关系
-            redisService.hdel(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId);
+            redisService.hdel(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, deviceId);
             if (assignedPerson != null && !assignedPerson.trim().isEmpty()) {
-                redisService.hdel(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, assignedPerson);
+                redisService.hdel(SwmRedisConstant.RedisGlobalKey.PERSON_DEVICE_MAP, assignedPerson);
             }
 
             log.info("已清除设备缓存：{}", deviceId);
@@ -257,8 +257,8 @@ public class SwmHelmetCacheService {
     public void clearAllHelmetCache() {
         try {
             // 清除映射关系缓存
-            redisService.del(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP);
-            redisService.del(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP);
+            redisService.del(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP);
+            redisService.del(SwmRedisConstant.RedisGlobalKey.PERSON_DEVICE_MAP);
 
             log.info("已清除所有头盔设备映射关系缓存");
         } catch (Exception e) {

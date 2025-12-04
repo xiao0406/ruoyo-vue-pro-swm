@@ -12,6 +12,7 @@ import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.utils.R;
 import groovy.lang.Lazy;
 import io.swagger.annotations.Api;
@@ -348,6 +349,8 @@ public class SwmDashboardNewController extends BaseController {
         result.put("worker", 0);
         result.put("manager", 0);
 
+        String corpCode = CorpUtils.getCurrentCorpCode();
+
         try {
             // 获取1小时前的时间字符串
 //            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -363,11 +366,11 @@ public class SwmDashboardNewController extends BaseController {
 //            Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
 
             //身份证从redis里获取，先获取到所有的设备，然后在获取设备对应的身份证
-            Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+            Set<Object> deviceIds = redisService.sGet(corpCode+SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
             Set<String> uniqueIdCards = new HashSet<>();
             if (deviceIds != null) {
                 for (Object deviceId : deviceIds) {
-                    String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                    String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
                     uniqueIdCards.add(currentPerson);
                 }
             }
@@ -857,11 +860,12 @@ public class SwmDashboardNewController extends BaseController {
 //        Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
 
         //身份证从redis里获取，先获取到所有的设备，然后在获取设备对应的身份证
-        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        Set<Object> deviceIds = redisService.sGet(corpCode+SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
         Set<String> uniqueIdCards = new HashSet<>();
         if (deviceIds != null) {
             for (Object deviceId : deviceIds) {
-                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
                 uniqueIdCards.add(currentPerson);
             }
         }
