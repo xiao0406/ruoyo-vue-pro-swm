@@ -4,6 +4,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -19,7 +20,8 @@ import com.jeesite.common.mybatis.annotation.Table;
 		@Column(name = "light_name", attrName = "lightName", label = "报警灯名称"),
 		@Column(name = "sn_code", attrName = "snCode", label = "报警灯SN码"),
 		@Column(name = "enable_alarm", attrName = "enableAlarm", label = "是否报警"),
-		@Column(includeEntity = DataEntity.class)
+		@Column(includeEntity = DataEntity.class),
+		@Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmAlarmLight extends DataEntity<SwmAlarmLight> {
 

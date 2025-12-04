@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -30,7 +31,8 @@ import java.util.Date;
         @Column(name = "attachment_url", attrName = "attachmentUrl", label = "附件URL"),
         @Column(name = "create_time", attrName = "createTime", label = "创建时间", isUpdateForce = true),
         @Column(name = "update_time", attrName = "updateTime", label = "更新时间", isUpdateForce = true),
-        @Column(name = "status", attrName = "status", label = "状态：0-正常，1-删除")
+        @Column(name = "status", attrName = "status", label = "状态：0-正常，1-删除"),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_time DESC")
 public class SwmSafetyEducation extends DataEntity<SwmSafetyEducation> {
 

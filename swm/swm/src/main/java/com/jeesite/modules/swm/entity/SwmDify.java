@@ -29,6 +29,7 @@ import lombok.Data;
 		@Column(name="text", attrName="text", label="文本"),
 		@Column(includeEntity=DataEntity.class),
 		@Column(name="manufacture", attrName="manufacture", label="制造单位"),
+		@Column(includeEntity= BaseEntity.class),
 	}, orderBy="a.update_date DESC"
 )
 @ApiModel(value = "SwmDify对象", description = "安全帽：ai日报表Entity")

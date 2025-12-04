@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -22,7 +23,8 @@ import javax.validation.constraints.Pattern;
         @Column(name = "end_time", attrName = "endTime", label = "结束时间"),
         @Column(name = "rest_time", attrName = "restTime", label = "休息时长"),
         @Column(name = "rest_days", attrName = "restDays", label = "休息日"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmScheduleTime extends DataEntity<SwmScheduleTime> {
 

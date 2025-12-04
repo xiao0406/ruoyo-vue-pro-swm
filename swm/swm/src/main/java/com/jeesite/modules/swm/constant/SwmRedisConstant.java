@@ -16,10 +16,10 @@ public class SwmRedisConstant {
      * 头盔设备相关缓存
      */
     public static class Helmet {
-        /** 设备ID到分配人员的映射缓存 */
+        /** 设备ID到分配人员的映射缓存   SWM:HELMET:DEVICE_PERSON_MAP*/
         public static final String DEVICE_PERSON_MAP = SWM_PREFIX + "HELMET:DEVICE_PERSON_MAP";
 
-        /** 人员到设备ID的映射缓存 */
+        /** 人员到设备ID的映射缓存   HGETALL SWM:HELMET:PERSON_DEVICE_MAP */
         public static final String PERSON_DEVICE_MAP = SWM_PREFIX + "HELMET:PERSON_DEVICE_MAP";
     }
 
@@ -56,6 +56,11 @@ public class SwmRedisConstant {
          * SMEMBERS online_devices
          */
         public static final String ONLINE_DEVICES_KEY = "iot:devices:online";
+
+        /**
+         * 设备与租户的映射关系
+         */
+        public static final String DEVICE_TO_CORP =SWM_PREFIX + "DEVICE_TO_CORP";
     }
 
     /**
@@ -65,4 +70,5 @@ public class SwmRedisConstant {
         /** 哪些信标标识为不用报警 */
         public static final String AREA_CACHE =SWM_PREFIX + "AREA_CACHE";
     }
+
 }

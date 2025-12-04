@@ -2,6 +2,7 @@ package com.jeesite.modules.swm.entity;
 
 import javax.validation.constraints.Size;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -20,6 +21,7 @@ import io.swagger.annotations.ApiModelProperty;
 		@Column(name="users", attrName="users", label="推送人员", comment="推送人员（多个用逗号分隔）"),
 		@Column(includeEntity=DataEntity.class),
 		@Column(name="main_id", attrName="mainId", label="主表id"),
+		@Column(includeEntity= BaseEntity.class),
 	}, orderBy="a.update_date DESC"
 )
 @ApiModel(value = "SwmAlarmConfigDetail对象", description = "swm_alarm_config_detailEntity")

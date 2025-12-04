@@ -1,6 +1,7 @@
 package com.jeesite.modules.swm.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.JoinTable;
@@ -29,7 +30,8 @@ import java.util.Date;
         @Column(name = "end_time", attrName = "endTime", label = "结束时间"),
         @Column(name = "attachment_path", attrName = "attachmentPath", label = "附件路径"),
         @Column(name = "inspection_list_status", attrName = "inspectionListStatus", label = "巡检列表状态"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 },
         // 联合查询出外键编码的名称数据（attrName="this"，指定this代表，当前实体）
         joinTable = {

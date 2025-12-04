@@ -4,6 +4,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -11,6 +12,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.utils.excel.annotation.ExcelField;
 import com.jeesite.common.utils.excel.annotation.ExcelFields;
 import com.jeesite.modules.sys.utils.DictUtils;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -55,8 +57,10 @@ import java.util.List;
         @Column(name = "hazard_retrigger_interval", attrName = "hazardRetriggerInterval", label = "危险源重新触发间隔(秒)"),
         @Column(name = "sleep_wakeup_time", attrName = "sleepWakeupTime", label = "休眠唤醒时间(秒)"),
         @Column(name = "beacon_filter_name", attrName = "beaconFilterName", label = "接收信标(名称)"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
 
     private static final long serialVersionUID = 1L;
@@ -183,6 +187,12 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
 
     // 非数据库字段，用于查询条件
     private List<String> deviceIdList; // 设备ID列表，用于批量查询
+
+
+    /**
+     * 随机值，目的取消一级缓存
+     */
+    private Integer random;
 
 
     @ExcelFields({

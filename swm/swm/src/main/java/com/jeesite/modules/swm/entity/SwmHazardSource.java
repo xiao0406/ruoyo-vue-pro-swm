@@ -6,6 +6,7 @@
 package com.jeesite.modules.swm.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -43,6 +44,7 @@ import java.util.List;
         @Column(name = "is_draft", attrName = "isDraft", label = "是否草稿状态"),
         @Column(name = "filter_identity_card", attrName = "filterIdentityCard", label = "白名单人员（这里的人员不收到报警信号）"),
         @Column(name = "filter_personnel", attrName = "filterPersonnel", label = "白名单人员（这里的人员不收到报警信号）"),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.create_date DESC")
 public class SwmHazardSource extends DataEntity<SwmHazardSource> {
 

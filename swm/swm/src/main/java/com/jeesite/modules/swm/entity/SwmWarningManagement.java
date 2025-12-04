@@ -1,6 +1,7 @@
 package com.jeesite.modules.swm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -44,7 +45,8 @@ import java.util.Map;
         @Column(name = "hazard_category", attrName = "hazardCategory", label = "危险源类别"),
         @Column(name = "location", attrName = "location", label = "位置"),
         @Column(name = "area", attrName = "area", label = "区域"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.warning_time DESC")
 public class SwmWarningManagement extends DataEntity<SwmWarningManagement> {
 

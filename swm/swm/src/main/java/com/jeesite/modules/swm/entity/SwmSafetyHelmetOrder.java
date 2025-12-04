@@ -4,6 +4,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -33,7 +34,8 @@ import java.util.Date;
         @Column(name = "bind_duration", attrName = "bindDuration", label = "绑定时长(天)"),
         @Column(name = "usage_status", attrName = "usageStatus", label = "使用状态"),
         @Column(name = "binder", attrName = "binder", label = "绑定人员"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 })
 public class SwmSafetyHelmetOrder extends DataEntity<SwmSafetyHelmetOrder> {
 

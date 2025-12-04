@@ -1,6 +1,7 @@
 package com.jeesite.modules.swm.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -31,6 +32,7 @@ import java.util.Date;
         @Column(name = "business_id", attrName = "businessId", label = "关联业务ID"),
         @Column(name = "status", attrName = "status", label = "文件状态"),
         @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.upload_time DESC")
 public class SwmMediaFile extends DataEntity<SwmMediaFile> {
 

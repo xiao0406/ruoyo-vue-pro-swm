@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -32,7 +33,8 @@ import java.util.List;
         @Column(name = "working_hours", attrName = "workingHours", label = "本月工作时长(小时)"),
         @Column(name = "idle_hours", attrName = "idleHours", label = "本月怠工时长(小时)"),
         @Column(name = "id_card", attrName = "idCard", label = "身份证号码"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmPersonnelBoard extends DataEntity<SwmPersonnelBoard> {
 

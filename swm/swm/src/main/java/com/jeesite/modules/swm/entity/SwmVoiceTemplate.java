@@ -5,6 +5,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -28,7 +29,8 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "language", attrName = "language", label = "语言"),
         @Column(name = "push_method", attrName = "pushMethod", label = "推送方式"),
         @Column(name = "push_frequency", attrName = "pushFrequency", label = "推送频次"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {
 

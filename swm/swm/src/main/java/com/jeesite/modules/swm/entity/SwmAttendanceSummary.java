@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -35,7 +36,8 @@ import java.math.BigDecimal;
         @Column(name = "attendance_achievement_rate", attrName = "attendanceAchievementRate", label = "考勤达成率"),
         @Column(name = "idle_hours", attrName = "idleHours", label = "怠工时长(h)"),
         @Column(name = "efficiency", attrName = "efficiency", label = "功效"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.create_date DESC")
 public class SwmAttendanceSummary extends DataEntity<SwmAttendanceSummary> {
 

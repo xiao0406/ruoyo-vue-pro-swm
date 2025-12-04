@@ -1,9 +1,11 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -22,8 +24,10 @@ import javax.validation.constraints.Pattern;
         @Column(name = "classes", attrName = "classes", label = "班次"),
         @Column(name = "id_card", attrName = "idCard", label = "身份证号码", queryType = QueryType.LIKE),
         @Column(name = "employee_id", attrName = "employeeId", label = "员工ID"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
 
     private static final long serialVersionUID = 1L;
@@ -45,6 +49,11 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
     private String organization; // 所属单位（查询字段）
     private String workshop; // 所属车间（查询字段）
     private String process; // 所属产线（查询字段）
+
+    /**
+     * 随机值，目的取消一级缓存
+     */
+    private Integer random;
 
     public SwmPersonSchedule() {
         this(null);

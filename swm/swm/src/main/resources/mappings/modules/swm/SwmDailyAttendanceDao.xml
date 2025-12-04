@@ -261,39 +261,42 @@
     <!-- 根据日期查询所有考勤记录 -->
     <select id="findByDate" resultType="SwmDailyAttendance">
         SELECT
-            a.id AS "id",
-            a.employee_id AS "employeeId",
-            a.employee_name AS "employeeName",
-            a.identity_card AS "identityCard",
-#             a.person_type AS "personType",
-            a.attendance_date AS "attendanceDate",
-            a.work_time_range AS "workTimeRange",
-            a.clock_in_time AS "clockInTime",
-            a.clock_in_date AS "clockInDate",
-            a.clock_out_time AS "clockOutTime",
-            a.clock_out_date AS "clockOutDate",
-            a.scheduled_hours AS "scheduledHours",
-            a.actual_hours AS "actualHours",
-            a.idle_hours AS "idleHours",
-            a.effective_work_hours AS "effectiveWorkHours",
-            a.daily_efficiency AS "dailyEfficiency",
-            a.daily_achievement_rate AS "dailyAchievementRate",
-            a.attendance_normal as "attendanceNormal",
-            a.status AS "status",
-            a.create_by AS "createBy",
-            a.create_date AS "createDate",
-            a.update_by AS "updateBy",
-            a.update_date AS "updateDate",
-            a.remarks AS "remarks",
-            sp.person_type AS "personType",
-            a.classes as "classes"
+        a.id AS id,
+        a.employee_id AS employeeId,
+        a.employee_name AS employeeName,
+        a.identity_card AS identityCard,
+        -- a.person_type AS personType,  <!-- 已注释掉 -->
+        a.attendance_date AS attendanceDate,
+        a.work_time_range AS workTimeRange,
+        a.clock_in_time AS clockInTime,
+        a.clock_in_date AS clockInDate,
+        a.clock_out_time AS clockOutTime,
+        a.clock_out_date AS clockOutDate,
+        a.scheduled_hours AS scheduledHours,
+        a.actual_hours AS actualHours,
+        a.idle_hours AS idleHours,
+        a.effective_work_hours AS effectiveWorkHours,
+        a.daily_efficiency AS dailyEfficiency,
+        a.daily_achievement_rate AS dailyAchievementRate,
+        a.attendance_normal AS attendanceNormal,
+        a.status AS status,
+        a.create_by AS createBy,
+        a.create_date AS createDate,
+        a.update_by AS updateBy,
+        a.update_date AS updateDate,
+        a.remarks AS remarks,
+        sp.person_type AS personType,
+        a.classes AS classes
         FROM swm_daily_attendance a
-        join swm_person sp  on a.identity_card  = sp.identity_card and sp.`status` = 0
+        INNER JOIN swm_person sp
+        ON a.identity_card = sp.identity_card
+        AND sp.status = 0
         <where>
             DATE(a.attendance_date) = DATE(#{attendanceDate})
         </where>
         ORDER BY a.employee_name ASC
     </select>
+
 
     <!-- 根据员工ID和月份查询考勤记录 -->
     <select id="findByEmployeeIdAndMonth" resultType="SwmDailyAttendance">

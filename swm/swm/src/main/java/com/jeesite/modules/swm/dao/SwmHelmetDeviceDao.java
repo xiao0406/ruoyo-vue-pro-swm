@@ -83,4 +83,6 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
      * @date 2025-01-13
      */
     List<SwmHelmetDevice> findHelmetDeviceListByDeviceIds(SwmHelmetDevice device);
+
+    List<SwmHelmetDevice> findDeviceCorpMapping(SwmHelmetDevice device);
 }

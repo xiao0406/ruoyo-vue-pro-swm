@@ -5,6 +5,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -47,7 +48,8 @@ import java.util.Set;
         @Column(name = "departure_reason", attrName = "departureReason", label = "离职原因"),
         @Column(name = "departure_date", attrName = "departureDate", label = "离职时间"),
         @Column(name = "is_external_personnel", attrName = "isExternalPersonnel", label = "是否厂内员工"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 @Data
 public class SwmPerson extends DataEntity<SwmPerson> {
@@ -158,6 +160,10 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String dept;// 部门
     private String position;// 职务
     private List<String> idCards;
+    /**
+     * 随机值，目的取消一级缓存
+     */
+    private Integer random;
 
 
     public SwmPerson() {

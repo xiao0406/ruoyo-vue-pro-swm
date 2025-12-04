@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.entity;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -21,6 +22,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
         @Column(name = "color", attrName = "color", label = "颜色代码"),
         @Column(name = "key", attrName = "key", label = "关键字段"),
         @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmHelmetSubitem extends DataEntity<SwmHelmetSubitem> {
 

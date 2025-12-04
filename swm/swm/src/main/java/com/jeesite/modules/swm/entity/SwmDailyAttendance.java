@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -45,7 +46,8 @@ import java.util.Date;
         @Column(name = "attendance_normal", attrName = "attendanceNormal", label = "考勤是否正常(0正常 1异常)"),
         @Column(name = "current_position", attrName = "currentPosition", label = "当前位置(0工作区 1休息区)"),
         @Column(name = "pending_clock_out_compensate", attrName = "pendingClockOutCompensate", label = "当天该员工是否已经触发过补偿并且未恢复"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.attendance_date DESC")
 @Data
 public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {

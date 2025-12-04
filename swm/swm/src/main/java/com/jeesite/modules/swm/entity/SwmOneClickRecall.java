@@ -5,6 +5,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -38,7 +39,8 @@ import java.util.Map;
         @Column(name = "recall_time", attrName = "recallTime", label = "召回时间"),
         @Column(name = "recall_result", attrName = "recallResult", label = "召回结果"),
         @Column(name = "device_list", attrName = "deviceList", label = "推送列表"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.recall_time DESC")
 public class SwmOneClickRecall extends DataEntity<SwmOneClickRecall> {
 

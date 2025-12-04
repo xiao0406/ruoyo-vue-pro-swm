@@ -263,7 +263,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     public List<SwmDailyAttendance> findByDate(Date attendanceDate) {
         // 处理日期，去除时间部分
         attendanceDate = truncateTime(attendanceDate);
-        return dao.findByDate(attendanceDate);
+        List<SwmDailyAttendance> byDate = dao.findByDate(attendanceDate);
+        return byDate;
     }
 
     /**

@@ -5,76 +5,56 @@
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmPerson">
         SELECT DISTINCT
-               a.id AS "id",
-               a.name AS "name",
-               a.person_type AS "personType",
-               a.gender AS "gender",
-                COALESCE(backup_o.office_name, o.office_name) AS "company",
-               COALESCE(p.position_name, backup_p.position_name) AS "department",
-               COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
-               COALESCE(backup_wg.work_group_name, wg.work_group_name) AS "team",
-               COALESCE(
-                   NULLIF(TRIM(f.work_type), ''),
-                   NULLIF(TRIM(backup_wt.work_type), ''),
-                   NULLIF(TRIM(a.job_type), '')
-               ) AS "jobType",
-               a.safety_helmet_id AS "safetyHelmetId",
-               a.personnel_status AS "personnelStatus",
-               a.safety_education AS "safetyEducation",
-               a.identity_card AS "identityCard",
-               a.phone_number AS "phoneNumber",
-               a.helmet_returned AS "helmetReturned",
-               a.departure_type AS "departureType",
-               a.departure_reason AS "departureReason",
-               a.departure_date AS "departureDate",
-               a.is_external_personnel AS "isExternalPersonnel",
-               a.create_by AS "createBy",
-               a.create_date AS "createDate",
-               a.update_by AS "updateBy",
-               a.update_date AS "updateDate",
-               a.remarks AS "remarks",
-               a.status AS "status",
-               a.dept ,
-               a.position
+        a.id AS "id",
+        a.NAME AS "name",
+        a.person_type AS "personType",
+        a.gender AS "gender",
+        a.corp_name AS "company",
+        pa.position_name AS "department",
+        pl.prod_line_name AS "prodLine",
+        wg.work_group_name AS "team",
+        a.job_type AS "jobType",
+        a.safety_helmet_id AS "safetyHelmetId",
+        a.personnel_status AS "personnelStatus",
+        a.safety_education AS "safetyEducation",
+        a.identity_card AS "identityCard",
+        a.phone_number AS "phoneNumber",
+        a.helmet_returned AS "helmetReturned",
+        a.departure_type AS "departureType",
+        a.departure_reason AS "departureReason",
+        a.departure_date AS "departureDate",
+        a.is_external_personnel AS "isExternalPersonnel",
+        a.create_by AS "createBy",
+        a.create_date AS "createDate",
+        a.update_by AS "updateBy",
+        a.update_date AS "updateDate",
+        a.remarks AS "remarks",
+        a.STATUS AS "status",
+        a.dept,
+        a.position
         FROM ${sqlMap.table.toSql()}
-        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
-            AND NOT EXISTS (
-                SELECT 1
-                FROM fms_worker fw2
-                WHERE fw2.identity_code = f.identity_code
-                AND fw2.create_date > f.create_date
-            )
-        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
-        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
-        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
-        LEFT JOIN fms_prod_line fpl on fpl.id = wg.prod_line_id
-        LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
-        LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
-        LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
-        LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+        left join fms_position_archive pa on a.department = pa.id  COLLATE utf8mb4_general_ci
+        left join fms_prod_line pl on a.prod_line = pl.id COLLATE utf8mb4_general_ci
+        left join fms_work_group wg on a.team = wg.id   COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
         <where>
             <if test="company != null and company != ''">
-                AND COALESCE(o.office_name, backup_o.office_name) LIKE CONCAT('%', #{company}, '%')
+                AND a.corp_name LIKE CONCAT('%', #{company}, '%')
             </if>
             <if test="id != null and id != ''">
                 AND a.id = #{id}
             </if>
             <if test="department != null and department != ''">
-                AND COALESCE(p.position_name, backup_p.position_name) = #{department}
+                AND pa.position_name = #{department}
             </if>
             <if test="prodLine != null and prodLine != ''">
-                AND COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) = #{prodLine}
+                AND pl.prod_line_name = #{prodLine}
             </if>
             <if test="team != null and team != ''">
-                AND COALESCE(wg.work_group_name, backup_wg.work_group_name) = #{team}
+                AND wg.work_group_name = #{team}
             </if>
             <if test="jobType != null and jobType != ''">
-                AND COALESCE(
-                        NULLIF(TRIM(f.work_type), ''),
-                        NULLIF(TRIM(backup_wt.work_type), ''),
-                        NULLIF(TRIM(a.job_type), '')
-                    ) = #{jobType}
+                AND  a.job_type= #{jobType}
             </if>
             
             <!-- 非组织字段保留原有查询方式 -->
@@ -527,5 +507,44 @@
                 </foreach>
             </if>
         </where>
+    </select>
+    <select id="peronsList" resultType="com.jeesite.modules.swm.entity.SwmPerson">
+        SELECT DISTINCT
+        a.id AS "id",
+        a.NAME AS "name",
+        a.person_type AS "personType",
+        a.gender AS "gender",
+        a.corp_name AS "company",
+        a.job_type AS "jobType",
+        a.safety_helmet_id AS "safetyHelmetId",
+        a.personnel_status AS "personnelStatus",
+        a.safety_education AS "safetyEducation",
+        a.identity_card AS "identityCard",
+        a.phone_number AS "phoneNumber",
+        a.helmet_returned AS "helmetReturned",
+        a.departure_type AS "departureType",
+        a.departure_reason AS "departureReason",
+        a.departure_date AS "departureDate",
+        a.is_external_personnel AS "isExternalPersonnel",
+        a.create_by AS "createBy",
+        a.create_date AS "createDate",
+        a.update_by AS "updateBy",
+        a.update_date AS "updateDate",
+        a.remarks AS "remarks",
+        a.STATUS AS "status",
+        a.dept,
+        a.position
+        FROM ${sqlMap.table.toSql()}
+        <where>
+            a.status = '0'
+            <if test="personnelStatus != null and personnelStatus != ''">
+                AND a.personnel_status = #{personnelStatus}
+            </if>
+            <if test="status != null and status != ''">
+                AND a.status = #{status}
+            </if>
+            AND #{random} = #{random}
+        </where>
+        ORDER BY ${sqlMap.order.toSql()}
     </select>
 </mapper>

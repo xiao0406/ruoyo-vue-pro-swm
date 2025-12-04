@@ -115,4 +115,7 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
     List<AiDto.Trajectory> findPersonList();
 
     List<SwmDashboardNewController.Person> findTodayAttendance(SwmDashboardNewController.Person vo);
+
+    List<SwmPerson> peronsList(SwmPerson swmPerson);
+
 }

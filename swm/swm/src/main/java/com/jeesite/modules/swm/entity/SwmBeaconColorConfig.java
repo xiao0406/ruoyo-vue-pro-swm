@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.entity;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -19,6 +20,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
         @Column(name = "name", attrName = "name", label = "名称", queryType = QueryType.LIKE),
         @Column(name = "color", attrName = "color", label = "颜色"),
         @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmBeaconColorConfig extends DataEntity<SwmBeaconColorConfig> {
     

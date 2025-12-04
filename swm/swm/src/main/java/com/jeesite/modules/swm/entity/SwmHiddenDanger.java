@@ -5,6 +5,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -28,7 +29,8 @@ import java.util.Date;
         @Column(name = "inspection_plan_id", attrName = "inspectionPlanId", label = "关联的巡检计划ID"),
         @Column(name = "is_beacon_deployed", attrName = "isBeaconDeployed", label = "是否布设信标"),
         @Column(name = "is_handled", attrName = "isHandled", label = "是否已处置"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.create_date DESC")
 public class SwmHiddenDanger extends DataEntity<SwmHiddenDanger> {
 

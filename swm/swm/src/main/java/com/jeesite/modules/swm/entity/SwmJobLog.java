@@ -5,6 +5,8 @@
 package com.jeesite.modules.swm.entity;
 
 import javax.validation.constraints.NotBlank;
+
+import com.jeesite.common.entity.BaseEntity;
 import org.hibernate.validator.constraints.Length;
 import java.util.Date;
 
@@ -29,6 +31,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
         @Column(name = "execute_status", attrName = "executeStatus", label = "执行结果（0 - 成功，1 - 失败）"),
         @Column(name = "exception_info", attrName = "exceptionInfo", label = "异常信息"),
         @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmJobLog extends DataEntity<SwmJobLog> {
 

@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -20,7 +21,8 @@ import org.hibernate.validator.constraints.Length;
         @Column(name = "need_confirm", attrName = "needConfirm", label = "是否弹窗确认"),
         @Column(name = "dialog_position", attrName = "dialogPosition", label = "弹窗位置"),
         @Column(name = "is_send_zjt", attrName = "isSendZjt", label = "是否推送中建通（1是，0否）"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmAlarmConfig extends DataEntity<SwmAlarmConfig> {
 

@@ -660,4 +660,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
         return resultList;
     }
+
+    public List<SwmHelmetDevice> findDeviceCorpMapping(SwmHelmetDevice device) {
+        return this.dao.findDeviceCorpMapping(device);
+    }
 }

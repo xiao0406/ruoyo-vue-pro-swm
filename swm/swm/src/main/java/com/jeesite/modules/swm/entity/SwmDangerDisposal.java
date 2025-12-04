@@ -5,6 +5,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -33,7 +34,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
         @Column(name = "disposal_status", attrName = "disposalStatus", label = "处置状态"),
         @Column(name = "disposal_user", attrName = "disposalUser", label = "处置人员"),
         @Column(name = "attachment", attrName = "attachment", label = "附件信息"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.create_date DESC")
 public class SwmDangerDisposal extends DataEntity<SwmDangerDisposal> {
 

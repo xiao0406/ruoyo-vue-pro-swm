@@ -5,6 +5,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -39,7 +40,8 @@ import java.util.Date;
         @Column(name = "departure_type", attrName = "departureType", label = "离职类型"),
         @Column(name = "departure_reason", attrName = "departureReason", label = "离职原因"),
         @Column(name = "departure_date", attrName = "departureDate", label = "离职时间"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmPersonDeparture extends DataEntity<SwmPersonDeparture> {
 

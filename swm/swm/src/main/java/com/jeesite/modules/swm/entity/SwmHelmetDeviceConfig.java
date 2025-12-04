@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.annotation.Column;
@@ -26,6 +27,7 @@ import com.jeesite.common.mybatis.annotation.Column;
         @Column(name = "sleep_wakeup_time", attrName = "sleepWakeupTime", label = "休眠唤醒时间"),
         @Column(name = "beacon_filter_name", attrName = "beaconFilterName", label = "接收信标名称"),
         @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmHelmetDeviceConfig extends DataEntity<SwmHelmetDeviceConfig> {
     

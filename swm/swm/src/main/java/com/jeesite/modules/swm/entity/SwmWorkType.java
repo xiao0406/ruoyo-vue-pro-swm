@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -16,7 +17,8 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
         @Column(name = "work_type", attrName = "workType", label = "工种名称", queryType = QueryType.LIKE),
         @Column(name = "work_type_code", attrName = "workTypeCode", label = "工种编码", queryType = QueryType.LIKE),
         @Column(name = "description", attrName = "description", label = "工种描述"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.work_type_code ASC")
 public class SwmWorkType extends DataEntity<SwmWorkType> {
 

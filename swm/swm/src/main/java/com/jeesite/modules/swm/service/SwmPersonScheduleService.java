@@ -212,4 +212,8 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
     public void insertBatch(List<SwmPersonSchedule> list) {
         dao.insertBatch(list);
     }
+
+    public List<SwmPersonSchedule> scheduleList(SwmPersonSchedule swmPersonSchedule) {
+        return dao.scheduleList(swmPersonSchedule);
+    }
 }

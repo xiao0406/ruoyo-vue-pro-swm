@@ -1,6 +1,7 @@
 package com.jeesite.modules.swm.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -29,7 +30,8 @@ import java.util.Date;
         @Column(name = "hazard_source_id", attrName = "hazardSourceId", label = "关联的危险源ID"),
         @Column(name = "hazard_source_name", attrName = "hazardSourceName", label = "关联的危险源名称"),
         @Column(name = "plan_status", attrName = "planStatus", label = "巡检状态"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.create_date DESC")
 public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 

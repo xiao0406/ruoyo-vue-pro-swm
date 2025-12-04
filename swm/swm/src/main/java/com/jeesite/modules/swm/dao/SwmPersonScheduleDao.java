@@ -64,4 +64,6 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
      * @return 排班人数
      */
     int countDistinctPersonByYearAndMonth(@Param("yearMonth") String yearMonth);
+
+    List<SwmPersonSchedule> scheduleList(SwmPersonSchedule swmPersonSchedule);
 }

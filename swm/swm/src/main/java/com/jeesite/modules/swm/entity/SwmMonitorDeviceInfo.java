@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -30,7 +31,8 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
         @Column(name = "load_source", attrName = "loadSource", label = "加载路径"),
         @Column(name = "stream_url", attrName = "streamUrl", label = "直播流获取路径"),
         @Column(name = "camera_index_code", attrName = "cameraIndexCode", label = "摄像机唯一标识码"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmMonitorDeviceInfo extends DataEntity<SwmMonitorDeviceInfo> {
 

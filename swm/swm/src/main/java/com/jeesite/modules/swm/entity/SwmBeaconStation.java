@@ -4,6 +4,7 @@
  */
 package com.jeesite.modules.swm.entity;
 
+import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
@@ -40,7 +41,8 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "beacon_status", attrName = "beaconStatus", label = "信标状态"),
         @Column(name = "deploy_status", attrName = "deployStatus", label = "部署状态"),
         @Column(name = "stream_url", attrName = "streamUrl", label = "推流地址"),
-        @Column(includeEntity = DataEntity.class)
+        @Column(includeEntity = DataEntity.class),
+        @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
