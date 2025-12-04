@@ -1,6 +1,7 @@
 package com.jeesite.modules.job.task;
 
 
+import com.jeesite.modules.swm.cache.DeviceCorpMappingCache;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
@@ -35,6 +36,9 @@ public class DeviceCorpTask {
     private UserService userService;
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private DeviceCorpMappingCache deviceCorpMappingCache;
 
     @XxlJob("deviceCorpMapping")
     @Transactional(rollbackFor = Exception.class)
@@ -76,6 +80,9 @@ public class DeviceCorpTask {
         }
 
         XxlJobHelper.log("设备租户映射关系生成完成");
+
+        // 刷新缓存
+        deviceCorpMappingCache.refreshCache();
 
     }
 }
