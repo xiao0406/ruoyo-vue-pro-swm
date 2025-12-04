@@ -7,6 +7,7 @@ import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
 import com.jeesite.modules.swm.service.TDengineService;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.utils.R;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -60,10 +61,11 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
         }
 
         idCardList.clear();
-        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
         if (deviceIds != null) {
             for (Object deviceId : deviceIds) {
-                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
                 idCardList.add(currentPerson);
             }
         }

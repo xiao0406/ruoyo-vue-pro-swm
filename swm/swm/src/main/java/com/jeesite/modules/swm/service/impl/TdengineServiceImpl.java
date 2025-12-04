@@ -5,9 +5,15 @@ import cn.hutool.http.HttpRequest;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.OkHttpClientManager;
+import com.jeesite.modules.constant.RedisConstant;
+import com.jeesite.modules.enums.CorpDbEnum;
+import com.jeesite.modules.swm.cache.DeviceCorpMappingCache;
 import com.jeesite.modules.swm.constant.DebugConstant;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.service.TDengineService;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.vo.DeviceDataDTO;
 import com.jeesite.modules.vo.QueryParamDTO;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +66,12 @@ public class TdengineServiceImpl implements TDengineService {
     @Autowired
     private ThreadPoolTaskExecutor swmExecutor;
 
+    @Autowired
+    private DeviceCorpMappingCache deviceCorpMappingCache;
+
+    @Autowired
+    private RedisService redisService;
+
     /**
      * 项目启动时自动创建数据库
      */
@@ -73,9 +85,18 @@ public class TdengineServiceImpl implements TDengineService {
      * 创建数据库
      */
     private void createDb() {
-        String sql = "create database if not exists " + dbname + " keep " + retentionPolicy;
-        log.info("create db sql:" + sql);
-        execute(sql);
+        log.info("初始化 TDengine 多租户数据库");
+
+        // 遍历所有租户数据库映射
+        for (CorpDbEnum corpDb : CorpDbEnum.values()) {
+            String dbName = corpDb.getDbName();
+            String sql = "create database if not exists " + dbName + " keep " + retentionPolicy;
+            log.info("创建数据库 SQL: {}", sql);
+            R<JSONObject> result = execute(sql);
+            if (R.SUCCESS != result.getCode()) {
+                log.error("创建数据库失败: {}", result.getMsg());
+            }
+        }
     }
 
     /**
@@ -815,19 +836,30 @@ public class TdengineServiceImpl implements TDengineService {
 
     @Override
     public R<JSONObject> executeTDengineSQL(String sql) {
+
+        String dbNameNew = dbname;
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        if (StringUtils.isNotBlank(corpCode)) {
+            dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
+        }
+
+        // 3. 替换 SQL 中的占位 {db} 为真实数据库名
+        String realSql = sql.replace(dbname, dbNameNew);
+
         try {
-            String result = okHttpClientManager.post(url, authorization, sql);
+
+            String result = okHttpClientManager.post(url, authorization, realSql);
 
             JSONObject jsonObject = JSONUtil.parseObj(result);
             if (!"succ".equals(jsonObject.getStr("status"))
                     && (jsonObject.getInt("code") == null || jsonObject.getInt("code") != 0)) {
                 log.error("SQL执行失败: {}", result);
-                log.error("失败SQL: {}", sql);
+                log.error("失败SQL: {}", realSql);
                 return R.fail(jsonObject.getStr("desc"));
             }
             return R.ok(jsonObject);
         } catch (Exception e) {
-            log.error("执行TDengine SQL异常: {}", sql, e);
+            log.error("执行TDengine SQL异常: {}", realSql, e);
             return R.fail("SQL执行异常: " + e.getMessage());
         }
     }

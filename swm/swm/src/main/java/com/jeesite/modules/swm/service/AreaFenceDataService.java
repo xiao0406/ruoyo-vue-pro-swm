@@ -8,6 +8,7 @@ package com.jeesite.modules.swm.service;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.lang.StringUtils;
+import com.jeesite.modules.swm.cache.DeviceCorpMappingCache;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.AreaFenceData;
 import com.jeesite.modules.swm.entity.AttendanceCheckResult;
@@ -52,6 +53,8 @@ public class AreaFenceDataService {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private DeviceCorpMappingCache deviceCorpMappingCache;
 
     @Value("${tdengine.dbname:swm_db}")
     private String dbname;
@@ -461,7 +464,7 @@ public class AreaFenceDataService {
             logger.info("开始计算身份证号为 {} 在 {} 工作时间范围 {} 的怠工时长", idCard, date, workTimeRange);
 
             // 1. 获取字典数据 - 查找所有区域配置
-            List<DictData> areaList = getAreaFenceDataDictList();
+            List<DictData> areaList = getAreaFenceDataDictList(idCard);
             if (areaList.isEmpty()) {
                 logger.warn("未找到area_fence_data字典配置");
                 return 0.0;
@@ -509,15 +512,19 @@ public class AreaFenceDataService {
      * @date 2025/01/27
      */
     @SuppressWarnings("unchecked")
-    private List<DictData> getAreaFenceDataDictList() {
+    private List<DictData> getAreaFenceDataDictList(String idCard) {
         try {
             List<DictData> dictList = new ArrayList<>();
+
+
+            String corpCode = deviceCorpMappingCache.getCorpCodeByIdCard(idCard);
 
             logger.info("开始从Redis缓存iot:area:all获取休息区域数据...");
 
             // 使用StringRedisTemplate来获取原始字符串数据，避免序列化问题
             try {
-                String rawData = stringRedisTemplate.opsForValue().get(SwmRedisConstant.Area.ALL_AREA_DATA);
+
+                String rawData = stringRedisTemplate.opsForValue().get(corpCode + SwmRedisConstant.RedisIotKey.AREA_ALL_CACHE_KEY);
                 if (rawData != null && !rawData.isEmpty()) {
                     logger.debug("从Redis获取到原始数据长度: {}", rawData.length());
 
@@ -580,7 +587,7 @@ public class AreaFenceDataService {
                 // 尝试使用RedisTemplate的方式
                 try {
                     logger.info("尝试使用RedisTemplate方式获取数据...");
-                    Object cachedData = redisTemplate.opsForValue().get(SwmRedisConstant.Area.ALL_AREA_DATA);
+                    Object cachedData = redisTemplate.opsForValue().get(corpCode + SwmRedisConstant.RedisIotKey.AREA_ALL_CACHE_KEY);
 
                     if (cachedData instanceof List) {
                         List<?> areaList = (List<?>) cachedData;
@@ -895,7 +902,7 @@ public class AreaFenceDataService {
             logger.debug("检查身份证号 {} 在时间范围 {} 到 {} 是否在休息区域", idCard, startTime, endTime);
 
             // 1. 获取字典数据 - 查找所有休息区域配置
-            List<DictData> areaList = getAreaFenceDataDictList();
+            List<DictData> areaList = getAreaFenceDataDictList(idCard);
             if (areaList.isEmpty()) {
                 logger.warn("未找到area_fence_data字典配置");
                 return false;
@@ -959,15 +966,17 @@ public class AreaFenceDataService {
      * @date 2025/01/27
      */
     @SuppressWarnings("unchecked")
-    private List<DictData> getWorkAreaFenceDataDictList() {
+    private List<DictData> getWorkAreaFenceDataDictList(String idCard) {
         try {
             List<DictData> dictList = new ArrayList<>();
 
             logger.info("开始从Redis缓存iot:area:all获取工作区域数据...");
 
+            String corpCode = deviceCorpMappingCache.getCorpCodeByIdCard(idCard);
+
             // 使用StringRedisTemplate来获取原始字符串数据，避免序列化问题
             try {
-                String rawData = stringRedisTemplate.opsForValue().get(SwmRedisConstant.Area.ALL_AREA_DATA);
+                String rawData = stringRedisTemplate.opsForValue().get(corpCode + SwmRedisConstant.RedisIotKey.AREA_ALL_CACHE_KEY);
                 if (rawData != null && !rawData.isEmpty()) {
                     logger.debug("从Redis获取到原始数据长度: {}", rawData.length());
 
@@ -1030,7 +1039,7 @@ public class AreaFenceDataService {
                 // 尝试使用RedisTemplate的方式
                 try {
                     logger.info("尝试使用RedisTemplate方式获取数据...");
-                    Object cachedData = redisTemplate.opsForValue().get(SwmRedisConstant.Area.ALL_AREA_DATA);
+                    Object cachedData = redisTemplate.opsForValue().get(corpCode + SwmRedisConstant.RedisIotKey.AREA_ALL_CACHE_KEY);
 
                     if (cachedData instanceof List) {
                         List<?> areaList = (List<?>) cachedData;
@@ -1434,8 +1443,8 @@ public class AreaFenceDataService {
             logger.debug("获取身份证 {} 的实时位置", idCard);
 
             // 1. 获取工作区和休息区列表
-            List<DictData> workAreaList = getWorkAreaFenceDataDictList();
-            List<DictData> restAreaList = getAreaFenceDataDictList();
+            List<DictData> workAreaList = getWorkAreaFenceDataDictList(idCard);
+            List<DictData> restAreaList = getAreaFenceDataDictList(idCard);
 
             List<String> workAreaIds = workAreaList.stream().map(DictData::getDictLabelRaw)
                     .collect(Collectors.toList());

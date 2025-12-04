@@ -33,6 +33,16 @@ public class SwmRedisConstant {
          */
         public static final String PERSON_DEVICE_MAP = SWM_PREFIX + "HELMET:PERSON_DEVICE_MAP";
 
+        /**
+         * 在职人员缓存的Redis Key
+         */
+        public static final String ACTIVE_PERSON_CACHE_KEY = "SWM:ACTIVE_PERSON_CACHE";
+
+        /**
+         * 身份证到人员ID映射的Redis Key
+         */
+        public static final String IDENTITY_CARD_MAP_KEY = "SWM:IDENTITY_CARD_MAP";
+
 
     }
 
@@ -71,7 +81,7 @@ public class SwmRedisConstant {
 
 
         // 区域缓存相关常量
-        public static final String AREA_CACHE_KEY_PREFIX = SEPAR + IOT_PREFIX + "area:name:";
+        public static final String AREA_CACHE_KEY_PREFIX = ":iot:area:name:";
         public static final String AREA_ALL_CACHE_KEY = SEPAR + IOT_PREFIX + "area:all";
         public static final String AREA_NAME_TO_ID_CACHE_KEY = SEPAR + IOT_PREFIX + "area:name_to_id";
 
@@ -81,6 +91,7 @@ public class SwmRedisConstant {
         public static final String BEACON_CACHE_NAME_TO_IDS = SEPAR + IOT_PREFIX + "beacon:station:name2ids:"; // 区域名称到ID映射
         public static final String BEACON_ALL_CACHE_KEY = SEPAR + IOT_PREFIX + "beacon:station:all";
         public static final String BEACON_ALL_AREA_IDS = SEPAR + IOT_PREFIX + "beacon:station:all_area_ids"; // 所有区域ID列表
+
 
 
         /**

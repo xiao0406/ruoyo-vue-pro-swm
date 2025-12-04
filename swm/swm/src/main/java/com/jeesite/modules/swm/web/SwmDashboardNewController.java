@@ -366,7 +366,7 @@ public class SwmDashboardNewController extends BaseController {
 //            Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(oneHourAgo, null);
 
             //身份证从redis里获取，先获取到所有的设备，然后在获取设备对应的身份证
-            Set<Object> deviceIds = redisService.sGet(corpCode+SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
+            Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
             Set<String> uniqueIdCards = new HashSet<>();
             if (deviceIds != null) {
                 for (Object deviceId : deviceIds) {
@@ -861,7 +861,7 @@ public class SwmDashboardNewController extends BaseController {
 
         //身份证从redis里获取，先获取到所有的设备，然后在获取设备对应的身份证
         String corpCode = CorpUtils.getCurrentCorpCode();
-        Set<Object> deviceIds = redisService.sGet(corpCode+SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
+        Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
         Set<String> uniqueIdCards = new HashSet<>();
         if (deviceIds != null) {
             for (Object deviceId : deviceIds) {

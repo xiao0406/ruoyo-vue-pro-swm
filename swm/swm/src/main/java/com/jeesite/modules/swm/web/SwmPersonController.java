@@ -34,6 +34,8 @@ import com.jeesite.modules.swm.service.SwmPersonCacheService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.service.SwmHelmetCacheService;
 import com.jeesite.modules.swm.service.TDengineService;
+import com.jeesite.modules.sys.utils.CorpUtils;
+import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
 import org.springframework.context.ApplicationContext;
 import com.jeesite.modules.utils.BatchOperationsUtil;
@@ -1442,10 +1444,11 @@ public class SwmPersonController extends BaseController {
             return result;
         }
         idCards.clear();
-        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
         if (deviceIds != null) {
             for (Object deviceId : deviceIds) {
-                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
                 idCards.add(currentPerson);
                 result.add(currentPerson);
             }

@@ -312,6 +312,7 @@
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
         WHERE a.personnel_status = '1'  -- 只查询在职人员
           AND a.status = '0'            -- 正常状态
+        AND #{random} = #{random}
         ORDER BY a.update_date DESC
     </select>
 

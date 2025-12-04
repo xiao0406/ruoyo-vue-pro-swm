@@ -4,7 +4,12 @@ import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.sys.entity.User;
+import com.jeesite.modules.sys.service.UserService;
+import com.jeesite.modules.sys.utils.CorpUtils;
+import com.xxl.job.core.context.XxlJobHelper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.stereotype.Service;
@@ -29,16 +34,9 @@ public class SwmPersonCacheService {
 
     @Autowired
     private SwmPersonDao swmPersonDao;
+    @Autowired
+    private UserService userService;
 
-    /**
-     * 在职人员缓存的Redis Key
-     */
-    private static final String ACTIVE_PERSON_CACHE_KEY = "SWM:ACTIVE_PERSON_CACHE";
-
-    /**
-     * 身份证到人员ID映射的Redis Key
-     */
-    private static final String IDENTITY_CARD_MAP_KEY = "SWM:IDENTITY_CARD_MAP";
 
     /**
      * 程序启动时初始化在职人员缓存
@@ -49,68 +47,91 @@ public class SwmPersonCacheService {
      */
     @PostConstruct
     public void initActivePersonCache() {
-        try {
-            log.info("开始初始化在职人员缓存...");
 
-            // 检查Redis连接状态
-            if (!isRedisAvailable()) {
-                log.warn("Redis连接不可用，跳过人员缓存初始化");
-                return;
-            }
 
-            // 使用自定义SQL查询获取包含各表ID的完整人员信息
-            List<Map<String, Object>> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds();
+        //获取系统所有租户信息
+        List<User> corpList = userService.findCorpList(new User());
+        if (CollectionUtils.isEmpty(corpList)) {
+            XxlJobHelper.log("没有租户信息");
+            return;
+        }
 
-            if (activePersonsWithIds == null || activePersonsWithIds.isEmpty()) {
-                log.warn("未查询到在职人员数据");
-                return;
-            }
 
-            // 清除旧缓存
-            clearActivePersonCache();
+        // 批量添加到缓存
+        Map<String, Object> personCacheMap = new HashMap<>();
+        Map<String, Object> identityCardMap = new HashMap<>();
 
-            // 批量添加到缓存
-            Map<String, Object> personCacheMap = new HashMap<>();
-            Map<String, Object> identityCardMap = new HashMap<>();
+        //为每个租户都生成排班计划
+        for (User user : corpList) {
 
-            for (Map<String, Object> personData : activePersonsWithIds) {
-                String personId = (String) personData.get("id");
-                String identityCard = (String) personData.get("identityCard");
+            String corpCode = user.getCorpCode();
+            String corpName = user.getCorpName();
+            //设置当前线程的租户信息
+            CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
-                // 构建缓存的人员信息（包含各表ID）
-                Map<String, Object> personInfo = buildPersonCacheInfoWithIds(personData);
+            try {
+                log.info("开始初始化在职人员缓存...");
 
-                // 使用人员ID作为Redis Hash的field
-                personCacheMap.put(personId, personInfo);
-
-                // 建立身份证到人员ID的映射
-                if (identityCard != null && !identityCard.trim().isEmpty()) {
-                    // 检查身份证是否已存在，如果存在则记录警告
-                    if (identityCardMap.containsKey(identityCard)) {
-                        String existingPersonId = (String) identityCardMap.get(identityCard);
-                        log.warn("发现重复身份证号码：{}，人员ID：{}，已存在人员ID：{}，将使用最新的人员记录",
-                                identityCard, personId, existingPersonId);
-                    }
-                    identityCardMap.put(identityCard, personId);
+                // 检查Redis连接状态
+                if (!isRedisAvailable()) {
+                    log.warn("Redis连接不可用，跳过人员缓存初始化");
+                    return;
                 }
+
+                int random = new Random().nextInt(1_000_000);
+
+                // 使用自定义SQL查询获取包含各表ID的完整人员信息
+                List<Map<String, Object>> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds(random);
+
+                if (activePersonsWithIds == null || activePersonsWithIds.isEmpty()) {
+                    log.warn("未查询到在职人员数据");
+                    continue;
+                }
+
+                // 清除旧缓存
+                clearActivePersonCache();
+
+                for (Map<String, Object> personData : activePersonsWithIds) {
+                    String personId = (String) personData.get("id");
+                    String identityCard = (String) personData.get("identityCard");
+
+                    // 构建缓存的人员信息（包含各表ID）
+                    Map<String, Object> personInfo = buildPersonCacheInfoWithIds(personData);
+
+                    // 使用人员ID作为Redis Hash的field
+                    personCacheMap.put(personId, personInfo);
+
+                    // 建立身份证到人员ID的映射
+                    if (identityCard != null && !identityCard.trim().isEmpty()) {
+                        // 检查身份证是否已存在，如果存在则记录警告
+                        if (identityCardMap.containsKey(identityCard)) {
+                            String existingPersonId = (String) identityCardMap.get(identityCard);
+                            log.warn("发现重复身份证号码：{}，人员ID：{}，已存在人员ID：{}，将使用最新的人员记录",
+                                    identityCard, personId, existingPersonId);
+                        }
+                        identityCardMap.put(identityCard, personId);
+                    }
+                }
+
+                log.info("在职人员缓存初始化完成，共{}条记录", activePersonsWithIds.size());
+
+            } catch (Exception e) {
+                log.error("初始化在职人员缓存失败", e);
+            }finally {
+                CorpUtils.removeCurrentCorpCode( null);
             }
+        }
+        // 批量存储到Redis
+        if (!personCacheMap.isEmpty()) {
+            redisService.hmset(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, personCacheMap);
+            log.info("成功缓存{}条在职人员信息", personCacheMap.size());
+        }
 
-            // 批量存储到Redis
-            if (!personCacheMap.isEmpty()) {
-                redisService.hmset(ACTIVE_PERSON_CACHE_KEY, personCacheMap);
-                log.info("成功缓存{}条在职人员信息", personCacheMap.size());
-            }
-
-            // 存储身份证映射
-            if (!identityCardMap.isEmpty()) {
-                redisService.hmset(IDENTITY_CARD_MAP_KEY, identityCardMap);
-                log.info("成功缓存{}条身份证映射信息", identityCardMap.size());
-            }
-
-            log.info("在职人员缓存初始化完成，共{}条记录", activePersonsWithIds.size());
-
-        } catch (Exception e) {
-            log.error("初始化在职人员缓存失败", e);
+        // 存储身份证映射
+        if (!identityCardMap.isEmpty()) {
+            redisService.hmset(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY, identityCardMap);
+            log.info("成功缓存{}条身份证映射信息", identityCardMap.size());
         }
     }
 
@@ -179,13 +200,13 @@ public class SwmPersonCacheService {
         }
         try {
             // 先从身份证映射中获取人员ID
-            String personId = (String) redisService.hget(IDENTITY_CARD_MAP_KEY, identityCard);
+            String personId = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY, identityCard);
             if (personId == null) {
                 return null;
             }
 
             // 根据人员ID获取人员信息
-            Map<String, Object> personInfo = (Map<String, Object>) redisService.hget(ACTIVE_PERSON_CACHE_KEY, personId);
+            Map<String, Object> personInfo = (Map<String, Object>) redisService.hget(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, personId);
             if (personInfo != null) {
             }
 
@@ -211,7 +232,7 @@ public class SwmPersonCacheService {
 
         try {
             // 先从身份证映射中批量获取人员ID
-            Map<Object, Object> personIdMap = redisService.hmget(IDENTITY_CARD_MAP_KEY);
+            Map<Object, Object> personIdMap = redisService.hmget(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY);
 
             for (String idCard : identityCards) {
                 if (idCard == null || idCard.trim().isEmpty()) {
@@ -225,7 +246,7 @@ public class SwmPersonCacheService {
                 String personId = String.valueOf(personIdObj);
 
                 // 根据人员ID获取人员信息
-                Map<String, Object> personInfo = (Map<String, Object>) redisService.hget(ACTIVE_PERSON_CACHE_KEY, personId);
+                Map<String, Object> personInfo = (Map<String, Object>) redisService.hget(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, personId);
                 if (personInfo != null) {
                     resultMap.put(idCard, personInfo);
                 }
@@ -247,7 +268,7 @@ public class SwmPersonCacheService {
         }
 
         try {
-            return (Map<String, Object>) redisService.hget(ACTIVE_PERSON_CACHE_KEY, personId);
+            return (Map<String, Object>) redisService.hget(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, personId);
         } catch (Exception e) {
             log.error("从缓存中查询人员ID{}失败", personId, e);
             return null;
@@ -259,7 +280,7 @@ public class SwmPersonCacheService {
      */
     public Map<Object, Object> getAllActivePersons() {
         try {
-            return redisService.hmget(ACTIVE_PERSON_CACHE_KEY);
+            return redisService.hmget(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY);
         } catch (Exception e) {
             log.error("获取所有在职人员缓存失败", e);
             return new HashMap<>();
@@ -280,22 +301,22 @@ public class SwmPersonCacheService {
             if (SwmPerson.PersonStatusEnum.ACTIVE.equals(person.getPersonnelStatus())) {
                 // 在职状态，添加或更新缓存
                 Map<String, Object> personInfo = buildPersonCacheInfo(person);
-                redisService.hset(ACTIVE_PERSON_CACHE_KEY, person.getId(), personInfo);
+                redisService.hset(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, person.getId(), personInfo);
 
                 // 更新身份证映射
                 if (person.getIdentityCard() != null && !person.getIdentityCard().trim().isEmpty()) {
-                    redisService.hset(IDENTITY_CARD_MAP_KEY, person.getIdentityCard(), person.getId());
+                    redisService.hset(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY, person.getIdentityCard(), person.getId());
                 }
 
                 log.debug("更新在职人员缓存：{}", person.getName());
 
             } else {
                 // 非在职状态，从缓存中移除
-                redisService.hdel(ACTIVE_PERSON_CACHE_KEY, person.getId());
+                redisService.hdel(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, person.getId());
 
                 // 移除身份证映射
                 if (person.getIdentityCard() != null && !person.getIdentityCard().trim().isEmpty()) {
-                    redisService.hdel(IDENTITY_CARD_MAP_KEY, person.getIdentityCard());
+                    redisService.hdel(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY, person.getIdentityCard());
                 }
 
                 log.debug("从在职人员缓存中移除：{}", person.getName());
@@ -315,10 +336,10 @@ public class SwmPersonCacheService {
         }
 
         try {
-            redisService.hdel(ACTIVE_PERSON_CACHE_KEY, person.getId());
+            redisService.hdel(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, person.getId());
 
             if (person.getIdentityCard() != null && !person.getIdentityCard().trim().isEmpty()) {
-                redisService.hdel(IDENTITY_CARD_MAP_KEY, person.getIdentityCard());
+                redisService.hdel(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY, person.getIdentityCard());
             }
 
             log.debug("从缓存中删除人员：{}", person.getName());
@@ -333,8 +354,8 @@ public class SwmPersonCacheService {
      */
     public void clearActivePersonCache() {
         try {
-            redisService.del(ACTIVE_PERSON_CACHE_KEY);
-            redisService.del(IDENTITY_CARD_MAP_KEY);
+            redisService.del(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY);
+            redisService.del(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY);
             log.info("已清除所有在职人员缓存");
         } catch (Exception e) {
             log.error("清除在职人员缓存失败", e);
@@ -371,8 +392,8 @@ public class SwmPersonCacheService {
         Map<String, Object> stats = new HashMap<>();
 
         try {
-            Map<Object, Object> personCache = redisService.hmget(ACTIVE_PERSON_CACHE_KEY);
-            Map<Object, Object> identityCardCache = redisService.hmget(IDENTITY_CARD_MAP_KEY);
+            Map<Object, Object> personCache = redisService.hmget(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY);
+            Map<Object, Object> identityCardCache = redisService.hmget(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY);
 
             stats.put("activePersonCount", personCache != null ? personCache.size() : 0);
             stats.put("identityCardMapCount", identityCardCache != null ? identityCardCache.size() : 0);

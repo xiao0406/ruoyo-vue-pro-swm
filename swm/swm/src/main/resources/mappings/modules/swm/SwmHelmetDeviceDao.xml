@@ -91,7 +91,9 @@
             a.create_date,
             a.update_by,
             a.update_date,
-            a.remarks
+            a.remarks,
+            a.corp_code,
+            a.corp_name
         FROM swm_helmet_device a
         WHERE a.device_id = #{deviceId}
         AND a.status = '0'

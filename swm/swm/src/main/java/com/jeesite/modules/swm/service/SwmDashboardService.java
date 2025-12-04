@@ -5,6 +5,7 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -261,11 +262,12 @@ public class SwmDashboardService {
 //            Set<String> todayOnSiteIdCards = getTodayOnSiteIdCards(todayStartTime, todayEndTime);
 
             //身份证从redis里获取，先获取到所有的设备，然后在获取设备对应的身份证
-            Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+            String corpCode = CorpUtils.getCurrentCorpCode();
+            Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
             Set<String> todayOnSiteIdCards = new HashSet<>();
             if (deviceIds != null) {
                 for (Object deviceId : deviceIds) {
-                    String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                    String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
                     todayOnSiteIdCards.add(currentPerson);
                 }
             }
