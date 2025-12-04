@@ -712,7 +712,17 @@ public class SwmDashboardNewController extends BaseController {
             List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(DateUtils.parseDate(last7Day));
             long count = todayAttendances.stream().filter(a -> a.getAttendanceNormal().equals("0")).count();
             countList.add(count);
-            String attendanceRate = BigDecimal.valueOf(count).divide(BigDecimal.valueOf(swmPersonList.size()), 2, RoundingMode.HALF_UP).toString();
+//            String attendanceRate = BigDecimal.valueOf(count).divide(BigDecimal.valueOf(swmPersonList.size()), 2, RoundingMode.HALF_UP).toString();
+            int total = swmPersonList.size();
+            String attendanceRate;
+
+            if (total == 0) {
+                attendanceRate = "0.00";  // 或者你想返回的默认值
+            } else {
+                attendanceRate = BigDecimal.valueOf(count)
+                        .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP)
+                        .toString();
+            }
             attendanceRateList.add(attendanceRate);
         }
         List<String> days = new ArrayList<>();
