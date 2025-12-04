@@ -94,7 +94,7 @@ public class SwmHazardSourceCache {
                     query.getSqlMap().getWhere().and("assigned_person", QueryType.IN, identityCards);
                 }
                 query.setStatus(SwmHelmetDevice.STATUS_NORMAL);
-                query.getSqlMap().getWhere().and("1", QueryType.NE, random);
+                query.setRandom(new Random().nextInt(1_000_000));
                 List<SwmHelmetDevice> swmHelmetDevices = swmHelmetDeviceService.findList(query);
 
                 //身份证和设备id对应关系

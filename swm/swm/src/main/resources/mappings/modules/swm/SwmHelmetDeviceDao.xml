@@ -51,6 +51,9 @@
         <if test="keyword != null and keyword != ''">
             AND a.device_id LIKE CONCAT('%', #{keyword}, '%')
         </if>
+        <if test="random != null ">
+            AND  #{random} = #{random}
+        </if>
         ORDER BY a.update_date DESC
     </select>
     
