@@ -36,7 +36,11 @@ public enum CorpDbEnum {
     }
 
     public static String getDbNameByCorpCode(String corpCode) {
-        return CORP_DB_MAP.get(corpCode);
+        String dbName = CORP_DB_MAP.get(corpCode);
+        if (dbName == null){
+            dbName = CORP_DB_MAP.get("ZJZK");
+        }
+        return dbName;
     }
 
     /**
