@@ -13,13 +13,13 @@ import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 
 /**
@@ -45,7 +45,7 @@ public class DeviceCorpTask {
     public void deviceCorpMapping() {
 
         XxlJobHelper.log("定时生成设备租户的映射关系===================================");
-        //获取系统所有租户信息
+
         List<User> corpList = userService.findCorpList(new User());
         if (CollectionUtils.isEmpty(corpList)) {
             XxlJobHelper.log("没有租户信息");
@@ -54,15 +54,16 @@ public class DeviceCorpTask {
 
         List<SwmHelmetDevice> deviceListAll = new ArrayList<>();
 
-        //查询每个租户的设备信息
         for (User user : corpList) {
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
-            //设置当前线程的租户信息
+
+            // 设置当前线程租户
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+
             SwmHelmetDevice device = new SwmHelmetDevice();
-            // 传随机值，使 SQL 每次不同，目的是取消一级缓存
-            device.setRandom(new Random().nextInt(1_000_000));
+            device.setRandom(new Random().nextInt(1_000_000));  // 防止一级缓存
+
             List<SwmHelmetDevice> deviceList = deviceService.findDeviceCorpMapping(device);
 
             if (CollectionUtils.isEmpty(deviceList)) {
@@ -72,17 +73,29 @@ public class DeviceCorpTask {
             deviceListAll.addAll(deviceList);
         }
 
-        // 写入 Redis：设备 -> 租户
+        // 构建一个临时 key
+        String tempKey = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP + "_TMP";
+
+        // 先写入临时 key
+        Map<String, String> map = new HashMap<>();
         for (SwmHelmetDevice d : deviceListAll) {
-            String deviceId = d.getDeviceId();
-            String corpCode = d.getCorpCode();
-            redisTemplate.opsForHash().put(SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP, deviceId, corpCode);
+            map.put(d.getDeviceId(), d.getCorpCode());
         }
+        redisTemplate.opsForHash().putAll(tempKey, map);
+
+        // 原子替换旧 key
+        redisTemplate.execute((RedisCallback<Object>) connection -> {
+            byte[] temp = tempKey.getBytes(StandardCharsets.UTF_8);
+            byte[] real = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP.getBytes(StandardCharsets.UTF_8);
+
+            connection.rename(temp, real); // 原子操作
+            return null;
+        });
 
         XxlJobHelper.log("设备租户映射关系生成完成");
 
         // 刷新缓存
         deviceCorpMappingCache.refreshCache();
-
     }
+
 }
