@@ -937,7 +937,7 @@ public class SwmDashboardController extends BaseController {
                 () -> getTeamRanking(monthlyAttendance, personMap, true, 10),swmExecutor);
 
         CompletableFuture<List<Map<String, Object>>> todayJobDistribution = supplyAsync(
-                () -> getJobDistribution(monthlyAttendance, personMap, true, 10),swmExecutor);
+                () -> getJobDistributionNew(monthlyAttendance, personMap, true, 10),swmExecutor);
 
         CompletableFuture<List<Map<String, Object>>> monthlyTeamRanking = supplyAsync(
                 () -> getTeamRanking(monthlyAttendance, personMap, false, 10),swmExecutor);
@@ -1298,6 +1298,38 @@ public class SwmDashboardController extends BaseController {
                 .sorted((a, b) -> ((BigDecimal) b.get("avgEfficiency")).compareTo((BigDecimal) a.get("avgEfficiency")))
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+    private List<Map<String, Object>> getJobDistributionNew(List<SwmDailyAttendance> attendances,
+                                                         Map<String, SwmPerson> personMap, boolean isToday, int limit) {
+        // 按工种分组统计
+        String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
+        // 筛选今日数据
+        List<SwmDailyAttendance> todayAttendances = attendances.parallelStream()
+                .filter(a -> todayStr.equals(DateUtil.format(a.getAttendanceDate(), "yyyy-MM-dd")))
+                .collect(Collectors.toList());
+
+        // 对todayAttendances按personType进行分组
+        Map<String, List<SwmDailyAttendance>> groupedByPersonType = todayAttendances.stream()
+                .collect(Collectors.groupingBy(SwmDailyAttendance::getPersonType));
+
+        List<Map<String, Object>> resultList = new ArrayList<>();
+        for (Map.Entry<String, List<SwmDailyAttendance>> entry : groupedByPersonType.entrySet()) {
+            Map<String, Object> result = new HashMap<>();
+            String key = entry.getKey();
+            DictData dictData = DictUtils.getDictData("person_type_enum", key);
+            Long number = 0L;
+            List<SwmDailyAttendance> value = entry.getValue();
+            for (SwmDailyAttendance attendance : value) {
+                if (attendance.getClockInDate() != null ) {
+                    number++;
+                }
+            }
+            result.put("name", dictData.getDictLabel());
+            result.put("presentCount", number);
+            resultList.add(result);
+        }
+        return resultList;
     }
 
     // 辅助方法：获取月份所有天数
