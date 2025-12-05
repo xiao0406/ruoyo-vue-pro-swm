@@ -10,6 +10,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -29,6 +30,7 @@ import javax.validation.constraints.NotBlank;
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmArea extends DataEntity<SwmArea> {
 
     private static final long serialVersionUID = 1L;
@@ -40,6 +42,7 @@ public class SwmArea extends DataEntity<SwmArea> {
     private String voicePrompt; // 语音提示
     private String filePath; // 文件路径
     private String bIds; // 关联的信标ID列表，JSON格式
+    private int  random;
 
     public SwmArea() {
         this(null);

@@ -1467,13 +1467,13 @@ public class SwmDashboardController extends BaseController {
                 sql = String.format(
                         "SELECT DISTINCT id_card FROM %s.external_coordinate_data WHERE time >= '%s' AND time <= '%s'",
                         dbname, startTime, endTime);
-                logger.info("查询TDengine身份证SQL: {} (时间范围: {} 到 {})", sql, startTime, endTime);
+//                logger.info("查询TDengine身份证SQL: {} (时间范围: {} 到 {})", sql, startTime, endTime);
             } else {
                 // 单一时间点查询（1小时内数据）
                 sql = String.format(
                         "SELECT DISTINCT id_card FROM %s.external_coordinate_data WHERE time >= '%s'",
                         dbname, startTime);
-                logger.info("查询TDengine身份证SQL: {} (开始时间: {})", sql, startTime);
+//                logger.info("查询TDengine身份证SQL: {} (开始时间: {})", sql, startTime);
             }
 
             R<cn.hutool.json.JSONObject> result = tdengineService.executeTDengineSQL(sql);

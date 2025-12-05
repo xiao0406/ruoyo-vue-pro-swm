@@ -8,6 +8,9 @@
         FROM ${sqlMap.table.toSql()}
         <where>
             ${sqlMap.where.toSql()}
+            <if test="random != null and random != 0">
+                AND #{random} = #{random}
+            </if>
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>

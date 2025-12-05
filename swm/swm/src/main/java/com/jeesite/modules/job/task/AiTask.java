@@ -38,6 +38,8 @@ public class AiTask {
     public void aiDailyReportTask() {
         XxlJobHelper.log("=====================定时生成工效任务=================");
 
+        //city 城市
+
         Date yesterday = DateUtil.yesterday();
         String jobParam = XxlJobHelper.getJobParam();
         String startDate = "";

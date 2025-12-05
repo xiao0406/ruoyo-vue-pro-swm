@@ -10,11 +10,15 @@ import com.jeesite.modules.fms.entity.FmsGeneralProject;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
+import com.jeesite.modules.sys.entity.User;
+import com.jeesite.modules.sys.service.UserService;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.util.BatchOperationsUtil;
 import com.jeesite.modules.utils.R;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,6 +59,8 @@ public class AttendanceTask {
     private SwmJobLogService swmJobLogService;
     @Autowired
     private TDengineService tdengineService;
+    @Autowired
+    private UserService userService;
     
     @Value("${tdengine.dbname:swm_db}")
     private String dbname;
@@ -1348,30 +1354,45 @@ public class AttendanceTask {
         jobLog.setStartTime(date);
         jobLog.setExecuteStatus("1"); // 默认失败
 
-        try {
-
-            // 保存任务参数
-            String jobParam = XxlJobHelper.getJobParam();
-            jobLog.setJobParam(jobParam);
-            swmJobLogService.save(jobLog);
-            jobLog.setIsNewRecord(false);
 
 
-            // 1. 处理未打上班卡的数据  clockInTime=null
-           processclockInCard();
-
-            // 2. 处理未打下班卡的数据 clockOutTime=null
-            processclockOutCard();
-
-            jobLog.setExecuteStatus("0");
-
-        } catch (Exception e) {
-            jobLog.setExceptionInfo(e.getMessage());
-        } finally {
-            jobLog.setEndTime(new Date());
-            jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
-            swmJobLogService.save(jobLog);
+        //获取系统所有租户信息
+        List<User> corpList = userService.findCorpList(new User());
+        if (CollectionUtils.isEmpty(corpList)) {
+            XxlJobHelper.log("没有租户信息");
+            return;
         }
+
+        corpList.forEach(corp -> {
+            String corpCode = corp.getCorpCode();
+            String corpName = corp.getCorpName();
+            CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            try {
+
+                // 保存任务参数
+                String jobParam = XxlJobHelper.getJobParam();
+                jobLog.setJobParam(jobParam);
+                swmJobLogService.save(jobLog);
+                jobLog.setIsNewRecord(false);
+
+
+                // 1. 处理未打上班卡的数据  clockInTime=null
+                processclockInCard();
+
+                // 2. 处理未打下班卡的数据 clockOutTime=null
+                processclockOutCard();
+
+                jobLog.setExecuteStatus("0");
+
+            } catch (Exception e) {
+                jobLog.setExceptionInfo(e.getMessage());
+            } finally {
+                jobLog.setEndTime(new Date());
+                jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
+                swmJobLogService.save(jobLog);
+                CorpUtils.removeCurrentCorpCode( null);
+            }
+        });
     }
 
 
@@ -1414,6 +1435,8 @@ public class AttendanceTask {
                             if (count != null && count > 0) {
                                 item.setClockInDate(nowDate);
                                 item.setClockInTime(nowDate);
+                                item.setCorpCode(CorpUtils.getCurrentCorpCode());
+                                item.setCorpName(CorpUtils.getCurrentCorpName());
                                 onlineDevices.add(item);
                                 XxlJobHelper.log("上班补卡人员：{}", item.getEmployeeName());
                             }
