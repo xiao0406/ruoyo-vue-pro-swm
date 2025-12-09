@@ -688,17 +688,18 @@ public class SwmDashboardController extends BaseController {
 
             CompletableFuture<Void> recordFuture = CompletableFuture.runAsync(() -> {
                 try {
-//                    String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
-//                    String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
-//                    String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+                    String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+                    String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
+                    String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
                     List<SwmWarningManagement> latestWarnings = swmWarningManagementService.findTodayWarningWithHybrid();
-                    swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
+//                    swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
                     swmWarningManagementService.fillLocationInfoV1(latestWarnings);
-//                    for (SwmWarningManagement warning : latestWarnings) {
-//                        if (Arrays.asList(dictLabel1, dictLabel2, dictLabel3).contains(warning.getWarningContent())){
-//                            warning.setWarningContent("异常行为预警");
-//                        }
-//                    }
+                    for (SwmWarningManagement warning : latestWarnings) {
+                        if (Arrays.asList(dictLabel1, dictLabel2, dictLabel3).contains(warning.getWarningContent())){
+                            warning.setWarningTypeText(warning.getWarningContent());
+                            warning.setWarningContent("异常行为预警");
+                        }
+                    }
                     result.put("record", latestWarnings);
                 } catch (Exception e) {
                     logger.error("获取已处置数据异常", e);

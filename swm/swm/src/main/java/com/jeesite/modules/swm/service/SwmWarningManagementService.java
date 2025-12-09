@@ -1823,9 +1823,6 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
 
-
-
-
             for (SwmWarningManagement warning : warningList) {
                 String deviceId = warning.getDeviceId();
                 String idCard = warning.getIdCard();

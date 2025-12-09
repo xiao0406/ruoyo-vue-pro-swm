@@ -490,10 +490,7 @@ public class SwmWarningManagementController extends BaseController {
     @RequestMapping(value = "getPopupWarnings")
     @ResponseBody
     public Map<String, Object> getPopupWarnings() {
-        Date now = new Date();
         Map<String, Object> resultData = swmWarningManagementService.getPopupWarnings();
-        long durationInSeconds = (new Date().getTime() - now.getTime()) / 1000;
-        logger.info("获取弹窗告警数据耗时: {} 秒", durationInSeconds);
 
         // 处理需要确认的告警数据
         @SuppressWarnings("unchecked")
