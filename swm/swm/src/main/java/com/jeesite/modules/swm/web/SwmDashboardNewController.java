@@ -965,7 +965,7 @@ public class SwmDashboardNewController extends BaseController {
         SwmPerson query = new SwmPerson();
         query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE); // '1' - 在职
         query.setStatus("0"); // 正常状态
-        query.setPersonType(SwmPerson.PersonTypeEnum.WORKER);
+//        query.setPersonType(SwmPerson.PersonTypeEnum.WORKER);
         query.setPage(new Page<>(request, response));
         Page<SwmPerson> page = swmPersonService.findPage(query);
         List<SwmPerson> swmPersonList = page.getList();
