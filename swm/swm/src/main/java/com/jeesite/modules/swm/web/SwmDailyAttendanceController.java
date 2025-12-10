@@ -767,9 +767,9 @@ public class SwmDailyAttendanceController extends BaseController {
             List<SwmDailyAttendance> list = swmDailyAttendanceService.findExportList(swmDailyAttendance);
             for (SwmDailyAttendance attendance : list) {
                 if (todayOnSiteIdCards.contains(attendance.getIdentityCard())) {
-                    attendance.setCurrentPosition("开机");
+                    attendance.setPowerOnStatus("开机");
                 } else {
-                    attendance.setCurrentPosition("关机");
+                    attendance.setPowerOnStatus("关机");
                 }
             }
 
