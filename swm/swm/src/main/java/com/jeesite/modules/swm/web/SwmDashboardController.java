@@ -792,6 +792,9 @@ public class SwmDashboardController extends BaseController {
                     String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
                     String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
 
+                    List<String> labels = Arrays.asList(dictLabel1, dictLabel2, dictLabel3);
+                    String inClause = labels.stream().map(s -> "'" + s + "'").collect(Collectors.joining(","));
+
                     // 查询今日报警记录 构建TDengine查询SQL
                     // 获取今天开始和结束的时间戳
                     Calendar calendar = Calendar.getInstance();
@@ -815,6 +818,9 @@ public class SwmDashboardController extends BaseController {
                             .append(".swm_warning_management ")
                             .append(" WHERE warning_time >= ").append(todayStartTime)
                             .append(" AND warning_time < ").append(tomorrowStartTime)
+                            .append(" AND warning_content IN (")
+                            .append(inClause)
+                            .append(") ")
                             .append(" and status = '0' and person_name != '未知' ")
                             .append("order by create_date desc ")
                             .append("limit 20 ");
