@@ -1321,6 +1321,7 @@ public class SwmDashboardController extends BaseController {
             DictData dictData = DictUtils.getDictData("person_type_enum", key);
             Long number = 0L;
             List<SwmDailyAttendance> value = entry.getValue();
+            // 统计打卡人数
             for (SwmDailyAttendance attendance : value) {
                 if (attendance.getClockInDate() != null ) {
                     number++;
@@ -1328,6 +1329,36 @@ public class SwmDashboardController extends BaseController {
             }
             result.put("name", dictData.getDictLabel());
             result.put("presentCount", number);
+            // 创建子列表，包含具体工种信息
+            List<Map<String, Object>> childResultList = new ArrayList<>();
+
+            // 按工种进一步分组统计，同样添加空值检查
+            Map<String, List<SwmDailyAttendance>> groupedByJobType = value.stream()
+                    .filter(attendance -> attendance.getEmployeeId() != null) // 再次过滤
+                    .collect(Collectors.groupingBy(attendance -> {
+                        SwmPerson person = personMap.get(attendance.getEmployeeId());
+                        // 处理工种为null的情况
+                        return (person != null && person.getJobType() != null) ?
+                                person.getJobType() : "未知工种";
+                    }));
+
+            // 填充具体的工种数据
+            for (Map.Entry<String, List<SwmDailyAttendance>> jobEntry : groupedByJobType.entrySet()) {
+                Map<String, Object> childResult = new HashMap<>();
+                String jobType = jobEntry.getKey();
+                List<SwmDailyAttendance> jobAttendances = jobEntry.getValue();
+
+                // 统计该工种的打卡人数
+                long jobPresentCount = jobAttendances.stream()
+                        .filter(attendance -> attendance.getClockInDate() != null)
+                        .count();
+
+                childResult.put("jobTypeName", jobType);
+                childResult.put("jobTypeCount", jobPresentCount);
+                childResultList.add(childResult);
+            }
+
+            result.put("jobTypes", childResultList);
             resultList.add(result);
         }
         return resultList;
