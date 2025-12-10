@@ -770,6 +770,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             exportEntity.setDailyEfficiency(attendance.getDailyEfficiency());
             exportEntity.setDailyAchievementRate(attendance.getDailyAchievementRate());
             exportEntity.setAttendanceNormal(attendance.getAttendanceNormal());
+            exportEntity.setPowerOnStatus(attendance.getPowerOnStatus());
 
             // 获取实时位置而不是使用数据库中的旧数据
             String realTimePosition = getRealTimePosition(attendance.getEmployeeId());
