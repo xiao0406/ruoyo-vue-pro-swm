@@ -791,16 +791,64 @@ public class SwmDashboardController extends BaseController {
                     String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
                     String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
                     String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
-                    List<SwmWarningManagement> latestWarnings = swmWarningManagementService.findTodayWarningWithHybrid();
-                    swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
-                    swmWarningManagementService.fillLocationInfoV1(latestWarnings);
-                    for (SwmWarningManagement warning : latestWarnings) {
+
+                    // 查询今日报警记录 构建TDengine查询SQL
+                    // 获取今天开始和结束的时间戳
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.set(Calendar.HOUR_OF_DAY, 0);
+                    calendar.set(Calendar.MINUTE, 0);
+                    calendar.set(Calendar.SECOND, 0);
+                    long todayStartTime = calendar.getTimeInMillis();
+
+                    calendar.add(Calendar.DAY_OF_YEAR, 1);
+                    long tomorrowStartTime = calendar.getTimeInMillis();
+                    StringBuilder sqlBuilder = new StringBuilder();
+                    // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
+                    sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
+                            .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
+                            .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
+                            .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+                            .append("disposal_duration, ")
+                            .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+                            .append("front_alarm, type, x, y, hazard_category, location, area ")
+                            .append("FROM ").append(dbname)
+                            .append(".swm_warning_management ")
+                            .append(" WHERE warning_time >= ").append(todayStartTime)
+                            .append(" AND warning_time < ").append(tomorrowStartTime)
+                            .append(" and status = '0' and person_name != '未知' ")
+                            .append("order by create_date desc ")
+                            .append("limit 20 ");
+                    // 执行查询
+                    R<JSONObject> tdRes = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+                    List<SwmWarningManagement> list = new ArrayList<>();
+                    if (tdRes.getCode() == R.SUCCESS && tdRes.getData() != null) {
+                        JSONObject data = tdRes.getData();
+                        JSONArray rows = data.getJSONArray("data");
+                        JSONArray columnMeta = data.getJSONArray("column_meta");
+
+                        if (rows != null) {
+                            for (int i = 0; i < rows.size(); i++) {
+                                try {
+                                    JSONArray row = rows.getJSONArray(i);
+                                    SwmWarningManagement entity = swmWarningManagementService.convertToEntity(row, columnMeta);
+                                    if (entity != null) {
+                                        list.add(entity);
+                                    }
+                                } catch (Exception e) {
+                                    logger.error("转换行数据异常: {}", e.getMessage());
+                                }
+                            }
+                        }
+                    }
+                    swmWarningManagementService.fillWorkGroupInfo(list);
+                    swmWarningManagementService.fillLocationInfoV1(list);
+                    for (SwmWarningManagement warning : list) {
                         if (Arrays.asList(dictLabel1, dictLabel2, dictLabel3).contains(warning.getWarningContent())){
                             warning.setWarningTypeText(warning.getWarningContent());
                             warning.setWarningContent("异常行为预警");
                         }
                     }
-                    result.put("record", latestWarnings);
+                    result.put("record", list);
                 } catch (Exception e) {
                     logger.error("获取已处置数据异常", e);
                 }
