@@ -421,7 +421,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     /**
      * 将TDengine结果转换为实体对象
      */
-    private SwmWarningManagement convertToEntity(JSONArray row, JSONArray columnMeta) {
+    public SwmWarningManagement convertToEntity(JSONArray row, JSONArray columnMeta) {
         if (row == null || columnMeta == null) {
             logger.error("行数据或列元数据为空");
             return null;
