@@ -171,6 +171,26 @@
             <if test="personName != null and personName != ''">
                 AND a.person_name LIKE CONCAT('%', #{personName}, '%')
             </if>
+
+            <!-- 只有在 powerOnStatus 不为空时才加条件 -->
+            <if test="powerOnStatus != null and powerOnStatus != ''">
+                <!-- 假如 status = 0，则使用 IN -->
+                <if test="powerOnStatus == '0'.toString() ">
+                    AND a.device_id IN
+                    <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
+                        #{id}
+                    </foreach>
+                </if>
+                <!-- 否则 NOT IN -->
+                <if test="powerOnStatus == '1'.toString() ">
+                    AND a.device_id NOT IN
+                    <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
+                        #{id}
+                    </foreach>
+                </if>
+            </if>
+
+
         </where>
         group by a.id
         ORDER BY a.update_date DESC

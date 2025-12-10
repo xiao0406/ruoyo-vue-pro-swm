@@ -4,6 +4,7 @@ import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.sys.utils.DictUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisCallback;
@@ -97,12 +98,14 @@ public class SwmPersonCacheService {
 
             // 批量存储到Redis
             if (!personCacheMap.isEmpty()) {
+                redisService.del(ACTIVE_PERSON_CACHE_KEY);
                 redisService.hmset(ACTIVE_PERSON_CACHE_KEY, personCacheMap);
                 log.info("成功缓存{}条在职人员信息", personCacheMap.size());
             }
 
             // 存储身份证映射
             if (!identityCardMap.isEmpty()) {
+                redisService.del(IDENTITY_CARD_MAP_KEY);
                 redisService.hmset(IDENTITY_CARD_MAP_KEY, identityCardMap);
                 log.info("成功缓存{}条身份证映射信息", identityCardMap.size());
             }
@@ -159,6 +162,12 @@ public class SwmPersonCacheService {
         personInfo.put("team", personData.get("team")); // 所属班组
         personInfo.put("jobType", personData.get("jobType")); // 工种
         personInfo.put("identityCard", personData.get("identityCard")); // 身份证号码
+        if (personData.get("personType") != null) {
+            String personType = personData.get("personType").toString();
+            String dictLabel = DictUtils.getDictLabel("person_type_enum", personType, "未知类型");
+            personInfo.put("personType", dictLabel);
+        }
+
 
         // 关联表的ID字段 - 2025/06/23 Shawn 添加
         personInfo.put("workerArchiveId", personData.get("workerArchiveId")); // 工人档案ID (fms_worker.id)
