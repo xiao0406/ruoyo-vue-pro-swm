@@ -740,8 +740,7 @@
             swm_daily_attendance a
                 left JOIN swm_person b on a.employee_id = b.id
         WHERE
-            b.job_type is NOT null and b.job_type != ''
-          and a.attendance_date = #{date}
+             a.attendance_date = #{date}
           AND (a.clock_in_date IS NOT NULL or a.clock_out_date is not null)
     </select>
     <select id="attendanceListCount" resultType="java.lang.Long">
@@ -751,8 +750,7 @@
             swm_daily_attendance a
                 left JOIN swm_person b on a.employee_id = b.id
         WHERE
-            b.job_type is NOT null and b.job_type != ''
-          and a.attendance_date = #{date}
+             a.attendance_date = #{date}
           AND (a.clock_in_date IS NOT NULL or a.clock_out_date is not null)
     </select>
     <select id="findByEmployeeIdAndDateBatch" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
