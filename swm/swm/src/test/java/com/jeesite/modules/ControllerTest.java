@@ -5,6 +5,7 @@ import com.jeesite.modules.swm.mq.SwmQueueKey;
 import com.jeesite.modules.swm.mq.producer.RabbitMqSender;
 import com.jeesite.modules.swm.param.SwmOneClickRecallSaveParam;
 import com.jeesite.modules.swm.service.impl.SwmOneClickRecallServiceImpl;
+import com.jeesite.modules.swm.web.SwmDashboardController;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,12 +23,20 @@ public class ControllerTest {
     @Resource
     private SwmOneClickRecallServiceImpl swmOneClickRecallService;
 
+    @Resource
+    private SwmDashboardController swmDashboardController;
+
     @Test
     public void send(){
 
         System.out.println(123);
         SwmOneClickRecallSaveParam param = new SwmOneClickRecallSaveParam();
         swmOneClickRecallService.addRecallRecord(param);
+    }
+
+    @Test
+    public void warningStatistics(){
+        swmDashboardController.warningStatistics();
     }
 
 }

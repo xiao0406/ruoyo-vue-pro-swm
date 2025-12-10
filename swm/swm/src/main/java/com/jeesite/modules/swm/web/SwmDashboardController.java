@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -318,6 +319,105 @@ public class SwmDashboardController extends BaseController {
         chartData.put("series", series);
         result.put("chartData", chartData);
 
+        return result;
+    }
+
+    /**
+     * 全部预警报警统计
+     */
+    @GetMapping(value = "warningStatistics")
+    @ResponseBody
+    @ApiOperation("全部预警报警统计")
+    public Map<String, Object> warningStatistics() {
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 取字典标签（这就是 DB 中的 warning_content 值）
+        String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+        String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
+        String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+        String dictLabel4 = DictUtils.getDictLabel("warning_content_enum", "危险区域闯入提示", "危险区域闯入提示");
+        String dictLabel5 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+
+//        List<String> labels = Arrays.asList(dictLabel1, dictLabel2, dictLabel3, dictLabel4, dictLabel5);
+
+        // 分组查询所有报警记录数量
+        String sql = "SELECT warning_content, COUNT(1) AS cnt FROM " + dbname + ".swm_warning_management where status = '0' GROUP BY warning_content";
+        R<JSONObject> r = tdengineService.executeTDengineSQL(sql);
+        // 建立 date -> (type -> count)
+        Map<String, Long> typeCount = new LinkedHashMap<>();
+        if (r.getCode() == R.SUCCESS && r.getData() != null) {
+            JSONArray data = r.getData().getJSONArray("data");
+            if (data != null) {
+                for (int i = 0; i < data.size(); i++) {
+                    JSONArray row = data.getJSONArray(i);
+                    String type = row.getStr(0);
+                    Long count = row.getLong(1);
+                    typeCount.put(type, count);
+                }
+            }
+        }
+        // 构造 chartData
+        Map<String, Object> chartData = new HashMap<>();
+        List<String> x = new ArrayList<>();
+        x.add(dictLabel5);
+        x.add(dictLabel4);
+        x.add("异常行为");
+        chartData.put("x", x);
+        // 获取长时间静止报警数量
+        long count1 = typeCount.getOrDefault(dictLabel1, 0L);
+        // 获取脱帽报警数量
+        long count2 = typeCount.getOrDefault(dictLabel2, 0L);
+        // 获取跌落报警数量
+        long count3 = typeCount.getOrDefault(dictLabel3, 0L);
+        // 获取危险区域闯入提示数量
+        long count4 = typeCount.getOrDefault(dictLabel4, 0L);
+        // 获取应急呼叫报警数量
+        long count5 = typeCount.getOrDefault(dictLabel5, 0L);
+        List<Long> y = new ArrayList<>();
+        y.add(count5);
+        y.add(count4);
+        y.add(count3 + count2 + count1);
+        chartData.put("y", y);
+        result.put("chartData", chartData);
+
+        // 分组查询今日报警记录数量
+        // 查询范围：今天，格式 yyyy-MM-dd HH:mm:ss
+        LocalDate today = LocalDate.now();
+        String startDate = today.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String endDate   = today.atTime(LocalTime.MAX).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String todaySql = "SELECT warning_content, COUNT(1) AS cnt FROM " + dbname + ".swm_warning_management where create_date >= '" + startDate +
+                "' AND create_date <= '" + endDate + "' AND status = '0' GROUP BY warning_content";
+        R<JSONObject> todayR = tdengineService.executeTDengineSQL(todaySql);
+        Map<String, Long> todayTypeCount = new LinkedHashMap<>();
+        if (todayR.getCode() == R.SUCCESS && todayR.getData() != null) {
+            JSONArray data = todayR.getData().getJSONArray("data");
+            if (data != null) {
+                for (int i = 0; i < data.size(); i++) {
+                    JSONArray row = data.getJSONArray(i);
+                    String type = row.getStr(0);
+                    Long count = row.getLong(1);
+                    todayTypeCount.put(type, count);
+                }
+            }
+        }
+
+        Map<String, Long> todayData = new LinkedHashMap<>();
+        // 获取长时间静止报警数量
+        long todayCount1 = todayTypeCount.getOrDefault(dictLabel1, 0L);
+        // 获取脱帽报警数量
+        long todayCount2 = todayTypeCount.getOrDefault(dictLabel2, 0L);
+        // 获取跌落报警数量
+        long todayCount3 = todayTypeCount.getOrDefault(dictLabel3, 0L);
+        // 获取危险区域闯入提示数量
+        long todayCount4 = todayTypeCount.getOrDefault(dictLabel4, 0L);
+        // 获取应急呼叫报警数量
+        long todayCount5 = todayTypeCount.getOrDefault(dictLabel5, 0L);
+
+        todayData.put(dictLabel5, todayCount5);
+        todayData.put(dictLabel4, todayCount4);
+        todayData.put("异常行为", todayCount3 + todayCount2 + todayCount1);
+
+        result.put("todayData", todayData);
         return result;
     }
 
@@ -692,7 +792,7 @@ public class SwmDashboardController extends BaseController {
                     String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
                     String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
                     List<SwmWarningManagement> latestWarnings = swmWarningManagementService.findTodayWarningWithHybrid();
-//                    swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
+                    swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
                     swmWarningManagementService.fillLocationInfoV1(latestWarnings);
                     for (SwmWarningManagement warning : latestWarnings) {
                         if (Arrays.asList(dictLabel1, dictLabel2, dictLabel3).contains(warning.getWarningContent())){
