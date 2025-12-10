@@ -47,12 +47,14 @@ public class SwmHelmetCacheService {
             // 批量缓存映射关系（永不过期）
             if (!devicePersonMap.isEmpty()) {
                 Map<String, Object> devicePersonMapObj = new HashMap<>(devicePersonMap);
+                redisService.del(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP);
                 redisService.hmset(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, devicePersonMapObj);
                 log.info("已缓存设备到人员映射关系，共{}条", devicePersonMap.size());
             }
 
             if (!personDeviceMap.isEmpty()) {
                 Map<String, Object> personDeviceMapObj = new HashMap<>(personDeviceMap);
+                redisService.del(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP);
                 redisService.hmset(SwmRedisConstant.Helmet.PERSON_DEVICE_MAP, personDeviceMapObj);
                 log.info("已缓存人员到设备映射关系，共{}条", personDeviceMap.size());
             }

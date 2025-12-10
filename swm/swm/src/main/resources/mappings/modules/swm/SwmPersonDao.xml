@@ -363,11 +363,11 @@
         a.name AS "name",
         a.person_type AS "personType",
         a.gender AS "gender",
-        COALESCE(MAX(o.office_name), MAX(backup_o.office_name)) AS "company",
-        COALESCE(MAX(p.position_name), MAX(backup_p.position_name)) AS "department",
-        COALESCE(MAX(fpl.prod_line_name), MAX(backup_fpl.prod_line_name)) AS "prodLine",
-        COALESCE(MAX(wg.work_group_name), MAX(backup_wg.work_group_name)) AS "team",
-        COALESCE(MAX(a.job_type), f.work_type) AS "jobType",
+        jso.office_name AS "company",
+        pa.position_name AS "department",
+        pl.prod_line_name AS "prodLine",
+        wg.work_group_name AS "team",
+        a.job_type AS "jobType",
         a.safety_helmet_id AS "safetyHelmetId",
         a.personnel_status AS "personnelStatus",
         a.identity_card AS "identityCard",
@@ -377,45 +377,29 @@
         a.update_by AS "updateBy",
         a.update_date AS "updateDate",
         a.remarks AS "remarks",
-        a.status AS "status",
-        MAX(f.id) AS "workerArchiveId",
-        MAX(o.office_code) AS "officeCode",
-        MAX(p.id) AS "positionArchiveId",
-        MAX(wg.id) AS "workGroupId",
-        MAX(fpl.id) AS "prodLineId"
+        a.status AS "status"
         FROM swm_person a
-        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
-            AND NOT EXISTS (
-                SELECT 1
-                FROM fms_worker fw2
-                WHERE fw2.identity_code = f.identity_code
-                AND fw2.create_date > f.create_date
-            )
-        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
-        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
-        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
-        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-        LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
-        LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
-        LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
-        LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+        left join fms_position_archive pa on a.department = pa.id  COLLATE utf8mb4_general_ci
+        left join fms_prod_line pl on a.prod_line = pl.id COLLATE utf8mb4_general_ci
+        left join fms_work_group wg on a.team = wg.id   COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        left join js_sys_office jso on a.company = jso.office_code  COLLATE utf8mb4_general_ci
         WHERE a.personnel_status = '1'
         AND a.status = '0'
         <if test="query.officeCode != null and query.officeCode != ''">
-            AND o.office_code = #{query.officeCode}
+            AND a.company = #{query.officeCode}
         </if>
         <if test="query.positionArchiveId != null and query.positionArchiveId != ''">
-            AND p.id = #{query.positionArchiveId}
+            AND a.department = #{query.positionArchiveId}
         </if>
         <if test="query.prodLineId != null and query.prodLineId != ''">
-            AND fpl.id = #{query.prodLineId}
+            AND a.prod_line = #{query.prodLineId}
         </if>
         <if test="query.workGroupId != null and query.workGroupId != ''">
-            AND wg.id = #{query.workGroupId}
+            AND a.team = #{query.workGroupId}
         </if>
         <if test="query.jobType != null and query.jobType != ''">
-            AND f.work_type = #{query.jobType}
+            AND a.job_type = #{query.jobType}
         </if>
         GROUP BY a.id  <!-- 只需按主键分组 -->
         ORDER BY MAX(a.update_date) DESC  <!-- 聚合排序字段 -->

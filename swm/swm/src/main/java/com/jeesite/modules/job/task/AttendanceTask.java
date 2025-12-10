@@ -1465,7 +1465,7 @@ public class AttendanceTask {
         List<SwmDailyAttendance> clockOutRecords = Collections.synchronizedList(new ArrayList<>());
 
         Date now = new Date();
-        Date threeMinutesAgo = DateUtil.offsetMinute(now, -3);
+        Date threeMinutesAgo = DateUtil.offsetMinute(now, -10);
         String startTime = DateUtil.formatDateTime(threeMinutesAgo);
         String endTime = DateUtil.formatDateTime(now);
 
