@@ -363,4 +363,11 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         page.setList(list);
         return page;
     }
+
+    public Page<SwmDashboardNewController.Person> findManageTodayList(SwmDashboardNewController.Person vo) {
+        Page<SwmDashboardNewController.Person> page = vo.getPage();
+        List<SwmDashboardNewController.Person> list = dao.findManageTodayList(vo);
+        page.setList(list);
+        return page;
+    }
 }

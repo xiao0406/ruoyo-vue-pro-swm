@@ -271,13 +271,11 @@ public class SwmDashboardNewController extends BaseController {
 
         //工人今日在厂
         String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.TEAMLEADER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
-        long todayAttendanceWorkerWhiteCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
-                && Arrays.asList(managerIds).contains(a.getPersonType())).count();
+        long todayAttendanceWorkerWhiteCount = swmPersonList.stream().filter(a ->  Arrays.asList(managerIds).contains(a.getPersonType())).count();
         result.put("todayAttendanceWorkerWhiteCount", todayAttendanceWorkerWhiteCount);
 
         //管理员今日在厂
-        long todayAttendanceManagerWhiteCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
-                && SwmPerson.PersonTypeEnum.MANAGER.equals(a.getPersonType())).count();
+        long todayAttendanceManagerWhiteCount = swmPersonList.stream().filter(a ->  SwmPerson.PersonTypeEnum.MANAGER.equals(a.getPersonType())).count();
         result.put("todayAttendanceManagerWhiteCount", todayAttendanceManagerWhiteCount);
 
 
@@ -1126,7 +1124,8 @@ public class SwmDashboardNewController extends BaseController {
         vo.setPersonTypeList(Arrays.asList(managerIds));
         String date = DateUtils.getDate();
         vo.setDate(date);
-        Page<SwmDashboardNewController.Person> page = swmPersonService.findTodayAttendance(vo);
+//        Page<SwmDashboardNewController.Person> page = swmPersonService.findTodayAttendance(vo);
+        Page<SwmDashboardNewController.Person> page = swmPersonService.findManageTodayList(vo);
         return page;
     }
 
@@ -1138,7 +1137,7 @@ public class SwmDashboardNewController extends BaseController {
         vo.setPersonTypeList(Arrays.asList(managerIds));
         String date = DateUtils.getDate();
         vo.setDate(date);
-        Page<SwmDashboardNewController.Person> page = swmPersonService.findTodayAttendance(vo);
+        Page<SwmDashboardNewController.Person> page = swmPersonService.findManageTodayList(vo);
         return page;
     }
 

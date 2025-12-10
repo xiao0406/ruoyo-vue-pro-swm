@@ -40,7 +40,7 @@
         LEFT JOIN js_sys_office jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         <where>
-            a.status = '0'
+            a.status = '0' and a.personnel_status = '1'
             <if test="company != null and company != ''">
                 AND jso.office_name LIKE CONCAT('%', #{company}, '%')
             </if>
@@ -327,7 +327,7 @@
             team, department, prod_line, job_type, safety_helmet_id, company,
             create_by, create_date, update_by, update_date, remarks,dept , position,  gender
         FROM swm_person
-        WHERE status = '0'
+        WHERE status = '0' and personnel_status = '1'
           AND identity_card IN
         <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
             #{idCard}
@@ -338,7 +338,7 @@
     <select id="countDistinctByIdentityCard" resultType="int">
         SELECT COUNT(DISTINCT identity_card)
         FROM swm_person
-        WHERE status = '0'
+        WHERE status = '0' and personnel_status = '1'
     </select>
 
     <select id="listByOrgAndWorkType" resultType="com.jeesite.modules.swm.entity.SwmPerson">
@@ -429,7 +429,7 @@
         team, department, prod_line, job_type, safety_helmet_id, company,
         create_by, create_date, update_by, update_date, remarks,dept , position,  gender
         FROM swm_person
-        WHERE status = '0'
+        WHERE status = '0' and personnel_status = '1'
         AND identity_card IN
         <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
             #{idCard}
@@ -439,7 +439,7 @@
         SELECT
         count(id)
         FROM swm_person
-        WHERE status = '0'
+        WHERE status = '0' and a.personnel_status = '1'
         AND identity_card IN
         <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
             #{idCard}
@@ -455,6 +455,7 @@
         WHERE
             shd.`status` = 0
           AND sp.`status` = 0
+          and sp.personnel_status = '1'
           AND shd.assigned_person IS NOT NULL
     </select>
     <select id="findPersonList" resultType="com.jeesite.modules.entity.AiDto$Trajectory">
@@ -473,7 +474,7 @@
                 LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
                 LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
         WHERE
-            sp.STATUS = 0
+            sp.STATUS = 0 and sp.personnel_status = '1'
     </select>
     <select id="findTodayAttendance" resultType="com.jeesite.modules.swm.web.SwmDashboardNewController$Person">
         SELECT
@@ -485,12 +486,30 @@
             swm_daily_attendance sda
                 join swm_person sp on sda.identity_card = sp.identity_card
         <where>
-             sda.`status` = '0' and sp.`status` ='0'
+             sda.`status` = '0' and sp.`status` ='0' and sp.personnel_status = '1'
             and sda.clock_in_date  is not  NULL
             and sda.attendance_date  = #{date}
               <if test="personTypeList != null and personTypeList.size >0">
                 and sp.person_type in
                   <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                    #{personType}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <select id="findManageTodayList" resultType="com.jeesite.modules.swm.web.SwmDashboardNewController$Person">
+        SELECT
+        sp.`name`,
+        sp.gender,
+        sp.phone_number,
+        sp.person_type
+        FROM
+         swm_person sp
+        <where>
+            sp.`status` ='0' and sp.personnel_status = '1'
+            <if test="personTypeList != null and personTypeList.size >0">
+                and sp.person_type in
+                <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
                     #{personType}
                 </foreach>
             </if>
