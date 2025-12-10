@@ -10,6 +10,7 @@ import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.sys.utils.DictUtils;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
@@ -158,6 +159,10 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String dept;// 部门
     private String position;// 职务
     private List<String> idCards;
+    @ApiModelProperty(value = "开机状态  0-开机，1-关机")
+    private String powerOnStatus;
+    //在线人数
+    private List<String> todayOnSiteIdCards;
 
 
     public SwmPerson() {

@@ -496,7 +496,7 @@ public class SwmDashboardNewController extends BaseController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:00");
         // 生成从 00:00 到当前时间的小时列表
         List<String> hourList = new ArrayList<>();
-        for (int hour = 0; hour <= currentHour; hour++) {
+        for (int hour = 6; hour <= currentHour; hour++) {
             String time = LocalTime.of(hour, 0).format(formatter);
             hourList.add(time);
         }

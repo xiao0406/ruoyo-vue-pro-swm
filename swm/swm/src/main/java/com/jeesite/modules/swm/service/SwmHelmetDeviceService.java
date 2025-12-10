@@ -9,6 +9,8 @@ import cn.hutool.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmHelmetDeviceDao;
 import com.jeesite.modules.swm.dao.SwmSafetyHelmetOrderDao;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
@@ -17,23 +19,20 @@ import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.utils.R;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -66,6 +65,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
     @Value("${tdengine.dbname}")
     private String dbname;
+
+    @Autowired
+    private RedisService redisService;
 
     /**
      * 安全帽超级表名称
@@ -145,7 +147,34 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             return findPageWithBatteryFilter(device);
         } else {
             // 走原有查询流程
-            return findPageNormal(device);
+            List<String> deviceIdList = new ArrayList<>();
+            //查询设备在线数量
+            try {
+                Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+                if (deviceIds != null) {
+                    deviceIdList = deviceIds.stream()
+                            .filter(Objects::nonNull)
+                            .map(Object::toString)
+                            .collect(Collectors.toList());
+                    device.setDeviceOnlist(deviceIdList);
+                } else {
+                    device.setDeviceOnlist(new ArrayList<>());
+                }
+            } catch (Exception e) {
+                log.warn("获取在线设备列表失败，使用空列表", e);
+                device.setDeviceOnlist(new ArrayList<>());
+            }
+            Page<SwmHelmetDevice> result = findPageNormal(device);
+            if (result != null) {
+                for (SwmHelmetDevice swmHelmetDevice : result.getList()) {
+                    if (deviceIdList.contains(swmHelmetDevice.getDeviceId())){
+                        swmHelmetDevice.setPowerOnStatus("0");
+                    }else {
+                        swmHelmetDevice.setPowerOnStatus("1");
+                    }
+                }
+            }
+            return result;
         }
     }
 
