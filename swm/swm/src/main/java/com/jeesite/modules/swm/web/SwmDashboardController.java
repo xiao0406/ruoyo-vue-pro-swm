@@ -791,8 +791,10 @@ public class SwmDashboardController extends BaseController {
                     String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
                     String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
                     String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+                    String dictLabel4 = DictUtils.getDictLabel("warning_content_enum", "危险区域闯入提示", "危险区域闯入提示");
+                    String dictLabel5 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
 
-                    List<String> labels = Arrays.asList(dictLabel1, dictLabel2, dictLabel3);
+                    List<String> labels = Arrays.asList(dictLabel1, dictLabel2, dictLabel3, dictLabel4, dictLabel5);
                     String inClause = labels.stream().map(s -> "'" + s + "'").collect(Collectors.joining(","));
 
                     // 查询今日报警记录 构建TDengine查询SQL
