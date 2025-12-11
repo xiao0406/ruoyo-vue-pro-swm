@@ -4,52 +4,48 @@
 
     <!-- 查询人员追踪信息 -->
     <select id="findPersonTrackInfo" resultType="com.jeesite.modules.swm.entity.PersonTrackInfo">
-        SELECT 
-            a.id AS id,
-            a.name AS name,
-            a.person_type AS personType,
-            a.gender AS gender,
-            -- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
-            COALESCE(backup_o.office_name,o.office_name) AS organization,
-            COALESCE(p.position_name, backup_p.position_name) AS workShop,                -- 🏭 车间字段
-            COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS prodLine,          -- 🏗️ 产线字段  
-            COALESCE(wg.work_group_name, backup_wg.work_group_name) AS teamGroup,         -- 👥 班组字段
-            COALESCE(f.work_type, backup_wt.work_type) AS workType,                       -- 工种字段
-            a.safety_helmet_id AS safetyHelmetId,
-            a.personnel_status AS personnelStatus,
-            a.safety_education AS safetyEducation,
-            a.identity_card AS identityCard,
-            a.phone_number AS phoneNumber,
-            a.helmet_returned AS helmetReturned,
-            a.departure_type AS departureType,
-            a.departure_reason AS departureReason,
-            a.departure_date AS departureDate,
-            a.create_by AS createBy,
-            a.create_date AS createDate,
-            a.update_by AS updateBy,
-            a.update_date AS updateDate,
-            a.remarks AS remarks,
-            a.status AS status,
-            -- 关联表的ID字段 2025/06/24 Shawn 添加
-            f.id AS workerArchiveId,                    -- 工人档案ID
-            COALESCE(o.office_code, backup_o.office_code) AS officeCode,                -- 组织编码
-            COALESCE(p.id, backup_p.id) AS positionArchiveId,                          -- 车间ID
-            COALESCE(wg.id, backup_wg.id) AS workGroupId,                              -- 班组ID
-            COALESCE(fpl.id, backup_fpl.id) AS prodLineId                              -- 产线ID
-        FROM swm_person a 
-        -- 原有的关联查询（通过fms_worker关联）
-        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci 
-        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL 
-        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ' 
-        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id 
-        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-        -- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
-        LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
-        LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
-        LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
-        LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+        SELECT
+        a.id AS id,
+        a.NAME AS NAME,
+        a.person_type AS personType,
+        a.gender AS gender,
+        jso.office_name AS organization,
+        pa.position_name AS workShop,
+        pl.prod_line_name AS prodLine,
+        wg.work_group_name AS teamGroup,
+        a.job_type AS workType,
+        a.safety_helmet_id AS safetyHelmetId,
+        a.personnel_status AS personnelStatus,
+        a.safety_education AS safetyEducation,
+        a.identity_card AS identityCard,
+        a.phone_number AS phoneNumber,
+        a.helmet_returned AS helmetReturned,
+        a.departure_type AS departureType,
+        a.departure_reason AS departureReason,
+        a.departure_date AS departureDate,
+        a.create_by AS createBy,
+        a.create_date AS createDate,
+        a.update_by AS updateBy,
+        a.update_date AS updateDate,
+        a.remarks AS remarks,
+        a.STATUS AS STATUS,
+        f.id AS workerArchiveId,
+        a.company AS officeCode,
+        a.department AS positionArchiveId,
+        a.team AS workGroupId,
+        a.prod_line AS prodLineId
+        FROM
+        swm_person a
+        LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
-        WHERE a.personnel_status = '1' and a.status = '0'
+        LEFT JOIN js_sys_office jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+        AND NOT EXISTS (SELECT 1 FROM fms_worker fw2 WHERE fw2.identity_code = f.identity_code AND fw2.create_date > f.create_date)
+        WHERE
+        a.personnel_status = '1'
+        AND a.STATUS = '0'
         <if test="searchName != null and searchName != ''">
             AND a.name LIKE CONCAT('%', #{searchName}, '%')
         </if>
@@ -59,29 +55,6 @@
                 #{personType}
             </foreach>
         </if>
-        <if test="organizationKey != null and organizationKey != ''">
-            AND (
-                -- 主关联查询条件（通过 fms_worker）
-                p.id LIKE CONCAT('%', #{organizationKey}, '%')                 -- 🏭 车间ID查询
-                OR fpl.id LIKE CONCAT('%', #{organizationKey}, '%')            -- 🏗️ 产线ID查询  
-                OR wg.id LIKE CONCAT('%', #{organizationKey}, '%')             -- 👥 班组ID查询
-                OR f.office_code = #{organizationKey}                          -- 🏢 厂间编码查询
-                OR f.id = #{organizationKey}                                   -- 人员编码
-                -- 备用关联查询条件（直接使用 swm_person 表中的字段）
-                OR backup_p.id LIKE CONCAT('%', #{organizationKey}, '%')       -- 🏭 备用车间ID查询
-                OR backup_fpl.id LIKE CONCAT('%', #{organizationKey}, '%')     -- 🏗️ 备用产线ID查询
-                OR backup_wg.id LIKE CONCAT('%', #{organizationKey}, '%')      -- 👥 备用班组ID查询
-                OR backup_o.office_code = #{organizationKey}                   -- 🏢 备用厂间编码查询
-                -- swm_person 表中的直接字段查询
-                OR a.company = #{organizationKey}                              -- 公司ID直接查询
-                OR a.department = #{organizationKey}                           -- 部门ID直接查询
-                OR a.prod_line = #{organizationKey}                            -- 产线ID直接查询
-                OR a.team = #{organizationKey}                                 -- 班组ID直接查询
-                OR a.job_type = #{organizationKey}                             -- 工种代码直接查询
-                OR backup_wt.work_type_code = #{organizationKey}               -- 备用工种代码查询
-            )
-        </if>
-        LIMIT 50000
     </select>
 
     <!-- 根据身份证号码查询人员信息 -->
