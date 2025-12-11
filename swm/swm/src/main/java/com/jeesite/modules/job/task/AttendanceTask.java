@@ -1411,7 +1411,7 @@ public class AttendanceTask {
                             String startTime = DateUtil.formatDateTime(clockStartTime);
                             String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 15));
                             Integer count = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
-                            if (count != null && count > 0) {
+                            if ( count > 0) {
                                 item.setClockInDate(nowDate);
                                 item.setClockInTime(nowDate);
                                 onlineDevices.add(item);
