@@ -1,6 +1,7 @@
 package com.jeesite.modules.swm.web;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.json.JSON;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
@@ -374,7 +375,27 @@ public class SwmDashboardController extends BaseController {
         // 获取应急呼叫报警数量
         long count5 = typeCount.getOrDefault(dictLabel5, 0L);
         List<Long> y = new ArrayList<>();
-        y.add(count5);
+
+        String sqlBuilder = "SELECT create_date, person_name FROM " + dbname + ".swm_warning_management WHERE warning_content = '" + dictLabel5 + "'";
+        // 执行查询
+        R<JSONObject> tdRes = tdengineService.executeTDengineSQL(sqlBuilder);
+        List<JSONObject> list = new ArrayList<>();
+        if (tdRes.getCode() == R.SUCCESS && tdRes.getData() != null) {
+            JSONObject data = tdRes.getData();
+            JSONArray rows = data.getJSONArray("data");
+//            JSONArray columnMeta = data.getJSONArray("column_meta");
+            if (rows != null) {
+                for (int i = 0; i < rows.size(); i++) {
+                    JSONArray row = rows.getJSONArray(i);
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.set("create_date", row.getDate(0));
+                    jsonObject.set("person_name", row.getStr(1));
+                    list.add(jsonObject);
+                }
+            }
+        }
+
+        y.add(countUniquePersonsByDay(list));
         y.add(count4);
         y.add(count3 + count2 + count1);
         chartData.put("y", y);
@@ -427,6 +448,32 @@ public class SwmDashboardController extends BaseController {
 
         result.put("todayData", todayData);
         return result;
+    }
+
+    public static long countUniquePersonsByDay(List<JSONObject> list) {
+        // 用于存储每天的人员集合（自动去重）
+        Map<String, Set<String>> dailyPersons = new HashMap<>();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        for (JSONObject obj : list) {
+            try {
+                // 解析完整日期并提取日期部分
+                Date createDate = (obj.getDate("create_date"));
+                String dayKey = dateFormat.format(createDate);
+                // 获取或创建当天的Set
+                Set<String> personsOfDay = dailyPersons.computeIfAbsent(dayKey, k -> new HashSet<>());
+                // 添加人员姓名（自动去重）
+                personsOfDay.add(obj.getStr("person_name"));
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 处理异常情况（如日期格式错误）
+            }
+        }
+        long count = 0;
+        // 转换为统计结果Map
+        for (Map.Entry<String, Set<String>> entry : dailyPersons.entrySet()) {
+            count = count + entry.getValue().size();
+        }
+        return count;
     }
 
 
