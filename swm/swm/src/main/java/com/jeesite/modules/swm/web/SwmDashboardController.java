@@ -411,9 +411,17 @@ public class SwmDashboardController extends BaseController {
         // 获取危险区域闯入提示数量
         long todayCount4 = todayTypeCount.getOrDefault(dictLabel4, 0L);
         // 获取应急呼叫报警数量
-        long todayCount5 = todayTypeCount.getOrDefault(dictLabel5, 0L);
-
-        todayData.put(dictLabel5, todayCount5);
+        String todayEmergencySql = "SELECT warning_content, person_name, COUNT(1) AS cnt FROM " + dbname + ".swm_warning_management where create_date >= '" + startDate +
+                "' AND create_date <= '" + endDate + "' AND status = '0' AND warning_content = '" + dictLabel5 + "' GROUP BY warning_content, person_name";
+        R<JSONObject> todayEmergencyR = tdengineService.executeTDengineSQL(todayEmergencySql);
+        long emergencyCount = 0;
+        if (todayEmergencyR.getCode() == R.SUCCESS && todayEmergencyR.getData() != null) {
+            JSONArray data = todayEmergencyR.getData().getJSONArray("data");
+            if (data != null) {
+                emergencyCount = data.size();
+            }
+        }
+        todayData.put(dictLabel5, emergencyCount);
         todayData.put(dictLabel4, todayCount4);
         todayData.put("异常行为", todayCount3 + todayCount2 + todayCount1);
 
