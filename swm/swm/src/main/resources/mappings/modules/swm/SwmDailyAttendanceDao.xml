@@ -87,16 +87,16 @@
                 AND a.work_time_range LIKE concat('%', #{workTimeRange}, '%')
             </if>
             <if test="company != null and company != ''">
-                AND ,jso.office_name LIKE concat('%', #{company}, '%')
+                AND sp.company = #{company}
             </if>
             <if test="department != null and department != ''">
-                AND pa.position_name LIKE concat('%', #{department}, '%')
+                AND sp.department = #{department}
             </if>
             <if test="prodLine != null and prodLine != ''">
-                AND pl.prod_line_name LIKE concat('%', #{prodLine}, '%')
+                AND sp.prod_line = #{prodLine}
             </if>
             <if test="team != null and team != ''">
-                AND wg.work_group_name LIKE concat('%', #{team}, '%')
+                AND sp.team = #{team}
             </if>
         </where>
         <choose>
