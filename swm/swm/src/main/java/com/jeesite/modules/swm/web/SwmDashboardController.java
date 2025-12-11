@@ -1517,10 +1517,20 @@ public class SwmDashboardController extends BaseController {
                         .filter(attendance -> attendance.getClockInDate() != null)
                         .count();
 
-                childResult.put("jobTypeName", jobType);
-                childResult.put("jobTypeCount", jobPresentCount);
-                childResultList.add(childResult);
+                // 只添加数量大于0的记录
+                if (jobPresentCount > 0) {
+                    childResult.put("jobTypeName", jobType);
+                    childResult.put("jobTypeCount", jobPresentCount);
+                    childResultList.add(childResult);
+                }
             }
+
+            // 按照数量降序排序
+            childResultList.sort((a, b) -> {
+                Long countA = (Long) a.get("jobTypeCount");
+                Long countB = (Long) b.get("jobTypeCount");
+                return countB.compareTo(countA);
+            });
 
             result.put("jobTypes", childResultList);
             resultList.add(result);
