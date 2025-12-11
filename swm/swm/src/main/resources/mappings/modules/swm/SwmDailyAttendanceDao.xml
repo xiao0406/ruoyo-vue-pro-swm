@@ -52,7 +52,7 @@
 
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmDailyAttendance">
-        SELECT ${sqlMap.column.toSql()}
+        SELECT DISTINCT ${sqlMap.column.toSql()}
         ,jso.office_name AS company,
         pa.position_name AS department,
         pl.prod_line_name AS prodLine,
@@ -67,6 +67,7 @@
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         <where>
             ${sqlMap.where.toSql()}
+            and  sp.status = '0' and sp.personnel_status = '1'
             <!-- 自定义条件 -->
             <if test="sqlMap.where.sqlSegment != null and sqlMap.where.sqlSegment != ''">
                 AND (${sqlMap.where.sqlSegment})
