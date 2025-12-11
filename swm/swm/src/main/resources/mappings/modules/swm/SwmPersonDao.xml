@@ -439,7 +439,7 @@
         SELECT
         count(id)
         FROM swm_person
-        WHERE status = '0' and a.personnel_status = '1'
+        WHERE status = '0' and personnel_status = '1'
         AND identity_card IN
         <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
             #{idCard}
