@@ -52,10 +52,22 @@
 
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmDailyAttendance">
-        SELECT ${sqlMap.column.toSql()}
+        SELECT DISTINCT ${sqlMap.column.toSql()}
+        ,jso.office_name AS company,
+        pa.position_name AS department,
+        pl.prod_line_name AS prodLine,
+        wg.work_group_name AS team
         FROM ${sqlMap.table.toSql()}
+        LEFT JOIN swm_person sp ON a.identity_card = sp.identity_card
+        LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON sp.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         <where>
             ${sqlMap.where.toSql()}
+            and  sp.status = '0' and sp.personnel_status = '1'
             <!-- 自定义条件 -->
             <if test="sqlMap.where.sqlSegment != null and sqlMap.where.sqlSegment != ''">
                 AND (${sqlMap.where.sqlSegment})
@@ -74,6 +86,18 @@
             </if>
             <if test="workTimeRange != null and workTimeRange != ''">
                 AND a.work_time_range LIKE concat('%', #{workTimeRange}, '%')
+            </if>
+            <if test="company != null and company != ''">
+                AND sp.company = #{company}
+            </if>
+            <if test="department != null and department != ''">
+                AND sp.department = #{department}
+            </if>
+            <if test="prodLine != null and prodLine != ''">
+                AND sp.prod_line = #{prodLine}
+            </if>
+            <if test="team != null and team != ''">
+                AND sp.team = #{team}
             </if>
         </where>
         <choose>

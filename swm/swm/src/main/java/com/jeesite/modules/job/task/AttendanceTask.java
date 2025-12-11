@@ -1409,7 +1409,7 @@ public class AttendanceTask {
                         if (clockStartTime != null){
                             //看看当前时间是否在应该打卡时间范围之内
                             String startTime = DateUtil.formatDateTime(clockStartTime);
-                            String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 7));
+                            String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 15));
                             Integer count = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
                             if (count != null && count > 0) {
                                 item.setClockInDate(nowDate);

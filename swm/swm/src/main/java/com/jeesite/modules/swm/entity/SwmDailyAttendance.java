@@ -94,6 +94,10 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private String teamName;
     @ApiModelProperty(value = "开机状态  0-开机，1-关机")
     private String powerOnStatus;
+    @ApiModelProperty(value = "制造单位")
+    private String company;
+    @ApiModelProperty(value = "产线")
+    private String prodLine;
 
     public SwmDailyAttendance() {
         this(null);
