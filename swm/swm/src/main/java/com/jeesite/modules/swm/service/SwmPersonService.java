@@ -4,10 +4,13 @@
  */
 package com.jeesite.modules.swm.service;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.google.common.collect.Lists;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
@@ -21,9 +24,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,6 +41,8 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     @Autowired
     private ApplicationContext applicationContext;
+    @Autowired
+    private RedisService redisService;
 
     /**
      * 获取单条数据
@@ -75,7 +78,30 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         // 设置状态条件为在职或离职
         swmPerson.getSqlMap().getWhere().and("personnel_status", QueryType.IN,
                 Lists.newArrayList(SwmPerson.PersonStatusEnum.ACTIVE, SwmPerson.PersonStatusEnum.INACTIVE));
-        return this.findPage(swmPerson);
+
+        //查询设备在线数量
+        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        Set<String> todayOnSiteIdCards = new HashSet<>();
+        if (deviceIds != null) {
+            for (Object deviceId : deviceIds) {
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                if (currentPerson != null){
+                    todayOnSiteIdCards.add(currentPerson);
+                }
+            }
+        }
+        swmPerson.setTodayOnSiteIdCards(new ArrayList<>(todayOnSiteIdCards));
+        Page<SwmPerson> result = this.findPage(swmPerson);
+        if(CollectionUtils.isNotEmpty(result.getList())){
+            for (SwmPerson person : result.getList()) {
+                if (todayOnSiteIdCards.contains(person.getIdentityCard())){
+                    person.setPowerOnStatus("0");
+                }else {
+                    person.setPowerOnStatus("1");
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -341,5 +367,12 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     public List<SwmPerson> peronsList(SwmPerson swmPerson) {
         return  dao.peronsList(swmPerson);
+    }
+
+    public Page<SwmDashboardNewController.Person> findManageTodayList(SwmDashboardNewController.Person vo) {
+        Page<SwmDashboardNewController.Person> page = vo.getPage();
+        List<SwmDashboardNewController.Person> list = dao.findManageTodayList(vo);
+        page.setList(list);
+        return page;
     }
 }

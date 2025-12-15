@@ -415,7 +415,8 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
         // 如果已经是编码格式，直接返回
         if (isCodeFormat(personTypeInput)) {
             // 验证编码是否有效
-            if ("0".equals(personTypeInput) || "1".equals(personTypeInput)) {
+            if (SwmPerson.PersonTypeEnum.WORKER.equals(personTypeInput) || SwmPerson.PersonTypeEnum.MANAGER.equals(personTypeInput)
+        || SwmPerson.PersonTypeEnum.TEAMLEADER.equals(personTypeInput) || SwmPerson.PersonTypeEnum.SPECIALTRADES.equals(personTypeInput )) {
                 return new NameConversionResult(personTypeInput, personTypeInput, false);
             } else {
                 return new NameConversionResult(personTypeInput, "无效的人员类型编码: " + personTypeInput);

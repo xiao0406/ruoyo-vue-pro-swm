@@ -1430,9 +1430,9 @@ public class AttendanceTask {
                         if (clockStartTime != null){
                             //看看当前时间是否在应该打卡时间范围之内
                             String startTime = DateUtil.formatDateTime(clockStartTime);
-                            String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 7));
+                            String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 15));
                             Integer count = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
-                            if (count != null && count > 0) {
+                            if ( count > 0) {
                                 item.setClockInDate(nowDate);
                                 item.setClockInTime(nowDate);
                                 item.setCorpCode(CorpUtils.getCurrentCorpCode());
@@ -1488,7 +1488,7 @@ public class AttendanceTask {
         List<SwmDailyAttendance> clockOutRecords = Collections.synchronizedList(new ArrayList<>());
 
         Date now = new Date();
-        Date threeMinutesAgo = DateUtil.offsetMinute(now, -3);
+        Date threeMinutesAgo = DateUtil.offsetMinute(now, -10);
         String startTime = DateUtil.formatDateTime(threeMinutesAgo);
         String endTime = DateUtil.formatDateTime(now);
 

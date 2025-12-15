@@ -1,6 +1,7 @@
 package com.jeesite.modules.swm.web;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.json.JSON;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
@@ -29,6 +30,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -319,6 +321,159 @@ public class SwmDashboardController extends BaseController {
         result.put("chartData", chartData);
 
         return result;
+    }
+
+    /**
+     * 全部预警报警统计
+     */
+    @GetMapping(value = "warningStatistics")
+    @ResponseBody
+    @ApiOperation("全部预警报警统计")
+    public Map<String, Object> warningStatistics() {
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 取字典标签（这就是 DB 中的 warning_content 值）
+        String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
+        String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
+        String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
+        String dictLabel4 = DictUtils.getDictLabel("warning_content_enum", "危险区域闯入提示", "危险区域闯入提示");
+        String dictLabel5 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+
+//        List<String> labels = Arrays.asList(dictLabel1, dictLabel2, dictLabel3, dictLabel4, dictLabel5);
+
+        // 分组查询所有报警记录数量
+        String sql = "SELECT warning_content, COUNT(1) AS cnt FROM " + dbname + ".swm_warning_management where status = '0' GROUP BY warning_content";
+        R<JSONObject> r = tdengineService.executeTDengineSQL(sql);
+        // 建立 date -> (type -> count)
+        Map<String, Long> typeCount = new LinkedHashMap<>();
+        if (r.getCode() == R.SUCCESS && r.getData() != null) {
+            JSONArray data = r.getData().getJSONArray("data");
+            if (data != null) {
+                for (int i = 0; i < data.size(); i++) {
+                    JSONArray row = data.getJSONArray(i);
+                    String type = row.getStr(0);
+                    Long count = row.getLong(1);
+                    typeCount.put(type, count);
+                }
+            }
+        }
+        // 构造 chartData
+        Map<String, Object> chartData = new HashMap<>();
+        List<String> x = new ArrayList<>();
+        x.add(dictLabel5);
+        x.add(dictLabel4);
+        x.add("异常行为");
+        chartData.put("x", x);
+        // 获取长时间静止报警数量
+        long count1 = typeCount.getOrDefault(dictLabel1, 0L);
+        // 获取脱帽报警数量
+        long count2 = typeCount.getOrDefault(dictLabel2, 0L);
+        // 获取跌落报警数量
+        long count3 = typeCount.getOrDefault(dictLabel3, 0L);
+        // 获取危险区域闯入提示数量
+        long count4 = typeCount.getOrDefault(dictLabel4, 0L);
+        // 获取应急呼叫报警数量
+        long count5 = typeCount.getOrDefault(dictLabel5, 0L);
+        List<Long> y = new ArrayList<>();
+
+        String sqlBuilder = "SELECT create_date, person_name FROM " + dbname + ".swm_warning_management WHERE warning_content = '" + dictLabel5 + "'";
+        // 执行查询
+        R<JSONObject> tdRes = tdengineService.executeTDengineSQL(sqlBuilder);
+        List<JSONObject> list = new ArrayList<>();
+        if (tdRes.getCode() == R.SUCCESS && tdRes.getData() != null) {
+            JSONObject data = tdRes.getData();
+            JSONArray rows = data.getJSONArray("data");
+//            JSONArray columnMeta = data.getJSONArray("column_meta");
+            if (rows != null) {
+                for (int i = 0; i < rows.size(); i++) {
+                    JSONArray row = rows.getJSONArray(i);
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.set("create_date", row.getDate(0));
+                    jsonObject.set("person_name", row.getStr(1));
+                    list.add(jsonObject);
+                }
+            }
+        }
+
+        y.add(countUniquePersonsByDay(list));
+        y.add(count4);
+        y.add(count3 + count2 + count1);
+        chartData.put("y", y);
+        result.put("chartData", chartData);
+
+        // 分组查询今日报警记录数量
+        // 查询范围：今天，格式 yyyy-MM-dd HH:mm:ss
+        LocalDate today = LocalDate.now();
+        String startDate = today.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String endDate   = today.atTime(LocalTime.MAX).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String todaySql = "SELECT warning_content, COUNT(1) AS cnt FROM " + dbname + ".swm_warning_management where create_date >= '" + startDate +
+                "' AND create_date <= '" + endDate + "' AND status = '0' GROUP BY warning_content";
+        R<JSONObject> todayR = tdengineService.executeTDengineSQL(todaySql);
+        Map<String, Long> todayTypeCount = new LinkedHashMap<>();
+        if (todayR.getCode() == R.SUCCESS && todayR.getData() != null) {
+            JSONArray data = todayR.getData().getJSONArray("data");
+            if (data != null) {
+                for (int i = 0; i < data.size(); i++) {
+                    JSONArray row = data.getJSONArray(i);
+                    String type = row.getStr(0);
+                    Long count = row.getLong(1);
+                    todayTypeCount.put(type, count);
+                }
+            }
+        }
+
+        Map<String, Long> todayData = new LinkedHashMap<>();
+        // 获取长时间静止报警数量
+        long todayCount1 = todayTypeCount.getOrDefault(dictLabel1, 0L);
+        // 获取脱帽报警数量
+        long todayCount2 = todayTypeCount.getOrDefault(dictLabel2, 0L);
+        // 获取跌落报警数量
+        long todayCount3 = todayTypeCount.getOrDefault(dictLabel3, 0L);
+        // 获取危险区域闯入提示数量
+        long todayCount4 = todayTypeCount.getOrDefault(dictLabel4, 0L);
+        // 获取应急呼叫报警数量
+        String todayEmergencySql = "SELECT warning_content, person_name, COUNT(1) AS cnt FROM " + dbname + ".swm_warning_management where create_date >= '" + startDate +
+                "' AND create_date <= '" + endDate + "' AND status = '0' AND warning_content = '" + dictLabel5 + "' GROUP BY warning_content, person_name";
+        R<JSONObject> todayEmergencyR = tdengineService.executeTDengineSQL(todayEmergencySql);
+        long emergencyCount = 0;
+        if (todayEmergencyR.getCode() == R.SUCCESS && todayEmergencyR.getData() != null) {
+            JSONArray data = todayEmergencyR.getData().getJSONArray("data");
+            if (data != null) {
+                emergencyCount = data.size();
+            }
+        }
+        todayData.put(dictLabel5, emergencyCount);
+        todayData.put(dictLabel4, todayCount4);
+        todayData.put("异常行为", todayCount3 + todayCount2 + todayCount1);
+
+        result.put("todayData", todayData);
+        return result;
+    }
+
+    public static long countUniquePersonsByDay(List<JSONObject> list) {
+        // 用于存储每天的人员集合（自动去重）
+        Map<String, Set<String>> dailyPersons = new HashMap<>();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        for (JSONObject obj : list) {
+            try {
+                // 解析完整日期并提取日期部分
+                Date createDate = (obj.getDate("create_date"));
+                String dayKey = dateFormat.format(createDate);
+                // 获取或创建当天的Set
+                Set<String> personsOfDay = dailyPersons.computeIfAbsent(dayKey, k -> new HashSet<>());
+                // 添加人员姓名（自动去重）
+                personsOfDay.add(obj.getStr("person_name"));
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 处理异常情况（如日期格式错误）
+            }
+        }
+        long count = 0;
+        // 转换为统计结果Map
+        for (Map.Entry<String, Set<String>> entry : dailyPersons.entrySet()) {
+            count = count + entry.getValue().size();
+        }
+        return count;
     }
 
 
@@ -691,15 +846,72 @@ public class SwmDashboardController extends BaseController {
                     String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
                     String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
                     String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
-                    List<SwmWarningManagement> latestWarnings = swmWarningManagementService.findTodayWarningWithHybrid();
-                    swmWarningManagementService.fillWorkGroupInfo(latestWarnings);
-                    swmWarningManagementService.fillLocationInfoV1(latestWarnings);
-                    for (SwmWarningManagement warning : latestWarnings) {
+                    String dictLabel4 = DictUtils.getDictLabel("warning_content_enum", "危险区域闯入提示", "危险区域闯入提示");
+                    String dictLabel5 = DictUtils.getDictLabel("warning_content_enum", "应急呼叫", "应急呼叫");
+
+                    List<String> labels = Arrays.asList(dictLabel1, dictLabel2, dictLabel3, dictLabel4, dictLabel5);
+                    String inClause = labels.stream().map(s -> "'" + s + "'").collect(Collectors.joining(","));
+
+                    // 查询今日报警记录 构建TDengine查询SQL
+                    // 获取今天开始和结束的时间戳
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.set(Calendar.HOUR_OF_DAY, 0);
+                    calendar.set(Calendar.MINUTE, 0);
+                    calendar.set(Calendar.SECOND, 0);
+                    long todayStartTime = calendar.getTimeInMillis();
+
+                    calendar.add(Calendar.DAY_OF_YEAR, 1);
+                    long tomorrowStartTime = calendar.getTimeInMillis();
+                    StringBuilder sqlBuilder = new StringBuilder();
+                    // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
+                    sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
+                            .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
+                            .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
+                            .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
+                            .append("disposal_duration, ")
+                            .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+                            .append("front_alarm, type, x, y, hazard_category, location, area ")
+                            .append("FROM ").append(dbname)
+                            .append(".swm_warning_management ")
+                            .append(" WHERE warning_time >= ").append(todayStartTime)
+                            .append(" AND warning_time < ").append(tomorrowStartTime)
+                            .append(" AND warning_content IN (")
+                            .append(inClause)
+                            .append(") ")
+                            .append(" and status = '0' and person_name != '未知' ")
+                            .append("order by create_date desc ")
+                            .append("limit 20 ");
+                    // 执行查询
+                    R<JSONObject> tdRes = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+                    List<SwmWarningManagement> list = new ArrayList<>();
+                    if (tdRes.getCode() == R.SUCCESS && tdRes.getData() != null) {
+                        JSONObject data = tdRes.getData();
+                        JSONArray rows = data.getJSONArray("data");
+                        JSONArray columnMeta = data.getJSONArray("column_meta");
+
+                        if (rows != null) {
+                            for (int i = 0; i < rows.size(); i++) {
+                                try {
+                                    JSONArray row = rows.getJSONArray(i);
+                                    SwmWarningManagement entity = swmWarningManagementService.convertToEntity(row, columnMeta);
+                                    if (entity != null) {
+                                        list.add(entity);
+                                    }
+                                } catch (Exception e) {
+                                    logger.error("转换行数据异常: {}", e.getMessage());
+                                }
+                            }
+                        }
+                    }
+                    swmWarningManagementService.fillWorkGroupInfo(list);
+                    swmWarningManagementService.fillLocationInfoV1(list);
+                    for (SwmWarningManagement warning : list) {
                         if (Arrays.asList(dictLabel1, dictLabel2, dictLabel3).contains(warning.getWarningContent())){
+                            warning.setWarningTypeText(warning.getWarningContent());
                             warning.setWarningContent("异常行为预警");
                         }
                     }
-                    result.put("record", latestWarnings);
+                    result.put("record", list);
                 } catch (Exception e) {
                     logger.error("获取已处置数据异常", e);
                 }
@@ -937,7 +1149,7 @@ public class SwmDashboardController extends BaseController {
                 () -> getTeamRanking(monthlyAttendance, personMap, true, 10),swmExecutor);
 
         CompletableFuture<List<Map<String, Object>>> todayJobDistribution = supplyAsync(
-                () -> getJobDistribution(monthlyAttendance, personMap, true, 10),swmExecutor);
+                () -> getJobDistributionNew(monthlyAttendance, personMap, true, 10),swmExecutor);
 
         CompletableFuture<List<Map<String, Object>>> monthlyTeamRanking = supplyAsync(
                 () -> getTeamRanking(monthlyAttendance, personMap, false, 10),swmExecutor);
@@ -1298,6 +1510,79 @@ public class SwmDashboardController extends BaseController {
                 .sorted((a, b) -> ((BigDecimal) b.get("avgEfficiency")).compareTo((BigDecimal) a.get("avgEfficiency")))
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+    private List<Map<String, Object>> getJobDistributionNew(List<SwmDailyAttendance> attendances,
+                                                         Map<String, SwmPerson> personMap, boolean isToday, int limit) {
+        // 按工种分组统计
+        String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
+        // 筛选今日数据
+        List<SwmDailyAttendance> todayAttendances = attendances.parallelStream()
+                .filter(a -> todayStr.equals(DateUtil.format(a.getAttendanceDate(), "yyyy-MM-dd")))
+                .collect(Collectors.toList());
+
+        // 对todayAttendances按personType进行分组
+        Map<String, List<SwmDailyAttendance>> groupedByPersonType = todayAttendances.stream()
+                .collect(Collectors.groupingBy(SwmDailyAttendance::getPersonType));
+
+        List<Map<String, Object>> resultList = new ArrayList<>();
+        for (Map.Entry<String, List<SwmDailyAttendance>> entry : groupedByPersonType.entrySet()) {
+            Map<String, Object> result = new HashMap<>();
+            String key = entry.getKey();
+            DictData dictData = DictUtils.getDictData("person_type_enum", key);
+            Long number = 0L;
+            List<SwmDailyAttendance> value = entry.getValue();
+            // 统计打卡人数
+            for (SwmDailyAttendance attendance : value) {
+                if (attendance.getClockInDate() != null ) {
+                    number++;
+                }
+            }
+            result.put("name", dictData.getDictLabel());
+            result.put("presentCount", number);
+            // 创建子列表，包含具体工种信息
+            List<Map<String, Object>> childResultList = new ArrayList<>();
+
+            // 按工种进一步分组统计，同样添加空值检查
+            Map<String, List<SwmDailyAttendance>> groupedByJobType = value.stream()
+                    .filter(attendance -> attendance.getEmployeeId() != null) // 再次过滤
+                    .collect(Collectors.groupingBy(attendance -> {
+                        SwmPerson person = personMap.get(attendance.getEmployeeId());
+                        // 处理工种为null的情况
+                        return (person != null && person.getJobType() != null) ?
+                                person.getJobType() : "未知工种";
+                    }));
+
+            // 填充具体的工种数据
+            for (Map.Entry<String, List<SwmDailyAttendance>> jobEntry : groupedByJobType.entrySet()) {
+                Map<String, Object> childResult = new HashMap<>();
+                String jobType = jobEntry.getKey();
+                List<SwmDailyAttendance> jobAttendances = jobEntry.getValue();
+
+                // 统计该工种的打卡人数
+                long jobPresentCount = jobAttendances.stream()
+                        .filter(attendance -> attendance.getClockInDate() != null)
+                        .count();
+
+                // 只添加数量大于0的记录
+                if (jobPresentCount > 0) {
+                    childResult.put("jobTypeName", jobType);
+                    childResult.put("jobTypeCount", jobPresentCount);
+                    childResultList.add(childResult);
+                }
+            }
+
+            // 按照数量降序排序
+            childResultList.sort((a, b) -> {
+                Long countA = (Long) a.get("jobTypeCount");
+                Long countB = (Long) b.get("jobTypeCount");
+                return countB.compareTo(countA);
+            });
+
+            result.put("jobTypes", childResultList);
+            resultList.add(result);
+        }
+        return resultList;
     }
 
     // 辅助方法：获取月份所有天数

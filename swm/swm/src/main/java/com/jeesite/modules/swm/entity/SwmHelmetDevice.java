@@ -188,6 +188,11 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     // 非数据库字段，用于查询条件
     private List<String> deviceIdList; // 设备ID列表，用于批量查询
 
+    @ApiModelProperty(value = "开机状态  0-开机，1-关机")
+    private String powerOnStatus;
+    //在线人数
+    private List<String> deviceOnlist;
+
 
     /**
      * 随机值，目的取消一级缓存

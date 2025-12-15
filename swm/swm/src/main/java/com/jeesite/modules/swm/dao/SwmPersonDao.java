@@ -118,4 +118,6 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
 
     List<SwmPerson> peronsList(SwmPerson swmPerson);
 
+
+    List<SwmDashboardNewController.Person> findManageTodayList(SwmDashboardNewController.Person vo);
 }

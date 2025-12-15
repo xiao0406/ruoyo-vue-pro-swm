@@ -185,6 +185,7 @@ public class SwmPersonController extends BaseController {
             personMap.put("safetyEducationText", person.getSafetyEducationText());
             personMap.put("helmetReturnedText", person.getHelmetReturnedText());
             personMap.put("departureTypeText", person.getDepartureTypeText());
+            personMap.put("powerOnStatus", person.getPowerOnStatus());
 
             // 添加到列表
             enhancedList.add(personMap);

@@ -421,7 +421,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
     /**
      * 将TDengine结果转换为实体对象
      */
-    private SwmWarningManagement convertToEntity(JSONArray row, JSONArray columnMeta) {
+    public SwmWarningManagement convertToEntity(JSONArray row, JSONArray columnMeta) {
         if (row == null || columnMeta == null) {
             logger.error("行数据或列元数据为空");
             return null;
@@ -1823,9 +1823,6 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
 
-
-
-
             for (SwmWarningManagement warning : warningList) {
                 String deviceId = warning.getDeviceId();
                 String idCard = warning.getIdCard();
@@ -2036,7 +2033,9 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             // 获取当前时间往前24小时的时间范围（long时间戳本身就是UTC时间）
             Calendar cal = Calendar.getInstance();
             long currentTime = cal.getTimeInMillis(); // UTC时间戳
-            long twentyFourHoursAgo = currentTime - (24 * 60 * 60 * 1000); // 24小时前的UTC时间戳
+            //long twentyFourHoursAgo = currentTime - (24 * 60 * 60 * 1000); // 24小时前的UTC时间戳
+            long twentyFourHoursAgo = currentTime - (3 * 60 * 1000); // 10分钟前的UTC时间戳
+
 
             // 直接使用UTC时间戳，无需额外时区转换
             long todayStartTime = twentyFourHoursAgo; // 24小时前

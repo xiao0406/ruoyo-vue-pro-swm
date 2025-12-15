@@ -2,6 +2,7 @@ package com.jeesite.modules.swm.entity;
 
 import com.jeesite.common.utils.excel.annotation.ExcelField;
 import com.jeesite.common.utils.excel.annotation.ExcelFields;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -30,6 +31,8 @@ public class SwmDailyAttendanceExportEntity {
     private String attendanceNormal;
     private String currentPosition;
     private String remarks;
+    @ApiModelProperty(value = "开机状态  0-开机，1-关机")
+    private String powerOnStatus;
 
     @ExcelFields({
             @ExcelField(title = "员工ID", attrName = "employeeId", align = ExcelField.Align.CENTER, sort = 10),
@@ -47,7 +50,8 @@ public class SwmDailyAttendanceExportEntity {
             @ExcelField(title = "今日达成率", attrName = "dailyAchievementRate", align = ExcelField.Align.CENTER, sort = 130),
             @ExcelField(title = "考勤状态", attrName = "attendanceNormal", align = ExcelField.Align.CENTER, sort = 140, dictType = "swm_attendance_status"),
             @ExcelField(title = "当前位置", attrName = "currentPosition", align = ExcelField.Align.CENTER, sort = 150, dictType = "swm_current_position"),
-            @ExcelField(title = "备注", attrName = "remarks", align = ExcelField.Align.LEFT, sort = 160)
+            @ExcelField(title = "备注", attrName = "remarks", align = ExcelField.Align.LEFT, sort = 160),
+            @ExcelField(title = "开机状态", attrName = "powerOnStatus", align = ExcelField.Align.LEFT, sort = 170)
     })
     public SwmDailyAttendanceExportEntity() {
     }
@@ -56,7 +60,7 @@ public class SwmDailyAttendanceExportEntity {
             Date attendanceDate, String workTimeRange, Date clockInTime, Date clockOutTime,
             BigDecimal scheduledHours, BigDecimal actualHours, BigDecimal idleHours,
             BigDecimal effectiveWorkHours, BigDecimal dailyEfficiency, BigDecimal dailyAchievementRate,
-            String attendanceNormal, String currentPosition, String remarks) {
+            String attendanceNormal, String currentPosition, String remarks,String powerOnStatus) {
         this.employeeId = employeeId;
         this.employeeName = employeeName;
         this.personType = personType;
@@ -73,6 +77,7 @@ public class SwmDailyAttendanceExportEntity {
         this.attendanceNormal = attendanceNormal;
         this.currentPosition = currentPosition;
         this.remarks = remarks;
+        this.powerOnStatus = powerOnStatus;
     }
 
     // Getter and Setter methods
@@ -202,5 +207,13 @@ public class SwmDailyAttendanceExportEntity {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public String getPowerOnStatus() {
+        return powerOnStatus;
+    }
+
+    public void setPowerOnStatus(String powerOnStatus) {
+        this.powerOnStatus = powerOnStatus;
     }
 }

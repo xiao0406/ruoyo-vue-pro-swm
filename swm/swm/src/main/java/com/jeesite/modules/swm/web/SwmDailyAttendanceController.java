@@ -2,7 +2,10 @@ package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
@@ -74,6 +77,8 @@ public class SwmDailyAttendanceController extends BaseController {
 
     @Autowired
     private AreaFenceDataService areaFenceDataService;
+    @Autowired
+    private RedisService redisService;
 
     // 自定义ObjectMapper，用于处理时间字段的序列化
     private final ObjectMapper objectMapper;
@@ -195,6 +200,25 @@ public class SwmDailyAttendanceController extends BaseController {
             swmDailyAttendance.setAttendanceDate(today);
         }
 
+        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        Set<String> todayOnSiteIdCards = new HashSet<>();
+        if (deviceIds != null) {
+            for (Object deviceId : deviceIds) {
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                if (currentPerson != null){
+                    todayOnSiteIdCards.add(currentPerson);
+                }
+            }
+        }
+
+        //在线
+        if (StringUtils.isNotEmpty(swmDailyAttendance.getPowerOnStatus())){
+            if ("0".equals(swmDailyAttendance.getPowerOnStatus())){
+                swmDailyAttendance.getSqlMap().getWhere().and("a.identity_card", QueryType.IN, new ArrayList<>(todayOnSiteIdCards));
+            }else {
+                swmDailyAttendance.getSqlMap().getWhere().and("a.identity_card", QueryType.NOT_IN,  new ArrayList<>(todayOnSiteIdCards));
+            }
+        }
         swmDailyAttendance.setPage(new Page<>(request, response));
         Page<SwmDailyAttendance> originalPage = swmDailyAttendanceService.findPage(swmDailyAttendance);
 
@@ -208,6 +232,11 @@ public class SwmDailyAttendanceController extends BaseController {
         List<Map<String, Object>> formattedList = new ArrayList<>();
 
         for (SwmDailyAttendance record : originalPage.getList()) {
+            if(todayOnSiteIdCards.contains(record.getIdentityCard())){
+                record.setPowerOnStatus("0");
+            }else {
+                record.setPowerOnStatus("1");
+            }
             formattedList.add(convertToMap(record));
         }
 
@@ -721,8 +750,28 @@ public class SwmDailyAttendanceController extends BaseController {
         }
 
         try {
+
+            Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+            Set<String> todayOnSiteIdCards = new HashSet<>();
+            if (deviceIds != null) {
+                for (Object deviceId : deviceIds) {
+                    String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                    if (currentPerson != null){
+                        todayOnSiteIdCards.add(currentPerson);
+                    }
+                }
+            }
+
+
             // 获取所有符合条件的数据（不分页）
             List<SwmDailyAttendance> list = swmDailyAttendanceService.findExportList(swmDailyAttendance);
+            for (SwmDailyAttendance attendance : list) {
+                if (todayOnSiteIdCards.contains(attendance.getIdentityCard())) {
+                    attendance.setPowerOnStatus("开机");
+                } else {
+                    attendance.setPowerOnStatus("关机");
+                }
+            }
 
             if (list.isEmpty()) {
                 return renderResult(Global.FALSE, text("没有符合条件的数据可以导出！"));

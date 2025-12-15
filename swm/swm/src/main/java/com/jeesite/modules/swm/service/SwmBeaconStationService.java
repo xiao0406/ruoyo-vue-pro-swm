@@ -483,7 +483,7 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             List<SwmBeaconStationExport> list = excelImport.getDataList(SwmBeaconStationExport.class);
             if (CollectionUtil.isNotEmpty(list)){
                 //获取所有区域
-                List<String> areaNameList = list.stream().map(SwmBeaconStationExport::getArea).collect(Collectors.toList());
+                List<String> areaNameList = list.stream().map(SwmBeaconStationExport::getArea).distinct().collect(Collectors.toList());
                 SwmArea area = new SwmArea();
                 area.getSqlMap().getWhere().and("area_name", QueryType.IN, areaNameList);
                 area.setStatus(SwmArea.STATUS_NORMAL);
