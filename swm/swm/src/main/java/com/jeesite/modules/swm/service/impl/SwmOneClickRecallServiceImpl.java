@@ -99,7 +99,7 @@ public class SwmOneClickRecallServiceImpl extends CrudService<SwmOneClickRecallD
                 swmOneClickRecall.setDeviceList(JSON.toJSONString(deviceList));
                 swmOneClickRecall.setEvacueeCount(deviceList.size());
             }
-        }else{
+        }else if (!evacuationPlan.equals(SwmOneClickRecall.EvacuationPlanEnum.BY_PERSON_TYPE)){
             // 全体人员撤离
             List<Map<String, Object>> allTargetPersonnel = swmOneClickRecallDao.findAllTargetPersonnelForBroadcast();
             if(Objects.isNull(allTargetPersonnel) || allTargetPersonnel.isEmpty()){

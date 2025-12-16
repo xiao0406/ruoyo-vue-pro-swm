@@ -1,5 +1,6 @@
 package com.jeesite.modules.config;
 
+import com.jeesite.modules.sys.utils.CorpUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -67,4 +68,47 @@ public class ThreadPoolTaskExecutorConfig {
         executor.initialize();
         return executor;
     }
+
+//    @Bean("swmExecutor")
+//    public ThreadPoolTaskExecutor swmExecutor() {
+//        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+//        // 设置核心线程数
+//        executor.setCorePoolSize(12);
+//        // 设置最大线程数
+//        executor.setMaxPoolSize(23);
+//        // 设置队列容量
+//        executor.setQueueCapacity(120);
+//        // 设置线程活跃时间（秒）
+//        executor.setKeepAliveSeconds(60);
+//        // 设置默认线程名称
+//        executor.setThreadNamePrefix("swm-");
+//        // 设置拒绝策略
+//        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+//        // 等待所有任务结束后再关闭线程池
+//        executor.setWaitForTasksToCompleteOnShutdown(true);
+//
+//        //设置 TaskDecorator 传递 CorpUtils 的租户信息
+//        executor.setTaskDecorator(runnable -> {
+//
+//            // 只捕获父线程 ThreadLocal 的值
+//            String corpCode = CorpUtils.getCurrentCorpCode();
+//            String corpName = CorpUtils.getCurrentCorpName();
+//
+//            return () -> {
+//                try {
+//                    // 显式覆盖（非常关键）
+//                    CorpUtils.setCurrentCorpCode(corpCode, corpName);
+//                    runnable.run();
+//                } finally {
+//                    // 必须清理 ThreadLocal
+//                    CorpUtils.removeCurrentCorpCode(null);
+//                }
+//            };
+//        });
+//
+//        // 初始化线程池
+//        executor.initialize();
+//        return executor;
+//    }
+
 }

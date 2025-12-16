@@ -92,6 +92,7 @@ public class PersonScheduleTask {
                     if (list != null && !list.isEmpty()) {
                         continue;
                     }
+                    XxlJobHelper.log("开始处理：租户：，人员：{}",corpCode, person.getName());
                     SwmPersonSchedule personSchedule = new SwmPersonSchedule();
                     personSchedule.setPersonName(person.getName());
                     personSchedule.setMonth(month);

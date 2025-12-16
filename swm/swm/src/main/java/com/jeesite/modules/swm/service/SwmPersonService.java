@@ -80,11 +80,12 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
                 Lists.newArrayList(SwmPerson.PersonStatusEnum.ACTIVE, SwmPerson.PersonStatusEnum.INACTIVE));
 
         //查询设备在线数量
-        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
         Set<String> todayOnSiteIdCards = new HashSet<>();
         if (deviceIds != null) {
             for (Object deviceId : deviceIds) {
-                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
                 if (currentPerson != null){
                     todayOnSiteIdCards.add(currentPerson);
                 }

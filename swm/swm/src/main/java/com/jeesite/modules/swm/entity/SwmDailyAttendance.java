@@ -101,6 +101,11 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     @ApiModelProperty(value = "产线")
     private String prodLine;
 
+    /**
+     * 随机值，目的取消一级缓存
+     */
+    private Integer random;
+
     public SwmDailyAttendance() {
         this(null);
     }

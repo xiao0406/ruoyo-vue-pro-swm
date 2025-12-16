@@ -16,6 +16,7 @@ import com.jeesite.modules.swm.dao.SwmSafetyHelmetOrderDao;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.utils.R;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -150,7 +151,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             List<String> deviceIdList = new ArrayList<>();
             //查询设备在线数量
             try {
-                Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+                String corpCode = CorpUtils.getCurrentCorpCode();
+                Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
                 if (deviceIds != null) {
                     deviceIdList = deviceIds.stream()
                             .filter(Objects::nonNull)

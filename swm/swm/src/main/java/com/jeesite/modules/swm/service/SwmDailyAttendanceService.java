@@ -939,12 +939,12 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         return dao.workerFatigue(vo);
     }
 
-    public List<SwmDailyAttendance> findClockInCardList(String date) {
-        return dao.findClockInCardList(date);
+    public List<SwmDailyAttendance> findClockInCardList(String date,Integer random) {
+        return dao.findClockInCardList(date,random);
     }
 
-    public List<SwmDailyAttendance> findClockOutCardList(String yestDay, String nowDate) {
-        return dao.findClockOutCardList(yestDay, nowDate);
+    public List<SwmDailyAttendance> findClockOutCardList(String yestDay, String nowDate,Integer random) {
+        return dao.findClockOutCardList(yestDay, nowDate,random);
     }
 
     public List<SwmDashboardNewController.AttendanceAnalysis> getAllTeamNumber(String companyCode) {

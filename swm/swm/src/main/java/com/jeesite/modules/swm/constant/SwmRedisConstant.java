@@ -101,6 +101,7 @@ public class SwmRedisConstant {
 
         /**
          * 统一在线设备集合 key
+         * SMEMBERS ZJGGJS:iot:devices:online
          */
         public static final String ONLINE_DEVICES_KEY = SEPAR+IOT_PREFIX + "devices:online";
         /**

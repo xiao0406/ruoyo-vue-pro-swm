@@ -30,6 +30,9 @@
             <if test="hazardSourceId != null and hazardSourceId != ''">
                 AND a.hazard_source_id = #{hazardSourceId}
             </if>
+            <if test="random != null and random != 0 ">
+                AND #{random} = #{random}
+            </if>
         </where>
         ORDER BY a.create_date DESC
     </select>

@@ -14,6 +14,7 @@ import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
 import com.jeesite.modules.swm.service.SwmPersonScheduleService;
 import com.jeesite.modules.sys.entity.DictData;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
 import com.jeesite.common.utils.SpringUtils;
@@ -2055,6 +2056,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     dbname, inCondition, todayStartTime, todayEndTime);
 
             logger.info("执行TDengine查询: {}", sql);
+            String corpCode = CorpUtils.getCurrentCorpCode();
             R<JSONObject> tdResult = tdengineService.executeTDengineSQL(sql);
 
             if (tdResult.getCode() == R.SUCCESS && tdResult.getData() != null) {

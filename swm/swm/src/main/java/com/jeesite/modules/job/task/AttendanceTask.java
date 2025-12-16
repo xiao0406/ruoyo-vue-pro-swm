@@ -88,230 +88,233 @@ public class AttendanceTask {
         jobLog.setJobName("calculateIdleHours");
         jobLog.setStartTime(new Date());
         jobLog.setExecuteStatus("1"); // 默认失败
-        try {
-            XxlJobHelper.log("开始执行怠工时长计算任务...");
 
-            // 获取传入的日期参数，如果没有传入则使用当天
-            String jobParam = XxlJobHelper.getJobParam();
-            jobLog.setJobParam(jobParam);
-            swmJobLogService.save(jobLog);
-            jobLog.setIsNewRecord(false);
-            Date targetDate;
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        //获取系统所有租户信息
+        List<User> corpList = userService.findCorpList(new User());
+        if (CollectionUtils.isEmpty(corpList)) {
+            XxlJobHelper.log("没有租户信息");
+            return;
+        }
+        //为每个租户都生成排班计划
+        for (User user : corpList) {
 
-            if (StringUtils.isNotBlank(jobParam)) {
-                try {
-                    targetDate = dateFormat.parse(jobParam);
-                } catch (Exception e) {
-                    XxlJobHelper.log("日期参数格式错误，使用当天: {}", jobParam);
+            String corpCode = user.getCorpCode();
+            String corpName = user.getCorpName();
+            //设置当前线程的租户信息
+            CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
+            try {
+                XxlJobHelper.log("开始执行怠工时长计算任务...");
+
+                // 获取传入的日期参数，如果没有传入则使用当天
+                String jobParam = XxlJobHelper.getJobParam();
+                jobLog.setJobParam(jobParam);
+                swmJobLogService.save(jobLog);
+                jobLog.setIsNewRecord(false);
+                Date targetDate;
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+                if (StringUtils.isNotBlank(jobParam)) {
+                    try {
+                        targetDate = dateFormat.parse(jobParam);
+                    } catch (Exception e) {
+                        XxlJobHelper.log("日期参数格式错误，使用当天: {}", jobParam);
+                        targetDate = new Date();
+                    }
+                } else {
                     targetDate = new Date();
                 }
-            } else {
-                targetDate = new Date();
-            }
 
-            // 如果当前时间是00:00到06:59，查询昨天的考勤记录
-            Calendar now = Calendar.getInstance();
-            int currentHour = now.get(Calendar.HOUR_OF_DAY);
-            if (currentHour >= 0 && currentHour <= 6) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(targetDate);
-                cal.add(Calendar.DAY_OF_MONTH, -1);
-                targetDate = cal.getTime();
-                XxlJobHelper.log("当前时间为早上{}点，查询昨天的考勤记录: {}", currentHour, dateFormat.format(targetDate));
-            }
+                // 如果当前时间是00:00到06:59，查询昨天的考勤记录
+                Calendar now = Calendar.getInstance();
+                int currentHour = now.get(Calendar.HOUR_OF_DAY);
+                if (currentHour >= 0 && currentHour <= 6) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(targetDate);
+                    cal.add(Calendar.DAY_OF_MONTH, -1);
+                    targetDate = cal.getTime();
+                    XxlJobHelper.log("当前时间为早上{}点，查询昨天的考勤记录: {}", currentHour, dateFormat.format(targetDate));
+                }
 
-            String dateStr = dateFormat.format(targetDate);
+                String dateStr = dateFormat.format(targetDate);
 
-            // 查询指定日期的所有考勤记录
-            SwmDailyAttendance query = new SwmDailyAttendance();
-            query.setAttendanceDate(targetDate);
+                // 查询指定日期的所有考勤记录
+                SwmDailyAttendance query = new SwmDailyAttendance();
+                query.setAttendanceDate(targetDate);
+                query.setRandom(new Random().nextInt(1_000_000));
+                List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
 
-            // 测试使用，生产上要删除 begin
-            // java.util.List<String> employeeIds = new java.util.ArrayList<>();
-            // employeeIds.add("1935182658452475904");
-            // // employeeIds.add("1935182658850934784");
-            // if (employeeIds != null && !employeeIds.isEmpty()) {
-            // query.getSqlMap().getWhere().and("employee_id",
-            // com.jeesite.common.mybatis.mapper.query.QueryType.IN,
-            // employeeIds);
-            // }
-            // 测试使用，生产上要删除 end
+                if (attendanceList.isEmpty()) {
+                    XxlJobHelper.log("{}没有考勤记录，无需计算怠工时长", dateStr);
+                    return;
+                }
 
-            List<SwmDailyAttendance> attendanceList = swmDailyAttendanceService.findList(query);
+                int successCount = 0;
+                int failCount = 0;
 
-            if (attendanceList.isEmpty()) {
-                XxlJobHelper.log("{}没有考勤记录，无需计算怠工时长", dateStr);
-                return;
-            }
-
-            int successCount = 0;
-            int failCount = 0;
-
-            // 为每条考勤记录计算怠工时长
-            for (SwmDailyAttendance record : attendanceList) {
-                try {
-                    // 获取员工身份证号
-                    String idCard = swmDailyAttendanceService.getIdCardByEmployeeId(record.getEmployeeId());
-                    if (idCard != null) {
-                        // 获取工作时间范围
-                        String workTimeRange = record.getWorkTimeRange();
-                        if (workTimeRange == null || workTimeRange.trim().isEmpty()) {
-                            workTimeRange = "08:00-17:00"; // 默认工作时间
-                            XxlJobHelper.log("员工[{}]{}工作时间范围为空，使用默认时间范围: {}",
-                                    record.getEmployeeId(), record.getEmployeeName(), workTimeRange);
-                        }
-
-                        // 计算怠工时长，传递工作时间范围
-                        double calculatedIdleHours = swmDailyAttendanceService.calculateIdleTimeByIdCard(idCard,
-                                dateStr, workTimeRange);
-
-                        // 更新怠工时长字段
-                        record.setIdleHours(BigDecimal.valueOf(calculatedIdleHours).setScale(2, RoundingMode.HALF_UP));
-
-                        // 计算实际工作时长（基于工作区域）
-                        double calculatedEffectiveWorkHours = swmDailyAttendanceService
-                                .calculateEffectiveWorkHoursByIdCard(idCard,
-                                        dateStr, workTimeRange);
-
-                        // 更新实际工作时长字段
-                        record.setEffectiveWorkHours(
-                                BigDecimal.valueOf(calculatedEffectiveWorkHours).setScale(2, RoundingMode.HALF_UP));
-
-                        XxlJobHelper.log("员工[{}]{}的实际工作时长计算完成: {} 小时 (工作时间: {})",
-                                record.getEmployeeId(), record.getEmployeeName(), calculatedEffectiveWorkHours,
-                                workTimeRange);
-
-                        // 获取用于计算的打卡时间（不修改原始记录，只用于计算）
-                        // @author: Shawn
-                        // @date: 2025/01/27
-                        Date clockInTime = record.getClockInTime();
-                        Date clockOutTime = record.getClockOutTime();
-                        boolean usedTdengineData = false;
-
-                        // 如果打卡时间为空，从TDengine表中获取用于计算的时间
-                        if (clockInTime == null || clockOutTime == null) {
-                            try {
-                                // 使用考勤记录中的实际考勤日期查询TDengine
-                                String recordDateStr = dateFormat.format(record.getAttendanceDate());
-                                R<Map<String, Object>> tdengineResult = helmetTdengineService
-                                        .getFirstAndLastTimeByIdCardAndDate(idCard, recordDateStr, workTimeRange);
-
-                                if (tdengineResult.getCode() == R.SUCCESS) {
-                                    Map<String, Object> timeData = tdengineResult.getData();
-                                    Object firstTimeObj = timeData.get("firstTime");
-                                    Object lastTimeObj = timeData.get("lastTime");
-
-                                    // 如果上班打卡时间为空，临时使用TDengine的第一条记录时间进行计算
-                                    if (clockInTime == null && firstTimeObj != null) {
-                                        clockInTime = parseTimeObject(firstTimeObj);
-                                        if (clockInTime != null) {
-                                            usedTdengineData = true;
-                                            log.info("员工[{}]{}上班打卡时间为空，临时使用TDengine第一条记录时间进行计算: {}",
-                                                    record.getEmployeeId(), record.getEmployeeName(), clockInTime);
-                                        }
-                                    }
-
-                                    // 如果下班打卡时间为空，临时使用TDengine的最后一条记录时间进行计算
-                                    if (clockOutTime == null && lastTimeObj != null) {
-                                        clockOutTime = parseTimeObject(lastTimeObj);
-                                        if (clockOutTime != null) {
-                                            usedTdengineData = true;
-                                            log.info("员工[{}]{}下班打卡时间为空，临时使用TDengine最后一条记录时间进行计算: {}",
-                                                    record.getEmployeeId(), record.getEmployeeName(), clockOutTime);
-                                        }
-                                    }
-                                } else {
-                                    XxlJobHelper.log("员工[{}]{}从TDengine查询时间记录失败: {}",
-                                            record.getEmployeeId(), record.getEmployeeName(), tdengineResult.getMsg());
-                                }
-                            } catch (Exception e) {
-                                XxlJobHelper.log("员工[{}]{}从TDengine获取时间用于计算时异常: {}",
-                                        record.getEmployeeId(), record.getEmployeeName(), e.getMessage());
+                // 为每条考勤记录计算怠工时长
+                for (SwmDailyAttendance record : attendanceList) {
+                    try {
+                        // 获取员工身份证号
+                        String idCard = swmDailyAttendanceService.getIdCardByEmployeeId(record.getEmployeeId());
+                        if (idCard != null) {
+                            // 获取工作时间范围
+                            String workTimeRange = record.getWorkTimeRange();
+                            if (workTimeRange == null || workTimeRange.trim().isEmpty()) {
+                                workTimeRange = "08:00-17:00"; // 默认工作时间
+                                XxlJobHelper.log("员工[{}]{}工作时间范围为空，使用默认时间范围: {}",
+                                        record.getEmployeeId(), record.getEmployeeName(), workTimeRange);
                             }
-                        }
 
-                        // 计算实际考勤时长
-                        // 修改逻辑: 1. 如果没有上下班打卡时间且TDengine也没有数据，实际考勤为0
-                        // 2. 如果有上下班打卡时间（包括从TDengine获取的），实际考勤 = 下班打卡时间 - 上班打卡时间 - 怠工时长
-                        // @author: Shawn
-                        // @date: 2025/01/27
-                        if (clockInTime == null || clockOutTime == null) {
-                            // 没有打卡时间且TDengine也没有可用数据，使用兜底逻辑
-                            BigDecimal actualHours = applyActualHoursFallback(record, BigDecimal.ZERO,
-                                    "没有完整的打卡记录且TDengine也无可用数据");
-                            record.setActualHours(actualHours);
+                            // 计算怠工时长，传递工作时间范围
+                            double calculatedIdleHours = swmDailyAttendanceService.calculateIdleTimeByIdCard(idCard,
+                                    dateStr, workTimeRange);
+
+                            // 更新怠工时长字段
+                            record.setIdleHours(BigDecimal.valueOf(calculatedIdleHours).setScale(2, RoundingMode.HALF_UP));
+
+                            // 计算实际工作时长（基于工作区域）
+                            double calculatedEffectiveWorkHours = swmDailyAttendanceService
+                                    .calculateEffectiveWorkHoursByIdCard(idCard,
+                                            dateStr, workTimeRange);
+
+                            // 更新实际工作时长字段
+                            record.setEffectiveWorkHours(
+                                    BigDecimal.valueOf(calculatedEffectiveWorkHours).setScale(2, RoundingMode.HALF_UP));
+
+                            XxlJobHelper.log("员工[{}]{}的实际工作时长计算完成: {} 小时 (工作时间: {})",
+                                    record.getEmployeeId(), record.getEmployeeName(), calculatedEffectiveWorkHours,
+                                    workTimeRange);
+
+                            // 获取用于计算的打卡时间（不修改原始记录，只用于计算）
+                            // @author: Shawn
+                            // @date: 2025/01/27
+                            Date clockInTime = record.getClockInTime();
+                            Date clockOutTime = record.getClockOutTime();
+                            boolean usedTdengineData = false;
+
+                            // 如果打卡时间为空，从TDengine表中获取用于计算的时间
+                            if (clockInTime == null || clockOutTime == null) {
+                                try {
+                                    // 使用考勤记录中的实际考勤日期查询TDengine
+                                    String recordDateStr = dateFormat.format(record.getAttendanceDate());
+                                    R<Map<String, Object>> tdengineResult = helmetTdengineService
+                                            .getFirstAndLastTimeByIdCardAndDate(idCard, recordDateStr, workTimeRange);
+
+                                    if (tdengineResult.getCode() == R.SUCCESS) {
+                                        Map<String, Object> timeData = tdengineResult.getData();
+                                        Object firstTimeObj = timeData.get("firstTime");
+                                        Object lastTimeObj = timeData.get("lastTime");
+
+                                        // 如果上班打卡时间为空，临时使用TDengine的第一条记录时间进行计算
+                                        if (clockInTime == null && firstTimeObj != null) {
+                                            clockInTime = parseTimeObject(firstTimeObj);
+                                            if (clockInTime != null) {
+                                                usedTdengineData = true;
+                                                log.info("员工[{}]{}上班打卡时间为空，临时使用TDengine第一条记录时间进行计算: {}",
+                                                        record.getEmployeeId(), record.getEmployeeName(), clockInTime);
+                                            }
+                                        }
+
+                                        // 如果下班打卡时间为空，临时使用TDengine的最后一条记录时间进行计算
+                                        if (clockOutTime == null && lastTimeObj != null) {
+                                            clockOutTime = parseTimeObject(lastTimeObj);
+                                            if (clockOutTime != null) {
+                                                usedTdengineData = true;
+                                                log.info("员工[{}]{}下班打卡时间为空，临时使用TDengine最后一条记录时间进行计算: {}",
+                                                        record.getEmployeeId(), record.getEmployeeName(), clockOutTime);
+                                            }
+                                        }
+                                    } else {
+                                        XxlJobHelper.log("员工[{}]{}从TDengine查询时间记录失败: {}",
+                                                record.getEmployeeId(), record.getEmployeeName(), tdengineResult.getMsg());
+                                    }
+                                } catch (Exception e) {
+                                    XxlJobHelper.log("员工[{}]{}从TDengine获取时间用于计算时异常: {}",
+                                            record.getEmployeeId(), record.getEmployeeName(), e.getMessage());
+                                }
+                            }
+
+                            // 计算实际考勤时长
+                            // 修改逻辑: 1. 如果没有上下班打卡时间且TDengine也没有数据，实际考勤为0
+                            // 2. 如果有上下班打卡时间（包括从TDengine获取的），实际考勤 = 下班打卡时间 - 上班打卡时间 - 怠工时长
+                            // @author: Shawn
+                            // @date: 2025/01/27
+                            if (clockInTime == null || clockOutTime == null) {
+                                // 没有打卡时间且TDengine也没有可用数据，使用兜底逻辑
+                                BigDecimal actualHours = applyActualHoursFallback(record, BigDecimal.ZERO,
+                                        "没有完整的打卡记录且TDengine也无可用数据");
+                                record.setActualHours(actualHours);
+                            } else {
+                                // 有完整打卡时间（可能来自TDengine），计算实际工作时长
+                                BigDecimal clockWorkHours = calculateWorkHoursBetweenTimes(clockInTime, clockOutTime);
+
+                                // 实际考勤时长 = 打卡工作时长 - 怠工时长
+                                BigDecimal actualHours = clockWorkHours.subtract(record.getIdleHours());
+
+                                // 应用兜底逻辑
+                                actualHours = applyActualHoursFallback(record, actualHours,
+                                        "打卡工作时长减去怠工时长后");
+
+                                record.setActualHours(actualHours.setScale(2, RoundingMode.HALF_UP));
+                                String dataSource = usedTdengineData ? "(包含TDengine数据)" : "";
+                                XxlJobHelper.log("员工[{}]{}实际考勤时长计算{}: 打卡工作{}小时 - 怠工{}小时 = 实际{}小时",
+                                        record.getEmployeeId(), record.getEmployeeName(), dataSource,
+                                        clockWorkHours, record.getIdleHours(), actualHours);
+                            }
+
+                            // 计算日考勤功效
+                            // 功效 = 1 - 怠工时长/实际考勤时长
+                            // @author: Shawn
+                            // @date: 2025/06/23
+                            BigDecimal dailyEfficiency = calculateDailyEfficiency(record.getIdleHours(),
+                                    record.getActualHours());
+                            record.setDailyEfficiency(dailyEfficiency);
+                            XxlJobHelper.log("员工[{}]{}日考勤功效计算: 1 - {}小时/{}小时 = {}",
+                                    record.getEmployeeId(), record.getEmployeeName(),
+                                    record.getIdleHours(), record.getActualHours(), dailyEfficiency);
+
+                            // 计算日达成率
+                            // 达成率 = 实际工作时长 / 应考勤时长
+                            // @author: Shawn
+                            // @date: 2025/01/27
+                            BigDecimal dailyAchievementRate = calculateDailyAchievementRate(record.getEffectiveWorkHours(),
+                                    record.getScheduledHours());
+                            record.setDailyAchievementRate(dailyAchievementRate);
+                            XxlJobHelper.log("员工[{}]{}日达成率计算: {}小时 / {}小时 = {}",
+                                    record.getEmployeeId(), record.getEmployeeName(),
+                                    record.getEffectiveWorkHours(), record.getScheduledHours(), dailyAchievementRate);
+
+                            // 更新考勤状态逻辑 - 使用新的业务规则
+                            // @author: Shawn
+                            // @date: 2025/01/27
+                            updateAttendanceStatusByNewRule(record);
+                            swmDailyAttendanceService.update(record);
+                            successCount++;
+                            XxlJobHelper.log("员工[{}]{}的怠工时长计算完成: {} 小时 (工作时间: {})",
+                                    record.getEmployeeId(), record.getEmployeeName(), calculatedIdleHours, workTimeRange);
                         } else {
-                            // 有完整打卡时间（可能来自TDengine），计算实际工作时长
-                            BigDecimal clockWorkHours = calculateWorkHoursBetweenTimes(clockInTime, clockOutTime);
-
-                            // 实际考勤时长 = 打卡工作时长 - 怠工时长
-                            BigDecimal actualHours = clockWorkHours.subtract(record.getIdleHours());
-
-                            // 应用兜底逻辑
-                            actualHours = applyActualHoursFallback(record, actualHours,
-                                    "打卡工作时长减去怠工时长后");
-
-                            record.setActualHours(actualHours.setScale(2, RoundingMode.HALF_UP));
-                            String dataSource = usedTdengineData ? "(包含TDengine数据)" : "";
-                            XxlJobHelper.log("员工[{}]{}实际考勤时长计算{}: 打卡工作{}小时 - 怠工{}小时 = 实际{}小时",
-                                    record.getEmployeeId(), record.getEmployeeName(), dataSource,
-                                    clockWorkHours, record.getIdleHours(), actualHours);
+                            XxlJobHelper.log("员工[{}]{}未找到身份证号，跳过计算",
+                                    record.getEmployeeId(), record.getEmployeeName());
+                            failCount++;
                         }
-
-                        // 计算日考勤功效
-                        // 功效 = 1 - 怠工时长/实际考勤时长
-                        // @author: Shawn
-                        // @date: 2025/06/23
-                        BigDecimal dailyEfficiency = calculateDailyEfficiency(record.getIdleHours(),
-                                record.getActualHours());
-                        record.setDailyEfficiency(dailyEfficiency);
-                        XxlJobHelper.log("员工[{}]{}日考勤功效计算: 1 - {}小时/{}小时 = {}",
-                                record.getEmployeeId(), record.getEmployeeName(),
-                                record.getIdleHours(), record.getActualHours(), dailyEfficiency);
-
-                        // 计算日达成率
-                        // 达成率 = 实际工作时长 / 应考勤时长
-                        // @author: Shawn
-                        // @date: 2025/01/27
-                        BigDecimal dailyAchievementRate = calculateDailyAchievementRate(record.getEffectiveWorkHours(),
-                                record.getScheduledHours());
-                        record.setDailyAchievementRate(dailyAchievementRate);
-                        XxlJobHelper.log("员工[{}]{}日达成率计算: {}小时 / {}小时 = {}",
-                                record.getEmployeeId(), record.getEmployeeName(),
-                                record.getEffectiveWorkHours(), record.getScheduledHours(), dailyAchievementRate);
-
-                        // 更新考勤状态逻辑 - 使用新的业务规则
-                        // @author: Shawn
-                        // @date: 2025/01/27
-                        updateAttendanceStatusByNewRule(record);
-
-                        swmDailyAttendanceService.update(record);
-
-                        successCount++;
-                        XxlJobHelper.log("员工[{}]{}的怠工时长计算完成: {} 小时 (工作时间: {})",
-                                record.getEmployeeId(), record.getEmployeeName(), calculatedIdleHours, workTimeRange);
-                    } else {
-                        XxlJobHelper.log("员工[{}]{}未找到身份证号，跳过计算",
-                                record.getEmployeeId(), record.getEmployeeName());
+                    } catch (Exception e) {
+                        XxlJobHelper.log("计算员工[{}]{}怠工时长失败: {}",
+                                record.getEmployeeId(), record.getEmployeeName(), e.getMessage());
                         failCount++;
                     }
-                } catch (Exception e) {
-                    XxlJobHelper.log("计算员工[{}]{}怠工时长失败: {}",
-                            record.getEmployeeId(), record.getEmployeeName(), e.getMessage());
-                    failCount++;
                 }
+                XxlJobHelper.log("怠工时长计算任务完成。成功: {}条，失败: {}条", successCount, failCount);
+                jobLog.setExecuteStatus("0"); // 成功
+            } catch (Exception e) {
+                XxlJobHelper.log("怠工时长计算任务执行异常", e);
+                jobLog.setExceptionInfo(e.getMessage());
+            } finally {
+                jobLog.setEndTime(new Date());
+                jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
+                swmJobLogService.save(jobLog);
             }
-
-            XxlJobHelper.log("怠工时长计算任务完成。成功: {}条，失败: {}条", successCount, failCount);
-            jobLog.setExecuteStatus("0"); // 成功
-        } catch (Exception e) {
-            XxlJobHelper.log("怠工时长计算任务执行异常", e);
-            jobLog.setExceptionInfo(e.getMessage());
-        } finally {
-            jobLog.setEndTime(new Date());
-            jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
-            swmJobLogService.save(jobLog);
         }
     }
 
@@ -331,6 +334,7 @@ public class AttendanceTask {
         query.setBeginAttendanceDate(startDate);
         query.setEndAttendanceDate(endDate);
         // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
+        query.setRandom(new Random().nextInt(1_000_000));
         List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService.findList(query);
 
         // 3. 按员工ID分组
@@ -1293,44 +1297,63 @@ public class AttendanceTask {
         jobLog.setJobName("calculateAttendanceByTimeRange");
         jobLog.setStartTime(new Date());
         jobLog.setExecuteStatus("1"); // 默认失败
-        
-        try {
-            XxlJobHelper.log("开始执行自定义时间范围考勤计算任务...");
-            
-            // 保存任务参数
-            String jobParam = XxlJobHelper.getJobParam();
-            jobLog.setJobParam(jobParam);
-            swmJobLogService.save(jobLog);
-            jobLog.setIsNewRecord(false);
-            
-            // 1. 解析参数
-            SwmDailyAttendance params = new SwmDailyAttendance();
-            params.setAttendanceDate(new Date());
-            // 2. 查询待处理记录
-            List<SwmDailyAttendance> records = swmDailyAttendanceService.findList(params);
 
-            if (records.isEmpty()) {
-                XxlJobHelper.log("没有找到待处理的考勤记录");
+
+        //获取系统所有租户信息
+        List<User> corpList = userService.findCorpList(new User());
+        if (CollectionUtils.isEmpty(corpList)) {
+            XxlJobHelper.log("没有租户信息");
+            return;
+        }
+        //为每个租户都生成排班计划
+        for (User user : corpList) {
+
+            String corpCode = user.getCorpCode();
+            String corpName = user.getCorpName();
+            //设置当前线程的租户信息
+            CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
+            try {
+                XxlJobHelper.log("开始执行自定义时间范围考勤计算任务...");
+
+                // 保存任务参数
+                String jobParam = XxlJobHelper.getJobParam();
+                jobLog.setJobParam(jobParam);
+                swmJobLogService.save(jobLog);
+                jobLog.setIsNewRecord(false);
+
+                // 1. 解析参数
+                SwmDailyAttendance params = new SwmDailyAttendance();
+                params.setAttendanceDate(new Date());
+                // 2. 查询待处理记录
+                params.setRandom(new Random().nextInt(1_000_000));
+                List<SwmDailyAttendance> records = swmDailyAttendanceService.findList(params);
+
+                if (records.isEmpty()) {
+                    XxlJobHelper.log("没有找到待处理的考勤记录");
+                    jobLog.setExecuteStatus("0"); // 成功
+                    continue;
+                }
+
+                // 3. 批量处理记录
+                AttendanceResult result = processAttendanceRecords(records);
+
+                // 4. 记录处理结果
+                logProcessResult(result);
+
+                XxlJobHelper.log("自定义时间范围考勤计算任务执行成功");
                 jobLog.setExecuteStatus("0"); // 成功
-                return;
+
+            } catch (Exception e) {
+                XxlJobHelper.log("自定义时间范围考勤计算任务执行异常", e);
+                jobLog.setExceptionInfo(e.getMessage());
+            } finally {
+                jobLog.setEndTime(new Date());
+                jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
+                swmJobLogService.save(jobLog);
+                CorpUtils.removeCurrentCorpCode(null);
             }
-            
-            // 3. 批量处理记录
-            AttendanceResult result = processAttendanceRecords(records);
-            
-            // 4. 记录处理结果
-            logProcessResult(result);
-            
-            XxlJobHelper.log("自定义时间范围考勤计算任务执行成功");
-            jobLog.setExecuteStatus("0"); // 成功
-            
-        } catch (Exception e) {
-            XxlJobHelper.log("自定义时间范围考勤计算任务执行异常", e);
-            jobLog.setExceptionInfo(e.getMessage());
-        } finally {
-            jobLog.setEndTime(new Date());
-            jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
-            swmJobLogService.save(jobLog);
         }
     }
 
@@ -1363,7 +1386,7 @@ public class AttendanceTask {
             return;
         }
 
-        corpList.forEach(corp -> {
+        for (User corp : corpList) {
             String corpCode = corp.getCorpCode();
             String corpName = corp.getCorpName();
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
@@ -1392,7 +1415,7 @@ public class AttendanceTask {
                 swmJobLogService.save(jobLog);
                 CorpUtils.removeCurrentCorpCode( null);
             }
-        });
+        }
     }
 
 
@@ -1410,7 +1433,8 @@ public class AttendanceTask {
         // 1. 查询当天所有的打卡记录
         String date = DateUtils.getDate();
         Date nowDate = new Date();
-        List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockInCardList(date);
+        Integer random = new Random().nextInt(1_000_000);
+        List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockInCardList(date,random);
 //        List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
         XxlJobHelper.log("上班卡查询范围{}，{}，条数{}",date,date,records.size());
 
@@ -1435,8 +1459,6 @@ public class AttendanceTask {
                             if ( count > 0) {
                                 item.setClockInDate(nowDate);
                                 item.setClockInTime(nowDate);
-                                item.setCorpCode(CorpUtils.getCurrentCorpCode());
-                                item.setCorpName(CorpUtils.getCurrentCorpName());
                                 onlineDevices.add(item);
                                 XxlJobHelper.log("上班补卡人员：{}", item.getEmployeeName());
                             }
@@ -1476,7 +1498,8 @@ public class AttendanceTask {
         String nowDate = DateUtils.getDate();
         String yestDay = DateUtils.formatDate(DateUtil.yesterday());
         // 1. 查询两天所有的打卡记录
-        List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockOutCardList(yestDay, nowDate);
+        Integer random = new Random().nextInt(1_000_000);
+        List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockOutCardList(yestDay, nowDate,random);
         //List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
         XxlJobHelper.log("下班卡查询范围{}，{}，条数{}", yestDay, nowDate, records.size());
 
@@ -2063,32 +2086,51 @@ public class AttendanceTask {
     @XxlJob("createDailyAttendanceV2")
     public void createDailyAttendanceV2() {
         SwmJobLog jobLog = initJobLog("createDailyAttendanceV2");
-        
-        try {
-            // 1. 解析参数
-            AttendanceGenerationParams params = parseAttendanceGenerationParams();
-            
-            // 2. 查询目标人员
-            List<SwmPerson> targetPersons = queryTargetPersons(params);
-            if (targetPersons.isEmpty()) {
-                XxlJobHelper.log("没有需要处理的在职人员");
-                jobLog.setExecuteStatus("0");
-                return;
+
+
+        //获取系统所有租户信息
+        List<User> corpList = userService.findCorpList(new User());
+        if (CollectionUtils.isEmpty(corpList)) {
+            XxlJobHelper.log("没有租户信息");
+            return;
+        }
+
+        //为每个租户都生成排班计划
+        for (User user : corpList) {
+
+            String corpCode = user.getCorpCode();
+            String corpName = user.getCorpName();
+            //设置当前线程的租户信息
+            CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
+            try {
+                // 1. 解析参数
+                AttendanceGenerationParams params = parseAttendanceGenerationParams();
+
+                // 2. 查询目标人员
+                List<SwmPerson> targetPersons = queryTargetPersons(params);
+                if (targetPersons.isEmpty()) {
+                    XxlJobHelper.log("没有需要处理的在职人员");
+                    jobLog.setExecuteStatus("0");
+                    continue;
+                }
+
+                // 3. 生成考勤记录
+                AttendanceGenerationResult result = generateAttendanceRecords(targetPersons, params.targetDate);
+
+                // 4. 输出统计结果
+                logGenerationResult(result, targetPersons.size());
+
+                jobLog.setExecuteStatus("0"); // 成功
+
+            } catch (Exception e) {
+                XxlJobHelper.log("创建每日考勤数据V2时发生异常", e);
+                jobLog.setExceptionInfo(e.getMessage());
+            } finally {
+                saveJobLog(jobLog);
+                CorpUtils.removeCurrentCorpCode(null);
             }
-            
-            // 3. 生成考勤记录
-            AttendanceGenerationResult result = generateAttendanceRecords(targetPersons, params.targetDate);
-            
-            // 4. 输出统计结果
-            logGenerationResult(result, targetPersons.size());
-            
-            jobLog.setExecuteStatus("0"); // 成功
-            
-        } catch (Exception e) {
-            XxlJobHelper.log("创建每日考勤数据V2时发生异常", e);
-            jobLog.setExceptionInfo(e.getMessage());
-        } finally {
-            saveJobLog(jobLog);
         }
     }
 
@@ -2259,6 +2301,7 @@ public class AttendanceTask {
         SwmPerson query = new SwmPerson();
         query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
         query.setStatus("0");
+        query.setRandom(new Random().nextInt(1_000_000));
         List<SwmPerson> persons = swmPersonService.findList(query);
         XxlJobHelper.log("查询到 {} 名在职人员", persons.size());
         return persons;

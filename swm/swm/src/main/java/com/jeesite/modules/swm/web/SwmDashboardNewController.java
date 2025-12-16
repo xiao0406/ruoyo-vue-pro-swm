@@ -104,7 +104,7 @@ public class SwmDashboardNewController extends BaseController {
                 () -> getAbnormalCount(swmPersonList),swmExecutor);
         // 实时作业人员变化趋势-每小时统计
         CompletableFuture<Map<String, Object>> hourWorkingCount = CompletableFuture.supplyAsync(
-                this::getHourWorkingCount);
+                this::getHourWorkingCount,swmExecutor);
 
         // 等待所有任务完成
         CompletableFuture.allOf(todayAttendanceCount, todayAbnormalCount, hourWorkingCount).join();
@@ -321,6 +321,7 @@ public class SwmDashboardNewController extends BaseController {
         try {
             // 从TDengine获取指定时间内的唯一身份证集合
             Set<String> uniqueIdCards = getUniqueIdCardsFromTDengine(startTime, endTime);
+            String corpCode = CorpUtils.getCurrentCorpCode();
 
             if (!uniqueIdCards.isEmpty()) {
                 // 通过身份证查询人员信息并按类型分类统计
@@ -973,6 +974,7 @@ public class SwmDashboardNewController extends BaseController {
     @ResponseBody
     @ApiOperation("在场工人数列表")
     public Page<Person> workerList( HttpServletRequest request, HttpServletResponse response) {
+        String corpCode = CorpUtils.getCurrentCorpCode();
         Page<Person> personPage = new Page<>();
         List<Person> list = new ArrayList<>();
         SwmPerson query = new SwmPerson();

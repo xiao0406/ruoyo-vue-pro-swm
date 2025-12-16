@@ -6,6 +6,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -33,6 +34,7 @@ import java.util.Date;
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.create_date DESC")
+@Data
 public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
 
     private static final long serialVersionUID = 1L;
@@ -62,6 +64,11 @@ public class SwmInspectionPlan extends DataEntity<SwmInspectionPlan> {
     // 非持久化字段
     private String[] hazardSourceIds; // 多个危险源ID，用于前端多选
     private String[] hazardSourceNames; // 多个危险源名称，用于前端显示
+
+    /**
+     * 随机值，目的取消一级缓存
+     */
+    private Integer random;
 
     public SwmInspectionPlan() {
         this(null);

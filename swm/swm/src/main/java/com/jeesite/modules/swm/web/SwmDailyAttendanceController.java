@@ -200,11 +200,11 @@ public class SwmDailyAttendanceController extends BaseController {
             swmDailyAttendance.setAttendanceDate(today);
         }
 
-        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
         Set<String> todayOnSiteIdCards = new HashSet<>();
         if (deviceIds != null) {
             for (Object deviceId : deviceIds) {
-                String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
                 if (currentPerson != null){
                     todayOnSiteIdCards.add(currentPerson);
                 }
@@ -751,11 +751,11 @@ public class SwmDailyAttendanceController extends BaseController {
 
         try {
 
-            Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.Device.ONLINE_DEVICES_KEY);
+            Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
             Set<String> todayOnSiteIdCards = new HashSet<>();
             if (deviceIds != null) {
                 for (Object deviceId : deviceIds) {
-                    String currentPerson = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+                    String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
                     if (currentPerson != null){
                         todayOnSiteIdCards.add(currentPerson);
                     }

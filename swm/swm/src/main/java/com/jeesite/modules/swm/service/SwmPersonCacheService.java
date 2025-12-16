@@ -115,6 +115,33 @@ public class SwmPersonCacheService {
                     }
                 }
 
+
+                // 批量存储到Redis
+                if (!personCacheMap.isEmpty()) {
+                    redisService.hmset(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, personCacheMap);
+                    log.info("成功缓存{}条在职人员信息", personCacheMap.size());
+                }
+                // 批量存储到Redis
+                if (!personCacheMap.isEmpty()) {
+                    redisService.del(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY);
+                    redisService.hmset(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, personCacheMap);
+                    log.info("成功缓存{}条在职人员信息", personCacheMap.size());
+                }
+
+                // 存储身份证映射
+                if (!identityCardMap.isEmpty()) {
+                    redisService.hmset(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY, identityCardMap);
+                    log.info("成功缓存{}条身份证映射信息", identityCardMap.size());
+                    // 存储身份证映射
+                    if (!identityCardMap.isEmpty()) {
+                        redisService.del(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY);
+                        redisService.hmset(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY, identityCardMap);
+                        log.info("成功缓存{}条身份证映射信息", identityCardMap.size());
+                    }
+
+                    log.info("在职人员缓存初始化完成，共{}条记录", activePersonsWithIds.size());
+                }
+
                 log.info("在职人员缓存初始化完成，共{}条记录", activePersonsWithIds.size());
 
             } catch (Exception e) {
@@ -123,34 +150,7 @@ public class SwmPersonCacheService {
                 CorpUtils.removeCurrentCorpCode( null);
             }
         }
-        // 批量存储到Redis
-        if (!personCacheMap.isEmpty()) {
-            redisService.hmset(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, personCacheMap);
-            log.info("成功缓存{}条在职人员信息", personCacheMap.size());
-        }
-            // 批量存储到Redis
-            if (!personCacheMap.isEmpty()) {
-                redisService.del(ACTIVE_PERSON_CACHE_KEY);
-                redisService.hmset(ACTIVE_PERSON_CACHE_KEY, personCacheMap);
-                log.info("成功缓存{}条在职人员信息", personCacheMap.size());
-            }
 
-        // 存储身份证映射
-        if (!identityCardMap.isEmpty()) {
-            redisService.hmset(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY, identityCardMap);
-            log.info("成功缓存{}条身份证映射信息", identityCardMap.size());
-            // 存储身份证映射
-            if (!identityCardMap.isEmpty()) {
-                redisService.del(IDENTITY_CARD_MAP_KEY);
-                redisService.hmset(IDENTITY_CARD_MAP_KEY, identityCardMap);
-                log.info("成功缓存{}条身份证映射信息", identityCardMap.size());
-            }
-
-            log.info("在职人员缓存初始化完成，共{}条记录", activePersonsWithIds.size());
-
-        } catch (Exception e) {
-            log.error("初始化在职人员缓存失败", e);
-        }
     }
 
     /**

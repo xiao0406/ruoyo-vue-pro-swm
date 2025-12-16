@@ -99,6 +99,9 @@
             <if test="team != null and team != ''">
                 AND sp.team = #{team}
             </if>
+            <if test="random != null and random != 0 ">
+                AND #{random} = #{random}
+            </if>
         </where>
         <choose>
             <when test="page != null and page.orderBy != null and page.orderBy != ''">
@@ -853,6 +856,7 @@
     <select id="findClockInCardList" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
         select * from swm_daily_attendance where attendance_date = #{date}
                                              and clock_in_date is null
+                                            and #{random} = #{random}
     </select>
     <select id="findClockOutCardList" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
         select *
@@ -860,6 +864,7 @@
         where
             ((attendance_date = #{yestDay} and classes = '3')
           or  attendance_date = #{nowDate})
+          and #{random} = #{random}
     </select>
     <select id="getAllTeamNumber"
             resultType="com.jeesite.modules.swm.web.SwmDashboardNewController$AttendanceAnalysis">
