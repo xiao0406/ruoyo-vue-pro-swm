@@ -51,11 +51,11 @@ public class ThreadPoolTaskExecutorConfig {
     public ThreadPoolTaskExecutor swmExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         // 设置核心线程数
-        executor.setCorePoolSize(12);
+        executor.setCorePoolSize(24);
         // 设置最大线程数
-        executor.setMaxPoolSize(23);
+        executor.setMaxPoolSize(47);
         // 设置队列容量
-        executor.setQueueCapacity(120);
+        executor.setQueueCapacity(200);
         // 设置线程活跃时间（秒）
         executor.setKeepAliveSeconds(60);
         // 设置默认线程名称
