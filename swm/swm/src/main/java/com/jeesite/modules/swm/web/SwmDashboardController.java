@@ -1533,6 +1533,12 @@ public class SwmDashboardController extends BaseController {
         List<Map<String, Object>> resultList = new ArrayList<>();
         for (Map.Entry<String, List<SwmDailyAttendance>> entry : groupedByPersonType.entrySet()) {
             Map<String, Object> result = new HashMap<>();
+            List<DictData> personTypeEnum = DictUtils.getDictList("person_type_enum");
+            for (DictData dictData : personTypeEnum) {
+                result.put("name", dictData.getDictLabel());
+                result.put("presentCount", 0L);
+            }
+            
             String key = entry.getKey();
             DictData dictData = DictUtils.getDictData("person_type_enum", key);
             Long number = 0L;

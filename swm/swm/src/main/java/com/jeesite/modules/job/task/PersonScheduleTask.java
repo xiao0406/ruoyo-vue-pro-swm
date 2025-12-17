@@ -37,6 +37,7 @@ public class PersonScheduleTask {
     @Autowired
     private UserService userService;
 
+
     /**
      * 定时生成人员的排班计划（默认白班）
      */
