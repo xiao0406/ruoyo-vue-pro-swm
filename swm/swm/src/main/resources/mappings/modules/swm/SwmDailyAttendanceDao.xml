@@ -312,8 +312,9 @@
             sp.person_type AS "personType",
             a.classes as "classes"
         FROM swm_daily_attendance a
-        join swm_person sp  on a.identity_card  = sp.identity_card and sp.`status` = 0
+        join swm_person sp  on a.identity_card  = sp.identity_card
         <where>
+            sp.`status` = 0 and
             DATE(a.attendance_date) = DATE(#{attendanceDate})
         </where>
         ORDER BY a.employee_name ASC

@@ -175,6 +175,8 @@ public class SwmPersonCacheService {
         personInfo.put("positionArchiveId", personData.get("positionArchiveId")); // 车间ID (fms_position_archive.id)
         personInfo.put("workGroupId", personData.get("workGroupId")); // 班组ID (fms_work_group.id)
         personInfo.put("prodLineId", personData.get("prodLineId")); // 产线ID (fms_prod_line.id)
+        personInfo.put("gender", personData.get("gender")); // 性别
+        personInfo.put("phoneNumber", personData.get("phoneNumber")); // 手机号
 
         return personInfo;
     }
