@@ -16,9 +16,13 @@ import com.jeesite.modules.swm.dao.SwmSafetyHelmetOrderDao;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.sys.entity.User;
+import com.jeesite.modules.sys.service.UserService;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.utils.R;
+import com.xxl.job.core.context.XxlJobHelper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -69,6 +73,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
     @Autowired
     private RedisService redisService;
+    @Autowired
+    private UserService userService;
 
     /**
      * 安全帽超级表名称
@@ -92,8 +98,26 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             }
 
             // 查询所有头盔设备数据（框架自动添加status='0'条件）
-            SwmHelmetDevice queryCondition = new SwmHelmetDevice();
-            List<SwmHelmetDevice> allDevices = this.findList(queryCondition);
+            List<SwmHelmetDevice> allDevices = new ArrayList<>();
+
+            //获取系统所有租户信息
+            List<User> corpList = userService.findCorpList(new User());
+            if (CollectionUtils.isEmpty(corpList)) {
+                XxlJobHelper.log("没有租户信息");
+                return;
+            }
+            //为每个租户都生成排班计划
+            for (User user : corpList) {
+
+                // 查询所有头盔设备数据（框架自动添加status='0'条件）
+                SwmHelmetDevice queryCondition = new SwmHelmetDevice();
+                queryCondition.setRandom(new Random().nextInt(1_000_000));
+                List<SwmHelmetDevice> list = this.findListInit(queryCondition);
+                allDevices.addAll( list);
+
+            }
+
+
 
             // 初始化Redis缓存
             helmetCacheService.initHelmetCache(allDevices);
@@ -102,6 +126,10 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         } catch (Exception e) {
             logger.error("初始化头盔设备Redis缓存失败", e);
         }
+    }
+
+    private List<SwmHelmetDevice> findListInit(SwmHelmetDevice queryCondition) {
+        return this.dao.findListInit(queryCondition);
     }
 
     /**

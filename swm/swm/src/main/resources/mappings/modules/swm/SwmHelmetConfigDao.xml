@@ -80,5 +80,8 @@
 		WHERE status = '0'
 		ORDER BY work_type_code
 	</select>
-	
+    <select id="getByDeviceId" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
+		select * from swm_helmet_device_config where device_id = #{deviceId} and status = '0'
+	</select>
+
 </mapper> 

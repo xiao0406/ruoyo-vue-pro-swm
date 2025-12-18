@@ -3,6 +3,8 @@ package com.jeesite.modules.swm.dao;
 import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmHelmetConfig;
+import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+
 import java.util.List;
 import java.util.Map;
 
@@ -60,4 +62,5 @@ public interface SwmHelmetConfigDao extends CrudDao<SwmHelmetConfig> {
      */
     List<Map<String, Object>> getWorkTypeEnumData();
 
+    SwmHelmetDevice getByDeviceId(String deviceId);
 }

@@ -57,43 +57,7 @@
     <!-- 根据头盔编号查询设备 -->
     <select id="getByDeviceId" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
         SELECT
-            a.id,
-            a.device_id,
-            a.helmet_type,
-            a.battery_level,
-            a.ip,
-            a.mac_address,
-            a.assigned_person,
-            a.person_name,
-            a.person_phone,
-            a.assigned_workshop,
-            a.assigned_process,
-            a.assigned_team,
-            a.motion_status,
-            a.bind_time,
-            a.unbind_time,
-            a.bind_duration_days,
-            a.usage_status,
-            a.server_ip,
-            a.server_port,
-            a.bluetooth_scan_window,
-            a.group_duration,
-            a.normal_beacon_cs,
-            a.special_beacon_cs,
-            a.location_mode,
-            a.deep_sleep_duration,
-            a.bluetooth_scan_duration,
-            a.send_interval,
-            a.hazard_retrigger_interval,
-            a.sleep_wakeup_time,
-            a.beacon_filter_name,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks,
-            a.corp_code,
-            a.corp_name
+            a.*
         FROM swm_helmet_device a
         WHERE a.device_id = #{deviceId}
         AND a.status = '0'
@@ -297,6 +261,15 @@
             swm_helmet_device a
         where `status` = '0'
           AND #{random} = #{random}
+    </select>
+    <select id="findListInit" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
+        select * from swm_helmet_device
+        <where>
+            `status` = '0'
+            <if test="random != null and random != 0 ">
+                AND #{random} = #{random}
+            </if>
+        </where>
     </select>
 
 </mapper> 

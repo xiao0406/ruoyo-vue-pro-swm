@@ -49,7 +49,6 @@ public class SwmPersonCacheService {
     @PostConstruct
     public void initActivePersonCache() {
 
-
         //获取系统所有租户信息
         List<User> corpList = userService.findCorpList(new User());
         if (CollectionUtils.isEmpty(corpList)) {

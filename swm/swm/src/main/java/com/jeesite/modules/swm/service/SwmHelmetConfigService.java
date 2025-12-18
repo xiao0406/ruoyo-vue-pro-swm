@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.service;
 import java.util.List;
 import java.util.Map;
 
+import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -164,4 +165,7 @@ public class SwmHelmetConfigService extends CrudService<SwmHelmetConfigDao, SwmH
 		return dao.getWorkTypeEnumData();
 	}
 
+	public SwmHelmetDevice getByDeviceId(String deviceId) {
+		return dao.getByDeviceId(deviceId);
+	}
 }
