@@ -425,6 +425,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
         // 添加手机号字段
         position.put("phoneNumber", person.getPhoneNumber());
+        position.put("gender", person.getGender());
 
         return position;
     }
