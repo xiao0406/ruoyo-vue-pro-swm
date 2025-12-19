@@ -4,18 +4,26 @@
  */
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.collection.CollectionUtil;
+import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.google.common.collect.Lists;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.entity.SwmBeaconStationExport;
+import com.jeesite.modules.entity.SwmPersonExport;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
+import com.jeesite.modules.swm.entity.SwmArea;
+import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.entity.AiDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
+import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +32,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 人员登记表service
@@ -369,5 +379,30 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         List<SwmDashboardNewController.Person> list = dao.findManageTodayList(vo);
         page.setList(list);
         return page;
+    }
+
+    @Transactional(readOnly = false)
+    public Integer importData(MultipartFile file) {
+        ExcelImport excelImport = null;
+        Integer count = 0;
+        try {
+            excelImport = new ExcelImport(file, 2, 0);
+            List<SwmPersonExport> list = excelImport.getDataList(SwmPersonExport.class);
+            if (CollectionUtil.isNotEmpty(list)){
+                for (SwmPersonExport export : list) {
+                    if (StringUtils.isBlank(export.getIdentityCard())){
+                        new RuntimeException("导入数据错误：身份证号不能为空");
+                    }
+                }
+                List<List<SwmPersonExport>> lists = BatchOperationsUtil.batchCutting(list, 100);
+                for (List<SwmPersonExport> list1 : lists) {
+                    this.dao.updateBatch(list1);
+                }
+                count = list.size();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return count;
     }
 }

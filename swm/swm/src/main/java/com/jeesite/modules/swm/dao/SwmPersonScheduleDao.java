@@ -2,6 +2,7 @@ package com.jeesite.modules.swm.dao;
 
 import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
+import com.jeesite.modules.entity.SwmPersonScheduleExport;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import org.apache.ibatis.annotations.Param;
 
@@ -64,4 +65,6 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
      * @return 排班人数
      */
     int countDistinctPersonByYearAndMonth(@Param("yearMonth") String yearMonth);
+
+    void updateBatch(List<SwmPersonScheduleExport> list1);
 }

@@ -31,7 +31,6 @@
             AND (wg.work_group_name LIKE CONCAT('%', #{workGroupName}, '%') OR backup_wg.work_group_name LIKE CONCAT('%', #{workGroupName}, '%'))
         </if>
     </sql>
-    
     <!-- 自定义查询（示例） -->
     <select id="findByIdCard" resultType="SwmPersonSchedule">
         SELECT 
@@ -212,5 +211,17 @@
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
-    
+
+    <update id="updateBatch">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE swm_person_schedule
+            <set>
+                <if test="classes != null and classes != '' ">
+                    classes = #{classes},
+                </if>
+                update_date = NOW()
+            </set>
+            WHERE id_card = #{idCard} and month = #{month}
+        </foreach>
+    </update>
 </mapper> 

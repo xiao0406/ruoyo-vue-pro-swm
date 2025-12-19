@@ -31,7 +31,11 @@
                a.remarks AS "remarks",
                a.status AS "status",
                a.dept ,
-               a.position
+               a.position,
+               a.person_number,
+               a.age,
+               a.urgent_person,
+               a.urgent_phone_number
         FROM ${sqlMap.table.toSql()}
         LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
@@ -515,4 +519,26 @@
             </if>
         </where>
     </select>
+
+    <update id="updateBatch">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE swm_person
+            <set>
+                <if test="personNumber != null and personNumber != '' ">
+                    person_number = #{personNumber},
+                </if>
+                <if test="age != null and age != '' ">
+                    age = #{age},
+                </if>
+                <if test="urgentPerson != null and urgentPerson != ''">
+                    urgent_person = #{urgentPerson},
+                </if>
+                <if test="urgentPhoneNumber != null and urgentPhoneNumber != ''">
+                    urgent_phone_number = #{urgentPhoneNumber},
+                </if>
+                update_date = NOW()
+            </set>
+            WHERE identity_card = #{identityCard}
+        </foreach>
+    </update>
 </mapper>

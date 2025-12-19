@@ -28,6 +28,8 @@ import java.util.Set;
 @Table(name = "swm_person", alias = "a", columns = {
         @Column(name = "id", attrName = "id", label = "编号", isPK = true),
         @Column(name = "name", attrName = "name", label = "姓名", queryType = QueryType.LIKE),
+        @Column(name = "person_number", attrName = "personNumber", label = "人员编码", queryType = QueryType.LIKE),
+        @Column(name = "age", attrName = "age", label = "年龄"),
         @Column(name = "person_type", attrName = "personType", label = "人员类型"),
         @Column(name = "gender", attrName = "gender", label = "性别"),
         @Column(name = "company", attrName = "company", label = "所属单位"),
@@ -43,6 +45,8 @@ import java.util.Set;
         @Column(name = "safety_education", attrName = "safetyEducation", label = "入场安全教育"),
         @Column(name = "identity_card", attrName = "identityCard", label = "身份证号码", queryType = QueryType.LIKE),
         @Column(name = "phone_number", attrName = "phoneNumber", label = "手机号码", queryType = QueryType.LIKE),
+        @Column(name = "urgent_person", attrName = "urgentPerson", label = "紧急联系人", queryType = QueryType.LIKE),
+        @Column(name = "urgent_phone_number", attrName = "urgentPhoneNumber", label = "紧急联系人手机号", queryType = QueryType.LIKE),
         @Column(name = "helmet_returned", attrName = "helmetReturned", label = "是否归还安全帽"),
         @Column(name = "departure_type", attrName = "departureType", label = "离职类型"),
         @Column(name = "departure_reason", attrName = "departureReason", label = "离职原因"),
@@ -161,6 +165,14 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private List<String> idCards;
     @ApiModelProperty(value = "开机状态  0-开机，1-关机")
     private String powerOnStatus;
+    @ApiModelProperty(value = "人员编码")
+    private String personNumber;
+    @ApiModelProperty(value = "年龄 ")
+    private String age;
+    @ApiModelProperty(value = "紧急联系人")
+    private String urgentPerson;
+    @ApiModelProperty(value = "紧急联系人手机号")
+    private String urgentPhoneNumber;
     //在线人数
     private List<String> todayOnSiteIdCards;
 

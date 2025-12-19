@@ -2,6 +2,8 @@ package com.jeesite.modules.swm.entity;
 
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Table;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
 
 import java.util.Date;
 
@@ -12,6 +14,7 @@ import java.util.Date;
  * @date 2025-01-14
  */
 @Table(name = "swm_person", alias = "a", label = "人员追踪信息")
+@Data
 public class PersonTrackInfo extends DataEntity<PersonTrackInfo> {
 
     private static final long serialVersionUID = 1L;
@@ -43,6 +46,15 @@ public class PersonTrackInfo extends DataEntity<PersonTrackInfo> {
 
     // 颜色相关字段 2025/06/24 Shawn 添加
     private String personTypeColor; // 人员类型颜色
+
+    @ApiModelProperty(value = "人员编码")
+    private String personNumber;
+    @ApiModelProperty(value = "年龄 ")
+    private String age;
+    @ApiModelProperty(value = "紧急联系人")
+    private String urgentPerson;
+    @ApiModelProperty(value = "紧急联系人手机号")
+    private String urgentPhoneNumber;
 
     public PersonTrackInfo() {
         this(null);

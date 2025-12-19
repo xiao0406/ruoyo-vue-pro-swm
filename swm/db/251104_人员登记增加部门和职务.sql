@@ -52,3 +52,12 @@ ALTER TABLE swm_hazard_source
 ALTER TABLE swm_daily_attendance
     ADD pending_clock_out_compensate BOOLEAN NOT NULL DEFAULT FALSE COMMENT '当天该员工是否已经触发过补偿且未恢复，true = 已补卡' AFTER clock_out_date;
 
+# 人员增加人员编码、年龄、.紧急联系人、紧急联系人手机号
+ALTER TABLE swm_person
+    ADD person_number VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '人员编码' AFTER name;
+ALTER TABLE swm_person
+    ADD age VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '年龄' AFTER person_number;
+ALTER TABLE swm_person
+    ADD urgent_person VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '紧急联系人' AFTER phone_number;
+ALTER TABLE swm_person
+    ADD urgent_phone_number VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '紧急联系人手机号' AFTER urgent_person;

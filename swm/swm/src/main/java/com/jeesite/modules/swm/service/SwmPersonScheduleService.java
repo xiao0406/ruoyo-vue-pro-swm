@@ -1,15 +1,24 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.common.utils.excel.ExcelImport;
+import com.jeesite.modules.entity.SwmPersonExport;
+import com.jeesite.modules.entity.SwmPersonScheduleExport;
 import com.jeesite.modules.swm.dao.SwmPersonScheduleDao;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
+import com.jeesite.modules.utils.BatchOperationsUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -211,5 +220,33 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
      */
     public void insertBatch(List<SwmPersonSchedule> list) {
         dao.insertBatch(list);
+    }
+
+    public Integer importData(MultipartFile file) {
+        ExcelImport excelImport = null;
+        Integer count = 0;
+        try {
+            excelImport = new ExcelImport(file, 2, 0);
+            List<SwmPersonScheduleExport> list = excelImport.getDataList(SwmPersonScheduleExport.class);
+            if (CollectionUtil.isNotEmpty(list)){
+                Date date = new Date();
+                String month = DateUtil.format(date, "yyyy-MM");
+
+                for (SwmPersonScheduleExport export : list) {
+                    export.setMonth( month);
+                    if (StringUtils.isBlank(export.getIdCard())){
+                        new RuntimeException("导入数据错误：身份证号不能为空");
+                    }
+                }
+                List<List<SwmPersonScheduleExport>> lists = BatchOperationsUtil.batchCutting(list, 100);
+                for (List<SwmPersonScheduleExport> list1 : lists) {
+                    this.dao.updateBatch(list1);
+                }
+                count = list.size();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return count;
     }
 }

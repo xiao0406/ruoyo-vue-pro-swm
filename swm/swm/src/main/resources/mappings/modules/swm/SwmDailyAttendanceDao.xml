@@ -897,5 +897,23 @@
         ORDER BY
             attendanceCount DESC
     </select>
+    <select id="idleHoursRankingList"
+            resultType="com.jeesite.modules.swm.entity.dto.SwmDashboardDto$IdleHoursRankingDto">
+        SELECT a.identity_card,
+               a.employee_name              as employeeName,
+               pa.position_name             as departmentName,
+               sp.job_type                  as jobType,
+               a.idle_hours                 as idleHours,
+               SUM(IFNULL(a.idle_hours, 0)) AS monthIdleHours
+        FROM `swm_daily_attendance` a
+                 JOIN swm_person sp ON a.identity_card = sp.identity_card
+                 left JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
+        WHERE a.`status` = '0'
+          AND sp.`status` = '0'
+          AND sp.personnel_status = '1'
+          AND a.attendance_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY sp.identity_card
+        ORDER BY monthIdleHours DESC;
+    </select>
 
 </mapper>

@@ -6,6 +6,7 @@ package com.jeesite.modules.swm.dao;
 
 import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
+import com.jeesite.modules.entity.SwmPersonExport;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.entity.AiDto;
@@ -117,4 +118,6 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
     List<SwmDashboardNewController.Person> findTodayAttendance(SwmDashboardNewController.Person vo);
 
     List<SwmDashboardNewController.Person> findManageTodayList(SwmDashboardNewController.Person vo);
+
+    void updateBatch(List<SwmPersonExport> list1);
 }

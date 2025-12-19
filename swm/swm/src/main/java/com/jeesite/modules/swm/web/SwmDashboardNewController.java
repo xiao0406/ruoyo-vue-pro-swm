@@ -11,6 +11,7 @@ import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
+import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.utils.R;
 import groovy.lang.Lazy;
@@ -1139,6 +1140,14 @@ public class SwmDashboardNewController extends BaseController {
         vo.setDate(date);
         Page<SwmDashboardNewController.Person> page = swmPersonService.findManageTodayList(vo);
         return page;
+    }
+
+    @GetMapping("/person/idleHoursRanking")
+    @ResponseBody
+    @ApiOperation("人员休闲区停留时长")
+    public Page<SwmDashboardDto.IdleHoursRankingDto> idleHoursRanking(SwmDashboardDto.IdleHoursRankingDto  vo) {
+        Page<SwmDashboardDto.IdleHoursRankingDto> result  = swmDailyAttendanceService.idleHoursRanking(vo);
+        return result;
     }
 
 }

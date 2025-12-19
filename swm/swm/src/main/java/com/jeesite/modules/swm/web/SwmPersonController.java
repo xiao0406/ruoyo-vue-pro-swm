@@ -34,6 +34,7 @@ import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.service.SwmHelmetCacheService;
 import com.jeesite.modules.swm.service.TDengineService;
 import com.jeesite.modules.utils.R;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.context.ApplicationContext;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -183,6 +184,10 @@ public class SwmPersonController extends BaseController {
             personMap.put("helmetReturnedText", person.getHelmetReturnedText());
             personMap.put("departureTypeText", person.getDepartureTypeText());
             personMap.put("powerOnStatus", person.getPowerOnStatus());
+            personMap.put("personNumber", person.getPersonNumber());
+            personMap.put("age", person.getAge());
+            personMap.put("urgentPerson", person.getUrgentPerson());
+            personMap.put("urgentPhoneNumber", person.getUrgentPhoneNumber());
 
             // 添加到列表
             enhancedList.add(personMap);
@@ -2119,6 +2124,14 @@ public class SwmPersonController extends BaseController {
         }
 
         return result;
+    }
+
+    @ApiOperation("人员台账excel导入（临时用于人员编码、年龄、紧急联系人、紧急联系人手机号）")
+    @RequestMapping("/importData")
+    @ResponseBody
+    public String importData(MultipartFile file) {
+        Integer count = swmPersonService.importData(file);
+        return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
 
 }

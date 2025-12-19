@@ -1,11 +1,13 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.job.task.AttendanceTask;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.*;
 
+import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import com.jeesite.modules.entity.AiDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -952,5 +954,15 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     public List<SwmDashboardNewController.AttendanceAnalysis> getTeamAttendance(String companyCode, String date) {
         return dao.getTeamAttendance(companyCode, date);
+    }
+
+    public Page<SwmDashboardDto.IdleHoursRankingDto> idleHoursRanking(SwmDashboardDto.IdleHoursRankingDto  vo) {
+        Page<SwmDashboardDto.IdleHoursRankingDto> page = vo.getPage();
+        Date date = new Date();
+        vo.setStartDate(DateUtil.beginOfMonth( date));
+        vo.setEndDate(DateUtil.endOfMonth(date));
+        List<SwmDashboardDto.IdleHoursRankingDto> list = dao.idleHoursRankingList(vo);
+        page.setList(list);
+        return page;
     }
 }

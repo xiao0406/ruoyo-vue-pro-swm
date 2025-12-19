@@ -33,7 +33,11 @@
         a.company AS officeCode,
         a.department AS positionArchiveId,
         a.team AS workGroupId,
-        a.prod_line AS prodLineId
+        a.prod_line AS prodLineId,
+        a.person_number,
+        a.age,
+        a.urgent_person,
+        a.urgent_phone_number
         FROM
         swm_person a
         LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
