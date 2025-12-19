@@ -65,7 +65,22 @@ public class PersonScheduleTask {
 
             try {
                 List<SwmPersonSchedule> insertList = new java.util.ArrayList<>();
-                //1.先查询本月排班人员信息
+
+                //1.查询人员信息
+                SwmPerson swmPerson = new SwmPerson();
+                swmPerson.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
+                swmPerson.setStatus(SwmPerson.STATUS_NORMAL);
+                swmPerson.setRandom(new Random().nextInt(1_000_000));
+                List<SwmPerson> personList = swmPersonService.peronsList(swmPerson);
+                XxlJobHelper.log("人员总数：{}", personList.size());
+
+                if (CollectionUtils.isEmpty(personList)) {
+                    XxlJobHelper.log("没有人员信息");
+                    continue;
+                }
+
+
+                //2.先查询本月排班人员信息
                 Date date = new Date();
                 String month = DateUtil.format(date, "yyyy-MM");
                 SwmPersonSchedule swmPersonSchedule = new SwmPersonSchedule();
@@ -76,15 +91,6 @@ public class PersonScheduleTask {
                 List<SwmPersonSchedule> scheduleList = swmPersonScheduleService.scheduleList(swmPersonSchedule);
                 Map<String, List<SwmPersonSchedule>> scheduleListMap = scheduleList.stream().collect(Collectors.groupingBy(SwmPersonSchedule::getIdCard));
                 XxlJobHelper.log("本月排班人数：{}", scheduleList.size());
-
-
-                //2.查询人员信息
-                SwmPerson swmPerson = new SwmPerson();
-                swmPerson.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
-                swmPerson.setStatus(SwmPerson.STATUS_NORMAL);
-                swmPerson.setRandom(new Random().nextInt(1_000_000));
-                List<SwmPerson> personList = swmPersonService.peronsList(swmPerson);
-                XxlJobHelper.log("人员总数：{}", personList.size());
 
 
                 //3.本月未排班则自动生成一个排班

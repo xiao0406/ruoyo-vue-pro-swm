@@ -546,7 +546,6 @@
         a.position
         FROM ${sqlMap.table.toSql()}
         <where>
-            a.status = '0'
             <if test="personnelStatus != null and personnelStatus != ''">
                 AND a.personnel_status = #{personnelStatus}
             </if>
