@@ -9,6 +9,8 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.entity.SwmBeaconStationExport;
+import com.jeesite.modules.entity.SwmHelmetDeviceExport;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.entity.SwmPerson;
@@ -17,12 +19,15 @@ import com.jeesite.modules.swm.service.SwmHelmetCacheService;
 import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
 import com.jeesite.modules.swm.service.SwmSafetyHelmetOrderService;
 import com.jeesite.modules.sys.utils.ExcelExportUtil;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -515,5 +520,26 @@ public class SwmHelmetDeviceController extends BaseController {
             throw new RuntimeException(e);
         }
         return renderResult(Global.TRUE, text("成功！"), name);
+    }
+
+    @ApiOperation("模板下载")
+    @RequestMapping("/export")
+    @ResponseBody
+    public String export() throws IOException {
+        String name;
+        List<SwmHelmetDeviceExport> list = new ArrayList<>();
+        String fileName = "安全帽管理导入模板.xlsx";
+        try (ExcelExport ee = new ExcelExport("安全帽管理设置", SwmHelmetDeviceExport.class)) {
+            name = ExcelExportUtil.uploadOss(ee.setDataList(list), fileName);
+        }
+        return renderResult(Global.TRUE, text("成功！"), name);
+    }
+
+    @ApiOperation("安全帽管理excel导入")
+    @RequestMapping("/importData")
+    @ResponseBody
+    public String importData(MultipartFile file) {
+        Integer count = swmHelmetDeviceService.importData(file);
+        return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
 }

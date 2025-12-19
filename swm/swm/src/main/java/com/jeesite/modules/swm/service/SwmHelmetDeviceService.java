@@ -4,21 +4,26 @@
  */
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
+import com.alibaba.csp.sentinel.util.StringUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.entity.SwmBeaconStationExport;
+import com.jeesite.modules.entity.SwmHelmetDeviceExport;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmHelmetDeviceDao;
 import com.jeesite.modules.swm.dao.SwmSafetyHelmetOrderDao;
-import com.jeesite.modules.swm.entity.SwmHelmetDevice;
-import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
-import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.service.UserService;
 import com.jeesite.modules.sys.utils.CorpUtils;
+import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.utils.R;
 import com.xxl.job.core.context.XxlJobHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +45,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 头盔设备管理服务
@@ -722,5 +728,34 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
     public List<SwmHelmetDevice> findDeviceCorpMapping(SwmHelmetDevice device) {
         return this.dao.findDeviceCorpMapping(device);
+    }
+
+    @Transactional(readOnly = false)
+    public Integer importData(MultipartFile file) {
+        ExcelImport excelImport = null;
+        List<SwmHelmetDevice> deviceList = new ArrayList<>();
+        Integer count = 0;
+        try {
+            excelImport = new ExcelImport(file, 2, 0);
+            List<SwmHelmetDeviceExport> list = excelImport.getDataList(SwmHelmetDeviceExport.class);
+            if (CollectionUtil.isNotEmpty(list)){
+                for (SwmHelmetDeviceExport swmHelmetDeviceExport : list) {
+                    SwmHelmetDevice device = new SwmHelmetDevice();
+                    device.setDeviceId(swmHelmetDeviceExport.getDeviceId());
+                    device.setMacAddress(swmHelmetDeviceExport.getMacAddress());
+                    device.setHelmetType(swmHelmetDeviceExport.getHelmetType());
+                    deviceList.add(device);
+                }
+
+                List<List<SwmHelmetDevice>> lists = BatchOperationsUtil.batchCutting(deviceList, 100);
+                for (List<SwmHelmetDevice> list1 : lists) {
+                    this.dao.insertBatch(list1);
+                }
+                count = list.size();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return count;
     }
 }
