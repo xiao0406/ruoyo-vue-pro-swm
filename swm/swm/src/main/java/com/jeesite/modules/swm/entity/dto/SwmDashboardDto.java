@@ -37,7 +37,25 @@ public class SwmDashboardDto {
 
         private Date startDate;
         private Date endDate;
+    }
 
+    /**
+     * 管理人员在岗情况”，列表类型：姓名、手机号、安全帽使用时长（月）、车间在岗时长（月）
+     */
+    @Data
+    public class ManagementOnDutyDto extends DataEntity<ManagementOnDutyDto> {
 
+        @ApiModelProperty(value = "姓名")
+        private String employeeName;
+
+        @ApiModelProperty(value = "手机号")
+        private String phoneNumber;
+
+        @ApiModelProperty(value = "使用时长（工作区+怠工时长）")
+        private String useHours;
+        @ApiModelProperty(value = "车间在岗时长（工作区考勤时长）")
+        private BigDecimal workDepartmentHours;
+        private Date startDate;
+        private Date endDate;
     }
 }

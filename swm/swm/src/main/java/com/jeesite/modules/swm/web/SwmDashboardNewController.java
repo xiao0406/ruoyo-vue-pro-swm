@@ -1150,4 +1150,12 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
+    @GetMapping("/person/idleHoursRanking")
+    @ResponseBody
+    @ApiOperation("管理人员在岗情况")
+    public Page<SwmDashboardDto.ManagementOnDutyDto> managementOnDuty(SwmDashboardDto.ManagementOnDutyDto  vo) {
+        Page<SwmDashboardDto.ManagementOnDutyDto> result  = swmDailyAttendanceService.managementOnDuty(vo);
+        return result;
+    }
+
 }

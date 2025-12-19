@@ -65,7 +65,7 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
      * @author Shawn
      * @date 2025/06/23
      */
-    List<Map<String, Object>> findActivePersonsWithIds();
+    List<Map<String, Object>> findActivePersonsWithIds(String idCard);
 
     /**
      * 根据身份证号列表查询人员

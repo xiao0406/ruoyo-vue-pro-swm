@@ -60,7 +60,7 @@ public class SwmPersonCacheService {
             }
 
             // 使用自定义SQL查询获取包含各表ID的完整人员信息
-            List<Map<String, Object>> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds();
+            List<Map<String, Object>> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds(null);
 
             if (activePersonsWithIds == null || activePersonsWithIds.isEmpty()) {
                 log.warn("未查询到在职人员数据");
@@ -138,6 +138,8 @@ public class SwmPersonCacheService {
         personInfo.put("team", person.getTeam()); // 所属班组
         personInfo.put("jobType", person.getJobType()); // 工种
         personInfo.put("identityCard", person.getIdentityCard()); // 身份证号码
+        personInfo.put("gender", person.getGender()); // 性别
+        personInfo.put("phoneNumber", person.getPhoneNumber()); // 手机号
 
         return personInfo;
     }
@@ -290,13 +292,18 @@ public class SwmPersonCacheService {
         try {
             if (SwmPerson.PersonStatusEnum.ACTIVE.equals(person.getPersonnelStatus())) {
                 // 在职状态，添加或更新缓存
-                Map<String, Object> personInfo = buildPersonCacheInfo(person);
+                Map<String, Object> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds(person.getIdentityCard()).get(0);
+
+//                Map<String, Object> personInfo = buildPersonCacheInfo(person);
+                Map<String, Object> personInfo = buildPersonCacheInfoWithIds(activePersonsWithIds);
                 redisService.hset(ACTIVE_PERSON_CACHE_KEY, person.getId(), personInfo);
 
                 // 更新身份证映射
                 if (person.getIdentityCard() != null && !person.getIdentityCard().trim().isEmpty()) {
                     redisService.hset(IDENTITY_CARD_MAP_KEY, person.getIdentityCard(), person.getId());
                 }
+
+
 
                 log.debug("更新在职人员缓存：{}", person.getName());
 

@@ -244,6 +244,10 @@ public class SwmPersonController extends BaseController {
 
             personData.put("dept", swmPerson.getDept());
             personData.put("position", swmPerson.getPosition());
+            personData.put("personNumber", swmPerson.getPersonNumber());
+            personData.put("age", swmPerson.getAge());
+            personData.put("urgentPerson", swmPerson.getUrgentPerson());
+            personData.put("urgentPhoneNumber", swmPerson.getUrgentPhoneNumber());
 
             result.putAll(personData);
         }

@@ -320,6 +320,9 @@
                 AND NOT EXISTS (SELECT 1 FROM fms_worker fw2 WHERE fw2.identity_code = f.identity_code AND fw2.create_date > f.create_date)
         WHERE a.personnel_status = '1'  -- 只查询在职人员
           AND a.status = '0'            -- 正常状态
+        <if test="idCard != null and idCard != ''">
+            and a.identity_card = idCard
+        </if>
         ORDER BY a.update_date DESC
     </select>
 

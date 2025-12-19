@@ -965,4 +965,14 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         page.setList(list);
         return page;
     }
+
+    public Page<SwmDashboardDto.ManagementOnDutyDto> managementOnDuty(SwmDashboardDto.ManagementOnDutyDto vo) {
+        Page<SwmDashboardDto.ManagementOnDutyDto> page = vo.getPage();
+        Date date = new Date();
+        vo.setStartDate(DateUtil.beginOfMonth( date));
+        vo.setEndDate(DateUtil.endOfMonth(date));
+//        List<SwmDashboardDto.ManagementOnDutyDto> list = dao.managementOnDuty(vo);
+        page.setList(null);
+        return page;
+    }
 }

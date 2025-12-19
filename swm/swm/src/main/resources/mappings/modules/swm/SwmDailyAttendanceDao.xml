@@ -899,12 +899,13 @@
     </select>
     <select id="idleHoursRankingList"
             resultType="com.jeesite.modules.swm.entity.dto.SwmDashboardDto$IdleHoursRankingDto">
-        SELECT a.identity_card,
-               a.employee_name              as employeeName,
-               pa.position_name             as departmentName,
-               sp.job_type                  as jobType,
-               a.idle_hours                 as idleHours,
-               SUM(IFNULL(a.idle_hours, 0)) AS monthIdleHours
+        SELECT
+            a.identity_card,
+            a.employee_name AS employeeName,
+            pa.position_name AS departmentName,
+            sp.job_type AS jobType,
+            a.idle_hours AS idleHours,
+            SUM(IFNULL(a.idle_hours, 0)) AS monthIdleHours
         FROM `swm_daily_attendance` a
                  JOIN swm_person sp ON a.identity_card = sp.identity_card
                  left JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
