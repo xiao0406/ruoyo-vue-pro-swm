@@ -900,7 +900,6 @@
     <select id="idleHoursRankingList"
             resultType="com.jeesite.modules.swm.entity.dto.SwmDashboardDto$IdleHoursRankingDto">
         SELECT
-            a.identity_card,
             a.employee_name AS employeeName,
             pa.position_name AS departmentName,
             sp.job_type AS jobType,
@@ -914,7 +913,32 @@
           AND sp.personnel_status = '1'
           AND a.attendance_date BETWEEN #{startDate} AND #{endDate}
         GROUP BY sp.identity_card
-        ORDER BY monthIdleHours DESC;
+        ORDER BY monthIdleHours DESC
+    </select>
+    <select id="managementOnDuty"
+            resultType="com.jeesite.modules.swm.entity.dto.SwmDashboardDto$ManagementOnDutyDto">
+        SELECT
+            t.employee_name AS employeeName,
+            sp.phone_number AS phoneNumber,
+            t.useHours,
+            t.workDepartmentHours
+        FROM (
+                 SELECT
+                     identity_card,
+                     employee_name,
+                     SUM(IFNULL(idle_hours + effective_work_hours, 0)) AS useHours,
+                     SUM(IFNULL(effective_work_hours, 0)) AS workDepartmentHours
+                 FROM swm_daily_attendance
+                 WHERE status = '0'
+                   AND attendance_date BETWEEN #{startDate} AND #{endDate}
+                 GROUP BY identity_card
+             ) t
+                 JOIN swm_person sp
+                      ON t.identity_card = sp.identity_card
+        WHERE sp.status = '0'
+          AND sp.personnel_status = '1'
+          AND sp.person_type = '1'
+        ORDER BY t.workDepartmentHours DESC
     </select>
 
 </mapper>

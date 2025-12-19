@@ -527,21 +527,21 @@
         <foreach collection="list" item="item" separator=";">
             UPDATE swm_person
             <set>
-                <if test="personNumber != null and personNumber != '' ">
-                    person_number = #{personNumber},
+                <if test="item.personNumber != null and item.personNumber != '' ">
+                    person_number = #{item.personNumber},
                 </if>
-                <if test="age != null and age != '' ">
-                    age = #{age},
+                <if test="item.age != null and item.age != '' ">
+                    age = #{item.age},
                 </if>
-                <if test="urgentPerson != null and urgentPerson != ''">
-                    urgent_person = #{urgentPerson},
+                <if test="item.urgentPerson != null and item.urgentPerson != ''">
+                    urgent_person = #{item.urgentPerson},
                 </if>
-                <if test="urgentPhoneNumber != null and urgentPhoneNumber != ''">
-                    urgent_phone_number = #{urgentPhoneNumber},
+                <if test="item.urgentPhoneNumber != null and item.urgentPhoneNumber != ''">
+                    urgent_phone_number = #{item.urgentPhoneNumber},
                 </if>
                 update_date = NOW()
             </set>
-            WHERE identity_card = #{identityCard}
+            WHERE identity_card = #{item.identityCard}
         </foreach>
     </update>
 </mapper>

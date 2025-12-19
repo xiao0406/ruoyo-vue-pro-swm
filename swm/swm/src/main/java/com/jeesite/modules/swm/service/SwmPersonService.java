@@ -386,7 +386,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         ExcelImport excelImport = null;
         Integer count = 0;
         try {
-            excelImport = new ExcelImport(file, 2, 0);
+            excelImport = new ExcelImport(file, 1, 0);
             List<SwmPersonExport> list = excelImport.getDataList(SwmPersonExport.class);
             if (CollectionUtil.isNotEmpty(list)){
                 for (SwmPersonExport export : list) {

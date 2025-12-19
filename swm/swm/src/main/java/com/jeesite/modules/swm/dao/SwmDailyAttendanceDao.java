@@ -195,4 +195,6 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
     List<SwmDashboardNewController.AttendanceAnalysis> getTeamAttendance(String companyCode, String date);
 
     List<SwmDashboardDto.IdleHoursRankingDto> idleHoursRankingList(SwmDashboardDto.IdleHoursRankingDto vo);
+
+    List<SwmDashboardDto.ManagementOnDutyDto> managementOnDuty(SwmDashboardDto.ManagementOnDutyDto vo);
 }
