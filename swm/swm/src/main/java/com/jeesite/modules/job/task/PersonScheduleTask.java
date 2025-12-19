@@ -96,10 +96,10 @@ public class PersonScheduleTask {
                 //3.本月未排班则自动生成一个排班
                 for (SwmPerson person : personList) {
                     List<SwmPersonSchedule> list = scheduleListMap.get(person.getIdentityCard());
-                    if (list != null && !list.isEmpty()) {
+                    if (CollectionUtils.isNotEmpty( list)) {
                         continue;
                     }
-                    XxlJobHelper.log("开始处理：租户：，人员：{}",corpCode, person.getName());
+                    XxlJobHelper.log("开始处理：租户：{}，人员：{}",corpCode, person.getName());
                     SwmPersonSchedule personSchedule = new SwmPersonSchedule();
                     personSchedule.setPersonName(person.getName());
                     personSchedule.setMonth(month);
