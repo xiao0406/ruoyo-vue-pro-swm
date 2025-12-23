@@ -172,8 +172,16 @@ public class AiDto implements Serializable{
 
         List<Trajectory> xyList;
 
-    }
+        @ApiModelProperty("员工姓名")
+        private String name;
+        @ApiModelProperty("绑定设备号")
+        private String id;
+        @ApiModelProperty(value = "所属车间")
+        private String group;
 
+        List<Trajectory> details;
+
+    }
 
 
     @Data

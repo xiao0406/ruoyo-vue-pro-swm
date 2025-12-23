@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
@@ -10,6 +11,7 @@ import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import com.jeesite.modules.entity.AiDto;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +20,10 @@ import com.jeesite.common.lang.StringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 日考勤统计表Service
@@ -972,6 +977,206 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         vo.setStartDate(DateUtil.beginOfMonth( date));
         vo.setEndDate(DateUtil.endOfMonth(date));
         List<SwmDashboardDto.ManagementOnDutyDto> list = dao.managementOnDuty(vo);
+        page.setList(list);
+        return page;
+    }
+
+    public List<SwmDashboardDto.TeamAttendanceAnalysis> teamAttendanceAnalysis(
+            SwmDashboardDto.TeamAttendanceAnalysis vo) {
+
+        Date date = new Date();
+        vo.setStartDate(DateUtil.beginOfMonth(date));
+        vo.setEndDate(DateUtil.endOfMonth(date));
+        List<SwmDashboardDto.TeamAttendanceAnalysis> list = dao.teamAttendanceAnalysis(vo);
+        if (CollectionUtils.isEmpty(list)) {
+            return Collections.emptyList();
+        }
+
+        // 统计当天（yyyy-MM-dd）
+        String statDate = new SimpleDateFormat("yyyy-MM-dd").format(date);
+
+        // 按班组分组（兜底 null）
+        Map<String, List<SwmDashboardDto.TeamAttendanceAnalysis>> teamMap =
+                list.stream().collect(Collectors.groupingBy(
+                        e -> Optional.ofNullable(e.getTeamName()).orElse("未分配班组")
+                ));
+
+        List<SwmDashboardDto.TeamAttendanceAnalysis> result = new ArrayList<>();
+
+        for (Map.Entry<String, List<SwmDashboardDto.TeamAttendanceAnalysis>> entry : teamMap.entrySet()) {
+
+            String teamName = entry.getKey();
+            List<SwmDashboardDto.TeamAttendanceAnalysis> records = entry.getValue();
+
+            /* -------------------- 当天应出勤人数 -------------------- */
+            int dayShouldAttendance = (int) records.stream()
+                    .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            /* -------------------- 当天实际出勤人数 -------------------- */
+            int dayActualAttendance = (int) records.stream()
+                    .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> r.getClockInDate() != null)
+                    .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            /* -------------------- 日出勤率 -------------------- */
+            BigDecimal dailyRate = dayShouldAttendance == 0
+                    ? BigDecimal.ZERO
+                    : BigDecimal.valueOf(dayActualAttendance)
+                    .divide(BigDecimal.valueOf(dayShouldAttendance), 4, RoundingMode.HALF_UP);
+
+            /* -------------------- 月出勤率（人 × 天） -------------------- */
+            long monthShould = records.stream()
+                    .map(r -> r.getEmployeeId() + "_" + r.getAttendanceDate())
+                    .distinct()
+                    .count();
+
+            long monthActual = records.stream()
+                    .filter(r -> r.getClockInDate() != null)
+                    .map(r -> r.getEmployeeId() + "_" + r.getAttendanceDate())
+                    .distinct()
+                    .count();
+
+            BigDecimal monthlyRate = monthShould == 0
+                    ? BigDecimal.ZERO
+                    : BigDecimal.valueOf(monthActual)
+                    .divide(BigDecimal.valueOf(monthShould), 4, RoundingMode.HALF_UP);
+
+            /* -------------------- 封装返回 -------------------- */
+            SwmDashboardDto.TeamAttendanceAnalysis dto = new SwmDashboardDto.TeamAttendanceAnalysis();
+            dto.setTeamName(teamName);
+            dto.setShouldAttendance(dayShouldAttendance);
+            dto.setActualAttendance(dayActualAttendance);
+            dto.setDailyAttendanceRate(dailyRate);
+            dto.setMonthlyAttendanceRate(monthlyRate);
+
+            result.add(dto);
+        }
+
+        /* -------------------- 排序：日出勤率倒序 -------------------- */
+        result.sort(Comparator.comparing(
+                SwmDashboardDto.TeamAttendanceAnalysis::getDailyAttendanceRate
+        ).reversed());
+
+        return result;
+    }
+
+    public List<SwmDashboardDto.TeamAttendanceAnalysis> departmentAttendanceAnalysis(
+            SwmDashboardDto.TeamAttendanceAnalysis vo) {
+
+        Date date = new Date();
+        vo.setStartDate(DateUtil.beginOfMonth(date));
+        vo.setEndDate(DateUtil.endOfMonth(date));
+        List<SwmDashboardDto.TeamAttendanceAnalysis> list = dao.departmentAttendanceAnalysis(vo);
+        if (CollectionUtils.isEmpty(list)) {
+            return Collections.emptyList();
+        }
+
+        // 统计当天（yyyy-MM-dd）
+        String statDate = new SimpleDateFormat("yyyy-MM-dd").format(date);
+
+        // 按班组分组（兜底 null）
+        Map<String, List<SwmDashboardDto.TeamAttendanceAnalysis>> departmentMap =
+                list.stream().collect(Collectors.groupingBy(
+                        e -> Optional.ofNullable(e.getDepartmentName()).orElse("未分配车间")
+                ));
+
+        List<SwmDashboardDto.TeamAttendanceAnalysis> result = new ArrayList<>();
+
+        for (Map.Entry<String, List<SwmDashboardDto.TeamAttendanceAnalysis>> entry : departmentMap.entrySet()) {
+
+            String departmentName = entry.getKey();
+            List<SwmDashboardDto.TeamAttendanceAnalysis> records = entry.getValue();
+
+            /* -------------------- 当天应出勤人数 -------------------- */
+            int dayShouldAttendance = (int) records.stream()
+                    .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            /* -------------------- 当天实际出勤人数 -------------------- */
+            int dayActualAttendance = (int) records.stream()
+                    .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> r.getClockInDate() != null)
+                    .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            /* -------------------- 日出勤率 -------------------- */
+            BigDecimal dailyRate = dayShouldAttendance == 0
+                    ? BigDecimal.ZERO
+                    : BigDecimal.valueOf(dayActualAttendance)
+                    .divide(BigDecimal.valueOf(dayShouldAttendance), 4, RoundingMode.HALF_UP);
+
+            /* -------------------- 月出勤率（人 × 天） -------------------- */
+            long monthShould = records.stream()
+                    .map(r -> r.getEmployeeId() + "_" + r.getAttendanceDate())
+                    .distinct()
+                    .count();
+
+            long monthActual = records.stream()
+                    .filter(r -> r.getClockInDate() != null)
+                    .map(r -> r.getEmployeeId() + "_" + r.getAttendanceDate())
+                    .distinct()
+                    .count();
+
+            BigDecimal monthlyRate = monthShould == 0
+                    ? BigDecimal.ZERO
+                    : BigDecimal.valueOf(monthActual)
+                    .divide(BigDecimal.valueOf(monthShould), 4, RoundingMode.HALF_UP);
+
+            /* -------------------- 封装返回 -------------------- */
+            SwmDashboardDto.TeamAttendanceAnalysis dto = new SwmDashboardDto.TeamAttendanceAnalysis();
+            dto.setDepartmentName(departmentName);
+            dto.setShouldAttendance(dayShouldAttendance);
+            dto.setActualAttendance(dayActualAttendance);
+            dto.setDailyAttendanceRate(dailyRate);
+            dto.setMonthlyAttendanceRate(monthlyRate);
+
+            result.add(dto);
+        }
+
+        /* -------------------- 排序：日出勤率倒序 -------------------- */
+        result.sort(Comparator.comparing(
+                SwmDashboardDto.TeamAttendanceAnalysis::getDailyAttendanceRate
+        ).reversed());
+
+        return result;
+    }
+
+    public Page<SwmDashboardDto.NoAttendancePerson> noAttendancePerson(SwmDashboardDto.NoAttendancePerson vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> page = vo.getPage();
+        List<SwmDashboardDto.NoAttendancePerson> list = dao.noAttendancePerson(vo);
+        page.setList(list);
+        return page;
+    }
+
+    public Page<SwmDashboardDto.NoAttendancePerson> beLatePerson(SwmDashboardDto.NoAttendancePerson vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> page = vo.getPage();
+        Date date = new Date();
+        vo.setStartDate(DateUtil.beginOfDay(date));
+        vo.setEndDate(DateUtil.endOfDay(date));
+        List<SwmDashboardDto.NoAttendancePerson> list = dao.beLatePerson(vo);
+        page.setList(list);
+        return page;
+    }
+
+    public Page<SwmDashboardDto.NoAttendancePerson> leaveEarlyPerson(SwmDashboardDto.NoAttendancePerson vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> page = vo.getPage();
+        Date date = new Date();
+        DateTime dateTime = DateUtil.offsetDay(date, -1);
+        vo.setStartDate(DateUtil.beginOfDay(dateTime));
+        vo.setEndDate(DateUtil.endOfDay(dateTime));
+        List<SwmDashboardDto.NoAttendancePerson> list = dao.leaveEarlyPerson(vo);
         page.setList(list);
         return page;
     }

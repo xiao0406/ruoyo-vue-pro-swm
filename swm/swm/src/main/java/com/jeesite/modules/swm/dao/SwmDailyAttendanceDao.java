@@ -197,4 +197,14 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
     List<SwmDashboardDto.IdleHoursRankingDto> idleHoursRankingList(SwmDashboardDto.IdleHoursRankingDto vo);
 
     List<SwmDashboardDto.ManagementOnDutyDto> managementOnDuty(SwmDashboardDto.ManagementOnDutyDto vo);
+
+    List<SwmDashboardDto.TeamAttendanceAnalysis> teamAttendanceAnalysis(SwmDashboardDto.TeamAttendanceAnalysis vo);
+
+    List<SwmDashboardDto.TeamAttendanceAnalysis> departmentAttendanceAnalysis(SwmDashboardDto.TeamAttendanceAnalysis vo);
+
+    List<SwmDashboardDto.NoAttendancePerson> noAttendancePerson(SwmDashboardDto.NoAttendancePerson vo);
+
+    List<SwmDashboardDto.NoAttendancePerson> beLatePerson(SwmDashboardDto.NoAttendancePerson vo);
+
+    List<SwmDashboardDto.NoAttendancePerson> leaveEarlyPerson(SwmDashboardDto.NoAttendancePerson vo);
 }

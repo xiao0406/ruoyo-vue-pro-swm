@@ -1142,7 +1142,7 @@ public class SwmDashboardNewController extends BaseController {
         return page;
     }
 
-    @GetMapping("/person/idleHoursRanking")
+    @GetMapping("/personIdleHoursRanking")
     @ResponseBody
     @ApiOperation("人员休闲区停留时长")
     public Page<SwmDashboardDto.IdleHoursRankingDto> idleHoursRanking(SwmDashboardDto.IdleHoursRankingDto  vo) {
@@ -1150,11 +1150,51 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
-    @GetMapping("/person/managementOnDuty")
+    @GetMapping("/personManagementOnDuty")
     @ResponseBody
     @ApiOperation("管理人员在岗情况")
     public Page<SwmDashboardDto.ManagementOnDutyDto> managementOnDuty(SwmDashboardDto.ManagementOnDutyDto  vo) {
         Page<SwmDashboardDto.ManagementOnDutyDto> result  = swmDailyAttendanceService.managementOnDuty(vo);
+        return result;
+    }
+
+    @GetMapping("/teamAttendanceAnalysis")
+    @ResponseBody
+    @ApiOperation("班组出勤率分析")
+    public List<SwmDashboardDto.TeamAttendanceAnalysis> teamAttendanceAnalysis(SwmDashboardDto.TeamAttendanceAnalysis  vo) {
+        List<SwmDashboardDto.TeamAttendanceAnalysis> result  = swmDailyAttendanceService.teamAttendanceAnalysis(vo);
+        return result;
+    }
+
+    @GetMapping("/departmentAttendanceAnalysis")
+    @ResponseBody
+    @ApiOperation("车间出勤率分析")
+    public List<SwmDashboardDto.TeamAttendanceAnalysis> departmentAttendanceAnalysis(SwmDashboardDto.TeamAttendanceAnalysis  vo) {
+        List<SwmDashboardDto.TeamAttendanceAnalysis> result  = swmDailyAttendanceService.departmentAttendanceAnalysis(vo);
+        return result;
+    }
+
+    @GetMapping("/noAttendancePerson")
+    @ResponseBody
+    @ApiOperation("长时间未出勤人员")
+    public Page<SwmDashboardDto.NoAttendancePerson> noAttendancePerson(SwmDashboardDto.NoAttendancePerson  vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> result  = swmDailyAttendanceService.noAttendancePerson(vo);
+        return result;
+    }
+
+    @GetMapping("/beLatePerson")
+    @ResponseBody
+    @ApiOperation("迟到人员-今天的")
+    public Page<SwmDashboardDto.NoAttendancePerson> beLatePerson(SwmDashboardDto.NoAttendancePerson  vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> result  = swmDailyAttendanceService.beLatePerson(vo);
+        return result;
+    }
+
+    @GetMapping("/leaveEarlyPerson")
+    @ResponseBody
+    @ApiOperation("早退人员-昨天的")
+    public Page<SwmDashboardDto.NoAttendancePerson> leaveEarlyPerson(SwmDashboardDto.NoAttendancePerson  vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> result  = swmDailyAttendanceService.leaveEarlyPerson(vo);
         return result;
     }
 

@@ -757,5 +757,117 @@ public class AiServiceImpl {
         return resultList;
     }
 
+    public Page<AiDto.Trajectory> trajectoryV1(AiDto.Trajectory vo) {
+        //查询人员信息
+        List<AiDto.Trajectory> personList = swmPersonService.findPersonList();
+        Map<String, AiDto.Trajectory> personMap = personList.stream().collect(Collectors.toMap(AiDto.Trajectory::getIdCard, Function.identity()));
+
+        //查询区域信息
+        List<AiDto.Trajectory> swmAreaList = swmAreaService.findAddressList();
+        Map<String, String> areaMap = swmAreaList.stream().collect(Collectors.toMap(AiDto.Trajectory::getAddress, AiDto.Trajectory::getAreaName));
+
+
+        // ====== 分页处理 ======
+        if (vo.getPageNo() == null || vo.getPageNo() < 1) vo.setPageNo(1);
+        if (vo.getPageSize() == null || vo.getPageSize() < 1) vo.setPageSize(10);
+        Page<AiDto.Trajectory> page = vo.getPage();
+
+        // ====== 日期处理 ======
+        DateTime now = DateUtil.date();
+        if (ObjectUtils.isEmpty(vo.getStartDate())) {
+            vo.setStartDate(DateUtil.format(DateUtil.offsetSecond(now, -120), "yyyy-MM-dd HH:mm:ss"));
+        }
+        if (ObjectUtils.isEmpty(vo.getEndDate())) {
+            vo.setEndDate(DateUtil.format(now, "yyyy-MM-dd HH:mm:ss"));
+        }
+
+        String startDate = vo.getStartDate();
+        String endDate = vo.getEndDate();
+
+        int offset = (page.getPageNo() - 1) * page.getPageSize();
+
+        // ====== 第一步：分页查询时间段内所有 elder_id + id_card（从超级表）=====
+        String idSql = "SELECT DISTINCT elder_id, id_card " + "FROM " + dbname + ".external_coordinate_data " + "WHERE time >= '" + startDate + "' " + "AND time <= '" + endDate + "' " + "AND id_card IS NOT NULL " + "ORDER BY elder_id, id_card " + "LIMIT " + page.getPageSize() + " OFFSET " + offset;
+
+        R<JSONObject> idResult = tdengineService.executeTDengineSQL(idSql);
+        if (idResult.getCode() != R.SUCCESS || idResult.getData() == null) {
+            page.setList(Collections.emptyList());
+            page.setCount(0);
+            return page;
+        }
+
+        JSONArray idArray = idResult.getData().getJSONArray("data");
+        if (idArray == null || idArray.isEmpty()) {
+            page.setList(Collections.emptyList());
+            page.setCount(0);
+            return page;
+        }
+
+        List<CompletableFuture<AiDto.Trajectory>> futureList = new ArrayList<>();
+        for (int i = 0; i < idArray.size(); i++) {
+
+            JSONArray row = idArray.getJSONArray(i);
+            String elderId = String.valueOf(row.get(0));
+            String idCard = String.valueOf(row.get(1));
+
+            CompletableFuture<AiDto.Trajectory> future = CompletableFuture.supplyAsync(() -> {
+
+                String childTable = dbname + ".external_coordinate_data_" + elderId + "_" + idCard;
+
+                String trackSql = "SELECT x, y, address, time " + "FROM " + childTable + " " + "WHERE time >= '" + vo.getStartDate() + "' " + "AND time <= '" + vo.getEndDate() + "' " + "ORDER BY time desc limit 1";
+
+                System.out.println("trackSql:" + trackSql);
+                R<JSONObject> trackResult = tdengineService.executeTDengineSQL(trackSql);
+                JSONArray trackArray = trackResult.getData() != null ? trackResult.getData().getJSONArray("data") : new JSONArray();
+
+                AiDto.Trajectory dto = new AiDto.Trajectory();
+                dto.setId(elderId);
+
+                // 设置人员信息
+                AiDto.Trajectory person = personMap.get(idCard);
+                if (person != null) {
+                    dto.setName(person.getEmployeeName());
+                    dto.setGroup(person.getDepartmentName());
+                    dto.setTeam(person.getTeamName());
+                }
+
+
+                if (trackArray != null) {
+                    JSONArray object = trackArray.getJSONArray(trackArray.size() - 1);
+                    dto.setX((Integer) object.get(0));
+                    dto.setY((Integer) object.get(1));
+                    dto.setAreaName(areaMap.get(object.get(2)));
+                }
+                return dto;
+
+            }, swmExecutor);
+
+            futureList.add(future);
+        }
+
+        // ====== 等待所有异步任务完成 ======
+        List<AiDto.Trajectory> list = futureList.stream().map(CompletableFuture::join).collect(Collectors.toList());
+
+        // ====== 总数统计 ======
+        String countSql = "SELECT COUNT(*) FROM (" + "   SELECT DISTINCT elder_id, id_card " + "   FROM " + dbname + ".external_coordinate_data " + "   WHERE time >= '" + startDate + "' " + "   AND time <= '" + endDate + "' " + ") t";
+
+        R<JSONObject> countResult = tdengineService.executeTDengineSQL(countSql);
+
+        int total = 0;
+        if (countResult.getCode() == R.SUCCESS && countResult.getData() != null) {
+            JSONArray arr = countResult.getData().getJSONArray("data");
+            if (arr != null && !arr.isEmpty()) {
+                total = (int) arr.getJSONArray(0).get(0);
+            }
+        }
+
+        page.setList(list);
+        page.setCount(total);
+        Map<String, Object> otherData = new HashMap<>();
+        otherData.put("time", new Date());
+        page.setOtherData(otherData);
+
+        return page;
+    }
 }
 

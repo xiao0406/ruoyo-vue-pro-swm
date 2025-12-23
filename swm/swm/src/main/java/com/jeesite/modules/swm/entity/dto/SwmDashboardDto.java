@@ -61,4 +61,58 @@ public class SwmDashboardDto {
         private Date startDate;
         private Date endDate;
     }
+
+    /**
+     * 修改“班组出勤率分析”（倒排）：应出勤人数、实际出勤人数、日出勤率、月出勤率
+     */
+    @Data
+    public static class TeamAttendanceAnalysis extends DataEntity<TeamAttendanceAnalysis> {
+
+        @ApiModelProperty(value = "班组名称")
+        private String teamName;
+        @ApiModelProperty(value = "车间名称")
+        private String departmentName;
+
+        @ApiModelProperty(value = "应出勤人数")
+        private Integer shouldAttendance;
+        @ApiModelProperty(value = "实际出勤人数")
+        private Integer actualAttendance;
+        @ApiModelProperty(value = "日出勤率")
+        private BigDecimal dailyAttendanceRate;
+        @ApiModelProperty(value = "月出勤率")
+        private BigDecimal monthlyAttendanceRate;
+
+        //打卡
+        private Date clockInDate;
+        private String employeeId;
+
+        private Date startDate;
+        private Date endDate;
+        private String attendanceDate;
+    }
+
+    /**
+     * 新增“长时间未出勤人员”清单，列表类型：姓名、班组、手机号、累计未出勤时间
+     */
+    @Data
+    public static class NoAttendancePerson extends DataEntity<NoAttendancePerson> {
+
+        @ApiModelProperty(value = "班组名称")
+        private String teamName;
+        @ApiModelProperty(value = "人员名称")
+        private String employeeName;
+        @ApiModelProperty(value = "手机号")
+        private String phoneNumber;
+        @ApiModelProperty(value = "累计未出勤时间")
+        private Integer absentDays;
+
+        //上班卡
+        private Date clockInDate;
+        //下班卡
+        private Date clockOutDate;
+
+
+        private Date startDate;
+        private Date endDate;
+    }
 }

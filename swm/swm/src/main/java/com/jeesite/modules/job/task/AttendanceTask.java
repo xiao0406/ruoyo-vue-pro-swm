@@ -26,6 +26,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -1336,6 +1339,8 @@ public class AttendanceTask {
      * 下班卡：判断当天人员是否有未打下班卡，有则判断未打卡的人员安全帽在当天是否有数据，有则说明今天来了，然后再
      * 判断最近三分钟有没有安全帽数据，没有则说明离开车间，补打下班卡
      *
+     * 可以指定参数：date=2025-01-10
+     *
      * @author Shawn
      * @date 2025-08-11
      */
@@ -1356,12 +1361,17 @@ public class AttendanceTask {
             swmJobLogService.save(jobLog);
             jobLog.setIsNewRecord(false);
 
+            String requestDate = null;
+            if (jobParam != null){
+                requestDate = jobLog.getJobParam();
+            }
+
 
             // 1. 处理未打上班卡的数据  clockInTime=null
-           processclockInCard();
+           processclockInCard(requestDate);
 
             // 2. 处理未打下班卡的数据 clockOutTime=null
-            processclockOutCard();
+            processclockOutCard(requestDate);
 
             jobLog.setExecuteStatus("0");
 
@@ -1382,13 +1392,15 @@ public class AttendanceTask {
      * @return 处理结果统计
      */
     @Transactional(readOnly = false)
-    public void processclockInCard() {
+    public void processclockInCard(String requestDate ) {
         XxlJobHelper.log("开始执行上班卡补卡任务...................");
 
         //设置请求参数，只查当天的数据
         // 1. 查询当天所有的打卡记录
         String date = DateUtils.getDate();
-        Date nowDate = new Date();
+        if(requestDate != null){
+            date = requestDate;
+        }
         List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockInCardList(date);
 //        List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
         XxlJobHelper.log("上班卡查询范围{}，{}，条数{}",date,date,records.size());
@@ -1410,10 +1422,23 @@ public class AttendanceTask {
                             //看看当前时间是否在应该打卡时间范围之内
                             String startTime = DateUtil.formatDateTime(clockStartTime);
                             String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 15));
-                            Integer count = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
-                            if ( count > 0) {
-                                item.setClockInDate(nowDate);
-                                item.setClockInTime(nowDate);
+                            String clockInTimeStr = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
+                            if (StringUtils.isNotEmpty(clockInTimeStr)) {
+
+                                // 统一去掉毫秒（如果有）
+                                clockInTimeStr = clockInTimeStr.substring(0, 19);
+                                // 解析时间
+                                LocalDateTime clockInDateTime = LocalDateTime.parse(
+                                        clockInTimeStr,
+                                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+                                // setClockInDate：yyyy-MM-dd HH:mm:ss
+                                String format = clockInDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                                item.setClockInDate(DateUtil.parseDate( format));
+
+                                // setClockInTime：HH:mm:ss
+                                String format1 = clockInDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                                item.setClockInTime(DateUtil.parseDate( format1));
                                 onlineDevices.add(item);
                                 XxlJobHelper.log("上班补卡人员：{}", item.getEmployeeName());
                             }
@@ -1444,14 +1469,16 @@ public class AttendanceTask {
     2.补偿打卡机制不影响信标打卡机制，信标打卡依旧可以持续更新下班打卡时间
      */
     @Transactional(readOnly = false)
-    public void processclockOutCard() {
+    public void processclockOutCard(String requestDate ) {
 
-        Date date = new Date();
         XxlJobHelper.log("开始执行下班卡补卡任务............................");
 
         //设置请求参数，只查当天的数据
         String nowDate = DateUtils.getDate();
-        String yestDay = DateUtils.formatDate(DateUtil.yesterday());
+        if(requestDate != null){
+            nowDate = requestDate;
+        }
+        String yestDay = LocalDate.parse(nowDate).minusDays(1).toString();
         // 1. 查询两天所有的打卡记录
         List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockOutCardList(yestDay, nowDate);
         //List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
@@ -1486,13 +1513,13 @@ public class AttendanceTask {
                     }
 
                     //2.判断今天有没有数据，没有则跳过
-                    Integer dayCount = getLast3MinutesBluetoothCount(deviceId, startDay, nowDay);
+                    Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId, startDay, nowDay);
                     if (dayCount == null || dayCount == 0) {
                         return;
                     }
 
                     // 3. 查询最近3分钟蓝牙信号
-                    Integer count = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
+                    Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, startTime, endTime);
                     // ============= 【A. 有信号 → 重置补偿状态】 =============
                     if (count != null && count > 0) {
                         // 说明员工又出现了 → 补偿机制恢复可再次触发
@@ -1535,9 +1562,9 @@ public class AttendanceTask {
 
 
     /**
-     * 查询某设备最近 3 分钟 TDengine 记录数量
+     * 查询打卡时间范围内是否有数据（用于下班卡）
      */
-    private Integer getLast3MinutesBluetoothCount(String deviceId, String start, String end) {
+    private Integer getLast3MinutesBluetoothCountByClockOut(String deviceId, String start, String end) {
 
         Integer res  = null;
 
@@ -1563,6 +1590,40 @@ public class AttendanceTask {
         }
 
         return res;
+    }
+
+    /**
+     * 查询打卡时间范围内的第一条数据（用于上班卡）
+     */
+    private String getLast3MinutesBluetoothCount(String deviceId, String start, String end) {
+
+        String idCard = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId);
+
+        try {
+
+            String tableName = dbname + ".external_coordinate_data" + deviceId + "_" + idCard;
+
+            String sql = "SELECT time FROM " + tableName +
+                    " WHERE time BETWEEN '" + start + "' AND '" + end + "'" +
+                    " ORDER BY time ASC LIMIT 1";
+
+            log.info("查询时间范围内第一条 TDengine 记录 SQL: {}", sql);
+
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+            if (result.getCode() == R.SUCCESS && result.getData() != null) {
+                JSONArray rows = result.getData().getJSONArray("data");
+                if (rows != null && !rows.isEmpty()) {
+                    JSONArray firstRow = rows.getJSONArray(0);
+                    Object timeVal = firstRow.get(0);
+                    return timeVal.toString();
+                }
+            }
+        } catch (Exception e) {
+            log.error("查询 TDengine 失败，deviceId={}", deviceId, e);
+        }
+
+        return null;
     }
 
     /**
