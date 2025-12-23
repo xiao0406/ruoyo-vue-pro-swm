@@ -926,6 +926,7 @@
         WHERE a.`status` = '0'
           AND sp.`status` = '0'
           AND sp.personnel_status = '1'
+           AND sp.person_type != '1'
           AND a.attendance_date BETWEEN #{startDate} AND #{endDate}
         GROUP BY sp.identity_card
         ORDER BY monthIdleHours DESC
@@ -968,6 +969,7 @@
                 LEFT JOIN fms_work_group fwg on sp.team = fwg.id  COLLATE utf8mb4_general_ci
         WHERE
             sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
             a.attendance_date BETWEEN #{startDate} AND #{endDate}
     </select>
     <select id="departmentAttendanceAnalysis"
@@ -983,6 +985,7 @@
                 LEFT JOIN fms_position_archive  fpa on sp.department = fpa.id  COLLATE utf8mb4_general_ci
         WHERE
             sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
             a.attendance_date BETWEEN #{startDate} AND #{endDate}
     </select>
     <select id="noAttendancePerson"
@@ -998,6 +1001,7 @@
                 LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
         WHERE
             sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
             DATEDIFF(CURDATE(), IFNULL(last_att.last_clock_date, sp.create_date)) >= 5
         ORDER BY
             absentDays DESC
@@ -1015,6 +1019,7 @@
                 LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
         WHERE
             sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
             a.attendance_date BETWEEN #{startDate} AND #{endDate}
           AND a.clock_in_date > STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', 1), '%H:%i')
         order by a.clock_in_date
@@ -1032,6 +1037,7 @@
         LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
         WHERE
             sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
         a.attendance_date BETWEEN #{startDate} AND #{endDate}
         AND a.clock_out_date IS NOT NULL
         AND TIME(a.clock_out_date) &lt; STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', - 1), '%H:%i')

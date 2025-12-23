@@ -306,7 +306,12 @@ public class SwmDashboardNewController extends BaseController {
         if(todayAttendanceCount == 0){
             result.put("todayAttendanceRate", "0.00");
         }else{
-            String todayAttendanceRate = BigDecimal.valueOf(todayAttendanceCount).divide(BigDecimal.valueOf(workerCount + managerCount), 2, RoundingMode.HALF_UP).toString();
+            long count = todayAttendances.stream().filter(a -> a.getClockInDate() != null
+                    && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)
+                    || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)
+                    || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))).count();
+
+            String todayAttendanceRate = BigDecimal.valueOf(count).divide(BigDecimal.valueOf(workerCount - managerCount), 2, RoundingMode.HALF_UP).toString();
             result.put("todayAttendanceRate", todayAttendanceRate);
         }
         return result;
