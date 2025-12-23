@@ -1055,7 +1055,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             dto.setShouldAttendance(dayShouldAttendance);
             dto.setActualAttendance(dayActualAttendance);
             dto.setDailyAttendanceRate(dailyRate.multiply(BigDecimal.valueOf(100)));
-            dto.setMonthlyAttendanceRate(monthlyRate);
+            dto.setMonthlyAttendanceRate(monthlyRate.multiply(BigDecimal.valueOf(100)));
 
             result.add(dto);
         }
@@ -1142,7 +1142,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             dto.setShouldAttendance(dayShouldAttendance);
             dto.setActualAttendance(dayActualAttendance);
             dto.setDailyAttendanceRate(dailyRate.multiply(BigDecimal.valueOf(100)));
-            dto.setMonthlyAttendanceRate(monthlyRate);
+            dto.setMonthlyAttendanceRate(monthlyRate.multiply(BigDecimal.valueOf(100)));
 
             result.add(dto);
         }

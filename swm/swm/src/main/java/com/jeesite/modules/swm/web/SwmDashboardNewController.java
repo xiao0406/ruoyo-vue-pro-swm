@@ -311,8 +311,8 @@ public class SwmDashboardNewController extends BaseController {
                     || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)
                     || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))).count();
 
-            String todayAttendanceRate = BigDecimal.valueOf(count).divide(BigDecimal.valueOf(workerCount - managerCount), 2, RoundingMode.HALF_UP).toString();
-            result.put("todayAttendanceRate", todayAttendanceRate);
+            BigDecimal divide = BigDecimal.valueOf(count).divide(BigDecimal.valueOf(workerCount - managerCount), 2, RoundingMode.HALF_UP);
+            result.put("todayAttendanceRate", divide.multiply(BigDecimal.valueOf(100)).toString());
         }
         return result;
     }
