@@ -175,7 +175,9 @@
             a.update_date AS "updateDate",
             a.remarks AS "remarks"
         FROM swm_daily_attendance a
+        join swm_person sp on a.employee_id = sp.id
         <where>
+            sp.status = '0' and sp.personnel_status = '1' and
             a.employee_id = #{employeeId}
             AND DATE(a.attendance_date) = DATE(#{attendanceDate})
         </where>
@@ -312,9 +314,9 @@
             sp.person_type AS "personType",
             a.classes as "classes"
         FROM swm_daily_attendance a
-        join swm_person sp  on a.identity_card  = sp.identity_card
+        join swm_person sp  on a.employee_id  = sp.id
         <where>
-            sp.`status` = 0 and
+            sp.`status` = 0 and sp.personnel_status = '1' and a.status = '0' and
             DATE(a.attendance_date) = DATE(#{attendanceDate})
         </where>
         ORDER BY a.employee_name ASC
@@ -771,11 +773,11 @@
             a.clock_in_date
         from
             swm_daily_attendance a
-                left JOIN swm_person b on a.employee_id = b.id
+             JOIN swm_person b on a.employee_id = b.id
         WHERE
            b.personnel_status = '1' and b.status = '0' and
              a.attendance_date = #{date}
-          AND (a.clock_in_date IS NOT NULL or a.clock_out_date is not null)
+          AND a.clock_in_date IS NOT NULL
     </select>
     <select id="attendanceListCount" resultType="java.lang.Long">
         SELECT
@@ -1014,7 +1016,7 @@
         WHERE
             sp.`status` = '0' and sp.personnel_status = '1' and
             a.attendance_date BETWEEN #{startDate} AND #{endDate}
-          AND a.clock_in_date >= STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', 1), '%H:%i')
+          AND a.clock_in_date > STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', 1), '%H:%i')
         order by a.clock_in_date
     </select>
     <select id="leaveEarlyPerson"

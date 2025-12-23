@@ -987,6 +987,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         Date date = new Date();
         vo.setStartDate(DateUtil.beginOfMonth(date));
         vo.setEndDate(DateUtil.endOfMonth(date));
+        vo.setPage(null);
         List<SwmDashboardDto.TeamAttendanceAnalysis> list = dao.teamAttendanceAnalysis(vo);
         if (CollectionUtils.isEmpty(list)) {
             return Collections.emptyList();
@@ -1073,6 +1074,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         Date date = new Date();
         vo.setStartDate(DateUtil.beginOfMonth(date));
         vo.setEndDate(DateUtil.endOfMonth(date));
+        vo.setPage(null);
         List<SwmDashboardDto.TeamAttendanceAnalysis> list = dao.departmentAttendanceAnalysis(vo);
         if (CollectionUtils.isEmpty(list)) {
             return Collections.emptyList();

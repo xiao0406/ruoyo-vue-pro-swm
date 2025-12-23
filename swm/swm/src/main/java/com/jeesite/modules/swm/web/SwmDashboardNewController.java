@@ -283,6 +283,8 @@ public class SwmDashboardNewController extends BaseController {
         // 工作中人数：从TDengine查询1小时内有位置数据的人数（按类型分类）
         //这里改下逻辑，取最近5分钟的数据
         Map<String, Integer> workingStats = getWorkingCountByTypeFromTDengine();
+//        Page<Person> page = workingList(null, null);
+//        long count = page.getCount();
         // 实时作业工人数
         Integer workingPersonCount = workingStats.getOrDefault("worker", 0);
         result.put("workingPersonCount", workingPersonCount);
@@ -291,7 +293,7 @@ public class SwmDashboardNewController extends BaseController {
         result.put("workingManagerCount", workingManagerCount);
         // 实时作业人数
         // 获取SwmPersonController Bean
-        result.put("totalWorkingCount", workingPersonCount);
+        result.put("totalWorkingCount", workingPersonCount+workingManagerCount);
 
         // 在场工人数
 //        long workerCount = swmPersonList.stream().filter(a -> !a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
