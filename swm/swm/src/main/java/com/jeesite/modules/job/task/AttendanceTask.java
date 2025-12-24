@@ -28,6 +28,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -1398,7 +1399,7 @@ public class AttendanceTask {
         //设置请求参数，只查当天的数据
         // 1. 查询当天所有的打卡记录
         String date = DateUtils.getDate();
-        if(requestDate != null){
+        if(StringUtils.isNotBlank(requestDate)){
             date = requestDate;
         }
         List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockInCardList(date);
@@ -1422,23 +1423,16 @@ public class AttendanceTask {
                             //看看当前时间是否在应该打卡时间范围之内
                             String startTime = DateUtil.formatDateTime(clockStartTime);
                             String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 15));
-                            String clockInTimeStr = getLast3MinutesBluetoothCount(deviceId, startTime, endTime);
+                            String clockInTimeStr = getLast3MinutesBluetoothCount(deviceId, startTime, endTime,item.getIdentityCard());
                             if (StringUtils.isNotEmpty(clockInTimeStr)) {
-
                                 // 统一去掉毫秒（如果有）
-                                clockInTimeStr = clockInTimeStr.substring(0, 19);
+                                Instant instant = Instant.parse(clockInTimeStr);
                                 // 解析时间
-                                LocalDateTime clockInDateTime = LocalDateTime.parse(
-                                        clockInTimeStr,
-                                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
-                                // setClockInDate：yyyy-MM-dd HH:mm:ss
-                                String format = clockInDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                                item.setClockInDate(DateUtil.parseDate( format));
-
-                                // setClockInTime：HH:mm:ss
-                                String format1 = clockInDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-                                item.setClockInTime(DateUtil.parseDate( format1));
+                                ZoneId zoneId = ZoneId.systemDefault();
+                                LocalDateTime clockInDateTime = LocalDateTime.ofInstant(instant, zoneId);
+                                Date clockInDate = Date.from(clockInDateTime.atZone(zoneId).toInstant());
+                                item.setClockInDate(clockInDate);
+                                item.setClockInTime(clockInDate);
                                 onlineDevices.add(item);
                                 XxlJobHelper.log("上班补卡人员：{}", item.getEmployeeName());
                             }
@@ -1475,7 +1469,7 @@ public class AttendanceTask {
 
         //设置请求参数，只查当天的数据
         String nowDate = DateUtils.getDate();
-        if(requestDate != null){
+        if(StringUtils.isNotBlank(requestDate)){
             nowDate = requestDate;
         }
         String yestDay = LocalDate.parse(nowDate).minusDays(1).toString();
@@ -1595,15 +1589,12 @@ public class AttendanceTask {
     /**
      * 查询打卡时间范围内的第一条数据（用于上班卡）
      */
-    private String getLast3MinutesBluetoothCount(String deviceId, String start, String end) {
-
-        String idCard = (String) redisService.hget(SwmRedisConstant.Helmet.DEVICE_PERSON_MAP, deviceId);
+    private String getLast3MinutesBluetoothCount(String deviceId, String start, String end,String idCard) {
 
         try {
+            String tableName = dbname + ".external_coordinate_data_" + deviceId + "_" + idCard;
 
-            String tableName = dbname + ".external_coordinate_data" + deviceId + "_" + idCard;
-
-            String sql = "SELECT time FROM " + tableName +
+            String sql = "SELECT time  FROM " + tableName +
                     " WHERE time BETWEEN '" + start + "' AND '" + end + "'" +
                     " ORDER BY time ASC LIMIT 1";
 
