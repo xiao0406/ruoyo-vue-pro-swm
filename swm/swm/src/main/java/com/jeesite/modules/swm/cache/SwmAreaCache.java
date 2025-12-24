@@ -52,8 +52,8 @@ public class SwmAreaCache {
             }
             // 清除旧缓存
             redisService.del(SwmRedisConstant.AreaCache.AREA_CACHE);
-            List<String> ids = list.stream().map(SwmArea::getId).collect(Collectors.toList());
-            redisService.set(SwmRedisConstant.AreaCache.AREA_CACHE, ids);
+            List<String> areaNames = list.stream().map(SwmArea::getAreaName).collect(Collectors.toList());
+            redisService.set(SwmRedisConstant.AreaCache.AREA_CACHE, areaNames);
         } catch (Exception e) {
             log.error("初始化工作缓存失败", e);
         }
@@ -63,11 +63,11 @@ public class SwmAreaCache {
      * 插入缓存数据
      * @param
      */
-    public void insertAreaCache(String id){
+    public void insertAreaCache(String areaName){
         Object object = redisService.get(SwmRedisConstant.AreaCache.AREA_CACHE);
         if (object != null) {
             List<String> list = (List<String>) object;
-            list.add(id);
+            list.add(areaName);
             redisService.set(SwmRedisConstant.AreaCache.AREA_CACHE, list);
         }
     }
