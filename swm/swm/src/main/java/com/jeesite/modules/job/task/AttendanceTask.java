@@ -17,6 +17,7 @@ import com.jeesite.modules.util.BatchOperationsUtil;
 import com.jeesite.modules.utils.R;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -2109,7 +2110,7 @@ public class AttendanceTask {
                 AttendanceGenerationParams params = parseAttendanceGenerationParams();
 
                 // 2. 查询目标人员
-                List<SwmPerson> targetPersons = queryTargetPersons(params);
+                List<SwmPerson> targetPersons = queryTargetPersons(params,corpCode);
                 if (targetPersons.isEmpty()) {
                     XxlJobHelper.log("没有需要处理的在职人员");
                     jobLog.setExecuteStatus("0");
@@ -2217,7 +2218,7 @@ public class AttendanceTask {
     /**
      * 查询目标人员
      */
-    private List<SwmPerson> queryTargetPersons(AttendanceGenerationParams params) {
+    private List<SwmPerson> queryTargetPersons(AttendanceGenerationParams params,String corpCode) {
         // 如果有身份证列表，查询指定的人员
         if (!params.idCardList.isEmpty()) {
             return queryMultiplePersons(params.idCardList);
@@ -2228,7 +2229,7 @@ public class AttendanceTask {
         } 
         // 否则查询所有在职人员
         else {
-            return queryAllActivePersons();
+            return queryAllActivePersons(corpCode);
         }
     }
 
@@ -2297,11 +2298,12 @@ public class AttendanceTask {
     /**
      * 查询所有在职人员
      */
-    private List<SwmPerson> queryAllActivePersons() {
+    private List<SwmPerson> queryAllActivePersons(String corpCode) {
         SwmPerson query = new SwmPerson();
         query.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
         query.setStatus("0");
         query.setRandom(new Random().nextInt(1_000_000));
+        query.setCorpCode(corpCode);
         List<SwmPerson> persons = swmPersonService.findList(query);
         XxlJobHelper.log("查询到 {} 名在职人员", persons.size());
         return persons;
@@ -2401,6 +2403,7 @@ public class AttendanceTask {
         SwmDailyAttendance attendance = buildNewAttendance(person, targetDate);
         setScheduleInfo(attendance, person, targetDate);
         setDefaultValues(attendance);
+        attendance.setCorpCode(person.getCorpCode());
         
         swmDailyAttendanceService.save(attendance);
         XxlJobHelper.log("为员工[{}]{}创建考勤记录成功", person.getId(), person.getName());

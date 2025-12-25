@@ -118,6 +118,9 @@
             <if test="random != null and random != 0 ">
                 AND #{random} = #{random}
             </if>
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
@@ -551,6 +554,9 @@
             </if>
             <if test="status != null and status != ''">
                 AND a.status = #{status}
+            </if>
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
             </if>
             AND #{random} = #{random}
         </where>

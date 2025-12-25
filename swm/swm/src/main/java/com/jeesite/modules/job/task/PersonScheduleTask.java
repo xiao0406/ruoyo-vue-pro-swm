@@ -71,6 +71,7 @@ public class PersonScheduleTask {
                 swmPerson.setPersonnelStatus(SwmPerson.PersonStatusEnum.ACTIVE);
                 swmPerson.setStatus(SwmPerson.STATUS_NORMAL);
                 swmPerson.setRandom(new Random().nextInt(1_000_000));
+                swmPerson.setCorpCode(corpCode);
                 List<SwmPerson> personList = swmPersonService.peronsList(swmPerson);
                 XxlJobHelper.log("人员总数：{}", personList.size());
 
@@ -88,6 +89,7 @@ public class PersonScheduleTask {
 
                 // 传随机值，使 SQL 每次不同，目的是取消一级缓存
                 swmPersonSchedule.setRandom(new Random().nextInt(1_000_000));
+                swmPersonSchedule.setCorpCode(corpCode);
                 List<SwmPersonSchedule> scheduleList = swmPersonScheduleService.scheduleList(swmPersonSchedule);
                 Map<String, List<SwmPersonSchedule>> scheduleListMap = scheduleList.stream().collect(Collectors.groupingBy(SwmPersonSchedule::getIdCard));
                 XxlJobHelper.log("本月排班人数：{}", scheduleList.size());

@@ -224,6 +224,9 @@
             <if test="month != null and month != ''">
                 AND a.month = #{month}
             </if>
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
             <!-- 新增随机条件，恒成立 -->
             AND #{random} = #{random}
         </where>
