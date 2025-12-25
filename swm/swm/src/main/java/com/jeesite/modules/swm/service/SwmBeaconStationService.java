@@ -481,9 +481,16 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         try {
             excelImport = new ExcelImport(file, 2, 0);
             List<SwmBeaconStationExport> list = excelImport.getDataList(SwmBeaconStationExport.class);
+
+            SwmBeaconStation swmBeaconStation1 = new SwmBeaconStation();
+            //查询所有的信标信息
+            List<SwmBeaconStation> stationList = this.dao.findList(swmBeaconStation1);
+            Map<String, String> stationMap = stationList.stream().collect(Collectors.toMap(SwmBeaconStation::getBeaconId, SwmBeaconStation::getId));
+
+
             if (CollectionUtil.isNotEmpty(list)){
                 //获取所有区域
-                List<String> areaNameList = list.stream().map(SwmBeaconStationExport::getArea).distinct().collect(Collectors.toList());
+                List<String> areaNameList = list.stream().map(SwmBeaconStationExport::getArea).collect(Collectors.toList());
                 SwmArea area = new SwmArea();
                 area.getSqlMap().getWhere().and("area_name", QueryType.IN, areaNameList);
                 area.setStatus(SwmArea.STATUS_NORMAL);
@@ -491,23 +498,34 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
                 Map<String, String> areaMap = swmAreaList.stream().collect(Collectors.toMap(SwmArea::getAreaName, SwmArea::getId));
 
                 for (SwmBeaconStationExport production : list) {
+                    //存在相同信标则跳过
+                    if (StringUtil.isNotEmpty(stationMap.get(production.getBeaconId()))){
+                        continue;
+                    }
                     if (StringUtil.isBlank(production.getBeaconId())){
-                        throw new RuntimeException("信标不能为空" );
+                        throw new RuntimeException("信标：" + production.getBeaconId() + "的信标不能为空" );
                     }
-                    if (StringUtil.isBlank(production.getArea())){
-                        throw new RuntimeException("信标：" + production.getBeaconId() + "的区域内容为空");
-                    }
-                    if (StringUtil.isBlank(areaMap.get(production.getArea()))){
-                        throw new RuntimeException("信标：" + production.getBeaconId() + "的区域不存在");
-                    }
+//                    if (StringUtil.isBlank(production.getArea())){
+//                        throw new RuntimeException("信标：" + production.getBeaconId() + "的区域内容为空");
+//                    }
+
                     SwmBeaconStation swmBeaconStation = new SwmBeaconStation();
+
+                    if (StringUtil.isNotEmpty(areaMap.get(production.getArea()))){
+                        swmBeaconStation.setArea(areaMap.get(production.getArea()));
+                    }
                     swmBeaconStation.setBeaconId(production.getBeaconId());
-                    swmBeaconStation.setArea(areaMap.get(production.getArea()));
+                    swmBeaconStation.setDeviceName(production.getDeviceName());
+                    swmBeaconStation.setPixelX(production.getPixelX());
+                    swmBeaconStation.setPixelY(production.getPixelY());
+                    swmBeaconStation.setLocation(production.getLocation());
+                    swmBeaconStation.setBeaconType(production.getBeaconType());
+                    swmBeaconStation.setBeaconStatus(production.getBeaconStatus());
                     swmBeaconStationList.add(swmBeaconStation);
                 }
                 List<List<SwmBeaconStation>> lists = BatchOperationsUtil.batchCutting(swmBeaconStationList, 100);
                 for (List<SwmBeaconStation> list1 : lists) {
-                    this.dao.updateBatch(list1);
+                    this.dao.insertBatch(list1);
                 }
                 count = list.size();
             }
