@@ -194,7 +194,7 @@ public class AiServiceImpl {
 
     public Page<AiDto.WorkerFatigue> workerFatigue(AiDto.WorkerFatigue vo) {
         Page<AiDto.WorkerFatigue> page = vo.getPage();
-        vo.setActualHours(BigDecimal.valueOf(5));
+        vo.setActualHours(BigDecimal.valueOf(9));
         DateTime yesterday = DateUtil.yesterday();
         if (ObjectUtils.isEmpty(vo.getStartDate())) {
             vo.setStartDate(DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd"));
