@@ -2403,10 +2403,9 @@ public class AttendanceTask {
         SwmDailyAttendance attendance = buildNewAttendance(person, targetDate);
         setScheduleInfo(attendance, person, targetDate);
         setDefaultValues(attendance);
-        attendance.setCorpCode(person.getCorpCode());
-        
+
         swmDailyAttendanceService.save(attendance);
-        XxlJobHelper.log("为员工[{}]{}创建考勤记录成功", person.getId(), person.getName());
+        XxlJobHelper.log("为员工[{}]{}创建考勤记录成功", person.getId(), person.getName(),person.getCorpCode(), person.getCorpName());
     }
 
     /**
@@ -2420,6 +2419,8 @@ public class AttendanceTask {
         attendance.setDeviceId(person.getSafetyHelmetId()); // 设置绑定设备号
         attendance.setPersonType(person.getPersonType());
         attendance.setAttendanceDate(targetDate);
+        attendance.setCorpCode(person.getCorpCode());
+        attendance.setCorpName(person.getCorpName());
         return attendance;
     }
 
