@@ -1568,7 +1568,7 @@ public class SwmPersonController extends BaseController {
 
             sqlBuilder.append(") AND time <= NOW() AND time >= NOW() - 5m ORDER BY device_id, time DESC");
 
-            logger.debug("批量查询电量SQL: {}", sqlBuilder.toString());
+            logger.info("批量查询电量SQL: {}", sqlBuilder.toString());
 
             // 执行查询
             R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());

@@ -162,7 +162,7 @@ public class SwmHelmetCacheService {
             // 先从缓存中查找
             String cachedDevice = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.PERSON_DEVICE_MAP, personId);
             if (cachedDevice != null) {
-                log.debug("从缓存中获取人员分配设备：{} -> {}", personId, cachedDevice);
+                log.info("从缓存中获取人员分配设备：{} -> {}", personId, cachedDevice);
                 return cachedDevice;
             }
 

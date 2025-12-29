@@ -2118,7 +2118,7 @@ public class AttendanceTask {
                 }
 
                 // 3. 生成考勤记录
-                AttendanceGenerationResult result = generateAttendanceRecords(targetPersons, params.targetDate);
+                AttendanceGenerationResult result = generateAttendanceRecords(targetPersons, params.targetDate,corpCode);
 
                 // 4. 输出统计结果
                 logGenerationResult(result, targetPersons.size());
@@ -2305,6 +2305,11 @@ public class AttendanceTask {
         query.setRandom(new Random().nextInt(1_000_000));
         query.setCorpCode(corpCode);
         List<SwmPerson> persons = swmPersonService.findList(query);
+        for (SwmPerson p : persons) {
+            XxlJobHelper.log("【刚查出来】name={}, dbCorp={}", p.getName(), p.getCorpCode()
+            );
+        }
+
         XxlJobHelper.log("查询到 {} 名在职人员", persons.size());
         return persons;
     }
@@ -2312,11 +2317,16 @@ public class AttendanceTask {
     /**
      * 生成考勤记录
      */
-    private AttendanceGenerationResult generateAttendanceRecords(List<SwmPerson> persons, Date targetDate) {
+    private AttendanceGenerationResult generateAttendanceRecords(List<SwmPerson> persons, Date targetDate,String corpCode) {
         AttendanceGenerationResult result = new AttendanceGenerationResult();
         String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(targetDate);
         
         for (SwmPerson person : persons) {
+            if (!corpCode.equals(person.getCorpCode())) {
+                XxlJobHelper.log("【跨租户人员被跳过】person={}, personCorp={}, taskCorp={}", person.getName(), person.getCorpCode(), corpCode);
+                return result;
+            }
+
             ProcessResult processResult = processSinglePerson(person, targetDate, dateStr);
             updateResultCounters(result, processResult);
         }
@@ -2329,14 +2339,14 @@ public class AttendanceTask {
      */
     private ProcessResult processSinglePerson(SwmPerson person, Date targetDate, String dateStr) {
         try {
+            XxlJobHelper.log("【进入处理单个人员】name={}, entityCorp={}, currentCorp={}", person.getName(), person.getCorpCode(), CorpUtils.getCurrentCorpCode());
             // 验证身份证
             if (!validateIdentityCard(person)) {
                 return ProcessResult.FAILED;
             }
             
             // 检查是否已存在
-            SwmDailyAttendance existing = swmDailyAttendanceService
-                .findByIdentityCardAndDate(person.getIdentityCard(), targetDate);
+            SwmDailyAttendance existing = swmDailyAttendanceService.findByIdentityCardAndDate(person.getIdentityCard(), targetDate);
             
             if (existing != null) {
                 return handleExistingAttendance(existing, person, targetDate, dateStr);
@@ -2347,8 +2357,7 @@ public class AttendanceTask {
             return ProcessResult.CREATED;
             
         } catch (Exception e) {
-            XxlJobHelper.log("为员工[{}]{}创建考勤记录失败：{}", 
-                person.getId(), person.getName(), e.getMessage());
+            XxlJobHelper.log("为员工[{}]{}创建考勤记录失败：{}", person.getId(), person.getName(), e.getMessage());
             return ProcessResult.FAILED;
         }
     }
@@ -2405,7 +2414,7 @@ public class AttendanceTask {
         setDefaultValues(attendance);
 
         swmDailyAttendanceService.save(attendance);
-        XxlJobHelper.log("为员工[{}]{}创建考勤记录成功", person.getId(), person.getName(),person.getCorpCode(), person.getCorpName());
+        XxlJobHelper.log("为员工[{}]{}创建考勤记录成功，租户信息：{}，{}", person.getId(), person.getName(),person.getCorpCode(), person.getCorpName());
     }
 
     /**

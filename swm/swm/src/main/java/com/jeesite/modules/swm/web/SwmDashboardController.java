@@ -859,27 +859,29 @@ public class SwmDashboardController extends BaseController {
 
                     // 查询今日报警记录 构建TDengine查询SQL
                     // 获取今天开始和结束的时间戳
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.set(Calendar.HOUR_OF_DAY, 0);
-                    calendar.set(Calendar.MINUTE, 0);
-                    calendar.set(Calendar.SECOND, 0);
-                    long todayStartTime = calendar.getTimeInMillis();
-
-                    calendar.add(Calendar.DAY_OF_YEAR, 1);
-                    long tomorrowStartTime = calendar.getTimeInMillis();
+//                    Calendar calendar = Calendar.getInstance();
+//                    calendar.set(Calendar.HOUR_OF_DAY, 0);
+//                    calendar.set(Calendar.MINUTE, 0);
+//                    calendar.set(Calendar.SECOND, 0);
+//                    long todayStartTime = calendar.getTimeInMillis();
+//
+//                    calendar.add(Calendar.DAY_OF_YEAR, 1);
+//                    long tomorrowStartTime = calendar.getTimeInMillis();
+                    String todayStartTime = DateUtil.format(DateUtil.beginOfDay(now), "yyyy-MM-dd HH:mm:ss");
+                    String tomorrowStartTime = DateUtil.format(DateUtil.endOfDay(now), "yyyy-MM-dd HH:mm:ss");
                     StringBuilder sqlBuilder = new StringBuilder();
                     // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
                     sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
-                            .append("CAST(warning_time + 28800000 AS TIMESTAMP) as warning_time, ")
-                            .append("alarm_record, CAST(alarm_time + 28800000 AS TIMESTAMP) as alarm_time, ")
+                            .append("warning_time, ")
+                            .append("alarm_record,alarm_time + 8h AS alarm_time, ")
                             .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
                             .append("disposal_duration, ")
-                            .append("create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, update_by, update_date, remarks, status, device_id, id_card, ")
+                            .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                             .append("front_alarm, type, x, y, hazard_category, location, area ")
                             .append("FROM ").append(dbname)
                             .append(".swm_warning_management ")
-                            .append(" WHERE warning_time >= ").append(todayStartTime)
-                            .append(" AND warning_time < ").append(tomorrowStartTime)
+                            .append("WHERE warning_time >= '").append(todayStartTime).append("' ")
+                            .append("AND warning_time < '").append(tomorrowStartTime).append("' ")
                             .append(" AND warning_content IN (")
                             .append(inClause)
                             .append(") ")
