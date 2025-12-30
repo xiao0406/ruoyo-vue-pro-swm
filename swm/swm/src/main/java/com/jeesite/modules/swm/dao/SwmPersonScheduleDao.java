@@ -4,6 +4,7 @@ import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.entity.SwmPersonScheduleExport;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
+import com.jeesite.modules.swm.entity.dto.SwmPersonScheduleDto;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -67,4 +68,13 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
     int countDistinctPersonByYearAndMonth(@Param("yearMonth") String yearMonth);
 
     void updateBatch(List<SwmPersonScheduleExport> list1);
+
+    /**
+     * 批量修改人员排班班次
+     *
+     * @param dto      包含人员ID列表和目标班次
+     * @param userCode
+     * @return 影响行数
+     */
+    int batchUpdateClasses(@Param("dto") SwmPersonScheduleDto dto, @Param("userCode") String userCode);
 }

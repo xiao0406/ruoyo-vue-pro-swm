@@ -6,8 +6,6 @@ import cn.hutool.json.JSONObject;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.cache.service.RedisService;
-import com.jeesite.modules.fms.entity.FmsGeneralProject;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.util.BatchOperationsUtil;
@@ -29,7 +27,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -1304,6 +1301,7 @@ public class AttendanceTask {
             // 1. 解析参数
             SwmDailyAttendance params = new SwmDailyAttendance();
             params.setAttendanceDate(new Date());
+//            params.setId("2002912727372230656");
             // 2. 查询待处理记录
             List<SwmDailyAttendance> records = swmDailyAttendanceService.findList(params);
 
@@ -1422,7 +1420,7 @@ public class AttendanceTask {
                         if (clockStartTime != null){
                             //看看当前时间是否在应该打卡时间范围之内
                             String startTime = DateUtil.formatDateTime(clockStartTime);
-                            String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 15));
+                            String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 8));
                             String clockInTimeStr = getLast3MinutesBluetoothCount(deviceId, startTime, endTime,item.getIdentityCard());
                             if (StringUtils.isNotEmpty(clockInTimeStr)) {
                                 // 统一去掉毫秒（如果有）
@@ -2740,7 +2738,7 @@ public class AttendanceTask {
             
             // 4. 计算打卡时间范围的上限
             double maxHours = calculateMaxWorkHours(timeRange[0], timeRange[1]);
-            
+
             // 5. 如果计算的活动时长超过上限，使用上限值
             if (totalHours > maxHours) {
                 XxlJobHelper.log("员工[{}]{}计算的{}时长{}小时超过打卡时长{}小时，使用打卡时长", 
@@ -2827,79 +2825,127 @@ public class AttendanceTask {
         }
     }
     
+//    /**
+//     * 确定查询时间范围
+//     * @param record 考勤记录
+//     * @return 时间范围数组 [开始时间, 结束时间]，如果无法确定返回null
+//     * @author Shawn
+//     * @date 2025-08-13
+//     */
+//    private String[] determineQueryTimeRange(SwmDailyAttendance record) {
+//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+//        String attendanceDate = dateFormat.format(record.getAttendanceDate());
+//
+//        // 优先级1：使用实际打卡完整时间
+//        if (record.getClockInDate() != null && record.getClockOutDate() != null) {
+//            String startTime = DATETIME_FORMAT.format(record.getClockInDate());
+//            String endTime = DATETIME_FORMAT.format(record.getClockOutDate());
+//
+//            return new String[]{startTime, endTime};
+//        }
+//
+//        // 优先级2：只有上班打卡完整时间 + 应考勤时间的下班时间
+//        if (record.getClockInDate() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
+//            String[] times = record.getWorkTimeRange().split("-");
+//            if (times.length == 2) {
+//                String startTime = DATETIME_FORMAT.format(record.getClockInDate());
+//                String endTime = attendanceDate + " " + times[1].trim() + ":00";
+//
+//                // 处理跨天
+//                if (times[1].trim().compareTo(times[0].trim()) < 0) {
+//                    Calendar cal = Calendar.getInstance();
+//                    cal.setTime(record.getAttendanceDate());
+//                    cal.add(Calendar.DAY_OF_MONTH, 1);
+//                    endTime = dateFormat.format(cal.getTime()) + " " + times[1].trim() + ":00";
+//                }
+//
+//                return new String[]{startTime, endTime};
+//            }
+//        }
+//
+//        // 优先级3：只有下班打卡完整时间 + 应考勤时间的上班时间
+//        if (record.getClockOutDate() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
+//            String[] times = record.getWorkTimeRange().split("-");
+//            if (times.length == 2) {
+//                String startTime = attendanceDate + " " + times[0].trim() + ":00";
+//                String endTime = DATETIME_FORMAT.format(record.getClockOutDate());
+//
+//                return new String[]{startTime, endTime};
+//            }
+//        }
+//
+//        // 优先级4：只有应考勤时间范围
+//        if (StringUtils.isNotBlank(record.getWorkTimeRange())) {
+//            String[] times = record.getWorkTimeRange().split("-");
+//            if (times.length == 2) {
+//                String startTime = attendanceDate + " " + times[0].trim() + ":00";
+//                String endTime = attendanceDate + " " + times[1].trim() + ":00";
+//
+//                // 处理跨天班次
+//                if (times[1].trim().compareTo(times[0].trim()) < 0) {
+//                    Calendar cal = Calendar.getInstance();
+//                    cal.setTime(record.getAttendanceDate());
+//                    cal.add(Calendar.DAY_OF_MONTH, 1);
+//                    endTime = dateFormat.format(cal.getTime()) + " " + times[1].trim() + ":00";
+//                }
+//
+//                return new String[]{startTime, endTime};
+//            }
+//        }
+//
+//        // 无法确定时间范围
+//        return null;
+//    }
+
     /**
      * 确定查询时间范围
      * @param record 考勤记录
+     * 新需求 这里不按照 原来的逻辑，改为按照班次进行查询 早班按照  00:00:00 到 23:59:59 晚班按照  12:00:00 到 12:00:00（+1）
      * @return 时间范围数组 [开始时间, 结束时间]，如果无法确定返回null
-     * @author Shawn
-     * @date 2025-08-13
+     * @author fangxiaolong
+     * @date 2025-12-29
      */
     private String[] determineQueryTimeRange(SwmDailyAttendance record) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
         String attendanceDate = dateFormat.format(record.getAttendanceDate());
-        
-        // 优先级1：使用实际打卡完整时间
-        if (record.getClockInDate() != null && record.getClockOutDate() != null) {
-            String startTime = DATETIME_FORMAT.format(record.getClockInDate());
-            String endTime = DATETIME_FORMAT.format(record.getClockOutDate());
-            
-            return new String[]{startTime, endTime};
+
+        // 检查是否有班次信息
+        if (StringUtils.isBlank(record.getClasses())) {
+            return null;
         }
-        
-        // 优先级2：只有上班打卡完整时间 + 应考勤时间的下班时间
-        if (record.getClockInDate() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
-            String[] times = record.getWorkTimeRange().split("-");
-            if (times.length == 2) {
-                String startTime = DATETIME_FORMAT.format(record.getClockInDate());
-                String endTime = attendanceDate + " " + times[1].trim() + ":00";
-                
-                // 处理跨天
-                if (times[1].trim().compareTo(times[0].trim()) < 0) {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(record.getAttendanceDate());
-                    cal.add(Calendar.DAY_OF_MONTH, 1);
-                    endTime = dateFormat.format(cal.getTime()) + " " + times[1].trim() + ":00";
-                }
-                
+
+        String classes = record.getClasses();
+
+        try {
+            if ("1".equals(classes)) {
+                // 白班：当天 00:00:00 到 24:00:00
+                String startTime = attendanceDate + " 00:00:00";
+                String endTime = attendanceDate + " 23:59:59";
+
                 return new String[]{startTime, endTime};
-            }
-        }
-        
-        // 优先级3：只有下班打卡完整时间 + 应考勤时间的上班时间
-        if (record.getClockOutDate() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
-            String[] times = record.getWorkTimeRange().split("-");
-            if (times.length == 2) {
-                String startTime = attendanceDate + " " + times[0].trim() + ":00";
-                String endTime = DATETIME_FORMAT.format(record.getClockOutDate());
-                
+            } else if ("3".equals(classes)) {
+                // 夜班：当天中午12:00 到 次日中午12:00
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(record.getAttendanceDate());
+                cal.add(Calendar.DAY_OF_MONTH, 1); // 次日
+                String nextDay = dateFormat.format(cal.getTime());
+
+                String startTime = attendanceDate + " 12:00:00";
+                String endTime = nextDay + " 12:00:00";
+
                 return new String[]{startTime, endTime};
+            } else {
+                // 其他班次类型，暂时返回null
+                return null;
             }
+        } catch (Exception e) {
+            log.error("确定班次时间范围失败: {}", classes, e);
+            return null;
         }
-        
-        // 优先级4：只有应考勤时间范围
-        if (StringUtils.isNotBlank(record.getWorkTimeRange())) {
-            String[] times = record.getWorkTimeRange().split("-");
-            if (times.length == 2) {
-                String startTime = attendanceDate + " " + times[0].trim() + ":00";
-                String endTime = attendanceDate + " " + times[1].trim() + ":00";
-                
-                // 处理跨天班次
-                if (times[1].trim().compareTo(times[0].trim()) < 0) {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(record.getAttendanceDate());
-                    cal.add(Calendar.DAY_OF_MONTH, 1);
-                    endTime = dateFormat.format(cal.getTime()) + " " + times[1].trim() + ":00";
-                }
-                
-                return new String[]{startTime, endTime};
-            }
-        }
-        
-        // 无法确定时间范围
-        return null;
     }
-    
+
+
     /**
      * 查询区域活动段
      * @param idCard 身份证号

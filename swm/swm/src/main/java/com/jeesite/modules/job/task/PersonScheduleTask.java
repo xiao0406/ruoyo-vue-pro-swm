@@ -1,8 +1,6 @@
 package com.jeesite.modules.job.task;
 
 
-import cn.hutool.core.date.DateUtil;
-import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.service.SwmPersonScheduleService;
@@ -10,7 +8,6 @@ import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.util.BatchOperationsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -46,9 +43,9 @@ public class PersonScheduleTask {
 
         //1.先查询本月排班人员信息
         Date date = new Date();
-        String month = DateUtil.format(date, "yyyy-MM");
+//        String month = DateUtil.format(date, "yyyy-MM");
         SwmPersonSchedule swmPersonSchedule = new SwmPersonSchedule();
-        swmPersonSchedule.setMonth(month);
+//        swmPersonSchedule.setMonth(month);
         List<SwmPersonSchedule> scheduleList = swmPersonScheduleService.findList(swmPersonSchedule);
         Map<String, List<SwmPersonSchedule>> scheduleListMap = scheduleList.stream().collect(Collectors.groupingBy(SwmPersonSchedule::getIdCard));
         XxlJobHelper.log("本月排班人数：{}", scheduleList.size());
@@ -70,7 +67,7 @@ public class PersonScheduleTask {
             }
             SwmPersonSchedule personSchedule = new SwmPersonSchedule();
             personSchedule.setPersonName(person.getName());
-            personSchedule.setMonth(month);
+//            personSchedule.setMonth(month);
             personSchedule.setClasses("1");
             personSchedule.setIdCard(person.getIdentityCard());
             personSchedule.setEmployeeId(person.getId());
