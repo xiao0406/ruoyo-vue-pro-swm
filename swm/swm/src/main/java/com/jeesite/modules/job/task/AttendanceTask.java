@@ -1391,6 +1391,7 @@ public class AttendanceTask {
             String corpCode = corp.getCorpCode();
             String corpName = corp.getCorpName();
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
             try {
 
                 // 保存任务参数
@@ -2339,7 +2340,6 @@ public class AttendanceTask {
      */
     private ProcessResult processSinglePerson(SwmPerson person, Date targetDate, String dateStr) {
         try {
-            XxlJobHelper.log("【进入处理单个人员】name={}, entityCorp={}, currentCorp={}", person.getName(), person.getCorpCode(), CorpUtils.getCurrentCorpCode());
             // 验证身份证
             if (!validateIdentityCard(person)) {
                 return ProcessResult.FAILED;
@@ -2414,7 +2414,7 @@ public class AttendanceTask {
         setDefaultValues(attendance);
 
         swmDailyAttendanceService.save(attendance);
-        XxlJobHelper.log("为员工[{}]{}创建考勤记录成功，租户信息：{}，{}", person.getId(), person.getName(),person.getCorpCode(), person.getCorpName());
+        XxlJobHelper.log("为员工[{}]{}创建考勤记录成功，person租户信息：{}，{}，attendance租户信息：{}，{}", person.getId(), person.getName(),person.getCorpCode(), person.getCorpName(),attendance.getCorpCode(), attendance.getCorpName());
     }
 
     /**

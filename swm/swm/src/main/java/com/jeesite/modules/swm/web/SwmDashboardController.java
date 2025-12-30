@@ -6,6 +6,7 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.StringUtils;
+import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.utils.R;
@@ -807,6 +808,8 @@ public class SwmDashboardController extends BaseController {
     @ResponseBody
     @ApiOperation("今日预警统计")
     public Map<String, Object> warningStatisticsForTodayNew() {
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        log.debug("今日报警记录租户信息: {}", corpCode);
         Map<String, Object> result = new HashMap<>();
         Map<String, Object> warningMap = new ConcurrentHashMap<>(); // 线程安全
         Date now = new Date();
@@ -872,7 +875,7 @@ public class SwmDashboardController extends BaseController {
                     StringBuilder sqlBuilder = new StringBuilder();
                     // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
                     sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
-                            .append("warning_time, ")
+                            .append("warning_time + 8h AS warning_time, ")
                             .append("alarm_record,alarm_time + 8h AS alarm_time, ")
                             .append("trigger_reason, handler, handle_time, handle_process, handle_status, attachment, ")
                             .append("disposal_duration, ")
@@ -889,6 +892,7 @@ public class SwmDashboardController extends BaseController {
                             .append("order by create_date desc ")
                             .append("limit 20 ");
                     // 执行查询
+                    log.info("查询今日报警记录SQL：" + sqlBuilder.toString());
                     R<JSONObject> tdRes = tdengineService.executeTDengineSQL(sqlBuilder.toString());
                     List<SwmWarningManagement> list = new ArrayList<>();
                     if (tdRes.getCode() == R.SUCCESS && tdRes.getData() != null) {

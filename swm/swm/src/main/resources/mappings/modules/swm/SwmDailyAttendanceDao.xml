@@ -465,7 +465,7 @@
         WHERE `id` = #{id}
     </update>
     <update id="updateBatch">
-        <foreach collection="list" item="item" separator=";">
+        <foreach collection="records" item="item" separator=";">
             UPDATE swm_daily_attendance
             <set>
                 <if test="item.clockInDate != null">
