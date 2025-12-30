@@ -4,16 +4,15 @@ import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.entity.SwmBeaconStationExport;
 import com.jeesite.modules.entity.SwmPersonScheduleExport;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.entity.SwmScheduleTime;
+import com.jeesite.modules.swm.entity.dto.SwmPersonScheduleDto;
 import com.jeesite.modules.swm.service.SwmPersonScheduleService;
 import com.jeesite.modules.swm.service.SwmScheduleTimeService;
 import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,11 +25,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 人员排班Controller
@@ -75,7 +71,7 @@ public class SwmPersonScheduleController extends BaseController {
     @RequestMapping(value = "listData")
     @ResponseBody
     @ApiOperation("查询列表数据")
-    public Map<String, Object> listData(SwmPersonSchedule swmPersonSchedule, HttpServletRequest request,
+    public Map<String, Object> listData(@ModelAttribute SwmPersonSchedule swmPersonSchedule, HttpServletRequest request,
             HttpServletResponse response) {
 
         // 从请求参数中获取四级查询条件 Author: Shawn Date: 2025/01/27
@@ -141,6 +137,22 @@ public class SwmPersonScheduleController extends BaseController {
     }
 
     /**
+     * 获取全部人员id-带查询条件
+     */
+    @RequestMapping(value = "getPersonIdList")
+    @ResponseBody
+    @ApiOperation("获取全部人员id-带查询条件")
+    public List<String> getPersonIdList(@ModelAttribute SwmPersonSchedule swmPersonSchedule) {
+        List<SwmPersonSchedule> list = swmPersonScheduleService.findList(swmPersonSchedule);
+        List<String> result = list.stream()
+                .map(SwmPersonSchedule::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        logger.info("获取全部人员id-带查询条件共 {} 条记录",result.size());
+        return result;
+    }
+
+    /**
      * 查看编辑表单
      */
     @RequestMapping(value = "form")
@@ -194,6 +206,45 @@ public class SwmPersonScheduleController extends BaseController {
     public String save(@Validated SwmPersonSchedule swmPersonSchedule) {
         swmPersonScheduleService.save(swmPersonSchedule);
         return renderResult(Global.TRUE, text("保存人员排班成功！"));
+    }
+
+    /**
+     * 批量修改人员排班班次数据
+     */
+    @PostMapping(value = "batchUpdateClasses")
+    @ResponseBody
+    @ApiOperation("批量修改人员排班班次数据")
+    public String batchUpdateClasses(@RequestBody SwmPersonScheduleDto dto) {
+        try {
+            // 1. 进阶校验：过滤ids中的空/空白值
+            List<String> validIds = dto.getIds().stream()
+                    .filter(id -> id != null && !id.trim().isEmpty())
+                    .collect(Collectors.toList());
+            if (validIds.isEmpty()) {
+                return renderResult(Global.FALSE, "选择的人员ID不能包含空值，请重新选择！");
+            }
+            dto.setIds(validIds);
+
+            // 2. 批次大小限制（防止锁表，可调整）
+            int batchMaxSize = 10000;
+            if (validIds.size() > batchMaxSize) {
+                return renderResult(Global.FALSE, "单次批量修改最多支持" + batchMaxSize + "条，请分批次操作！");
+            }
+
+            // 3. 班次值最终校验（兼容trim）
+            String classes = dto.getClasses().trim();
+            if (!Arrays.asList("1", "3").contains(classes)) {
+                return renderResult(Global.FALSE, "班次值只能是「1/3」！");
+            }
+            dto.setClasses(classes);
+
+            // 4. 执行批量更新
+            int affectRows = swmPersonScheduleService.batchUpdateClasses(dto);
+            return renderResult(Global.TRUE, "批量修改成功！实际修改 " + affectRows + " 条记录");
+        } catch (Exception e) {
+            logger.error("批量修改班次失败，入参：{}", dto, e);
+            return renderResult(Global.FALSE, "批量修改失败：" + e.getMessage());
+        }
     }
 
     /**
