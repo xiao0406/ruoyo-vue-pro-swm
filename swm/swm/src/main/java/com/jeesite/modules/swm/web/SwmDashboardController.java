@@ -873,6 +873,12 @@ public class SwmDashboardController extends BaseController {
                     String todayStartTime = DateUtil.format(DateUtil.beginOfDay(now), "yyyy-MM-dd HH:mm:ss");
                     String tomorrowStartTime = DateUtil.format(DateUtil.endOfDay(now), "yyyy-MM-dd HH:mm:ss");
                     StringBuilder sqlBuilder = new StringBuilder();
+
+                    String dbNameNew = dbname;
+                    if (org.apache.commons.lang3.StringUtils.isNotBlank(corpCode)) {
+                        dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
+                    }
+
                     // 在SQL中使用TIMEDIFF函数添加8小时(28800000ms)到时间字段
                     sqlBuilder.append("SELECT id, person_name, warning_type, warning_content, ")
                             .append("warning_time + 8h AS warning_time, ")
@@ -881,7 +887,7 @@ public class SwmDashboardController extends BaseController {
                             .append("disposal_duration, ")
                             .append("create_by, create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                             .append("front_alarm, type, x, y, hazard_category, location, area ")
-                            .append("FROM ").append(dbname)
+                            .append("FROM ").append(dbNameNew)
                             .append(".swm_warning_management ")
                             .append("WHERE warning_time >= '").append(todayStartTime).append("' ")
                             .append("AND warning_time < '").append(tomorrowStartTime).append("' ")

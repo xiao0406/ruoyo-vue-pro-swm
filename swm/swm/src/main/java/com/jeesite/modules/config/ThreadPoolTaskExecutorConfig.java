@@ -62,6 +62,10 @@ public class ThreadPoolTaskExecutorConfig {
         executor.setThreadNamePrefix("swm-");
         // 设置拒绝策略
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+
+        // 新增参数：线程上下文复制 ，解决异步任务，多租户失效问题
+        executor.setTaskDecorator(new CorpContextTaskDecorator());
+
         // 等待所有任务结束后再关闭线程池
         executor.setWaitForTasksToCompleteOnShutdown(true);
         // 初始化线程池

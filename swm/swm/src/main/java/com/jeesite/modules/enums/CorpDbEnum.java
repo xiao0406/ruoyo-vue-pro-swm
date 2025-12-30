@@ -37,12 +37,20 @@ public enum CorpDbEnum {
     }
 
     public static String getDbNameByCorpCode(String corpCode) {
-        String dbName = CORP_DB_MAP.get(corpCode);
-        if (dbName == null){
-            dbName = CORP_DB_MAP.get("ZJZK");
+        if (corpCode == null) {
+            throw new IllegalArgumentException("corpCode 不能为空");
         }
+
+        String normalized = corpCode.trim().toUpperCase();
+        String dbName = CORP_DB_MAP.get(normalized);
+
+        if (dbName == null) {
+            return CorpDbEnum.ZJZK.getDbName();
+        }
+
         return dbName;
     }
+
 
     /**
      * 遍历所有映射
