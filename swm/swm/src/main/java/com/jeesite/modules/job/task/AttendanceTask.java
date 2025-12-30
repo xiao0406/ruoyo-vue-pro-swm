@@ -1385,7 +1385,6 @@ public class AttendanceTask {
         jobLog.setExecuteStatus("1"); // 默认失败
 
 
-
         //获取系统所有租户信息
         List<User> corpList = userService.findCorpList(new User());
         if (CollectionUtils.isEmpty(corpList)) {
@@ -1406,21 +1405,17 @@ public class AttendanceTask {
                 swmJobLogService.save(jobLog);
                 jobLog.setIsNewRecord(false);
 
-            String requestDate = null;
-            if (jobParam != null){
-                requestDate = jobLog.getJobParam();
-            }
+                String requestDate = null;
+                if (jobParam != null) {
+                    requestDate = jobLog.getJobParam();
+                }
 
 
                 // 1. 处理未打上班卡的数据  clockInTime=null
-                processclockInCard();
-            // 1. 处理未打上班卡的数据  clockInTime=null
-           processclockInCard(requestDate);
+                processclockInCard(requestDate);
 
                 // 2. 处理未打下班卡的数据 clockOutTime=null
-                processclockOutCard();
-            // 2. 处理未打下班卡的数据 clockOutTime=null
-            processclockOutCard(requestDate);
+                processclockOutCard(requestDate);
 
                 jobLog.setExecuteStatus("0");
 
@@ -1430,7 +1425,7 @@ public class AttendanceTask {
                 jobLog.setEndTime(new Date());
                 jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
                 swmJobLogService.save(jobLog);
-                CorpUtils.removeCurrentCorpCode( null);
+                CorpUtils.removeCurrentCorpCode(null);
             }
         }
     }

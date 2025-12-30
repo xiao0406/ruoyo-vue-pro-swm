@@ -82,7 +82,7 @@ public class SwmPersonCacheService {
                 int random = new Random().nextInt(1_000_000);
 
                 // 使用自定义SQL查询获取包含各表ID的完整人员信息
-                List<Map<String, Object>> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds(random);
+                List<Map<String, Object>> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds(random,null);
 
                 if (activePersonsWithIds == null || activePersonsWithIds.isEmpty()) {
                     log.warn("未查询到在职人员数据");
@@ -327,8 +327,8 @@ public class SwmPersonCacheService {
         try {
             if (SwmPerson.PersonStatusEnum.ACTIVE.equals(person.getPersonnelStatus())) {
                 // 在职状态，添加或更新缓存
-
-                Map<String, Object> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds(person.getIdentityCard()).get(0);
+                int random = new Random().nextInt(1_000_000);
+                Map<String, Object> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds(random, person.getIdentityCard()).get(0);
                 Map<String, Object> personInfo = buildPersonCacheInfoWithIds(activePersonsWithIds);
                 redisService.hset(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, person.getId(), personInfo);
 

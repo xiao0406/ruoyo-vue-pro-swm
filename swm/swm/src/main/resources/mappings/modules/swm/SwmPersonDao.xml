@@ -329,6 +329,9 @@
         <if test="idCard != null and idCard != ''">
             and a.identity_card = idCard
         </if>
+        <if test="random != null and random != 0 ">
+            AND #{random} = #{random}
+        </if>
         ORDER BY a.update_date DESC
     </select>
 
