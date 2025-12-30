@@ -58,9 +58,9 @@ public class PersonScheduleLogAspect {
                 break;
             } else if (arg instanceof SwmPersonSchedule) {
                 SwmPersonSchedule schedule = (SwmPersonSchedule) arg;
-                String singlePersonId = schedule.getEmployeeId();
-                if (singlePersonId != null && !singlePersonId.trim().isEmpty()) {
-                    personIdList.add(singlePersonId);
+                String singleId = schedule.getId();
+                if (singleId != null && !singleId.trim().isEmpty()) {
+                    personIdList.add(singleId);
                 }
                 targetClasses = schedule.getClasses();
                 break;
