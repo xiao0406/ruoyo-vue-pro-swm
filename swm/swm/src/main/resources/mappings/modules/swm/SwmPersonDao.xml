@@ -31,7 +31,11 @@
                a.remarks AS "remarks",
                a.status AS "status",
                a.dept ,
-               a.position
+               a.position,
+               a.person_number,
+               a.age,
+               a.urgent_person,
+               a.urgent_phone_number
         FROM ${sqlMap.table.toSql()}
         LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
@@ -322,6 +326,9 @@
                 AND NOT EXISTS (SELECT 1 FROM fms_worker fw2 WHERE fw2.identity_code = f.identity_code AND fw2.create_date > f.create_date)
         WHERE a.personnel_status = '1'  -- 只查询在职人员
           AND a.status = '0'            -- 正常状态
+        <if test="idCard != null and idCard != ''">
+            and a.identity_card = idCard
+        </if>
         ORDER BY a.update_date DESC
     </select>
 
@@ -562,4 +569,26 @@
         </where>
         ORDER BY ${sqlMap.order.toSql()}
     </select>
+
+    <update id="updateBatch">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE swm_person
+            <set>
+                <if test="item.personNumber != null and item.personNumber != '' ">
+                    person_number = #{item.personNumber},
+                </if>
+                <if test="item.age != null and item.age != '' ">
+                    age = #{item.age},
+                </if>
+                <if test="item.urgentPerson != null and item.urgentPerson != ''">
+                    urgent_person = #{item.urgentPerson},
+                </if>
+                <if test="item.urgentPhoneNumber != null and item.urgentPhoneNumber != ''">
+                    urgent_phone_number = #{item.urgentPhoneNumber},
+                </if>
+                update_date = NOW()
+            </set>
+            WHERE identity_card = #{item.identityCard}
+        </foreach>
+    </update>
 </mapper>

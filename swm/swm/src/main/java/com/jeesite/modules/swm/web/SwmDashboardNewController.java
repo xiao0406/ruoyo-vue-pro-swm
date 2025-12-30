@@ -11,6 +11,7 @@ import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
+import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.utils.R;
@@ -285,6 +286,8 @@ public class SwmDashboardNewController extends BaseController {
         // 工作中人数：从TDengine查询1小时内有位置数据的人数（按类型分类）
         //这里改下逻辑，取最近5分钟的数据
         Map<String, Integer> workingStats = getWorkingCountByTypeFromTDengine();
+//        Page<Person> page = workingList(null, null);
+//        long count = page.getCount();
         // 实时作业工人数
         Integer workingPersonCount = workingStats.getOrDefault("worker", 0);
         result.put("workingPersonCount", workingPersonCount);
@@ -293,7 +296,7 @@ public class SwmDashboardNewController extends BaseController {
         result.put("workingManagerCount", workingManagerCount);
         // 实时作业人数
         // 获取SwmPersonController Bean
-        result.put("totalWorkingCount", workingPersonCount);
+        result.put("totalWorkingCount", workingPersonCount+workingManagerCount);
 
         // 在场工人数
 //        long workerCount = swmPersonList.stream().filter(a -> !a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
@@ -306,8 +309,13 @@ public class SwmDashboardNewController extends BaseController {
         if(todayAttendanceCount == 0){
             result.put("todayAttendanceRate", "0.00");
         }else{
-            String todayAttendanceRate = BigDecimal.valueOf(todayAttendanceCount).divide(BigDecimal.valueOf(workerCount + managerCount), 2, RoundingMode.HALF_UP).toString();
-            result.put("todayAttendanceRate", todayAttendanceRate);
+            long count = todayAttendances.stream().filter(a -> a.getClockInDate() != null
+                    && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)
+                    || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)
+                    || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))).count();
+
+            BigDecimal divide = BigDecimal.valueOf(count).divide(BigDecimal.valueOf(workerCount - managerCount), 2, RoundingMode.HALF_UP);
+            result.put("todayAttendanceRate", divide.multiply(BigDecimal.valueOf(100)).toString());
         }
         return result;
     }
@@ -1157,6 +1165,62 @@ public class SwmDashboardNewController extends BaseController {
         vo.setDate(date);
         Page<SwmDashboardNewController.Person> page = swmPersonService.findManageTodayList(vo);
         return page;
+    }
+
+    @GetMapping("/personIdleHoursRanking")
+    @ResponseBody
+    @ApiOperation("人员休闲区停留时长")
+    public Page<SwmDashboardDto.IdleHoursRankingDto> idleHoursRanking(SwmDashboardDto.IdleHoursRankingDto  vo) {
+        Page<SwmDashboardDto.IdleHoursRankingDto> result  = swmDailyAttendanceService.idleHoursRanking(vo);
+        return result;
+    }
+
+    @GetMapping("/personManagementOnDuty")
+    @ResponseBody
+    @ApiOperation("管理人员在岗情况")
+    public Page<SwmDashboardDto.ManagementOnDutyDto> managementOnDuty(SwmDashboardDto.ManagementOnDutyDto  vo) {
+        Page<SwmDashboardDto.ManagementOnDutyDto> result  = swmDailyAttendanceService.managementOnDuty(vo);
+        return result;
+    }
+
+    @GetMapping("/teamAttendanceAnalysis")
+    @ResponseBody
+    @ApiOperation("班组出勤率分析")
+    public List<SwmDashboardDto.TeamAttendanceAnalysis> teamAttendanceAnalysis(SwmDashboardDto.TeamAttendanceAnalysis  vo) {
+        List<SwmDashboardDto.TeamAttendanceAnalysis> result  = swmDailyAttendanceService.teamAttendanceAnalysis(vo);
+        return result;
+    }
+
+    @GetMapping("/departmentAttendanceAnalysis")
+    @ResponseBody
+    @ApiOperation("车间出勤率分析")
+    public List<SwmDashboardDto.TeamAttendanceAnalysis> departmentAttendanceAnalysis(SwmDashboardDto.TeamAttendanceAnalysis  vo) {
+        List<SwmDashboardDto.TeamAttendanceAnalysis> result  = swmDailyAttendanceService.departmentAttendanceAnalysis(vo);
+        return result;
+    }
+
+    @GetMapping("/noAttendancePerson")
+    @ResponseBody
+    @ApiOperation("长时间未出勤人员")
+    public Page<SwmDashboardDto.NoAttendancePerson> noAttendancePerson(SwmDashboardDto.NoAttendancePerson  vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> result  = swmDailyAttendanceService.noAttendancePerson(vo);
+        return result;
+    }
+
+    @GetMapping("/beLatePerson")
+    @ResponseBody
+    @ApiOperation("迟到人员-今天的")
+    public Page<SwmDashboardDto.NoAttendancePerson> beLatePerson(SwmDashboardDto.NoAttendancePerson  vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> result  = swmDailyAttendanceService.beLatePerson(vo);
+        return result;
+    }
+
+    @GetMapping("/leaveEarlyPerson")
+    @ResponseBody
+    @ApiOperation("早退人员-昨天的")
+    public Page<SwmDashboardDto.NoAttendancePerson> leaveEarlyPerson(SwmDashboardDto.NoAttendancePerson  vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> result  = swmDailyAttendanceService.leaveEarlyPerson(vo);
+        return result;
     }
 
 }

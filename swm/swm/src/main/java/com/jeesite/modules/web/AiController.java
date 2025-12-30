@@ -99,6 +99,14 @@ public class AiController {
         return result;
     }
 
+    @PostMapping("trajectoryV1")
+    @ResponseBody
+    @ApiOperation(value = "轨迹定位")
+    public Page<AiDto.Trajectory> trajectoryV1(AiDto.Trajectory vo ) {
+        Page<AiDto.Trajectory> result =  aiServiceImpl.trajectoryV1(vo);
+        return result;
+    }
+
     @PostMapping("teamActualHours")
     @ResponseBody
     @ApiOperation(value = "班组有效时长")

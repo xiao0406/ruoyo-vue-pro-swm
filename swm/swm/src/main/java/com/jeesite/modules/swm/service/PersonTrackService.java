@@ -418,9 +418,14 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         position.put("positionArchiveId", person.getPositionArchiveId());
         position.put("workGroupId", person.getWorkGroupId());
         position.put("prodLineId", person.getProdLineId());
+        position.put("personNumber",person.getPersonNumber());
+        position.put("age", person.getAge());
+        position.put("urgentPerson", person.getUrgentPerson());
+        position.put("urgentPhoneNumber", person.getUrgentPhoneNumber());
 
         // 添加手机号字段
         position.put("phoneNumber", person.getPhoneNumber());
+        position.put("gender", person.getGender());
 
         return position;
     }

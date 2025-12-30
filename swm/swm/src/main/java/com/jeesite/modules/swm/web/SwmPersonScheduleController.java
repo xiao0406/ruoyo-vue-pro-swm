@@ -2,11 +2,15 @@ package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.entity.SwmBeaconStationExport;
+import com.jeesite.modules.entity.SwmPersonScheduleExport;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.entity.SwmScheduleTime;
 import com.jeesite.modules.swm.service.SwmPersonScheduleService;
 import com.jeesite.modules.swm.service.SwmScheduleTimeService;
+import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -17,9 +21,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -345,5 +351,26 @@ public class SwmPersonScheduleController extends BaseController {
             logger.error("获取班组列表失败", e);
             return Collections.emptyList();
         }
+    }
+
+    @ApiOperation("模板下载")
+    @RequestMapping("/export")
+    @ResponseBody
+    public String export() throws IOException {
+        String name;
+        List<SwmPersonScheduleExport> list = new ArrayList<>();
+        String fileName = "班次管理导入模板.xlsx";
+        try (ExcelExport ee = new ExcelExport("班次管理设置", SwmPersonScheduleExport.class)) {
+            name = ExcelExportUtil.uploadOss(ee.setDataList(list), fileName);
+        }
+        return renderResult(Global.TRUE, text("成功！"), name);
+    }
+
+    @ApiOperation("班次切换白夜班")
+    @RequestMapping("/importData")
+    @ResponseBody
+    public String importData(MultipartFile file) {
+        Integer count = swmPersonScheduleService.importData(file);
+        return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
 }

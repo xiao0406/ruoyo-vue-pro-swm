@@ -89,14 +89,14 @@ public class SwmAreaCache {
      * 插入缓存数据
      * @param
      */
-    public void insertAreaCache(String id){
-        String currentCorpCode = CorpUtils.getCurrentCorpCode();
 
-        Object object = redisService.get(currentCorpCode+SwmRedisConstant.RedisSwmKey.AREA_CACHE);
-        if (object != null) {
-            List<String> list = (List<String>) object;
-            list.add(id);
-            redisService.set(currentCorpCode+SwmRedisConstant.RedisSwmKey.AREA_CACHE, list);
-        }
+    public void insertAreaCache(String areaName){
+            String currentCorpCode = CorpUtils.getCurrentCorpCode();
+            Object object = redisService.get(currentCorpCode+SwmRedisConstant.RedisSwmKey.AREA_CACHE);
+            if (object != null) {
+                List<String> list = (List<String>) object;
+                list.add(areaName);
+                redisService.set(currentCorpCode+SwmRedisConstant.RedisSwmKey.AREA_CACHE, list);
+            }
     }
 }

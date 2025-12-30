@@ -4,6 +4,7 @@ import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmMonthlyAttendance;
+import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import com.jeesite.modules.entity.AiDto;
 import org.apache.ibatis.annotations.Param;
@@ -192,4 +193,18 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
     List<SwmDashboardNewController.AttendanceAnalysis> getAllTeamNumber(String companyCode);
 
     List<SwmDashboardNewController.AttendanceAnalysis> getTeamAttendance(String companyCode, String date);
+
+    List<SwmDashboardDto.IdleHoursRankingDto> idleHoursRankingList(SwmDashboardDto.IdleHoursRankingDto vo);
+
+    List<SwmDashboardDto.ManagementOnDutyDto> managementOnDuty(SwmDashboardDto.ManagementOnDutyDto vo);
+
+    List<SwmDashboardDto.TeamAttendanceAnalysis> teamAttendanceAnalysis(SwmDashboardDto.TeamAttendanceAnalysis vo);
+
+    List<SwmDashboardDto.TeamAttendanceAnalysis> departmentAttendanceAnalysis(SwmDashboardDto.TeamAttendanceAnalysis vo);
+
+    List<SwmDashboardDto.NoAttendancePerson> noAttendancePerson(SwmDashboardDto.NoAttendancePerson vo);
+
+    List<SwmDashboardDto.NoAttendancePerson> beLatePerson(SwmDashboardDto.NoAttendancePerson vo);
+
+    List<SwmDashboardDto.NoAttendancePerson> leaveEarlyPerson(SwmDashboardDto.NoAttendancePerson vo);
 }

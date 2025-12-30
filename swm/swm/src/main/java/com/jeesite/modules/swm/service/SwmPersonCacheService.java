@@ -173,6 +173,8 @@ public class SwmPersonCacheService {
         personInfo.put("team", person.getTeam()); // 所属班组
         personInfo.put("jobType", person.getJobType()); // 工种
         personInfo.put("identityCard", person.getIdentityCard()); // 身份证号码
+        personInfo.put("gender", person.getGender()); // 性别
+        personInfo.put("phoneNumber", person.getPhoneNumber()); // 手机号
 
         return personInfo;
     }
@@ -325,13 +327,17 @@ public class SwmPersonCacheService {
         try {
             if (SwmPerson.PersonStatusEnum.ACTIVE.equals(person.getPersonnelStatus())) {
                 // 在职状态，添加或更新缓存
-                Map<String, Object> personInfo = buildPersonCacheInfo(person);
+
+                Map<String, Object> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds(person.getIdentityCard()).get(0);
+                Map<String, Object> personInfo = buildPersonCacheInfoWithIds(activePersonsWithIds);
                 redisService.hset(SwmRedisConstant.RedisGlobalKey.ACTIVE_PERSON_CACHE_KEY, person.getId(), personInfo);
 
                 // 更新身份证映射
                 if (person.getIdentityCard() != null && !person.getIdentityCard().trim().isEmpty()) {
                     redisService.hset(SwmRedisConstant.RedisGlobalKey.IDENTITY_CARD_MAP_KEY, person.getIdentityCard(), person.getId());
                 }
+
+
 
                 log.debug("更新在职人员缓存：{}", person.getName());
 

@@ -159,7 +159,7 @@ public class SwmAreaController extends BaseController {
         swmAreaService.save(swmArea);
         //生产区域信标,插入redis中
         if (SwmArea.STATUS_NORMAL.equals(swmArea.getAreaType())){
-            swmAreaCache.insertAreaCache(swmArea.getId());
+            swmAreaCache.insertAreaCache(swmArea.getAreaName());
         }
         return renderResult(Global.TRUE, text("保存区域成功！"));
     }

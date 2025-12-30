@@ -1536,6 +1536,12 @@ public class SwmDashboardController extends BaseController {
         Map<String, List<SwmDailyAttendance>> groupedByPersonType = todayAttendances.stream()
                 .collect(Collectors.groupingBy(SwmDailyAttendance::getPersonType));
 
+        for (SwmDailyAttendance todayAttendance : todayAttendances) {
+            if (todayAttendance.getEmployeeId().equals("1982757473443696640")){
+                System.out.println("todayAttendance = " + todayAttendance);
+            }
+        }
+
         List<Map<String, Object>> resultList = new ArrayList<>();
         for (Map.Entry<String, List<SwmDailyAttendance>> entry : groupedByPersonType.entrySet()) {
             Map<String, Object> result = new HashMap<>();

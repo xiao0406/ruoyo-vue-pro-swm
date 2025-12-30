@@ -64,6 +64,7 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
      * @author Shawn
      * @date 2025/06/23
      */
+    List<Map<String, Object>> findActivePersonsWithIds(String idCard);
     List<Map<String, Object>> findActivePersonsWithIds(int random);
 
     /**
@@ -120,4 +121,6 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
 
 
     List<SwmDashboardNewController.Person> findManageTodayList(SwmDashboardNewController.Person vo);
+
+    void updateBatch(List<SwmPersonExport> list);
 }

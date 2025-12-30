@@ -479,7 +479,7 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         List<SwmBeaconStation> swmBeaconStationList = new ArrayList<>();
         Integer count = 0;
         try {
-            excelImport = new ExcelImport(file, 2, 0);
+            excelImport = new ExcelImport(file, 1, 0);
             List<SwmBeaconStationExport> list = excelImport.getDataList(SwmBeaconStationExport.class);
 
             SwmBeaconStation swmBeaconStation1 = new SwmBeaconStation();
