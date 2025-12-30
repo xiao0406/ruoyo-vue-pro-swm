@@ -83,9 +83,9 @@ public class PersonScheduleTask {
 
                 //2.先查询本月排班人员信息
                 Date date = new Date();
-                String month = DateUtil.format(date, "yyyy-MM");
+//                String month = DateUtil.format(date, "yyyy-MM");
                 SwmPersonSchedule swmPersonSchedule = new SwmPersonSchedule();
-                swmPersonSchedule.setMonth(month);
+//                swmPersonSchedule.setMonth(month);
 
                 // 传随机值，使 SQL 每次不同，目的是取消一级缓存
                 swmPersonSchedule.setRandom(new Random().nextInt(1_000_000));
@@ -104,7 +104,7 @@ public class PersonScheduleTask {
                     XxlJobHelper.log("开始处理：租户：{}，人员：{}",corpCode, person.getName());
                     SwmPersonSchedule personSchedule = new SwmPersonSchedule();
                     personSchedule.setPersonName(person.getName());
-                    personSchedule.setMonth(month);
+//                    personSchedule.setMonth(month);
                     personSchedule.setClasses("1");
                     personSchedule.setIdCard(person.getIdentityCard());
                     personSchedule.setEmployeeId(person.getId());

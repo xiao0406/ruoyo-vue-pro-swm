@@ -90,7 +90,7 @@
             a.status
         FROM swm_person_schedule a
         WHERE a.id_card = #{idCard}
-        AND a.month = #{month}
+#         AND a.month = #{month}
         AND a.status = '0'
         ORDER BY a.update_date DESC
     </select>
@@ -245,4 +245,21 @@
             WHERE id_card = #{idCard} and month = #{month}
         </foreach>
     </update>
+
+    <!-- 批量修改班次：根据employee_id批量更新classes字段 -->
+    <update id="batchUpdateClasses">
+        UPDATE swm_person_schedule
+        SET
+        classes = #{dto.classes},
+        <if test="userCode != null and userCode != '' ">
+            update_by = #{userCode},
+        </if>
+        update_date = NOW()
+        WHERE
+        id IN
+        <foreach collection="dto.ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
 </mapper>
