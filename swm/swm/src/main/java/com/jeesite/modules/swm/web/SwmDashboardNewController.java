@@ -253,7 +253,9 @@ public class SwmDashboardNewController extends BaseController {
         result.put("todayAttendanceCount", todayAttendanceCount);
         // 今日出勤工人数
         long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
-                && a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)).count();
+                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)
+                    || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER)
+                    || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES))).count();
         result.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
         // 今日出勤管理员数
         long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
