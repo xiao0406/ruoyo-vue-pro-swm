@@ -82,7 +82,7 @@ public class PersonScheduleTask {
 
 
                 //2.先查询本月排班人员信息
-                Date date = new Date();
+//                Date date = new Date();
 //                String month = DateUtil.format(date, "yyyy-MM");
                 SwmPersonSchedule swmPersonSchedule = new SwmPersonSchedule();
 //                swmPersonSchedule.setMonth(month);
