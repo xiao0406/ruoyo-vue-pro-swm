@@ -103,7 +103,6 @@
             id,
             work_group_name AS "name"
         FROM fms_work_group
-       
         GROUP BY id, work_group_name
         ORDER BY work_group_name
     </select>
