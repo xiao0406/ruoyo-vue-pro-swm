@@ -90,7 +90,9 @@
             a.status
         FROM swm_person_schedule a
         WHERE a.id_card = #{idCard}
-#         AND a.month = #{month}
+        <if test="month != null and month != ''">
+            AND a.month = #{month}
+        </if>
         AND a.status = '0'
         ORDER BY a.update_date DESC
     </select>
