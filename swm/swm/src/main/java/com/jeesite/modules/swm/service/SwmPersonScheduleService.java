@@ -209,7 +209,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
      * @return 排班记录列表
      */
     public List<SwmPersonSchedule> findByIdCardAndMonth(String idCard, String month) {
-        return dao.findByIdCardAndMonth(idCard, month);
+        return dao.findByIdCardAndMonth(idCard, null);
     }
 
     /**
