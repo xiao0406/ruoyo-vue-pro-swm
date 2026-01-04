@@ -101,6 +101,12 @@ public class PersonScheduleTask {
                     if (CollectionUtils.isNotEmpty( list)) {
                         continue;
                     }
+
+                    if (!corpCode.equals(person.getCorpCode()) && !corpName.equals(person.getCorpName())) {
+                        XxlJobHelper.log("【跨租户人员被跳过】person={}, personCorp={}, taskCorp={}", person.getName(), person.getCorpCode(), corpCode);
+                        continue;
+                    }
+
                     XxlJobHelper.log("开始处理：租户：{}，人员：{}",corpCode, person.getName());
                     SwmPersonSchedule personSchedule = new SwmPersonSchedule();
                     personSchedule.setPersonName(person.getName());
