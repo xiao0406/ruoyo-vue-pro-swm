@@ -12,7 +12,7 @@
 	<!-- 屏蔽SwmWarningManagementDao的SQL日志，避免频繁的告警查询日志干扰 -->
 	<!-- Author: Shawn -->
 	<!-- Date: 2025/06/23 -->
-<!--	<logger name="com.jeesite.modules.swm.dao.SwmWarningManagementDao" level="INFO" />-->
+	<logger name="com.jeesite.modules.swm.dao.SwmWarningManagementDao" level="INFO" />
 	
 	<logger name="io.seata" level="INFO" />
 	<logger name="zipkin2.reporter.AsyncReporter$BoundedAsyncReporter" level="ERROR" />
@@ -26,20 +26,17 @@
 		</encoder>
 	</appender>
 
-	<!-- 只在控制台输出 DEBUG 级别 -->
-	<filter class="ch.qos.logback.classic.filter.LevelFilter">
-		<level>DEBUG</level>
-		<onMatch>ACCEPT</onMatch>
-		<onMismatch>DENY</onMismatch>
-	</filter>
-
-	<!-- Log file debug output -->
+	<!-- Log file debug output（每天1个文件，按天归档） -->
 	<appender name="debug" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${log.path}/debug.log</file>
-		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-			<fileNamePattern>${log.path}/debug.%d{yyyy-MM-dd}.%i.log.zip</fileNamePattern>
-			<maxFileSize>50MB</maxFileSize>
+		<!-- 改用TimeBasedRollingPolicy，仅按时间（天）滚动 -->
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- 归档文件命名格式：debug.年月日.log.zip（当日日志写入debug.log，次日自动归档为该格式） -->
+			<fileNamePattern>${log.path}/debug.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+			<!-- 保留30天的归档日志，超过自动删除（可按需调整） -->
 			<maxHistory>30</maxHistory>
+			<!-- 可选：防止归档文件过大（若单日日志超阈值，会自动分割，但你需求是1个文件，可注释或调大） -->
+			<!-- <totalSizeCap>1500MB</totalSizeCap> -->
 		</rollingPolicy>
 		<encoder>
 			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p ${PID:- } [%15.15t] [%-39logger{39}] - %m%n%wEx</pattern>
@@ -48,16 +45,20 @@
 			<level>ERROR</level>
 			<onMatch>DENY</onMatch>
 			<onMismatch>NEUTRAL</onMismatch>
-		</filter>
+		</filter>-->
 	</appender>
 
-	<!-- Log file error output -->
+	<!-- Log file error output（每天1个文件，按天归档） -->
 	<appender name="error" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${log.path}/error.log</file>
-		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-			<fileNamePattern>${log.path}/error.%d{yyyy-MM-dd}.%i.log.zip</fileNamePattern>
-			<maxFileSize>50MB</maxFileSize>
+		<!-- 改用TimeBasedRollingPolicy，仅按时间（天）滚动 -->
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- 归档文件命名格式：error.年月日.log.zip（当日日志写入error.log，次日自动归档为该格式） -->
+			<fileNamePattern>${log.path}/error.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+			<!-- 保留30天的归档日志，超过自动删除（可按需调整） -->
 			<maxHistory>30</maxHistory>
+			<!-- 可选：防止归档文件过大（若单日日志超阈值，会自动分割，但你需求是1个文件，可注释或调大） -->
+			<!-- <totalSizeCap>1500MB</totalSizeCap> -->
 		</rollingPolicy>
 		<encoder>
 			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p ${PID:- } [%15.15t] [%-39logger{39}] - %m%n%wEx</pattern>
@@ -68,7 +69,7 @@
 	</appender>
 
 	<!-- Level: FATAL 0  ERROR 3  WARN 4  INFO 6  DEBUG 7 -->
-	<root level="DEBUG">
+	<root level="WARN">
 		<appender-ref ref="console" />
 		<appender-ref ref="debug" />
 		<appender-ref ref="error" />
