@@ -1428,6 +1428,9 @@ public class AttendanceTask {
                                 // 解析时间
                                 ZoneId zoneId = ZoneId.systemDefault();
                                 LocalDateTime clockInDateTime = LocalDateTime.ofInstant(instant, zoneId);
+                                if (clockInDateTime.getHour() == 0 && clockInDateTime.getMinute() == 0 && clockInDateTime.getSecond() == 0 && instant.toString().contains("T24")) {
+                                    clockInDateTime = clockInDateTime.withHour(23).withMinute(59).withSecond(59);
+                                }
                                 Date clockInDate = Date.from(clockInDateTime.atZone(zoneId).toInstant());
                                 item.setClockInDate(clockInDate);
                                 item.setClockInTime(clockInDate);
@@ -1529,8 +1532,17 @@ public class AttendanceTask {
                     // 无信号，未补偿过 → 触发补卡
                     if (count != null && count == 0) {
                         // 补偿下班卡
-                        item.setClockOutDate(now);
-                        item.setClockOutTime(now);
+                        ZoneId zoneId = ZoneId.systemDefault();
+                        // 当前时间
+                        LocalDateTime nowDateTime = LocalDateTime.now(zoneId);
+                        // 如果极端情况下出现 24:00:00（理论上不会，但兜底）
+                        if (nowDateTime.getHour() == 0 && nowDateTime.getMinute() == 0 && nowDateTime.getSecond() == 0) {
+                            // 统一压成 23:59:59（不跨天）
+                            nowDateTime = nowDateTime.minusSeconds(1);
+                        }
+                        Date clockOutDate = Date.from(nowDateTime.atZone(zoneId).toInstant());
+                        item.setClockOutDate(clockOutDate);
+                        item.setClockOutTime(clockOutDate);
                         // 标记今天已补偿
                         item.setPendingClockOutCompensate(true);
                         clockOutRecords.add(item);
