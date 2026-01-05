@@ -283,11 +283,8 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
             excelImport = new ExcelImport(file, 2, 0);
             List<SwmPersonScheduleExport> list = excelImport.getDataList(SwmPersonScheduleExport.class);
             if (CollectionUtil.isNotEmpty(list)){
-                Date date = new Date();
-                String month = DateUtil.format(date, "yyyy-MM");
-
                 for (SwmPersonScheduleExport export : list) {
-                    export.setMonth( month);
+//                    export.setMonth( month);
                     if (StringUtils.isBlank(export.getIdCard())){
                         new RuntimeException("导入数据错误：身份证号不能为空");
                     }

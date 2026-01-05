@@ -69,7 +69,7 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
 
     List<SwmPersonSchedule> scheduleList(SwmPersonSchedule swmPersonSchedule);
 
-    void updateBatch(List<SwmPersonScheduleExport> list1);
+    void updateBatch(@Param("list") List<SwmPersonScheduleExport> list1);
 
     /**
      * 批量修改人员排班班次
