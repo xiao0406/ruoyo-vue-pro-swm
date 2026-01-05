@@ -243,7 +243,7 @@
                 </if>
                 update_date = NOW()
             </set>
-            WHERE id_card = #{idCard} and month = #{month}
+            WHERE id_card = #{idCard}
         </foreach>
     </update>
 
