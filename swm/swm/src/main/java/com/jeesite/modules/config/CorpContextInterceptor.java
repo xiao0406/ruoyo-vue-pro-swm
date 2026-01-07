@@ -24,9 +24,7 @@ public class CorpContextInterceptor implements HandlerInterceptor {
     private static final String SESSION_CORP_NAME = "corpName";
 
     @Override
-    public boolean preHandle(HttpServletRequest request,
-                             HttpServletResponse response,
-                             Object handler) {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
 
         // 1. 先清理，防止线程复用带来的脏数据（非常关键）
         CorpUtils.removeCurrentCorpCode(null);
@@ -55,10 +53,7 @@ public class CorpContextInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request,
-                                HttpServletResponse response,
-                                Object handler,
-                                Exception ex) {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         // 4. 请求结束必须清理 ThreadLocal
         CorpUtils.removeCurrentCorpCode(null);
     }

@@ -5,18 +5,22 @@ import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
-import com.jeesite.modules.entity.SwmPersonExport;
+import com.jeesite.modules.annotation.SavePersonScheduleLog;
 import com.jeesite.modules.entity.SwmPersonScheduleExport;
 import com.jeesite.modules.swm.dao.SwmPersonScheduleDao;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
+import com.jeesite.modules.swm.entity.dto.SwmPersonScheduleDto;
+import com.jeesite.modules.sys.entity.User;
+import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -33,6 +37,12 @@ import java.util.Map;
 public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, SwmPersonSchedule> {
 
     private static final Logger logger = LoggerFactory.getLogger(SwmPersonScheduleService.class);
+
+    @Resource
+    private SwmPersonScheduleDao swmPersonScheduleDao;
+
+    @Resource
+    private SwmPersonScheduleLogService swmPersonScheduleLogService;
 
     /**
      * 获取单条数据
@@ -86,8 +96,48 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
      */
     @Override
     @Transactional(readOnly = false)
+    @SavePersonScheduleLog(remarkPrefix = "单个修改人员班次：目标班次")
     public void save(SwmPersonSchedule swmPersonSchedule) {
         super.save(swmPersonSchedule);
+    }
+
+    /**
+     * 批量修改班次（事务控制：修改+存日志原子性）
+     */
+    @Transactional(readOnly = false)
+    @SavePersonScheduleLog(remarkPrefix = "批量修改人员班次：目标班次") // 添加自定义注解，触发 AOP 日志记录
+    public int batchUpdateClasses(SwmPersonScheduleDto dto) {
+        // 1. 安全获取用户信息（双重兜底：用户对象 + 字段值）
+        String userCode = "system";
+        User user = UserUtils.getUser();
+
+        if (user != null) {
+            // 处理 userCode 兜底：避免用户对象非 null 但 userCode 为 null
+            String tempUserCode = user.getUserCode();
+            if (tempUserCode != null && !tempUserCode.trim().isEmpty()) {
+                userCode = tempUserCode.trim();
+            }
+        }
+
+        // 2. 执行批量修改（原有逻辑）
+        int affectRows = swmPersonScheduleDao.batchUpdateClasses(dto, userCode);
+
+//        // 3. 构建班次修改日志（完善字段赋值）
+//        SwmPersonScheduleLog scheduleLog = new SwmPersonScheduleLog();
+//        scheduleLog.setId(IdGen.uuid()); // 主键
+//        scheduleLog.setOperateUser(userCode); // 此时绝不会为 null
+//        scheduleLog.setOperateTime(new Date()); // 操作时间
+//        scheduleLog.setTargetClasses(dto.getClasses()); // 目标班次
+//        scheduleLog.setPersonCount(dto.getIds().size()); // 修改人员数量
+//        // 将人员ID列表转为逗号分隔的字符串
+//        String personIdsStr = String.join(",", dto.getIds());
+//        scheduleLog.setPersonIds(personIdsStr); // 人员ID列表
+//        scheduleLog.setRemark("批量修改人员班次：目标班次" + dto.getClasses()); // 备注
+//
+//        // 4. 保存日志（和批量修改在同一个事务中）
+//        swmPersonScheduleLogService.saveScheduleLog(scheduleLog);
+
+        return affectRows;
     }
 
     /**
@@ -159,7 +209,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
      * @return 排班记录列表
      */
     public List<SwmPersonSchedule> findByIdCardAndMonth(String idCard, String month) {
-        return dao.findByIdCardAndMonth(idCard, month);
+        return dao.findByIdCardAndMonth(idCard, null);
     }
 
     /**
@@ -233,11 +283,8 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
             excelImport = new ExcelImport(file, 2, 0);
             List<SwmPersonScheduleExport> list = excelImport.getDataList(SwmPersonScheduleExport.class);
             if (CollectionUtil.isNotEmpty(list)){
-                Date date = new Date();
-                String month = DateUtil.format(date, "yyyy-MM");
-
                 for (SwmPersonScheduleExport export : list) {
-                    export.setMonth( month);
+//                    export.setMonth( month);
                     if (StringUtils.isBlank(export.getIdCard())){
                         new RuntimeException("导入数据错误：身份证号不能为空");
                     }
