@@ -1,34 +1,30 @@
 package com.jeesite.modules.swm.web;
 
-import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
-import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
-import com.jeesite.modules.swm.entity.*;
+import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.entity.SwmWarningManagement;
+import com.jeesite.modules.swm.entity.TreeNode;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.utils.R;
-import groovy.lang.Lazy;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,7 +45,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 @Slf4j
@@ -253,10 +248,12 @@ public class SwmDashboardNewController extends BaseController {
         long todayAttendanceCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null).count();
         result.put("todayAttendanceCount", todayAttendanceCount);
         // 今日出勤工人数
-        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
-                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)
-        || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))
-        || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)).count();
+        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null)
+                && !(a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER))).count();
+//        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null)
+//                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)
+//        || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))
+//        || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)).count();
         result.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
         // 今日出勤管理员数
         long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
