@@ -249,15 +249,11 @@ public class SwmDashboardNewController extends BaseController {
         result.put("todayAttendanceCount", todayAttendanceCount);
         // 今日出勤工人数
         long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null)
-                && !(a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER))).count();
-//        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null)
-//                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)
-//        || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))
-//        || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)).count();
+                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER) || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)) ).count();
         result.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
         // 今日出勤管理员数
-        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null || a.getClockOutDate() != null)
-                && a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
+        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null)
+                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER) || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))).count();
         result.put("todayAttendanceManagerCount", todayAttendanceManagerCount);
 
         //今日出勤白班人数   classes = 1
@@ -271,12 +267,13 @@ public class SwmDashboardNewController extends BaseController {
         result.put("todayAttendanceNightCount", todayAttendanceNightCount);
 
         //工人今日在厂
-        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.TEAMLEADER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
+        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
         long todayAttendanceWorkerWhiteCount = swmPersonList.stream().filter(a ->  Arrays.asList(managerIds).contains(a.getPersonType())).count();
         result.put("todayAttendanceWorkerWhiteCount", todayAttendanceWorkerWhiteCount);
 
         //管理员今日在厂
-        long todayAttendanceManagerWhiteCount = swmPersonList.stream().filter(a ->  SwmPerson.PersonTypeEnum.MANAGER.equals(a.getPersonType())).count();
+        long todayAttendanceManagerWhiteCount = swmPersonList.stream().filter(a ->  (SwmPerson.PersonTypeEnum.MANAGER.equals(a.getPersonType()) ||
+                SwmPerson.PersonTypeEnum.TEAMLEADER.equals(a.getPersonType()))).count();
         result.put("todayAttendanceManagerWhiteCount", todayAttendanceManagerWhiteCount);
 
 
