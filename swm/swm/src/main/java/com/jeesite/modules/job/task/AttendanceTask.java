@@ -15,7 +15,6 @@ import com.jeesite.modules.util.BatchOperationsUtil;
 import com.jeesite.modules.utils.R;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -665,22 +664,22 @@ public class AttendanceTask {
         // 2. 查询员工的排班信息
         List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService
                 .findByIdCardAndMonth(person.getIdentityCard(), month);
-        if (personScheduleList == null || personScheduleList.isEmpty()) {
-            return null;
-        }
+//        if (personScheduleList == null || personScheduleList.isEmpty()) {
+//            return null;
+//        }
 
         SwmPersonSchedule personSchedule = personScheduleList.get(0);
-        if (personSchedule == null || personSchedule.getClasses() == null) {
-            return null;
-        }
+//        if (personSchedule == null || personSchedule.getClasses() == null) {
+//            return null;
+//        }
 
         // 3. 查询班次对应的时间
         SwmScheduleTime scheduleTimeQuery = new SwmScheduleTime();
         scheduleTimeQuery.setShiftType(personSchedule.getClasses());
         List<SwmScheduleTime> scheduleTimeList = swmScheduleTimeService.findList(scheduleTimeQuery);
-        if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
-            return null;
-        }
+//        if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
+//            return null;
+//        }
         
         // 返回包含班次信息的对象
         return new ScheduleInfo(scheduleTimeList.get(0), personSchedule.getClasses());
@@ -1466,7 +1465,7 @@ public class AttendanceTask {
                         if (clockStartTime != null){
                             //看看当前时间是否在应该打卡时间范围之内
                             String startTime = DateUtil.formatDateTime(clockStartTime);
-                            String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 8));
+                            String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 16));
                             String clockInTimeStr = getLast3MinutesBluetoothCount(deviceId, startTime, endTime,item.getIdentityCard());
                             if (StringUtils.isNotEmpty(clockInTimeStr)) {
                                 // 统一去掉毫秒（如果有）
@@ -2612,15 +2611,15 @@ public class AttendanceTask {
      */
     private void setScheduleInfo(SwmDailyAttendance attendance, SwmPerson person, Date targetDate) {
         ScheduleInfo scheduleInfo = getScheduleTimeForPerson(person, targetDate);
-        
-        if (scheduleInfo == null) {
-            attendance.setWorkTimeRange(null);
-            attendance.setClasses(null);
-            attendance.setScheduledHours(BigDecimal.ZERO);
-            XxlJobHelper.log("员工[{}]{}没有排班信息", person.getId(), person.getName());
-            return;
-        }
-        
+
+//        if (scheduleInfo == null) {
+//            attendance.setWorkTimeRange(null);
+//            attendance.setClasses(null);
+//            attendance.setScheduledHours(BigDecimal.ZERO);
+//            XxlJobHelper.log("员工[{}]{}没有排班信息", person.getId(), person.getName());
+//            return;
+//        }
+
         SwmScheduleTime scheduleTime = scheduleInfo.scheduleTime;
         String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
         

@@ -1,24 +1,32 @@
 package com.jeesite.modules.swm.web;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.DateUtils;
+import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.job.task.AttendanceTask;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
+import com.jeesite.modules.swm.job.FmsMonthPlanProlongTask;
+import com.jeesite.modules.swm.service.AreaFenceDataService;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
-import com.jeesite.common.utils.excel.ExcelExport;
-import com.jeesite.common.lang.DateUtils;
 import com.jeesite.modules.util.MinioUtils;
-import org.springframework.mock.web.MockMultipartFile;
-import com.jeesite.modules.job.task.AttendanceTask;
-import com.jeesite.modules.swm.job.FmsMonthPlanProlongTask;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -28,23 +36,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.math.BigDecimal;
-import java.text.ParseException;
-import java.util.Calendar;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.std.DateSerializer;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.jeesite.common.lang.StringUtils;
-import com.jeesite.modules.utils.R;
-import com.jeesite.modules.swm.service.AreaFenceDataService;
 
 /**
  * 日考勤统计表Controller
@@ -184,66 +178,140 @@ public class SwmDailyAttendanceController extends BaseController {
         return "modules/swm/swmDailyAttendanceList";
     }
 
-    /**
-     * 查询列表数据
-     */
     @RequestMapping(value = "listData")
     @ResponseBody
     public Page<Map<String, Object>> listData(SwmDailyAttendance swmDailyAttendance, HttpServletRequest request,
-            HttpServletResponse response) {
+                                              HttpServletResponse response) {
+        // 1. 日期默认值处理（原有逻辑保留）
         if (swmDailyAttendance.getAttendanceDate() == null &&
                 swmDailyAttendance.getBeginAttendanceDate() == null &&
                 swmDailyAttendance.getEndAttendanceDate() == null) {
-
             Date today = new Date();
-
             swmDailyAttendance.setAttendanceDate(today);
         }
 
+        // 2. 获取在线人员身份证集合（原有逻辑保留）
         Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
         Set<String> todayOnSiteIdCards = new HashSet<>();
-        if (deviceIds != null) {
+        if (deviceIds != null && !deviceIds.isEmpty()) { // 新增：判空避免无效遍历
             for (Object deviceId : deviceIds) {
                 String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
-                if (currentPerson != null){
+                if (StringUtils.isNotEmpty(currentPerson)){ // 新增：判空避免空字符串加入
                     todayOnSiteIdCards.add(currentPerson);
                 }
             }
         }
 
-        //在线
-        if (StringUtils.isNotEmpty(swmDailyAttendance.getPowerOnStatus())){
-            if ("0".equals(swmDailyAttendance.getPowerOnStatus())){
-                swmDailyAttendance.getSqlMap().getWhere().and("a.identity_card", QueryType.IN, new ArrayList<>(todayOnSiteIdCards));
-            }else {
-                swmDailyAttendance.getSqlMap().getWhere().and("a.identity_card", QueryType.NOT_IN,  new ArrayList<>(todayOnSiteIdCards));
+        // 3. 在线/离线筛选（核心修复：处理空集合+表别名+逻辑兜底）
+        String powerOnStatus = swmDailyAttendance.getPowerOnStatus();
+        if (StringUtils.isNotEmpty(powerOnStatus)) {
+            List<String> idCardList = new ArrayList<>(todayOnSiteIdCards);
+            // 关键：表别名建议通过常量/配置获取，避免硬编码
+            String identityCardColumn = "a.identity_card";
+
+            if ("0".equals(powerOnStatus)) {
+                // 在线：空集合时不拼接条件（或根据业务返回空）
+                if (!idCardList.isEmpty()) {
+                    swmDailyAttendance.getSqlMap().getWhere().and(identityCardColumn, QueryType.IN, idCardList);
+                } else {
+                    // 业务兜底：在线但无人员，直接返回空结果（避免SQL错误）
+                    Page<Map<String, Object>> emptyPage = new Page<>(request, response);
+                    emptyPage.setCount(0);
+                    return emptyPage;
+                }
+            } else {
+                // 离线：空集合时拼接 1=1（或根据业务调整），非空时拼接NOT IN
+                if (!idCardList.isEmpty()) {
+                    swmDailyAttendance.getSqlMap().getWhere().and(identityCardColumn, QueryType.NOT_IN, idCardList);
+                } else {
+                    // 兜底：无在线人员 → 所有人员都是离线，不拼接筛选条件（或拼接 1=1）
+                    // swmDailyAttendance.getSqlMap().getWhere().and("1", QueryType.EQ, "1");
+                }
             }
+            logger.info("在线人员身份证集合：{}，筛选条件：powerOnStatus={}", todayOnSiteIdCards, powerOnStatus);
         }
+
+        // 4. 执行分页查询（确保sqlMap的条件被带入）
         swmDailyAttendance.setPage(new Page<>(request, response));
         Page<SwmDailyAttendance> originalPage = swmDailyAttendanceService.findPage(swmDailyAttendance);
 
-        // 创建新的分页对象，用于存储格式化后的数据
+        // 5. 格式化结果（原有逻辑保留，新增powerOnStatus赋值）
         Page<Map<String, Object>> formattedPage = new Page<>(request, response);
         formattedPage.setCount(originalPage.getCount());
         formattedPage.setPageNo(originalPage.getPageNo());
         formattedPage.setPageSize(originalPage.getPageSize());
 
-        // 处理日期格式并计算怠工时长
         List<Map<String, Object>> formattedList = new ArrayList<>();
-
         for (SwmDailyAttendance record : originalPage.getList()) {
-            if(todayOnSiteIdCards.contains(record.getIdentityCard())){
-                record.setPowerOnStatus("0");
-            }else {
-                record.setPowerOnStatus("1");
-            }
+            // 赋值在线状态（前端展示用）
+            record.setPowerOnStatus(todayOnSiteIdCards.contains(record.getIdentityCard()) ? "0" : "1");
             formattedList.add(convertToMap(record));
         }
-
         formattedPage.setList(formattedList);
 
         return formattedPage;
     }
+
+//    /**
+//     * 查询列表数据
+//     */
+//    @RequestMapping(value = "listData")
+//    @ResponseBody
+//    public Page<Map<String, Object>> listData(SwmDailyAttendance swmDailyAttendance, HttpServletRequest request,
+//            HttpServletResponse response) {
+//        if (swmDailyAttendance.getAttendanceDate() == null &&
+//                swmDailyAttendance.getBeginAttendanceDate() == null &&
+//                swmDailyAttendance.getEndAttendanceDate() == null) {
+//
+//            Date today = new Date();
+//
+//            swmDailyAttendance.setAttendanceDate(today);
+//        }
+//
+//        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
+//        Set<String> todayOnSiteIdCards = new HashSet<>();
+//        if (deviceIds != null) {
+//            for (Object deviceId : deviceIds) {
+//                String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+//                if (currentPerson != null){
+//                    todayOnSiteIdCards.add(currentPerson);
+//                }
+//            }
+//        }
+//
+//        //在线
+//        if (StringUtils.isNotEmpty(swmDailyAttendance.getPowerOnStatus())){
+//            if ("0".equals(swmDailyAttendance.getPowerOnStatus())){
+//                swmDailyAttendance.getSqlMap().getWhere().and("a.identity_card", QueryType.IN, new ArrayList<>(todayOnSiteIdCards));
+//            }else {
+//                swmDailyAttendance.getSqlMap().getWhere().and("a.identity_card", QueryType.NOT_IN,  new ArrayList<>(todayOnSiteIdCards));
+//            }
+//        }
+//        swmDailyAttendance.setPage(new Page<>(request, response));
+//        Page<SwmDailyAttendance> originalPage = swmDailyAttendanceService.findPage(swmDailyAttendance);
+//
+//        // 创建新的分页对象，用于存储格式化后的数据
+//        Page<Map<String, Object>> formattedPage = new Page<>(request, response);
+//        formattedPage.setCount(originalPage.getCount());
+//        formattedPage.setPageNo(originalPage.getPageNo());
+//        formattedPage.setPageSize(originalPage.getPageSize());
+//
+//        // 处理日期格式并计算怠工时长
+//        List<Map<String, Object>> formattedList = new ArrayList<>();
+//
+//        for (SwmDailyAttendance record : originalPage.getList()) {
+//            if(todayOnSiteIdCards.contains(record.getIdentityCard())){
+//                record.setPowerOnStatus("0");
+//            }else {
+//                record.setPowerOnStatus("1");
+//            }
+//            formattedList.add(convertToMap(record));
+//        }
+//
+//        formattedPage.setList(formattedList);
+//
+//        return formattedPage;
+//    }
 
     /**
      * 查看编辑表单
