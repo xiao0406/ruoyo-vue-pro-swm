@@ -1140,7 +1140,7 @@ public class SwmDashboardNewController extends BaseController {
     @ResponseBody
     @ApiOperation("管理员今日在厂")
     public Page<Person> todayAttendanceManagerList(Person vo,  HttpServletRequest request, HttpServletResponse response) {
-        String[] managerIds = {SwmPerson.PersonTypeEnum.MANAGER};
+        String[] managerIds = {SwmPerson.PersonTypeEnum.MANAGER,SwmPerson.PersonTypeEnum.TEAMLEADER};
         vo.setPersonTypeList(Arrays.asList(managerIds));
         String date = DateUtils.getDate();
         vo.setDate(date);
@@ -1153,7 +1153,7 @@ public class SwmDashboardNewController extends BaseController {
     @ResponseBody
     @ApiOperation("工人今日在厂")
     public Page<SwmDashboardNewController.Person> todayAttendanceWorkerList(Person vo, HttpServletRequest request, HttpServletResponse response) {
-        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.TEAMLEADER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
+        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
         vo.setPersonTypeList(Arrays.asList(managerIds));
         String date = DateUtils.getDate();
         vo.setDate(date);
