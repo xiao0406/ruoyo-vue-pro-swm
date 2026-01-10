@@ -21,9 +21,11 @@ import com.jeesite.modules.swm.job.FmsMonthPlanProlongTask;
 import com.jeesite.modules.swm.service.AreaFenceDataService;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
+import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.util.MinioUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.shiro.session.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.mock.web.MockMultipartFile;
@@ -39,6 +41,8 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import static net.oschina.j2cache.Level2Cache.log;
 
 /**
  * 日考勤统计表Controller
@@ -76,6 +80,8 @@ public class SwmDailyAttendanceController extends BaseController {
 
     // 自定义ObjectMapper，用于处理时间字段的序列化
     private final ObjectMapper objectMapper;
+
+    private static final String SESSION_CORP_CODE = "corpCode";
 
     // 构造函数初始化objectMapper
     public SwmDailyAttendanceController() {
@@ -182,6 +188,16 @@ public class SwmDailyAttendanceController extends BaseController {
     @ResponseBody
     public Page<Map<String, Object>> listData(SwmDailyAttendance swmDailyAttendance, HttpServletRequest request,
                                               HttpServletResponse response) {
+        Session session = UserUtils.getSession();
+        String sessionCorpCode ="";
+        if (session != null) {
+            sessionCorpCode = (String) session.getAttribute(SESSION_CORP_CODE);
+
+            if (com.alibaba.cloud.commons.lang.StringUtils.isNotBlank(sessionCorpCode)) {
+                log.debug("使用 Session 租户: {}", sessionCorpCode);
+            }
+        }
+
         // 1. 日期默认值处理（原有逻辑保留）
         if (swmDailyAttendance.getAttendanceDate() == null &&
                 swmDailyAttendance.getBeginAttendanceDate() == null &&
@@ -190,17 +206,36 @@ public class SwmDailyAttendanceController extends BaseController {
             swmDailyAttendance.setAttendanceDate(today);
         }
 
-        // 2. 获取在线人员身份证集合（原有逻辑保留）
-        Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
+        // 2. 获取在线人员身份证集合（原有逻辑保留，新增日志打印）
+
+        String onlineDevicesKey1 = SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY;
+        String onlineDevicesKey2 = sessionCorpCode+SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY;
+        logger.info("Redis常量 - 在线设备KEY【名称：onlineDevicesKey1，值：{}】,【名称：onlineDevicesKey2，值：{}】", onlineDevicesKey1,onlineDevicesKey2);
+        Set<Object> deviceIds = redisService.sGet(onlineDevicesKey2);
         Set<String> todayOnSiteIdCards = new HashSet<>();
+
+        // ===== 新增：打印deviceIds的核心日志 =====
+        // 1. 打印deviceIds的基础信息（是否为空、元素数量）
+        logger.info("从Redis获取的在线设备ID集合(ONLINE_DEVICES_KEY)：{}，集合大小：{}",
+                (deviceIds == null ? "null" : deviceIds),
+                (deviceIds == null ? 0 : deviceIds.size()));
+
         if (deviceIds != null && !deviceIds.isEmpty()) { // 新增：判空避免无效遍历
             for (Object deviceId : deviceIds) {
                 String currentPerson = (String) redisService.hget(SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+
+                // 2. 打印每个deviceId对应的身份证（便于排查单个设备的映射问题）
+                logger.info("设备ID：{}，映射的身份证号：{}", deviceId, currentPerson);
+
                 if (StringUtils.isNotEmpty(currentPerson)){ // 新增：判空避免空字符串加入
                     todayOnSiteIdCards.add(currentPerson);
                 }
             }
         }
+
+        // 3. 打印最终收集到的身份证集合（验证结果）
+        logger.info("最终收集到的在线人员身份证集合：{}，集合大小：{}",
+                todayOnSiteIdCards, todayOnSiteIdCards.size());
 
         // 3. 在线/离线筛选（核心修复：处理空集合+表别名+逻辑兜底）
         String powerOnStatus = swmDailyAttendance.getPowerOnStatus();
