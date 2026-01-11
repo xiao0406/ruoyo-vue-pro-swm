@@ -101,4 +101,8 @@ public class SwmScheduleTimeService extends CrudService<SwmScheduleTimeDao, SwmS
     public void delete(SwmScheduleTime swmScheduleTime) {
         super.delete(swmScheduleTime);
     }
+
+    public List<SwmScheduleTime> findListSingle(SwmScheduleTime scheduleTimeQuery) {
+        return dao.findListSingle(scheduleTimeQuery);
+    }
 }

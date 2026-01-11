@@ -650,39 +650,154 @@ public class AttendanceTask {
         }
     }
 
+//    /**
+//     * 获取员工的排班信息
+//     *
+//     * @param person 员工信息
+//     * @param date   考勤日期
+//     * @return ScheduleInfo 包含排班时间信息和班次名称
+//     */
+//    private ScheduleInfo getScheduleTimeForPerson(SwmPerson person, Date date) {
+//        // 1. 获取当前月份
+//        String month = DateUtil.format(date, "yyyy-MM");
+//
+//        // 2. 查询员工的排班信息
+//        List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService
+//                .findByIdCardAndMonth(person.getIdentityCard(), month);
+////        if (personScheduleList == null || personScheduleList.isEmpty()) {
+////            return null;
+////        }
+//
+//        SwmPersonSchedule personSchedule = personScheduleList.get(0);
+////        if (personSchedule == null || personSchedule.getClasses() == null) {
+////            return null;
+////        }
+//
+//        // 3. 查询班次对应的时间
+//        SwmScheduleTime scheduleTimeQuery = new SwmScheduleTime();
+//        scheduleTimeQuery.setShiftType(personSchedule.getClasses());
+//        List<SwmScheduleTime> scheduleTimeList = swmScheduleTimeService.findList(scheduleTimeQuery);
+////        if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
+////            return null;
+////        }
+//
+//        // 返回包含班次信息的对象
+//        return new ScheduleInfo(scheduleTimeList.get(0), personSchedule.getClasses());
+//    }
+
+
     /**
-     * 获取员工的排班信息
-     * 
-     * @param person 员工信息
-     * @param date   考勤日期
-     * @return ScheduleInfo 包含排班时间信息和班次名称
+     * 根据人员和日期获取排班时间信息
+     * @param person 人员信息
+     * @param date 考勤日期
+     * @return 排班信息（ScheduleInfo），异常时返回null并打印日志
      */
     private ScheduleInfo getScheduleTimeForPerson(SwmPerson person, Date date) {
-        // 1. 获取当前月份
-        String month = DateUtil.format(date, "yyyy-MM");
+        // ========== 1. 入参判空 + 基础日志 ==========
+        if (person == null) {
+            XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：入参person为null，无法查询排班信息");
+            return null;
+        }
+        if (date == null) {
+            XxlJobHelper.log("【WARN】getScheduleTimeForPerson：入参date为null，无法格式化月份");
+            return null;
+        }
 
-        // 2. 查询员工的排班信息
-        List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService
-                .findByIdCardAndMonth(person.getIdentityCard(), month);
-//        if (personScheduleList == null || personScheduleList.isEmpty()) {
-//            return null;
-//        }
+        String personId = person.getId() == null ? "未知ID" : person.getId();
+        String personName = person.getName() == null ? "未知姓名" : person.getName();
+        String idCard = person.getIdentityCard() == null ? "未知身份证" : person.getIdentityCard();
+        String dateStr = DateUtil.format(date, "yyyy-MM-dd");
+        XxlJobHelper.log("【INFO】getScheduleTimeForPerson：开始查询排班，人员ID：{}，姓名：{}，身份证：{}，日期：{}",
+                personId, personName, idCard, dateStr);
 
-        SwmPersonSchedule personSchedule = personScheduleList.get(0);
-//        if (personSchedule == null || personSchedule.getClasses() == null) {
-//            return null;
-//        }
+        try {
+            // ========== 2. 格式化月份 + 日志 ==========
+            String month = DateUtil.format(date, "yyyy-MM");
+            if (StringUtils.isEmpty(month)) {
+                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：日期{}格式化月份失败，结果为空", dateStr);
+                return null;
+            }
+            XxlJobHelper.log("【INFO】getScheduleTimeForPerson：考勤日期{}对应的月份：{}", dateStr, month);
 
-        // 3. 查询班次对应的时间
-        SwmScheduleTime scheduleTimeQuery = new SwmScheduleTime();
-        scheduleTimeQuery.setShiftType(personSchedule.getClasses());
-        List<SwmScheduleTime> scheduleTimeList = swmScheduleTimeService.findList(scheduleTimeQuery);
-//        if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
-//            return null;
-//        }
-        
-        // 返回包含班次信息的对象
-        return new ScheduleInfo(scheduleTimeList.get(0), personSchedule.getClasses());
+            // ========== 3. 查询员工排班信息 + 日志 ==========
+            List<SwmPersonSchedule> personScheduleList = null;
+            try {
+                personScheduleList = swmPersonScheduleService.findByIdCardAndMonth(idCard, month);
+            } catch (Exception e) {
+                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：查询员工排班信息失败，身份证：{}，月份：{}，异常：{}",
+                        idCard, month, e.getMessage());
+                throw e; // 抛出异常，让上层捕获
+            }
+
+            // 关键：集合判空（你注释了这行，极易导致IndexOutOfBoundsException）
+            if (personScheduleList == null || personScheduleList.isEmpty()) {
+                XxlJobHelper.log("【WARN】getScheduleTimeForPerson：员工[{}]{}月份{}无排班信息，排班列表为空",
+                        personId, personName, month);
+                return null;
+            }
+            XxlJobHelper.log("【INFO】getScheduleTimeForPerson：查询到员工排班列表，数量：{}", personScheduleList.size());
+
+            // ========== 4. 获取第一个排班记录 + 日志 ==========
+            SwmPersonSchedule personSchedule = personScheduleList.get(0);
+            if (personSchedule == null) {
+                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：员工[{}]{}排班列表第一个元素为null",
+                        personId, personName);
+                return null;
+            }
+            String classes = personSchedule.getClasses();
+            XxlJobHelper.log("【INFO】getScheduleTimeForPerson：员工[{}]{}班次信息：{}",
+                    personId, personName, classes == null ? "null" : classes);
+
+            if (classes == null) {
+                XxlJobHelper.log("【WARN】getScheduleTimeForPerson：员工[{}]{}班次(classes)为null",
+                        personId, personName);
+                return null;
+            }
+
+            // ========== 5. 查询班次对应的时间 + 日志 ==========
+            SwmScheduleTime scheduleTimeQuery = new SwmScheduleTime();
+            scheduleTimeQuery.setShiftType(classes);
+            List<SwmScheduleTime> scheduleTimeList = null;
+            try {
+//                scheduleTimeList = swmScheduleTimeService.findList(scheduleTimeQuery);
+                scheduleTimeList = swmScheduleTimeService.findListSingle(scheduleTimeQuery);
+            } catch (Exception e) {
+                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：查询班次时间失败，班次：{}，异常：{}",
+                        classes, e.getMessage());
+                throw e; // 抛出异常，让上层捕获
+            }
+
+            // 关键：集合判空（你注释了这行，极易导致IndexOutOfBoundsException）
+            if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
+                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：班次{}无对应的时间信息，时间列表为空", classes);
+                return null;
+            }
+            XxlJobHelper.log("【INFO】getScheduleTimeForPerson：查询到班次{}对应的时间列表，数量：{}",
+                    classes, scheduleTimeList.size());
+
+            // ========== 6. 获取第一个班次时间 + 日志 ==========
+            SwmScheduleTime scheduleTime = scheduleTimeList.get(0);
+            if (scheduleTime == null) {
+                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：班次{}时间列表第一个元素为null", classes);
+                return null;
+            }
+
+            // ========== 7. 构建返回结果 + 日志 ==========
+            ScheduleInfo scheduleInfo = new ScheduleInfo(scheduleTime, classes);
+            XxlJobHelper.log("【INFO】getScheduleTimeForPerson：查询完成，员工[{}]{}排班信息：班次={}，时间={}",
+                    personId, personName, classes, scheduleTime);
+            return scheduleInfo;
+
+        } catch (Exception e) {
+            // ========== 全局异常捕获 + 完整堆栈 ==========
+            XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：执行失败，人员ID：{}，姓名：{}，异常信息：{}",
+                    personId, personName, e.getMessage());
+            XxlJobHelper.log("【ERROR】异常堆栈：");
+            for (StackTraceElement element : e.getStackTrace()) {
+                XxlJobHelper.log(element.toString());
+            }
+            return null;
+        }
     }
 
     /**
@@ -2413,6 +2528,7 @@ public class AttendanceTask {
             }
             
             // 创建新记录
+            XxlJobHelper.log("日期{},员工[{}]身份信息不存在", targetDate, person.getName());
             createNewAttendance(person, targetDate);
             return ProcessResult.CREATED;
             
@@ -2477,22 +2593,128 @@ public class AttendanceTask {
         XxlJobHelper.log("为员工[{}]{}创建考勤记录成功，person租户信息：{}，{}，attendance租户信息：{}，{}", person.getId(), person.getName(),person.getCorpCode(), person.getCorpName(),attendance.getCorpCode(), attendance.getCorpName());
     }
 
+//    /**
+//     * 构建新的考勤记录对象
+//     */
+//    private SwmDailyAttendance buildNewAttendance(SwmPerson person, Date targetDate) {
+//        SwmDailyAttendance attendance = new SwmDailyAttendance();
+//        attendance.setEmployeeId(person.getId());
+//        attendance.setEmployeeName(person.getName());
+//        attendance.setIdentityCard(person.getIdentityCard());
+//        attendance.setDeviceId(person.getSafetyHelmetId()); // 设置绑定设备号
+//        attendance.setPersonType(person.getPersonType());
+//        attendance.setAttendanceDate(targetDate);
+//        attendance.setCorpCode(person.getCorpCode());
+//        attendance.setCorpName(person.getCorpName());
+//        return attendance;
+//    }
+
+
     /**
      * 构建新的考勤记录对象
+     * @param person 人员信息
+     * @param targetDate 考勤日期
+     * @return 新的考勤记录对象（若入参非法返回null）
      */
     private SwmDailyAttendance buildNewAttendance(SwmPerson person, Date targetDate) {
-        SwmDailyAttendance attendance = new SwmDailyAttendance();
-        attendance.setEmployeeId(person.getId());
-        attendance.setEmployeeName(person.getName());
-        attendance.setIdentityCard(person.getIdentityCard());
-        attendance.setDeviceId(person.getSafetyHelmetId()); // 设置绑定设备号
-        attendance.setPersonType(person.getPersonType());
-        attendance.setAttendanceDate(targetDate);
-        attendance.setCorpCode(person.getCorpCode());
-        attendance.setCorpName(person.getCorpName());
-        return attendance;
-    }
+        // 日期格式化工具（避免重复创建）
+        SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
+        // ========== 1. 核心入参判空 + XXL-Job日志 ==========
+        if (person == null) {
+            XxlJobHelper.log("【ERROR】构建考勤记录：入参person为null，无法构建考勤记录");
+            return null;
+        }
+        if (targetDate == null) {
+            XxlJobHelper.log("【WARN】构建考勤记录：入参targetDate为null，默认使用当前时间");
+            targetDate = new Date(); // 兜底：避免日期字段为null
+        }
+
+        // ========== 2. 打印基础上下文日志 ==========
+        String personId = person.getId() == null ? "未知ID" : person.getId();
+        String personName = person.getName() == null ? "未知姓名" : person.getName();
+        String attendanceDate = DATE_FORMAT.format(targetDate);
+        XxlJobHelper.log("【INFO】构建考勤记录：开始构建，人员ID：{}，姓名：{}，考勤日期：{}",
+                personId, personName, attendanceDate);
+
+        try {
+            SwmDailyAttendance attendance = new SwmDailyAttendance();
+
+            // ========== 3. 逐个属性赋值 + 空值日志 ==========
+            // 员工ID
+            if (person.getId() != null) {
+                attendance.setEmployeeId(person.getId());
+            } else {
+                XxlJobHelper.log("【WARN】构建考勤记录：人员ID为null，employeeId字段未设置，人员姓名：{}", personName);
+            }
+
+            // 员工姓名
+            if (person.getName() != null) {
+                attendance.setEmployeeName(person.getName());
+            } else {
+                XxlJobHelper.log("【WARN】构建考勤记录：人员姓名为null，employeeName字段未设置，人员ID：{}", personId);
+            }
+
+            // 身份证号
+            if (person.getIdentityCard() != null) {
+                attendance.setIdentityCard(person.getIdentityCard());
+            } else {
+                XxlJobHelper.log("【WARN】构建考勤记录：人员身份证号为null，identityCard字段未设置，人员ID：{}，姓名：{}", personId, personName);
+            }
+
+            // 绑定设备号（安全帽ID）
+            if (person.getSafetyHelmetId() != null) {
+                attendance.setDeviceId(person.getSafetyHelmetId());
+                XxlJobHelper.log("【DEBUG】构建考勤记录：绑定设备号：{}", person.getSafetyHelmetId());
+            } else {
+                XxlJobHelper.log("【WARN】构建考勤记录：人员安全帽ID为null，deviceId字段未设置，人员ID：{}，姓名：{}", personId, personName);
+            }
+
+            // 人员类型
+            if (person.getPersonType() != null) {
+                attendance.setPersonType(person.getPersonType());
+            } else {
+                XxlJobHelper.log("【WARN】构建考勤记录：人员类型为null，personType字段未设置，人员ID：{}，姓名：{}", personId, personName);
+            }
+
+            // 考勤日期（已兜底，必赋值）
+            attendance.setAttendanceDate(targetDate);
+
+            // 企业编码
+            if (person.getCorpCode() != null) {
+                attendance.setCorpCode(person.getCorpCode());
+            } else {
+                XxlJobHelper.log("【WARN】构建考勤记录：企业编码为null，corpCode字段未设置，人员ID：{}，姓名：{}", personId, personName);
+            }
+
+            // 企业名称
+            if (person.getCorpName() != null) {
+                attendance.setCorpName(person.getCorpName());
+            } else {
+                XxlJobHelper.log("【WARN】构建考勤记录：企业名称为null，corpName字段未设置，人员ID：{}，姓名：{}", personId, personName);
+            }
+
+            // ========== 4. 构建完成日志 ==========
+            XxlJobHelper.log("【INFO】构建考勤记录：完成，人员ID：{}，考勤记录关键信息：employeeId={}, identityCard={}, attendanceDate={}",
+                    personId,
+                    attendance.getEmployeeId(),
+                    attendance.getIdentityCard(),
+                    DATE_FORMAT.format(attendance.getAttendanceDate()));
+
+            return attendance;
+
+        } catch (Exception e) {
+            // ========== 5. 异常捕获日志（含堆栈） ==========
+            XxlJobHelper.log("【ERROR】构建考勤记录：失败，人员ID：{}，姓名：{}，考勤日期：{}，异常信息：{}",
+                    personId, personName, attendanceDate, e.getMessage());
+            // 打印完整异常堆栈（XXL-Job日志支持换行）
+            XxlJobHelper.log("【ERROR】异常堆栈：");
+            for (StackTraceElement element : e.getStackTrace()) {
+                XxlJobHelper.log(element.toString());
+            }
+            return null; // 异常时返回null，避免上游报错
+        }
+    }
     /**
      * 根据工作时间范围计算应考勤时长（用于createDailyAttendanceV2）
      * @param workTimeRange 工作时间范围，格式如 "07:00-18:00"
@@ -2609,51 +2831,175 @@ public class AttendanceTask {
     /**
      * 设置排班信息
      */
-    private void setScheduleInfo(SwmDailyAttendance attendance, SwmPerson person, Date targetDate) {
-        ScheduleInfo scheduleInfo = getScheduleTimeForPerson(person, targetDate);
-
-//        if (scheduleInfo == null) {
-//            attendance.setWorkTimeRange(null);
-//            attendance.setClasses(null);
-//            attendance.setScheduledHours(BigDecimal.ZERO);
-//            XxlJobHelper.log("员工[{}]{}没有排班信息", person.getId(), person.getName());
-//            return;
+//    private void setScheduleInfo(SwmDailyAttendance attendance, SwmPerson person, Date targetDate) {
+//        ScheduleInfo scheduleInfo = getScheduleTimeForPerson(person, targetDate);
+//
+////        if (scheduleInfo == null) {
+////            attendance.setWorkTimeRange(null);
+////            attendance.setClasses(null);
+////            attendance.setScheduledHours(BigDecimal.ZERO);
+////            XxlJobHelper.log("员工[{}]{}没有排班信息", person.getId(), person.getName());
+////            return;
+////        }
+//
+//        SwmScheduleTime scheduleTime = scheduleInfo.scheduleTime;
+//        String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
+//
+//        // 设置班次信息
+//        attendance.setClasses(scheduleInfo.classes);
+//        attendance.setWorkTimeRange(workTimeRange);
+//
+//        // 计算应考勤时长（工作日和休息日都计算，减去休息时长）
+//        BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange, scheduleTime.getRestTime());
+//        attendance.setScheduledHours(scheduledHours);
+//
+//        // 设置休息时长（工作日和休息日都设置）
+//        Double restTime = scheduleTime.getRestTime();
+//        if (restTime != null) {
+//            attendance.setRestTime(BigDecimal.valueOf(restTime).setScale(1, RoundingMode.HALF_UP));
+//        } else {
+//            attendance.setRestTime(BigDecimal.ZERO);
 //        }
+//
+//        // 计算打卡时间范围（工作日和休息日都计算）
+//        calculateAndSetClockTimeRange(attendance, targetDate, workTimeRange);
+//
+//        // 判断是否为休息日（仅影响考勤状态）
+//        if (isRestDay(scheduleTime, targetDate)) {
+//            attendance.setAttendanceNormal("2"); // 设置为休息日
+//            XxlJobHelper.log("员工[{}]{} {}是休息日，班次：{}，但按工作日逻辑计算时间字段",
+//                person.getId(), person.getName(),
+//                new SimpleDateFormat("yyyy-MM-dd").format(targetDate),
+//                scheduleInfo.classes);
+//        }
+//
+//        XxlJobHelper.log("员工[{}]{}有排班信息：班次：{}，时间：{}，应考勤时长：{} 小时，休息时长：{} 小时",
+//            person.getId(), person.getName(), scheduleInfo.classes, workTimeRange, scheduledHours,
+//            attendance.getRestTime());
+//    }
 
+    private void setScheduleInfo(SwmDailyAttendance attendance, SwmPerson person, Date targetDate) {
+        // ========== 1. 入参判空日志 ==========
+        if (attendance == null) {
+            XxlJobHelper.log("【警告】setScheduleInfo入参attendance为null，无法设置排班信息");
+            return;
+        }
+        if (person == null) {
+            XxlJobHelper.log("【警告】setScheduleInfo入参person为null，无法设置排班信息");
+            return;
+        }
+        if (targetDate == null) {
+            XxlJobHelper.log("【警告】setScheduleInfo入参targetDate为null，默认使用当前时间");
+            targetDate = new Date(); // 兜底：避免后续空指针
+        }
+
+        // ========== 2. scheduleInfo判空日志 ==========
+//        ScheduleInfo scheduleInfo = getScheduleTimeForPerson(person, targetDate);
+        ScheduleInfo scheduleInfo = null;
+        try {
+            scheduleInfo = getScheduleTimeForPerson(person, targetDate);
+        } catch (Exception e) {
+            XxlJobHelper.log("【getScheduleTimeForPerson失败】员工[{}]{}，异常：{}",
+                    person.getId(), person.getName(), e.getMessage());
+            throw e; // 抛出异常，让上层捕获
+        }
+        XxlJobHelper.log("【调试】员工[{}]{}获取到排班基础信息：{}",
+                person.getId(), person.getName(), scheduleInfo);
+
+        // ========== 3. scheduleTime判空日志 ==========
         SwmScheduleTime scheduleTime = scheduleInfo.scheduleTime;
-        String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
-        
+        if (scheduleTime == null) {
+            XxlJobHelper.log("【警告】员工[{}]{}的排班信息ScheduleInfo中scheduleTime为null，无法计算考勤时长",
+                    person.getId(), person.getName());
+//            attendance.setClasses(scheduleInfo.classes); // 仅设置班次（如有）
+//            attendance.setWorkTimeRange(null);
+//            attendance.setScheduledHours(BigDecimal.ZERO);
+//            attendance.setRestTime(BigDecimal.ZERO);
+            return;
+        }
+
+        // ========== 4. 排班时间字段判空日志 ==========
+        String startTime = scheduleTime.getStartTime();
+        String endTime = scheduleTime.getEndTime();
+        if (StringUtils.isEmpty(startTime)) {
+            XxlJobHelper.log("【警告】员工[{}]{}的排班时间startTime为null/空，班次：{}",
+                    person.getId(), person.getName(), scheduleInfo.classes);
+        }
+        if (StringUtils.isEmpty(endTime)) {
+            XxlJobHelper.log("【警告】员工[{}]{}的排班时间endTime为null/空，班次：{}",
+                    person.getId(), person.getName(), scheduleInfo.classes);
+        }
+        // 拼接时间范围，空值兜底
+        String workTimeRange = (StringUtils.isEmpty(startTime) ? "未知开始时间" : startTime)
+                + "-" + (StringUtils.isEmpty(endTime) ? "未知结束时间" : endTime);
+
+        // ========== 5. 班次信息判空日志 ==========
+        String classes = scheduleInfo.classes;
+        if (StringUtils.isEmpty(classes)) {
+            XxlJobHelper.log("【提示】员工[{}]{}的排班信息中班次(classes)为null/空，时间范围：{}",
+                    person.getId(), person.getName(), workTimeRange);
+        }
+
         // 设置班次信息
-        attendance.setClasses(scheduleInfo.classes);
+        attendance.setClasses(classes);
         attendance.setWorkTimeRange(workTimeRange);
-        
-        // 计算应考勤时长（工作日和休息日都计算，减去休息时长）
+
+        // ========== 6. 应考勤时长计算日志（含入参空值提示） ==========
         BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange, scheduleTime.getRestTime());
+        if (scheduledHours == null) {
+            XxlJobHelper.log("【警告】员工[{}]{}应考勤时长计算结果为null，默认设为0小时",
+                    person.getId(), person.getName());
+            scheduledHours = BigDecimal.ZERO;
+        }
         attendance.setScheduledHours(scheduledHours);
-        
-        // 设置休息时长（工作日和休息日都设置）
+
+        // ========== 7. 休息时长判空日志 ==========
         Double restTime = scheduleTime.getRestTime();
-        if (restTime != null) {
-            attendance.setRestTime(BigDecimal.valueOf(restTime).setScale(1, RoundingMode.HALF_UP));
+        BigDecimal restTimeBigDecimal;
+        if (restTime == null) {
+            XxlJobHelper.log("【提示】员工[{}]{}的排班休息时长(restTime)为null，默认设为0小时",
+                    person.getId(), person.getName());
+            restTimeBigDecimal = BigDecimal.ZERO;
         } else {
-            attendance.setRestTime(BigDecimal.ZERO);
+            restTimeBigDecimal = BigDecimal.valueOf(restTime).setScale(1, RoundingMode.HALF_UP);
+            XxlJobHelper.log("【调试】员工[{}]{}的排班休息时长：{} 小时（原始值）→ {} 小时（保留1位小数）",
+                    person.getId(), person.getName(), restTime, restTimeBigDecimal);
         }
-        
-        // 计算打卡时间范围（工作日和休息日都计算）
-        calculateAndSetClockTimeRange(attendance, targetDate, workTimeRange);
-        
-        // 判断是否为休息日（仅影响考勤状态）
-        if (isRestDay(scheduleTime, targetDate)) {
-            attendance.setAttendanceNormal("2"); // 设置为休息日
-            XxlJobHelper.log("员工[{}]{} {}是休息日，班次：{}，但按工作日逻辑计算时间字段", 
-                person.getId(), person.getName(), 
-                new SimpleDateFormat("yyyy-MM-dd").format(targetDate),
-                scheduleInfo.classes);
+        attendance.setRestTime(restTimeBigDecimal);
+
+        // ========== 8. 打卡时间范围计算日志（兜底异常） ==========
+        try {
+            calculateAndSetClockTimeRange(attendance, targetDate, workTimeRange);
+        } catch (Exception e) {
+            XxlJobHelper.log("【错误】员工[{}]{}计算打卡时间范围失败，时间范围：{}，异常信息：{}",
+                    person.getId(), person.getName(), workTimeRange, e.getMessage());
         }
-        
-        XxlJobHelper.log("员工[{}]{}有排班信息：班次：{}，时间：{}，应考勤时长：{} 小时，休息时长：{} 小时", 
-            person.getId(), person.getName(), scheduleInfo.classes, workTimeRange, scheduledHours, 
-            attendance.getRestTime());
+
+        // ========== 9. 休息日判断日志 ==========
+        boolean isRestDayFlag = false;
+        try {
+            isRestDayFlag = isRestDay(scheduleTime, targetDate);
+            if (isRestDayFlag) {
+                attendance.setAttendanceNormal("2"); // 设置为休息日
+                XxlJobHelper.log("【提示】员工[{}]{} {}是休息日，班次：{}，按工作日逻辑计算时间字段",
+                        person.getId(), person.getName(),
+                        new SimpleDateFormat("yyyy-MM-dd").format(targetDate),
+                        classes == null ? "未知班次" : classes);
+            }
+        } catch (Exception e) {
+            XxlJobHelper.log("【错误】员工[{}]{}判断休息日失败，异常信息：{}，默认按工作日处理",
+                    person.getId(), person.getName(), e.getMessage());
+        }
+
+        // ========== 10. 最终结果日志（空值兜底） ==========
+        XxlJobHelper.log("【完成】员工[{}]{}排班信息设置完成：班次：{}，时间范围：{}，应考勤时长：{} 小时，休息时长：{} 小时，是否休息日：{}",
+                person.getId() == null ? "未知ID" : person.getId(),
+                person.getName() == null ? "未知姓名" : person.getName(),
+                classes == null ? "未知班次" : classes,
+                workTimeRange,
+                scheduledHours,
+                attendance.getRestTime(),
+                isRestDayFlag ? "是" : "否");
     }
 
     /**

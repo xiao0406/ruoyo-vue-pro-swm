@@ -1,7 +1,6 @@
 package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
@@ -13,6 +12,7 @@ import com.jeesite.modules.swm.entity.dto.SwmPersonScheduleDto;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.utils.BatchOperationsUtil;
+import com.xxl.job.core.context.XxlJobHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -209,7 +208,21 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
      * @return 排班记录列表
      */
     public List<SwmPersonSchedule> findByIdCardAndMonth(String idCard, String month) {
-        return dao.findByIdCardAndMonth(idCard, null);
+        // 打印身份证号原始信息（关键！）
+        XxlJobHelper.log("【DEBUG】身份证号原始值：[{}]，长度：{}",
+                idCard, idCard == null ? 0 : idCard.length());
+        // 打印ASCII码（排查不可见字符）
+        if (idCard != null) {
+            StringBuilder ascii = new StringBuilder();
+            for (char c : idCard.toCharArray()) {
+                ascii.append((int)c).append(",");
+            }
+            XxlJobHelper.log("【DEBUG】身份证号ASCII码：{}", ascii.toString());
+        }
+        List<SwmPersonSchedule> result = dao.findByIdCardAndMonth(idCard, null);
+        XxlJobHelper.log("【DEBUG】DAO返回值是否为null：{}", result == null);
+        XxlJobHelper.log("【DEBUG】DAO返回列表是否为空：{}", result.isEmpty());
+        return result;
     }
 
     /**

@@ -3,25 +3,22 @@ package com.jeesite.modules.swm.service;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.service.CrudService;
-import com.jeesite.modules.job.task.AttendanceTask;
+import com.jeesite.modules.entity.AiDto;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.*;
-
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
-import com.jeesite.modules.entity.AiDto;
+import com.xxl.job.core.context.XxlJobHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.jeesite.common.lang.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -404,6 +401,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         }
         // 处理日期，去除时间部分
         attendanceDate = truncateTime(attendanceDate);
+        XxlJobHelper.log("日期{},员工身份证号[{}]", attendanceDate, identityCard);
         return dao.findByIdentityCardAndDate(identityCard, attendanceDate);
     }
 

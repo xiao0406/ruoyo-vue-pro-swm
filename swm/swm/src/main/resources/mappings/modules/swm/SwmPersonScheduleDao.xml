@@ -94,9 +94,10 @@
             AND a.month = #{month}
         </if>
         AND a.status = '0'
+        AND (1=1 OR a.corp_code IS NOT NULL)
         ORDER BY a.update_date DESC
     </select>
-    
+
     <!-- 获取所有班组列表 -->
     <select id="findWorkGroupList" resultType="java.util.Map">
         SELECT
