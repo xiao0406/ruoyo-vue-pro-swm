@@ -878,7 +878,7 @@ public class TdengineServiceImpl implements TDengineService {
         // 3. 替换 SQL 中的占位 {db} 为真实数据库名
         String realSql = sql.replace(dbname, dbNameNew);
 
-        XxlJobHelper.log("查询SQL: {}", sql);
+        XxlJobHelper.log("定时任务查询SQL: {}", sql);
 
         try {
 
