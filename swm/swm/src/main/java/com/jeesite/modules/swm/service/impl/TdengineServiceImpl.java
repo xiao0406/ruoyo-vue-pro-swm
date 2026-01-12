@@ -867,10 +867,12 @@ public class TdengineServiceImpl implements TDengineService {
     }
 
     @Override
-    public R<JSONObject> executeTDengineSQLByXXJOB(String sql) {
+    public R<JSONObject> executeTDengineSQLByXXJOB(String sql,String corpCode) {
 
         String dbNameNew = dbname;
-        String corpCode = CorpUtils.getCurrentCorpCode();
+        if (StringUtils.isBlank(corpCode)){
+            corpCode = CorpUtils.getCurrentCorpCode();
+        }
         if (StringUtils.isNotBlank(corpCode)) {
             dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
         }

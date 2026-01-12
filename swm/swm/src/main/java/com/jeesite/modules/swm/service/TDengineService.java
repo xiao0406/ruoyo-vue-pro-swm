@@ -48,5 +48,5 @@ public interface TDengineService {
 
     R<JSONObject> executeTDengineSQL(String sql);
 
-    R<JSONObject> executeTDengineSQLByXXJOB(String sql);
+    R<JSONObject> executeTDengineSQLByXXJOB(String sql,String corpCode);
 }

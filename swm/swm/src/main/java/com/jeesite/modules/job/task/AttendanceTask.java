@@ -1461,7 +1461,7 @@ public class AttendanceTask {
                 }
 
                 // 3. 批量处理记录
-                AttendanceResult result = processAttendanceRecords(records);
+                AttendanceResult result = processAttendanceRecords(records,corpCode);
 
                 // 4. 记录处理结果
                 logProcessResult(result);
@@ -1531,10 +1531,10 @@ public class AttendanceTask {
 
 
                 // 1. 处理未打上班卡的数据  clockInTime=null
-                processclockInCard(requestDate);
+                processclockInCard(requestDate,corpCode);
 
                 // 2. 处理未打下班卡的数据 clockOutTime=null
-                processclockOutCard(requestDate);
+                processclockOutCard(requestDate,corpCode);
 
                 jobLog.setExecuteStatus("0");
 
@@ -1557,7 +1557,7 @@ public class AttendanceTask {
      * @return 处理结果统计
      */
     @Transactional(readOnly = false)
-    public void processclockInCard(String requestDate ) {
+    public void processclockInCard(String requestDate,String corpCode ) {
         XxlJobHelper.log("开始执行上班卡补卡任务...................");
 
         //设置请求参数，只查当天的数据
@@ -1589,7 +1589,7 @@ public class AttendanceTask {
                             //看看当前时间是否在应该打卡时间范围之内
                             String startTime = DateUtil.formatDateTime(clockStartTime);
                             String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 16));
-                            String clockInTimeStr = getLast3MinutesBluetoothCount(deviceId, startTime, endTime,item.getIdentityCard());
+                            String clockInTimeStr = getLast3MinutesBluetoothCount(deviceId, startTime, endTime,item.getIdentityCard(),corpCode);
                             if (StringUtils.isNotEmpty(clockInTimeStr)) {
                                 // 统一去掉毫秒（如果有）
                                 Instant instant = Instant.parse(clockInTimeStr);
@@ -1632,7 +1632,7 @@ public class AttendanceTask {
     2.补偿打卡机制不影响信标打卡机制，信标打卡依旧可以持续更新下班打卡时间
      */
     @Transactional(readOnly = false)
-    public void processclockOutCard(String requestDate ) {
+    public void processclockOutCard(String requestDate,String corpCode) {
 
         XxlJobHelper.log("开始执行下班卡补卡任务............................");
 
@@ -1677,13 +1677,13 @@ public class AttendanceTask {
                     }
 
                     //2.判断今天有没有数据，没有则跳过
-                    Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId, startDay, nowDay);
+                    Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId, startDay, nowDay,corpCode);
                     if (dayCount == null || dayCount == 0) {
                         return;
                     }
 
                     // 3. 查询最近3分钟蓝牙信号
-                    Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, startTime, endTime);
+                    Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, startTime, endTime,corpCode);
                     // ============= 【A. 有信号 → 重置补偿状态】 =============
                     if (count != null && count > 0) {
                         // 说明员工又出现了 → 补偿机制恢复可再次触发
@@ -1737,7 +1737,7 @@ public class AttendanceTask {
     /**
      * 查询打卡时间范围内是否有数据（用于下班卡）
      */
-    private Integer getLast3MinutesBluetoothCountByClockOut(String deviceId, String start, String end) {
+    private Integer getLast3MinutesBluetoothCountByClockOut(String deviceId, String start, String end,String corpCode) {
 
         Integer res  = null;
 
@@ -1747,7 +1747,7 @@ public class AttendanceTask {
 
             log.info("查询最近 3 分钟 TDengine 记录数量 SQL: {}", sql);
 
-            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+            R<JSONObject> result = tdengineService.executeTDengineSQLByXXJOB(sql,corpCode);
 
             if (result.getCode() == R.SUCCESS && result.getData() != null) {
                 JSONArray rows = result.getData().getJSONArray("data");
@@ -1768,7 +1768,7 @@ public class AttendanceTask {
     /**
      * 查询打卡时间范围内的第一条数据（用于上班卡）
      */
-    private String getLast3MinutesBluetoothCount(String deviceId, String start, String end,String idCard) {
+    private String getLast3MinutesBluetoothCount(String deviceId, String start, String end,String idCard,String corpCode) {
 
         try {
             String tableName = dbname + ".external_coordinate_data_" + deviceId + "_" + idCard;
@@ -1779,7 +1779,7 @@ public class AttendanceTask {
 
             log.info("查询时间范围内第一条 TDengine 记录 SQL: {}", sql);
 
-            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+            R<JSONObject> result = tdengineService.executeTDengineSQLByXXJOB(sql,corpCode);
 
             if (result.getCode() == R.SUCCESS && result.getData() != null) {
                 JSONArray rows = result.getData().getJSONArray("data");
@@ -2015,13 +2015,13 @@ public class AttendanceTask {
      * @author Shawn
      * @date 2025-08-12
      */
-    private AttendanceResult processAttendanceRecords(List<SwmDailyAttendance> records) {
+    private AttendanceResult processAttendanceRecords(List<SwmDailyAttendance> records,String corpCode) {
         AttendanceResult result = new AttendanceResult();
         result.totalCount = records.size();
         
         for (SwmDailyAttendance record : records) {
             try {
-                boolean processed = processAttendanceRecord(record);
+                boolean processed = processAttendanceRecord(record,corpCode);
                 if (processed) {
                     result.successCount++;
                 } else {
@@ -2045,7 +2045,7 @@ public class AttendanceTask {
      * @author Shawn
      * @date 2025-08-12
      */
-    private boolean processAttendanceRecord(SwmDailyAttendance record) {
+    private boolean processAttendanceRecord(SwmDailyAttendance record,String corpCode) {
         boolean updated = false;
         
         // 计算实际考勤时长 - 修改为工作区域时长
@@ -2053,7 +2053,7 @@ public class AttendanceTask {
         // @author: Shawn
         // @date: 2025-08-20
         if (shouldCalculateActualHours(record)) {
-            BigDecimal workAreaHours = calculateWorkAreaHours(record);
+            BigDecimal workAreaHours = calculateWorkAreaHours(record,corpCode);
             if (workAreaHours != null) {
                 record.setActualHours(workAreaHours);
                 updated = true;
@@ -2064,7 +2064,7 @@ public class AttendanceTask {
         
         // 计算实际工作时长（使用当天24小时工作区域时长）
         if (shouldCalculateWorkHours(record)) {
-            BigDecimal workHours = calculateWorkAreaHours24h(record);
+            BigDecimal workHours = calculateWorkAreaHours24h(record,corpCode);
             if (workHours != null) {
                 // 兜底逻辑：如果24小时工作区域时长小于实际考勤时长，使用实际考勤时长作为兜底
                 if (record.getActualHours() != null && 
@@ -2086,7 +2086,7 @@ public class AttendanceTask {
             }
             
             // 计算怠工时长
-            BigDecimal idleHours = calculateIdleAreaHours(record);
+            BigDecimal idleHours = calculateIdleAreaHours(record,corpCode);
             if (idleHours != null) {
                 record.setIdleHours(idleHours);
                 updated = true;
@@ -3152,7 +3152,7 @@ public class AttendanceTask {
      * @author Shawn
      * @date 2025-08-13
      */
-    private BigDecimal calculateAreaHours(SwmDailyAttendance record, String areaType, String areaName) {
+    private BigDecimal calculateAreaHours(SwmDailyAttendance record, String areaType, String areaName,String corpCode) {
         try {
             // 1. 确定查询时间范围
             String[] timeRange = determineQueryTimeRange(record);
@@ -3167,7 +3167,7 @@ public class AttendanceTask {
                 record.getIdentityCard(), 
                 timeRange[0], 
                 timeRange[1],
-                areaType
+                areaType,corpCode
             );
             
             if (workSegments.isEmpty()) {
@@ -3210,8 +3210,8 @@ public class AttendanceTask {
      * @author Shawn
      * @date 2025-08-13
      */
-    private BigDecimal calculateWorkAreaHours(SwmDailyAttendance record) {
-        return calculateAreaHours(record, "0", "工作区");
+    private BigDecimal calculateWorkAreaHours(SwmDailyAttendance record,String corpCode) {
+        return calculateAreaHours(record, "0", "工作区",corpCode);
     }
     
     /**
@@ -3221,8 +3221,8 @@ public class AttendanceTask {
      * @author Shawn
      * @date 2025-08-13
      */
-    private BigDecimal calculateIdleAreaHours(SwmDailyAttendance record) {
-        return calculateAreaHours(record, "1", "休息区");
+    private BigDecimal calculateIdleAreaHours(SwmDailyAttendance record,String corpCode) {
+        return calculateAreaHours(record, "1", "休息区",corpCode);
     }
     
     /**
@@ -3233,7 +3233,7 @@ public class AttendanceTask {
      * @author Shawn
      * @date 2025-08-20
      */
-    private BigDecimal calculateWorkAreaHours24h(SwmDailyAttendance record) {
+    private BigDecimal calculateWorkAreaHours24h(SwmDailyAttendance record,String corpCode) {
         try {
             // 直接使用当天24小时范围
             String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(record.getAttendanceDate());
@@ -3245,7 +3245,7 @@ public class AttendanceTask {
             
             // 查询工作区域的连续段
             List<WorkSegment> workSegments = queryAreaSegments(
-                record.getIdentityCard(), startTime, endTime, "0");
+                record.getIdentityCard(), startTime, endTime, "0",corpCode);
             
             if (workSegments.isEmpty()) {
                 XxlJobHelper.log("员工[{}]{}在当天24小时内无工作区域活动数据", 
@@ -3399,7 +3399,7 @@ public class AttendanceTask {
      * @author Shawn
      * @date 2025-08-13
      */
-    private List<WorkSegment> queryAreaSegments(String idCard, String startTime, String endTime, String areaType) {
+    private List<WorkSegment> queryAreaSegments(String idCard, String startTime, String endTime, String areaType,String corpCode) {
         List<WorkSegment> segments = new ArrayList<>();
         
         try {
@@ -3416,7 +3416,7 @@ public class AttendanceTask {
             
             XxlJobHelper.log("查询区域数据SQL: {}", sql);
             
-            R<JSONObject> response = tdengineService.executeTDengineSQLByXXJOB(sql);
+            R<JSONObject> response = tdengineService.executeTDengineSQLByXXJOB(sql,corpCode);
             if (response.getCode() != R.SUCCESS || response.getData() == null) {
                 XxlJobHelper.log("查询失败或无数据");
                 return segments;
