@@ -757,28 +757,35 @@ public class AttendanceTask {
             // ========== 5. 查询班次对应的时间 + 日志 ==========
             SwmScheduleTime scheduleTimeQuery = new SwmScheduleTime();
             scheduleTimeQuery.setShiftType(classes);
-            List<SwmScheduleTime> scheduleTimeList = null;
+            List<SwmScheduleTime> scheduleTimeListOld = null;
+            List<SwmScheduleTime> scheduleTimeList = new ArrayList<>();
             try {
 //                scheduleTimeList = swmScheduleTimeService.findList(scheduleTimeQuery);
-                scheduleTimeList = swmScheduleTimeService.findListSingle(scheduleTimeQuery);
+                scheduleTimeListOld = swmScheduleTimeService.findListSingle(scheduleTimeQuery);
+                for (SwmScheduleTime time : scheduleTimeListOld) {
+                    if (person.getCorpCode().equals(time.getCorpCode())){
+                        scheduleTimeList.add(time);
+                    }
+                }
+
             } catch (Exception e) {
-                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：查询班次时间失败，班次：{}，异常：{}",
-                        classes, e.getMessage());
+                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：查询班次时间失败，人员：{}，班次：{}，异常：{}，人员租户：{}",
+                        person.getName(),classes, e.getMessage(), person.getCorpCode());
                 throw e; // 抛出异常，让上层捕获
             }
 
             // 关键：集合判空（你注释了这行，极易导致IndexOutOfBoundsException）
             if (scheduleTimeList == null || scheduleTimeList.isEmpty()) {
-                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：班次{}无对应的时间信息，时间列表为空", classes);
+                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：人员：{}，班次{}无对应的时间信息，时间列表为空",person.getName(), classes);
                 return null;
             }
-            XxlJobHelper.log("【INFO】getScheduleTimeForPerson：查询到班次{}对应的时间列表，数量：{}",
-                    classes, scheduleTimeList.size());
+            XxlJobHelper.log("【INFO】getScheduleTimeForPerson：人员：{}，查询到班次{}对应的时间列表，数量：{}",
+                    person.getName(),classes, scheduleTimeList.size());
 
             // ========== 6. 获取第一个班次时间 + 日志 ==========
             SwmScheduleTime scheduleTime = scheduleTimeList.get(0);
             if (scheduleTime == null) {
-                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：班次{}时间列表第一个元素为null", classes);
+                XxlJobHelper.log("【ERROR】getScheduleTimeForPerson：人员：{}，班次{}时间列表第一个元素为null",person.getName(), classes);
                 return null;
             }
 

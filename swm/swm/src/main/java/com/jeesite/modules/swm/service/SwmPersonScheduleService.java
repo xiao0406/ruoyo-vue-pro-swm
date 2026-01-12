@@ -289,11 +289,12 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
         return dao.scheduleList(swmPersonSchedule);
     }
 
+    @Transactional(readOnly = false)
     public Integer importData(MultipartFile file) {
         ExcelImport excelImport = null;
         Integer count = 0;
         try {
-            excelImport = new ExcelImport(file, 2, 0);
+            excelImport = new ExcelImport(file, 1, 0);
             List<SwmPersonScheduleExport> list = excelImport.getDataList(SwmPersonScheduleExport.class);
             if (CollectionUtil.isNotEmpty(list)){
                 for (SwmPersonScheduleExport export : list) {

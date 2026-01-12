@@ -152,11 +152,10 @@
             a.classes AS "classes",
             a.id_card AS "idCard",
             a.employee_id AS "employeeId",
-            -- 添加组织架构信息
-            COALESCE(o.office_name, backup_o.office_name) AS "organization",
-            COALESCE(p.position_name, backup_p.position_name) AS "workshop", 
-            COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "process",
-            COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "workGroupName",
+            jso.office_name AS  "organization",
+            pa.position_name AS "workshop",
+            pl.prod_line_name AS "process",
+            wg.work_group_name AS "workGroupName",
             a.create_by AS "createBy",
             a.create_date AS "createDate",
             a.update_by AS "updateBy", 
@@ -164,25 +163,12 @@
             a.remarks AS "remarks",
             a.status AS "status"
         FROM swm_person_schedule a
-        -- 通过身份证关联人员表
-        LEFT JOIN swm_person sp ON a.id_card = sp.identity_card
-        -- 关联最新的 fms_worker 记录（使用 EXISTS 优化性能）
-        LEFT JOIN fms_worker f ON a.id_card = f.identity_code COLLATE utf8mb4_general_ci
-            AND NOT EXISTS (
-                SELECT 1
-                FROM fms_worker fw2
-                WHERE fw2.identity_code = f.identity_code
-                AND fw2.create_date &gt; f.create_date
-            )
-        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
-        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
-        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
-        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-        -- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
-        LEFT JOIN js_sys_office backup_o ON sp.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
-        LEFT JOIN fms_position_archive backup_p ON sp.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
-        LEFT JOIN fms_work_group backup_wg ON sp.team = backup_wg.id COLLATE utf8mb4_general_ci
-        LEFT JOIN fms_prod_line backup_fpl ON sp.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+        left join swm_person sp on a.id_card = sp.identity_card
+        LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON sp.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
         <where>
             a.status = '0' and sp.status = '0'
             <if test="personName != null and personName != ''">
@@ -199,16 +185,16 @@
             </if>
             <!-- 新增四级查询条件 -->
             <if test="organization != null and organization != ''">
-                AND (o.office_name LIKE CONCAT('%', #{organization}, '%') OR backup_o.office_name LIKE CONCAT('%', #{organization}, '%'))
+                AND jso.office_name LIKE CONCAT('%', #{organization}, '%')
             </if>
             <if test="workshop != null and workshop != ''">
-                AND (p.position_name LIKE CONCAT('%', #{workshop}, '%') OR backup_p.position_name LIKE CONCAT('%', #{workshop}, '%'))
+                AND pa.position_name LIKE CONCAT('%', #{workshop}, '%')
             </if>
             <if test="process != null and process != ''">
-                AND (fpl.prod_line_name LIKE CONCAT('%', #{process}, '%') OR backup_fpl.prod_line_name LIKE CONCAT('%', #{process}, '%'))
+                AND pl.prod_line_name LIKE CONCAT('%', #{process}, '%')
             </if>
             <if test="workGroupName != null and workGroupName != ''">
-                AND (wg.work_group_name LIKE CONCAT('%', #{workGroupName}, '%') OR backup_wg.work_group_name LIKE CONCAT('%', #{workGroupName}, '%'))
+                AND wg.work_group_name LIKE CONCAT('%', #{workGroupName}, '%')
             </if>
         </where>
         ORDER BY ${sqlMap.order.toSql()}
@@ -239,12 +225,12 @@
         <foreach collection="list" item="item" separator=";">
             UPDATE swm_person_schedule
             <set>
-                <if test="classes != null and classes != '' ">
-                    classes = #{classes},
+                <if test="item.classes != null and item.classes != '' ">
+                    classes = #{item.classes},
                 </if>
                 update_date = NOW()
             </set>
-            WHERE id_card = #{idCard}
+            WHERE id_card = #{item.idCard}
         </foreach>
     </update>
 

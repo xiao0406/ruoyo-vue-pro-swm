@@ -33,9 +33,8 @@ public interface SwmScheduleTimeDao extends CrudDao<SwmScheduleTime> {
             "a.`corp_name` AS corpName " +
             "FROM `swm_schedule_time` a " +
             "WHERE 1=1 " +
-            "AND a.`shift_type` LIKE CONCAT('%', #{scheduleTimeQuery.shiftType}, '%') " +
+            "AND a.`shift_type` = #{scheduleTimeQuery.shiftType} " +
             "AND a.`status` = 0 " +
-            "AND (1=1 OR a.corp_code IS NOT NULL) " +
             "ORDER BY a.update_date DESC")
     List<SwmScheduleTime> findListSingle(@Param("scheduleTimeQuery") SwmScheduleTime scheduleTimeQuery);
 } 

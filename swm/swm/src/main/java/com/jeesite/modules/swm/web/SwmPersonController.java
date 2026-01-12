@@ -12,16 +12,16 @@ import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.read.metadata.ReadSheet;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.DateUtils;
+import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.entity.SwmPersonExport;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmPersonDeparture;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
-import com.jeesite.modules.swm.excel.SwmPersonExcelModel;
-import com.jeesite.modules.swm.excel.SwmPersonImportListener;
-import com.jeesite.modules.swm.excel.SwmPersonExcelEnhancedModel;
-import com.jeesite.modules.swm.excel.SwmPersonImportEnhancedListener;
+import com.jeesite.modules.swm.excel.*;
 import com.jeesite.modules.swm.service.OrgValidationService;
 import com.jeesite.modules.swm.service.SwmPersonDepartureService;
 import com.jeesite.modules.swm.service.SwmPersonService;
@@ -37,10 +37,12 @@ import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.service.UserService;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.DictUtils;
+import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import com.jeesite.modules.utils.R;
 import com.xxl.job.core.context.XxlJobHelper;
 import org.apache.commons.collections.CollectionUtils;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -2143,6 +2145,36 @@ public class SwmPersonController extends BaseController {
     public String importData(MultipartFile file) {
         Integer count = swmPersonService.importData(file);
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
+    }
+
+
+    /**
+     * 导出分页数据
+     */
+    @ApiOperation("人员台账excel导出")
+    @GetMapping("export")
+    @ResponseBody
+    public String export(SwmPerson swmPerson, HttpServletRequest request, HttpServletResponse response) {
+
+        Page<SwmPerson> page = swmPersonService.findPage(new Page<>(1, 99999), swmPerson);
+
+        String name;
+        List<SwmPerson> list = page.getList();
+        List<SwmPersonDtoExport> exportList = new ArrayList<>();
+        for (SwmPerson person : list) {
+            SwmPersonDtoExport export = new SwmPersonDtoExport();
+            BeanUtils.copyProperties(person, export);
+            exportList.add(export);
+        }
+
+        String fileName = "人员台账导出" + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
+
+        try (ExcelExport ee = new ExcelExport("人员台账导出", SwmPersonDtoExport.class)) {
+            name = ExcelExportUtil.uploadOss(ee.setDataList(exportList), fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return renderResult(Global.TRUE, text("成功！"), name);
     }
 
 }

@@ -21,6 +21,7 @@ import com.jeesite.modules.swm.job.FmsMonthPlanProlongTask;
 import com.jeesite.modules.swm.service.AreaFenceDataService;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.util.MinioUtils;
 import io.swagger.annotations.Api;
@@ -188,15 +189,8 @@ public class SwmDailyAttendanceController extends BaseController {
     @ResponseBody
     public Page<Map<String, Object>> listData(SwmDailyAttendance swmDailyAttendance, HttpServletRequest request,
                                               HttpServletResponse response) {
-        Session session = UserUtils.getSession();
-        String sessionCorpCode ="";
-        if (session != null) {
-            sessionCorpCode = (String) session.getAttribute(SESSION_CORP_CODE);
 
-            if (com.alibaba.cloud.commons.lang.StringUtils.isNotBlank(sessionCorpCode)) {
-                log.debug("使用 Session 租户: {}", sessionCorpCode);
-            }
-        }
+        String corpCode = CorpUtils.getCurrentCorpCode();
 
         // 1. 日期默认值处理（原有逻辑保留）
         if (swmDailyAttendance.getAttendanceDate() == null &&
@@ -208,9 +202,7 @@ public class SwmDailyAttendanceController extends BaseController {
 
         // 2. 获取在线人员身份证集合（原有逻辑保留，新增日志打印）
 
-        String onlineDevicesKey1 = SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY;
-        String onlineDevicesKey2 = sessionCorpCode+SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY;
-        logger.info("Redis常量 - 在线设备KEY【名称：onlineDevicesKey1，值：{}】,【名称：onlineDevicesKey2，值：{}】", onlineDevicesKey1,onlineDevicesKey2);
+        String onlineDevicesKey2 = corpCode+SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY;
         Set<Object> deviceIds = redisService.sGet(onlineDevicesKey2);
         Set<String> todayOnSiteIdCards = new HashSet<>();
 
@@ -854,7 +846,8 @@ public class SwmDailyAttendanceController extends BaseController {
 
         try {
 
-            Set<Object> deviceIds = redisService.sGet(SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
+            String corpCode = CorpUtils.getCurrentCorpCode();
+            Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
             Set<String> todayOnSiteIdCards = new HashSet<>();
             if (deviceIds != null) {
                 for (Object deviceId : deviceIds) {
