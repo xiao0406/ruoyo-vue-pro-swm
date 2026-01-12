@@ -47,4 +47,6 @@ public interface TDengineService {
     Long count(QueryParamDTO param);
 
     R<JSONObject> executeTDengineSQL(String sql);
+
+    R<JSONObject> executeTDengineSQLByXXJOB(String sql);
 }

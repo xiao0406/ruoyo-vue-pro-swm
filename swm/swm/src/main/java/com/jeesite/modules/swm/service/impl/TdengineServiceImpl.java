@@ -17,6 +17,7 @@ import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.vo.DeviceDataDTO;
 import com.jeesite.modules.vo.QueryParamDTO;
+import com.xxl.job.core.context.XxlJobHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -846,6 +847,38 @@ public class TdengineServiceImpl implements TDengineService {
 
         // 3. 替换 SQL 中的占位 {db} 为真实数据库名
         String realSql = sql.replace(dbname, dbNameNew);
+
+        try {
+
+            String result = okHttpClientManager.post(url, authorization, realSql);
+
+            JSONObject jsonObject = JSONUtil.parseObj(result);
+            if (!"succ".equals(jsonObject.getStr("status"))
+                    && (jsonObject.getInt("code") == null || jsonObject.getInt("code") != 0)) {
+                log.error("SQL执行失败: {}", result);
+                log.error("失败SQL: {}", realSql);
+                return R.fail(jsonObject.getStr("desc"));
+            }
+            return R.ok(jsonObject);
+        } catch (Exception e) {
+            log.error("执行TDengine SQL异常: {}", realSql, e);
+            return R.fail("SQL执行异常: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public R<JSONObject> executeTDengineSQLByXXJOB(String sql) {
+
+        String dbNameNew = dbname;
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        if (StringUtils.isNotBlank(corpCode)) {
+            dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
+        }
+
+        // 3. 替换 SQL 中的占位 {db} 为真实数据库名
+        String realSql = sql.replace(dbname, dbNameNew);
+
+        XxlJobHelper.log("查询SQL: {}", sql);
 
         try {
 

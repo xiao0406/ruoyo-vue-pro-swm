@@ -6,6 +6,7 @@ import cn.hutool.json.JSONObject;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.entity.User;
@@ -3415,7 +3416,7 @@ public class AttendanceTask {
             
             XxlJobHelper.log("查询区域数据SQL: {}", sql);
             
-            R<JSONObject> response = tdengineService.executeTDengineSQL(sql);
+            R<JSONObject> response = tdengineService.executeTDengineSQLByXXJOB(sql);
             if (response.getCode() != R.SUCCESS || response.getData() == null) {
                 XxlJobHelper.log("查询失败或无数据");
                 return segments;
