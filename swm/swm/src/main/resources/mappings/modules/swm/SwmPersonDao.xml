@@ -35,7 +35,9 @@
                a.person_number,
                a.age,
                a.urgent_person,
-               a.urgent_phone_number
+               a.urgent_phone_number,
+               a.corp_code AS "corpCode",
+               a.corp_name AS "corpName"
         FROM ${sqlMap.table.toSql()}
         LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci

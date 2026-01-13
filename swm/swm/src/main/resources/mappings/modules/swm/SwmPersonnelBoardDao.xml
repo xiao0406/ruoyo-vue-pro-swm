@@ -38,11 +38,10 @@
         SELECT
             a.id AS "id",
             a.name AS "name",
-            -- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
-            COALESCE(backup_o.office_name, o.office_name) AS "organization",
-            COALESCE(p.position_name, backup_p.position_name) AS "workshop",
-            COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "process",
-            COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
+            jso.office_name AS "organization",
+            pa.position_name AS "workshop",
+            pl.prod_line_name  AS "process",
+            wg.work_group_name  AS "team",
             hd.device_id AS "deviceId",
             NULL AS "workStatus",
             NULL AS "helmetStatus",
@@ -58,27 +57,10 @@
             a.remarks AS "remarks",
             a.status AS "status"
         FROM swm_person a
-        -- 原有的关联查询（通过fms_worker关联）
-        LEFT JOIN (
-            SELECT *
-            FROM (
-                SELECT 
-                    fw.*,
-                    ROW_NUMBER() OVER (PARTITION BY fw.identity_code ORDER BY fw.id DESC) AS rn
-                FROM fms_worker fw
-                WHERE fw.identity_code IS NOT NULL
-            ) latest_worker
-            WHERE latest_worker.rn = 1
-        ) f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
-        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
-        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
-        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
-        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-        -- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
-        LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
-        LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
-        LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
-        LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
         LEFT JOIN swm_helmet_device hd ON a.identity_card = hd.assigned_person
         LEFT JOIN (
             SELECT
@@ -116,16 +98,16 @@
                 AND a.name LIKE CONCAT('%', #{name}, '%')
             </if>
             <if test="organization != null and organization != ''">
-                AND (o.office_name LIKE CONCAT('%', #{organization}, '%') OR backup_o.office_name LIKE CONCAT('%', #{organization}, '%'))
+                AND jso.office_name LIKE CONCAT('%', #{organization}, '%')
             </if>
             <if test="workshop != null and workshop != ''">
-                AND (p.position_name LIKE CONCAT('%', #{workshop}, '%') OR backup_p.position_name LIKE CONCAT('%', #{workshop}, '%'))
+                AND pa.position_name LIKE CONCAT('%', #{workshop}, '%')
             </if>
             <if test="process != null and process != ''">
-                AND (fpl.prod_line_name LIKE CONCAT('%', #{process}, '%') OR backup_fpl.prod_line_name LIKE CONCAT('%', #{process}, '%'))
+                AND  pl.prod_line_name LIKE CONCAT('%', #{process}, '%')
             </if>
             <if test="team != null and team != ''">
-                AND (wg.work_group_name LIKE CONCAT('%', #{team}, '%') OR backup_wg.work_group_name LIKE CONCAT('%', #{team}, '%'))
+                AND wg.work_group_name LIKE CONCAT('%', #{team}, '%')
             </if>
             <if test="deviceIds != null and deviceIds.size() > 0">
                 <choose>

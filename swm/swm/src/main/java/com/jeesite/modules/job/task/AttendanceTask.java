@@ -2490,8 +2490,7 @@ public class AttendanceTask {
         query.setCorpCode(corpCode);
         List<SwmPerson> persons = swmPersonService.findList(query);
         for (SwmPerson p : persons) {
-            XxlJobHelper.log("【刚查出来】name={}, dbCorp={}", p.getName(), p.getCorpCode()
-            );
+            XxlJobHelper.log("【刚查出来】name={}, dbCorpCode={}， dbCorpCode={}", p.getName(), p.getCorpCode(),p.getCorpName());
         }
 
         XxlJobHelper.log("查询到 {} 名在职人员", persons.size());
@@ -2596,6 +2595,9 @@ public class AttendanceTask {
         SwmDailyAttendance attendance = buildNewAttendance(person, targetDate);
         setScheduleInfo(attendance, person, targetDate);
         setDefaultValues(attendance);
+
+        attendance.setCorpCode(person.getCorpCode());
+        attendance.setCorpName(person.getCorpName());
 
         swmDailyAttendanceService.save(attendance);
         XxlJobHelper.log("为员工[{}]{}创建考勤记录成功，person租户信息：{}，{}，attendance租户信息：{}，{}", person.getId(), person.getName(),person.getCorpCode(), person.getCorpName(),attendance.getCorpCode(), attendance.getCorpName());

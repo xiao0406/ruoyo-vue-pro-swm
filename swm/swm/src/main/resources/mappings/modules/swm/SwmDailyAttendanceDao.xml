@@ -62,12 +62,10 @@
         LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
-        LEFT JOIN swm_work_type backup_wt ON sp.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
         LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
-        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         <where>
             ${sqlMap.where.toSql()}
-            and  sp.status = '0' and sp.personnel_status = '1'
+            and  sp.status = '0' and a.`status` = '0' and sp.personnel_status = '1'
             <!-- 自定义条件 -->
             <if test="sqlMap.where.sqlSegment != null and sqlMap.where.sqlSegment != ''">
                 AND (${sqlMap.where.sqlSegment})
@@ -131,11 +129,13 @@
                         ORDER BY a.idle_hours DESC
                     </when>
                     <otherwise>
+                        group by sp.identity_card
                         ORDER BY ${page.orderBy}
                     </otherwise>
                 </choose>
             </when>
             <otherwise>
+                group by sp.identity_card
                 ORDER BY
                     CASE
                         WHEN a.clock_in_time IS NOT NULL
@@ -149,6 +149,7 @@
                     a.update_date DESC
             </otherwise>
         </choose>
+
     </select>
 
     <!-- 根据员工ID和日期查询考勤记录 -->
