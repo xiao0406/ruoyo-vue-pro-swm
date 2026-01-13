@@ -401,7 +401,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         }
         // 处理日期，去除时间部分
         attendanceDate = truncateTime(attendanceDate);
-        XxlJobHelper.log("日期{},员工身份证号[{}]", attendanceDate, identityCard);
+        XxlJobHelper.log("日期{},员工身份证号[{}]", DateUtil.format(attendanceDate,"yyyy-MM-dd"), identityCard);
         return dao.findByIdentityCardAndDate(identityCard, attendanceDate);
     }
 
