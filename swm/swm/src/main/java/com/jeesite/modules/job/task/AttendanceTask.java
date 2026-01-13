@@ -327,129 +327,155 @@ public class AttendanceTask {
     public void calculateMonthlyAttendance() {
         log.info("开始执行月考勤统计定时任务");
 
-        // 1. 获取当月日期范围
-        Date startDate = DateUtil.beginOfMonth(DateUtil.date());
-        Date endDate = DateUtil.date(); // 统计到当天
 
-        // 2. 查询当月所有员工的日考勤记录
-        SwmDailyAttendance query = new SwmDailyAttendance();
-        query.setBeginAttendanceDate(startDate);
-        query.setEndAttendanceDate(endDate);
-        // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
-        query.setRandom(new Random().nextInt(1_000_000));
-        List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService.findList(query);
+        //获取系统所有租户信息
+        List<User> corpList = userService.findCorpList(new User());
+        if (CollectionUtils.isEmpty(corpList)) {
+            XxlJobHelper.log("没有租户信息");
+            return;
+        }
+        //为每个租户都生成排班计划
+        for (User user : corpList) {
 
-        // 3. 按员工ID分组
-        Map<String, List<SwmDailyAttendance>> attendanceByEmployee = dailyAttendanceList.stream()
-                .collect(Collectors.groupingBy(SwmDailyAttendance::getEmployeeId));
+            String corpCode = user.getCorpCode();
+            String corpName = user.getCorpName();
+            //设置当前线程的租户信息
+            CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
-        // 4. 计算当月应出勤天数(出勤天数按当月的总天数算)
-        int scheduledDays = DateUtil.lengthOfMonth(DateUtil.thisMonth(), DateUtil.isLeapYear(DateUtil.thisYear()));
+            try {
+                // 1. 获取当月日期范围
+                Date startDate = DateUtil.beginOfMonth(DateUtil.date());
+                Date endDate = DateUtil.date(); // 统计到当天
 
-        // 5. 处理每个员工的考勤数据
-        for (Map.Entry<String, List<SwmDailyAttendance>> entry : attendanceByEmployee.entrySet()) {
-            String employeeId = entry.getKey();
-            List<SwmDailyAttendance> employeeAttendance = entry.getValue();
+                // 2. 查询当月所有员工的日考勤记录
+                SwmDailyAttendance query = new SwmDailyAttendance();
+                query.setBeginAttendanceDate(startDate);
+                query.setEndAttendanceDate(endDate);
+                // query.setEmployeeId("1935182658540556288"); // 注意，测试使用生产上要去掉，先写死。
+                query.setRandom(new Random().nextInt(1_000_000));
+                List<SwmDailyAttendance> dailyAttendanceList = swmDailyAttendanceService.findList(query);
 
-            // 获取员工基本信息
-            SwmPerson person = swmPersonService.get(employeeId);
-            if (person == null) {
-                log.warn("员工ID:{}不存在人员信息，跳过统计", employeeId);
-                continue;
-            }
+                // 3. 按员工ID分组
+                Map<String, List<SwmDailyAttendance>> attendanceByEmployee = dailyAttendanceList.stream()
+                        .collect(Collectors.groupingBy(SwmDailyAttendance::getEmployeeId));
 
-            // 计算实际出勤天数(实际考勤时长>0的记录数)
-            long actualDays = employeeAttendance.stream()
-                    .filter(att -> att.getActualHours() != null && att.getActualHours().compareTo(BigDecimal.ZERO) > 0)
-                    .count();
+                // 4. 计算当月应出勤天数(出勤天数按当月的总天数算)
+                int scheduledDays = DateUtil.lengthOfMonth(DateUtil.thisMonth(), DateUtil.isLeapYear(DateUtil.thisYear()));
 
-            // 出勤率 = 实际出勤天数/应出勤天数
-            BigDecimal attendanceRate = actualDays > 0
-                    ? BigDecimal.valueOf(actualDays).divide(BigDecimal.valueOf(scheduledDays), 4, RoundingMode.HALF_UP)
-                    : BigDecimal.ZERO;
+                // 5. 处理每个员工的考勤数据
+                for (Map.Entry<String, List<SwmDailyAttendance>> entry : attendanceByEmployee.entrySet()) {
+                    String employeeId = entry.getKey();
+                    List<SwmDailyAttendance> employeeAttendance = entry.getValue();
 
-            // 计算总时长
-            BigDecimal totalScheduledHours = employeeAttendance.stream()
-                    .map(SwmDailyAttendance::getScheduledHours)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    // 获取员工基本信息
+                    SwmPerson person = swmPersonService.get(employeeId);
+                    if (person == null) {
+                        log.warn("员工ID:{}不存在人员信息，跳过统计", employeeId);
+                        continue;
+                    }
 
-            // 修改：实际工作时间改为累计实际工作时长（基于工作区域计算）
-            BigDecimal totalEffectiveWorkHours = employeeAttendance.stream()
-                    .map(SwmDailyAttendance::getEffectiveWorkHours)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    // 计算实际出勤天数(实际考勤时长>0的记录数)
+                    long actualDays = employeeAttendance.stream()
+                            .filter(att -> att.getActualHours() != null && att.getActualHours().compareTo(BigDecimal.ZERO) > 0)
+                            .count();
 
-            BigDecimal totalActualHours = employeeAttendance.stream()
-                    .map(SwmDailyAttendance::getActualHours)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    // 出勤率 = 实际出勤天数/应出勤天数
+                    BigDecimal attendanceRate = actualDays > 0
+                            ? BigDecimal.valueOf(actualDays).divide(BigDecimal.valueOf(scheduledDays), 4, RoundingMode.HALF_UP)
+                            : BigDecimal.ZERO;
 
-            BigDecimal totalIdleHours = employeeAttendance.stream()
-                    .map(SwmDailyAttendance::getIdleHours)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    // 计算总时长
+                    BigDecimal totalScheduledHours = employeeAttendance.stream()
+                            .map(SwmDailyAttendance::getScheduledHours)
+                            .filter(Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // 计算功效(平均每日功效)
-            BigDecimal avgEfficiency = employeeAttendance.stream()
-                    .map(SwmDailyAttendance::getDailyEfficiency)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .divide(BigDecimal.valueOf(actualDays > 0 ? actualDays : 1), 2, RoundingMode.HALF_UP);
+                    // 修改：实际工作时间改为累计实际工作时长（基于工作区域计算）
+                    BigDecimal totalEffectiveWorkHours = employeeAttendance.stream()
+                            .map(SwmDailyAttendance::getEffectiveWorkHours)
+                            .filter(Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // 6. 查询是否已存在当月记录
-            String monthStr = DateUtil.format(startDate, "yyyy-MM");
-            SwmAttendanceSummary existingSummary = swmAttendanceSummaryService.findByEmployeeIdAndMonth(employeeId,
-                    monthStr);
+                    BigDecimal totalActualHours = employeeAttendance.stream()
+                            .map(SwmDailyAttendance::getActualHours)
+                            .filter(Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // 7. 保存或更新记录
-            SwmAttendanceSummary summary = existingSummary != null ? existingSummary : new SwmAttendanceSummary();
+                    BigDecimal totalIdleHours = employeeAttendance.stream()
+                            .map(SwmDailyAttendance::getIdleHours)
+                            .filter(Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // 设置基本信息
-            summary.setEmployeeId(employeeId);
-            summary.setEmployeeName(person.getName());
-            summary.setDepartment(person.getDepartment());
-            summary.setWorkProcess(person.getWorkProcess());
-            summary.setTeam(person.getTeam());
-            summary.setJobType(person.getJobType());
+                    // 计算功效(平均每日功效)
+                    BigDecimal avgEfficiency = employeeAttendance.stream()
+                            .map(SwmDailyAttendance::getDailyEfficiency)
+                            .filter(Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                            .divide(BigDecimal.valueOf(actualDays > 0 ? actualDays : 1), 2, RoundingMode.HALF_UP);
 
-            // 获取人员本月班次(不确定人员一个月是不是只能有一个班次，这里用list查询，取第一个)
-            SwmPersonSchedule queryPersonSchedule = new SwmPersonSchedule();
-            queryPersonSchedule.setIdCard(person.getIdentityCard());
-            queryPersonSchedule.setMonth(monthStr);
-            List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService.findList(queryPersonSchedule);
-            if (personScheduleList != null && !personScheduleList.isEmpty()) {
-                summary.setWorkShift(personScheduleList.get(0).getClasses());
-            }
-            summary.setMonth(monthStr);
+                    // 6. 查询是否已存在当月记录
+                    String monthStr = DateUtil.format(startDate, "yyyy-MM");
+                    SwmAttendanceSummary existingSummary = swmAttendanceSummaryService.findByEmployeeIdAndMonth(employeeId,
+                            monthStr,person.getCorpCode());
 
-            // 设置统计信息
-            summary.setScheduledDays(BigDecimal.valueOf(scheduledDays));
-            summary.setActualDays(BigDecimal.valueOf(actualDays));
-            summary.setAttendanceRate(attendanceRate);
-            summary.setScheduledHours(totalScheduledHours);
-            summary.setActualHours(totalEffectiveWorkHours);
-            summary.setIdleHours(totalIdleHours);
-            summary.setEfficiency(avgEfficiency);
+                    // 7. 保存或更新记录
+                    SwmAttendanceSummary summary = existingSummary != null ? existingSummary : new SwmAttendanceSummary();
 
-            // 计算考勤达成率（修改：使用实际工作时长计算）
-            if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal achievementRate = totalEffectiveWorkHours.divide(totalScheduledHours, 4,
-                        RoundingMode.HALF_UP);
-                summary.setAttendanceAchievementRate(achievementRate);
-            } else {
-                summary.setAttendanceAchievementRate(BigDecimal.ZERO);
-            }
+                    // 设置基本信息
+                    summary.setEmployeeId(employeeId);
+                    summary.setEmployeeName(person.getName());
+                    summary.setDepartment(person.getDepartment());
+                    summary.setWorkProcess(person.getWorkProcess());
+                    summary.setTeam(person.getTeam());
+                    summary.setJobType(person.getJobType());
 
-            // 保存记录
-            if (existingSummary != null) {
-                swmAttendanceSummaryService.update(summary);
-            } else {
-                swmAttendanceSummaryService.save(summary);
+                    // 获取人员本月班次(不确定人员一个月是不是只能有一个班次，这里用list查询，取第一个)
+                    SwmPersonSchedule queryPersonSchedule = new SwmPersonSchedule();
+                    queryPersonSchedule.setIdCard(person.getIdentityCard());
+                    queryPersonSchedule.setMonth(monthStr);
+                    List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService.findList(queryPersonSchedule);
+                    if (personScheduleList != null && !personScheduleList.isEmpty()) {
+                        summary.setWorkShift(personScheduleList.get(0).getClasses());
+                    }
+                    summary.setMonth(monthStr);
+
+                    // 设置统计信息
+                    summary.setScheduledDays(BigDecimal.valueOf(scheduledDays));
+                    summary.setActualDays(BigDecimal.valueOf(actualDays));
+                    summary.setAttendanceRate(attendanceRate);
+                    summary.setScheduledHours(totalScheduledHours);
+                    summary.setActualHours(totalEffectiveWorkHours);
+                    summary.setIdleHours(totalIdleHours);
+                    summary.setEfficiency(avgEfficiency);
+
+                    // 计算考勤达成率（修改：使用实际工作时长计算）
+                    if (totalScheduledHours.compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal achievementRate = totalEffectiveWorkHours.divide(totalScheduledHours, 4,
+                                RoundingMode.HALF_UP);
+                        summary.setAttendanceAchievementRate(achievementRate);
+                    } else {
+                        summary.setAttendanceAchievementRate(BigDecimal.ZERO);
+                    }
+                    summary.setCorpCode(person.getCorpCode());
+                    summary.setCorpName(person.getCorpName());
+
+                    // 保存记录
+                    if (existingSummary != null) {
+                        swmAttendanceSummaryService.update(summary);
+                    } else {
+                        swmAttendanceSummaryService.save(summary);
+                    }
+                }
+                log.info("月考勤统计定时任务执行完成，共处理{}名员工的考勤数据", attendanceByEmployee.size());
+            }catch (Exception e){
+                XxlJobHelper.log("月考勤统计失败：{}", e.getMessage());
+            }finally {
+                CorpUtils.removeCurrentCorpCode(null);
             }
         }
 
-        log.info("月考勤统计定时任务执行完成，共处理{}名员工的考勤数据", attendanceByEmployee.size());
+
     }
 
     /**
@@ -2528,10 +2554,14 @@ public class AttendanceTask {
             }
             
             // 检查是否已存在
-            SwmDailyAttendance existing = swmDailyAttendanceService.findByIdentityCardAndDate(person.getIdentityCard(), targetDate);
+            SwmDailyAttendance existing = swmDailyAttendanceService.findByIdentityCardAndDate(person.getIdentityCard(), targetDate,person.getCorpCode());
             
             if (existing != null) {
                 return handleExistingAttendance(existing, person, targetDate, dateStr);
+            }
+            if (existing == null){
+                XxlJobHelper.log("查询的数据不存在：日期{},员工[{}]身份信息不存在", targetDate, person.getName());
+                log.error("日期{},员工[{}]身份信息不存在", targetDate, person.getName());
             }
             
             // 创建新记录

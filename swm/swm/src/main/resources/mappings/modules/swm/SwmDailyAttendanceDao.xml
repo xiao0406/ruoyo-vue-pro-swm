@@ -323,6 +323,7 @@
             sp.`status` = 0 and sp.personnel_status = '1' and a.status = '0' and
             DATE(a.attendance_date) = DATE(#{attendanceDate})
         </where>
+        group by a.identity_card
         ORDER BY a.employee_name ASC
     </select>
 
@@ -522,6 +523,7 @@
         FROM swm_daily_attendance a
         WHERE a.identity_card = #{identityCard}
           AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+        AND a.corp_code = #{corpCode}
         LIMIT 1
     </select>
 
@@ -556,7 +558,7 @@
         FROM swm_daily_attendance a
         WHERE a.identity_card = #{identityCard}
           AND DATE_FORMAT(a.attendance_date, '%Y-%m') = #{month}
-          AND a.status = '0'  AND sp.personnel_status = '1'
+          AND a.status = '0'
         ORDER BY a.attendance_date ASC
     </select>
 

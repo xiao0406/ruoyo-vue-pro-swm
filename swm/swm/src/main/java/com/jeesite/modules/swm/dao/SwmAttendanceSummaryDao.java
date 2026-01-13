@@ -29,7 +29,7 @@ public interface SwmAttendanceSummaryDao extends CrudDao<SwmAttendanceSummary> {
      * @param month 统计月份 格式(YYYY-MM)
      * @return 考勤统计记录
      */
-    SwmAttendanceSummary findByEmployeeIdAndMonth(String employeeId, String month);
+    SwmAttendanceSummary findByEmployeeIdAndMonth(String employeeId, String month,String corpCode);
     
     /**
      * 根据员工姓名和月份查询考勤统计记录

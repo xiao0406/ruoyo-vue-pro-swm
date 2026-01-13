@@ -93,27 +93,37 @@ public class SwmDashboardNewController extends BaseController {
         // 查询日考勤数据
         List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(date);
         // 人员数据统计
-        CompletableFuture<Map<String, Object>> todayAttendanceCount = CompletableFuture.supplyAsync(
-                () -> getPersonCount(todayAttendances, swmPersonList),swmExecutor);
-        // 异常数据统计
-        CompletableFuture<Map<String, Object>> todayAbnormalCount = CompletableFuture.supplyAsync(
-                () -> getAbnormalCount(swmPersonList),swmExecutor);
-        // 实时作业人员变化趋势-每小时统计
-        CompletableFuture<Map<String, Object>> hourWorkingCount = CompletableFuture.supplyAsync(
-                this::getHourWorkingCount,swmExecutor);
+//        CompletableFuture<Map<String, Object>> todayAttendanceCount = CompletableFuture.supplyAsync(
+//                () -> getPersonCount(todayAttendances, swmPersonList),swmExecutor);
+//        // 异常数据统计
+//        CompletableFuture<Map<String, Object>> todayAbnormalCount = CompletableFuture.supplyAsync(
+//                () -> getAbnormalCount(swmPersonList),swmExecutor);
+//        // 实时作业人员变化趋势-每小时统计
+//        CompletableFuture<Map<String, Object>> hourWorkingCount = CompletableFuture.supplyAsync(
+//                this::getHourWorkingCount,swmExecutor);
 
         // 等待所有任务完成
-        CompletableFuture.allOf(todayAttendanceCount, todayAbnormalCount, hourWorkingCount).join();
+//        CompletableFuture.allOf(todayAttendanceCount, todayAbnormalCount, hourWorkingCount).join();
         // 组装结果
         try {
-            result.put("todayAttendance", todayAttendanceCount.get());
-            result.put("todayAbnormalCount", todayAbnormalCount.get());
-            result.put("hourWorkingCount", hourWorkingCount.get());
+            Map<String, Object> todayAttendanceCount = getPersonCount(todayAttendances, swmPersonList);
+            result.put("todayAttendance", todayAttendanceCount);
+//            result.put("todayAbnormalCount", todayAbnormalCount.get());
+//            result.put("hourWorkingCount", hourWorkingCount.get());
         } catch (Exception e) {
             logger.error("获取统计结果时出错", e);
             throw new RuntimeException("获取统计结果时出错", e);
         }
         return result;
+    }
+
+    @GetMapping("/hourWorkingCount")
+    @ResponseBody
+    @ApiOperation("今日作业人数变化趋势")
+    public Map<String, Object> hourWorkingCount() {
+        // 查询所有在职人员
+        Map<String, Object> hourWorkingCount = getHourWorkingCount();
+        return hourWorkingCount;
     }
 
     private Map<String, Object> getHourWorkingCount() {
@@ -244,37 +254,93 @@ public class SwmDashboardNewController extends BaseController {
      */
     private Map<String, Object> getPersonCount(List<SwmDailyAttendance> todayAttendances, List<SwmPerson> swmPersonList) {
         Map<String, Object> result = new HashMap<>();
-        // 今日出勤人数
-        long todayAttendanceCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null).count();
+
+
+        //一。考勤相关数据
+        long todayAttendanceCount = 0;
+        long todayAttendanceWorkerCount = 0;
+        long todayAttendanceManagerCount = 0;
+        long todayAttendanceWhiteCount = 0;
+        long todayAttendanceNightCount = 0;
+
+        for (SwmDailyAttendance a : todayAttendances) {
+            if (a.getClockInDate() == null) {
+                continue;
+            }
+            String type  = a.getPersonType();
+
+            // 今日出勤人数
+            todayAttendanceCount++;
+            // 今日出勤工人数
+           if (type.equals(SwmPerson.PersonTypeEnum.WORKER) || type.equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)){
+                todayAttendanceWorkerCount++;
+            }
+           // 今日出勤管理员数
+            if (type.equals(SwmPerson.PersonTypeEnum.MANAGER) || type.equals(SwmPerson.PersonTypeEnum.TEAMLEADER)){
+                todayAttendanceManagerCount++;
+            }
+            //今日出勤白班人数   classes = 1
+            if ("1".equals(a.getClasses())){
+                todayAttendanceWhiteCount++;
+            }
+            // 今日出勤夜班人数   classes = 3
+            if ("3".equals(a.getClasses())){
+                todayAttendanceNightCount++;
+            }
+        }
+
         result.put("todayAttendanceCount", todayAttendanceCount);
-        // 今日出勤工人数
-        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null)
-                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER) || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)) ).count();
         result.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
-        // 今日出勤管理员数
-        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null)
-                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER) || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))).count();
         result.put("todayAttendanceManagerCount", todayAttendanceManagerCount);
-
-        //今日出勤白班人数   classes = 1
-     long todayAttendanceWhiteCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
-                && "1".equals(a.getClasses())).count();
         result.put("todayAttendanceWhiteCount", todayAttendanceWhiteCount);
-
-        //今日出勤夜班人数   classes = 3
-        long todayAttendanceNightCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
-                && "3".equals(a.getClasses())).count();
         result.put("todayAttendanceNightCount", todayAttendanceNightCount);
 
-        //工人今日在厂
-        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
-        long todayAttendanceWorkerWhiteCount = swmPersonList.stream().filter(a ->  Arrays.asList(managerIds).contains(a.getPersonType())).count();
-        result.put("todayAttendanceWorkerWhiteCount", todayAttendanceWorkerWhiteCount);
+        //二、今日在厂相关数据
+        long todayAttendanceWorkerWhiteCount = 0;
+        long todayAttendanceManagerWhiteCount = 0;
+        for (SwmPerson p : swmPersonList) {
+            String type = p.getPersonType();
+            if (type.equals(SwmPerson.PersonTypeEnum.MANAGER) || type.equals(SwmPerson.PersonTypeEnum.TEAMLEADER)) {
+                todayAttendanceWorkerWhiteCount++;
+            } else {
+                todayAttendanceManagerWhiteCount++;
+            }
+        }
 
-        //管理员今日在厂
-        long todayAttendanceManagerWhiteCount = swmPersonList.stream().filter(a ->  (SwmPerson.PersonTypeEnum.MANAGER.equals(a.getPersonType()) ||
-                SwmPerson.PersonTypeEnum.TEAMLEADER.equals(a.getPersonType()))).count();
+        result.put("todayAttendanceWorkerWhiteCount", todayAttendanceWorkerWhiteCount);
         result.put("todayAttendanceManagerWhiteCount", todayAttendanceManagerWhiteCount);
+
+//        // 今日出勤人数
+//        long todayAttendanceCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null).count();
+//        result.put("todayAttendanceCount", todayAttendanceCount);
+//        // 今日出勤工人数
+//        long todayAttendanceWorkerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null)
+//                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER) || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)) ).count();
+//        result.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
+//        // 今日出勤管理员数
+//        long todayAttendanceManagerCount = todayAttendances.stream().filter(a -> (a.getClockInDate() != null)
+//                && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER) || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))).count();
+//        result.put("todayAttendanceManagerCount", todayAttendanceManagerCount);
+
+        //今日出勤白班人数   classes = 1
+//     long todayAttendanceWhiteCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
+//                && "1".equals(a.getClasses())).count();
+//        result.put("todayAttendanceWhiteCount", todayAttendanceWhiteCount);
+
+//        //今日出勤夜班人数   classes = 3
+//        long todayAttendanceNightCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
+//                && "3".equals(a.getClasses())).count();
+//        result.put("todayAttendanceNightCount", todayAttendanceNightCount);
+
+//        //工人今日在厂
+//        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
+//        long todayAttendanceWorkerWhiteCount = swmPersonList.stream().filter(a ->  Arrays.asList(managerIds).contains(a.getPersonType())).count();
+//        result.put("todayAttendanceWorkerWhiteCount", todayAttendanceWorkerWhiteCount);
+//
+//        //管理员今日在厂
+//        long todayAttendanceManagerWhiteCount = swmPersonList.stream().filter(a ->  (SwmPerson.PersonTypeEnum.MANAGER.equals(a.getPersonType()) ||
+//                SwmPerson.PersonTypeEnum.TEAMLEADER.equals(a.getPersonType()))).count();
+//        result.put("todayAttendanceManagerWhiteCount", todayAttendanceManagerWhiteCount);
 
 
         // 工作中人数：从TDengine查询1小时内有位置数据的人数（按类型分类）
@@ -284,10 +350,10 @@ public class SwmDashboardNewController extends BaseController {
 //        long count = page.getCount();
         // 实时作业工人数
         Integer workingPersonCount = workingStats.getOrDefault("worker", 0);
-        result.put("workingPersonCount", workingPersonCount);
+//        result.put("workingPersonCount", workingPersonCount);
         // 实时作业管理员数
         Integer workingManagerCount = workingStats.getOrDefault("manager", 0);
-        result.put("workingManagerCount", workingManagerCount);
+//        result.put("workingManagerCount", workingManagerCount);
         // 实时作业人数
         // 获取SwmPersonController Bean
         result.put("totalWorkingCount", workingPersonCount+workingManagerCount);
@@ -297,18 +363,17 @@ public class SwmDashboardNewController extends BaseController {
         long workerCount = swmPersonList.size();
         result.put("workerCount", workerCount);
         // 在场管理员数
-        long managerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
-        result.put("managerCount", managerCount);
+//        long managerCount = swmPersonList.stream().filter(a -> a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
+//        result.put("managerCount", managerCount);
         // 今日出勤率
         if(todayAttendanceCount == 0){
             result.put("todayAttendanceRate", "0.00");
         }else{
-            long count = todayAttendances.stream().filter(a -> a.getClockInDate() != null
-                    && (a.getPersonType().equals(SwmPerson.PersonTypeEnum.WORKER)
-                    || a.getPersonType().equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)
-                    || a.getPersonType().equals(SwmPerson.PersonTypeEnum.TEAMLEADER))).count();
+            long attCount = todayAttendances.stream().filter(a -> a.getClockInDate() != null
+                    && (!a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER))).count();
 
-            BigDecimal divide = BigDecimal.valueOf(count).divide(BigDecimal.valueOf(workerCount - managerCount), 2, RoundingMode.HALF_UP);
+            long totalCount = swmPersonList.stream().filter(a -> !a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
+            BigDecimal divide = BigDecimal.valueOf(attCount).divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP);
             result.put("todayAttendanceRate", divide.multiply(BigDecimal.valueOf(100)).toString());
         }
         return result;

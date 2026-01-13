@@ -114,7 +114,7 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
      * @date 2025-08-12
      */
     SwmDailyAttendance findByIdentityCardAndDate(@Param("identityCard") String identityCard,
-            @Param("attendanceDate") Date attendanceDate);
+            @Param("attendanceDate") Date attendanceDate, @Param("corpCode") String corpCode);
 
     /**
      * 根据身份证号和月份查询考勤记录

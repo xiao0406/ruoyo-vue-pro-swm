@@ -808,8 +808,6 @@ public class SwmDashboardController extends BaseController {
     @ResponseBody
     @ApiOperation("今日预警统计")
     public Map<String, Object> warningStatisticsForTodayNew() {
-        String corpCode = CorpUtils.getCurrentCorpCode();
-        log.debug("今日报警记录租户信息: {}", corpCode);
         Map<String, Object> result = new HashMap<>();
         Map<String, Object> warningMap = new ConcurrentHashMap<>(); // 线程安全
         Date now = new Date();
@@ -915,7 +913,7 @@ public class SwmDashboardController extends BaseController {
                             }
                         }
                     }
-                    swmWarningManagementService.fillWorkGroupInfo(list);
+//                    swmWarningManagementService.fillWorkGroupInfo(list);
                     swmWarningManagementService.fillLocationInfoV1(list);
                     for (SwmWarningManagement warning : list) {
                         if (Arrays.asList(dictLabel1, dictLabel2, dictLabel3).contains(warning.getWarningContent())){

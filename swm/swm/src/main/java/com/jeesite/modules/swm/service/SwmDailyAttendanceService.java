@@ -395,14 +395,14 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
      * @author Shawn
      * @date 2025-08-12
      */
-    public SwmDailyAttendance findByIdentityCardAndDate(String identityCard, Date attendanceDate) {
+    public SwmDailyAttendance findByIdentityCardAndDate(String identityCard, Date attendanceDate,String corpCode) {
         if (StringUtils.isBlank(identityCard)) {
             return null;
         }
         // 处理日期，去除时间部分
         attendanceDate = truncateTime(attendanceDate);
         XxlJobHelper.log("日期{},员工身份证号[{}]", DateUtil.format(attendanceDate,"yyyy-MM-dd"), identityCard);
-        return dao.findByIdentityCardAndDate(identityCard, attendanceDate);
+        return dao.findByIdentityCardAndDate(identityCard, attendanceDate,corpCode);
     }
 
     /**

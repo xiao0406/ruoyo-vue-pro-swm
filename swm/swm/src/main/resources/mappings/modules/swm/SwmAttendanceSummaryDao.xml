@@ -107,6 +107,7 @@
         <where>
             a.employee_id = #{param1}
             AND a.month = #{param2}
+        AND a.corp_code =  #{corpCode}
         </where>
     </select>
     

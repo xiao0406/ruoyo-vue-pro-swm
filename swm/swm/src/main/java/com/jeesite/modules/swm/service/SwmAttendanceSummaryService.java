@@ -189,8 +189,8 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
      * @param month      统计月份 格式(YYYY-MM)
      * @return 考勤统计记录
      */
-    public SwmAttendanceSummary findByEmployeeIdAndMonth(String employeeId, String month) {
-        return dao.findByEmployeeIdAndMonth(employeeId, month);
+    public SwmAttendanceSummary findByEmployeeIdAndMonth(String employeeId, String month,String corpCode) {
+        return dao.findByEmployeeIdAndMonth(employeeId, month, corpCode);
     }
 
     /**
