@@ -772,28 +772,44 @@
     </select>
     <select id="attendanceListPage" resultType="com.jeesite.modules.swm.web.SwmDashboardNewController$Person">
         SELECT
-            b.name,
-            b.gender,
-            b.phone_number as phone,
-            b.person_type,
-            a.clock_in_date
-        from
-            swm_daily_attendance a
-             JOIN swm_person b on a.employee_id = b.id
-        WHERE
-           b.personnel_status = '1' and b.status = '0' and
-             a.attendance_date = #{date}
-          AND a.clock_in_date IS NOT NULL
+        b.name,
+        b.gender,
+        b.phone_number as phone,
+        b.person_type,
+        a.clock_in_date
+        FROM
+        swm_daily_attendance a
+        JOIN swm_person b ON a.employee_id = b.id
+        <where>
+            b.personnel_status = '1'
+            AND b.status = '0'
+            AND a.attendance_date = #{date}
+            AND a.clock_in_date IS NOT NULL
+            <if test="personTypeList != null and personTypeList.size() > 0">
+                AND b.person_type IN
+                <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                    #{personType}
+                </foreach>
+            </if>
+        </where>
     </select>
+
     <select id="attendanceListCount" resultType="java.lang.Long">
         SELECT
             count(1)
         from
             swm_daily_attendance a
                 left JOIN swm_person b on a.employee_id = b.id
-        WHERE
-             a.attendance_date = #{date}
-          AND (a.clock_in_date IS NOT NULL or a.clock_out_date is not null)
+        <where>
+            b.personnel_status = '1' and b.status = '0' and a.attendance_date = #{date}
+            AND a.clock_in_date IS NOT NULL
+            <if test="personTypeList != null and personTypeList.size >0">
+                AND  b.person_type IN
+                <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                    #{personType}
+                </foreach>
+            </if>
+        </where>
     </select>
     <select id="findByEmployeeIdAndDateBatch" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
         SELECT

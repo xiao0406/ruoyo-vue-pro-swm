@@ -918,6 +918,36 @@ public class SwmDashboardNewController extends BaseController {
         Page<Person> resultPage = swmDailyAttendanceService.attendanceList(person);
         return resultPage;
     }
+
+    @GetMapping("/attendance/workList")
+    @ResponseBody
+    @ApiOperation("今日出勤工人人数列表")
+    public Page<Person> workList(HttpServletRequest request, HttpServletResponse response) {
+        Date date = new Date();
+        // 创建查询参数对象
+        Person person = new Person();
+        person.setPage(new Page<>(request, response));
+        person.setDate(DateUtils.formatDate(date));
+        // 调用服务层方法进行数据库分页查询
+        person.setPersonTypeList(Arrays.asList(SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.SPECIALTRADES));
+        Page<Person> resultPage = swmDailyAttendanceService.attendanceList(person);
+        return resultPage;
+    }
+
+    @GetMapping("/attendance/manageList")
+    @ResponseBody
+    @ApiOperation("今日出勤管理员人数列表")
+    public Page<Person> manageList(HttpServletRequest request, HttpServletResponse response) {
+        Date date = new Date();
+        // 创建查询参数对象
+        Person person = new Person();
+        person.setPage(new Page<>(request, response));
+        person.setDate(DateUtils.formatDate(date));
+        // 调用服务层方法进行数据库分页查询
+        person.setPersonTypeList(Arrays.asList(SwmPerson.PersonTypeEnum.MANAGER, SwmPerson.PersonTypeEnum.TEAMLEADER));
+        Page<Person> resultPage = swmDailyAttendanceService.attendanceList(person);
+        return resultPage;
+    }
     // 实时作业人数列表
     @GetMapping("/working/list")
     @ResponseBody

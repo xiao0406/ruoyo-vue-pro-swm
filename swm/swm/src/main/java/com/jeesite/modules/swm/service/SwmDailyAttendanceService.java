@@ -908,6 +908,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         // 从DAO获取分页数据
         List<SwmDashboardNewController.Person> list = dao.attendanceListPage(person);
         personCount.setDate(person.getDate());
+        personCount.setPersonTypeList(person.getPersonTypeList());
         // 获取总记录数
         Long count = dao.attendanceListCount(personCount);
 
