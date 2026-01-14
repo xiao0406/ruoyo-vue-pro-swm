@@ -699,38 +699,6 @@ public class SwmDashboardController extends BaseController {
                 handledCountMap.remove("危险源报警");
             }
 
-//            // 设置安全预警（即危险源报警）- 不用"已处置/总数"格式
-//            warningMap.put("安全预警", hazardTotalCount);
-//
-//            // 计算跌落报警的总数和已处置数
-//            Long fallTotalCount = totalCountMap.getOrDefault("跌落报警", 0L);
-//            Long fallHandledCount = handledCountMap.getOrDefault("跌落报警", 0L);
-//            warningMap.put("跌落报警", fallHandledCount + "/" + fallTotalCount);
-//
-//            // 计算静默报警的总数和已处置数
-//            Long silentTotalCount = totalCountMap.getOrDefault("静默报警", 0L);
-//            Long silentHandledCount = handledCountMap.getOrDefault("静默报警", 0L);
-//            warningMap.put("静默报警", silentHandledCount + "/" + silentTotalCount);
-
-//            // 计算主动报警（除安全预警外所有报警的总和）
-//            Long activeTotalCount = 0L;
-//            Long activeHandledCount = 0L;
-//
-//            // 遍历所有报警类型，计算除安全预警和危险源报警之外的总数和已处置数
-//            for (String warningType : totalCountMap.keySet()) {
-//                if (!"安全预警".equals(warningType) && !"危险源报警".equals(warningType)) {
-//                    activeTotalCount += totalCountMap.getOrDefault(warningType, 0L);
-//                }
-//            }
-//
-//            for (String warningType : handledCountMap.keySet()) {
-//                if (!"安全预警".equals(warningType) && !"危险源报警".equals(warningType)) {
-//                    activeHandledCount += handledCountMap.getOrDefault(warningType, 0L);
-//                }
-//            }
-
-//            // 设置主动报警总数，格式为"已处置/总数"
-//            warningMap.put("主动报警", activeHandledCount + "/" + activeTotalCount);
 
 
 

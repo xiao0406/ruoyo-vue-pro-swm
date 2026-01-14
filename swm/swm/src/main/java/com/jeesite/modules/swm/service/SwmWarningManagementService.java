@@ -2164,7 +2164,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 "create_by, CAST(create_date + 28800000 AS TIMESTAMP) as create_date, " +
                 "update_by, update_date, remarks, status, device_id, id_card, " +
                 "front_alarm, type, x, y, hazard_category, location, area " +
-                "FROM %s.swm_warning_management WHERE id='%s' LIMIT 1", 
+                "FROM %s.swm_warning_management_today WHERE id='%s' LIMIT 1",
                 dbname, id
             );
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
