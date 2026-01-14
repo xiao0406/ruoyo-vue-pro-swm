@@ -882,7 +882,7 @@ public class SwmDashboardController extends BaseController {
                             .append("create_by, create_date +8h AS create_date, update_by, update_date, remarks, status, device_id, id_card, ")
                             .append("front_alarm, type, x, y, hazard_category, location, area ")
                             .append("FROM ").append(dbname)
-                            .append(".swm_warning_management ")
+                            .append(".swm_warning_management_today ")
                             .append("WHERE warning_time >= '").append(todayStartTime).append("' ")
                             .append("AND warning_time < '").append(tomorrowStartTime).append("' ")
                             .append(" AND warning_content IN (")
