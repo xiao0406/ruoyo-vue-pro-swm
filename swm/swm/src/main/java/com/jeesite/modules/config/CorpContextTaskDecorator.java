@@ -3,6 +3,9 @@ package com.jeesite.modules.config;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import org.springframework.core.task.TaskDecorator;
 
+/**
+ * 线程上下文复制
+ */
 public class CorpContextTaskDecorator implements TaskDecorator {
 
     @Override

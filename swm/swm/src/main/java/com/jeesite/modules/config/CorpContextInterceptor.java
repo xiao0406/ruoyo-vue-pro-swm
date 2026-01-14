@@ -15,6 +15,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import static net.sf.jsqlparser.util.validation.metadata.NamedObject.user;
 
+
+/**
+ * 所有的HTTP都走这里，拦截器设置租户信息
+ */
 @Component
 @Slf4j
 public class CorpContextInterceptor implements HandlerInterceptor {

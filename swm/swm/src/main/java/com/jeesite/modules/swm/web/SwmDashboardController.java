@@ -808,6 +808,8 @@ public class SwmDashboardController extends BaseController {
     @ResponseBody
     @ApiOperation("今日预警统计")
     public Map<String, Object> warningStatisticsForTodayNew() {
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        String corpName = CorpUtils.getCurrentCorpName();
         Map<String, Object> result = new HashMap<>();
         Map<String, Object> warningMap = new ConcurrentHashMap<>(); // 线程安全
         Date now = new Date();
@@ -822,33 +824,43 @@ public class SwmDashboardController extends BaseController {
             // 异步任务
             CompletableFuture<Void> totalFuture = CompletableFuture.runAsync(() -> {
                 try {
+                    CorpUtils.setCurrentCorpCode(corpCode, corpName);
                     String totalAlarmNumber = warningStatistics(null, null);
                     warningMap.put("累计报警数", totalAlarmNumber);
                 } catch (Exception e) {
                     logger.error("统计累计报警数异常", e);
+                }finally {
+                    CorpUtils.removeCurrentCorpCode(null);
                 }
             }, swmExecutor);
 
             CompletableFuture<Void> todayFuture = CompletableFuture.runAsync(() -> {
                 try {
+                    CorpUtils.setCurrentCorpCode(corpCode, corpName);
                     String nowDayAlarmNumber = warningStatistics(nowDayStartTime, nowDayEndTime);
                     warningMap.put("今日报警数", nowDayAlarmNumber);
                 } catch (Exception e) {
                     logger.error("统计今日报警数异常", e);
+                }finally {
+                    CorpUtils.removeCurrentCorpCode(null);
                 }
             }, swmExecutor);
 
             CompletableFuture<Void> fiveMinuteFuture = CompletableFuture.runAsync(() -> {
                 try {
+                    CorpUtils.setCurrentCorpCode(corpCode, corpName);
                     String fiveMinuteAlarmNumber = warningStatistics(fiveMinuteStartTime, nowDayEndTime);
                     warningMap.put("当前报警数", fiveMinuteAlarmNumber);
                 } catch (Exception e) {
                     logger.error("统计近五分钟报警数异常", e);
+                }finally {
+                    CorpUtils.removeCurrentCorpCode(null);
                 }
             }, swmExecutor);
 
             CompletableFuture<Void> recordFuture = CompletableFuture.runAsync(() -> {
                 try {
+                    CorpUtils.setCurrentCorpCode(corpCode, corpName);
                     String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
                     String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
                     String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
@@ -858,16 +870,6 @@ public class SwmDashboardController extends BaseController {
                     List<String> labels = Arrays.asList(dictLabel1, dictLabel2, dictLabel3, dictLabel4, dictLabel5);
                     String inClause = labels.stream().map(s -> "'" + s + "'").collect(Collectors.joining(","));
 
-                    // 查询今日报警记录 构建TDengine查询SQL
-                    // 获取今天开始和结束的时间戳
-//                    Calendar calendar = Calendar.getInstance();
-//                    calendar.set(Calendar.HOUR_OF_DAY, 0);
-//                    calendar.set(Calendar.MINUTE, 0);
-//                    calendar.set(Calendar.SECOND, 0);
-//                    long todayStartTime = calendar.getTimeInMillis();
-//
-//                    calendar.add(Calendar.DAY_OF_YEAR, 1);
-//                    long tomorrowStartTime = calendar.getTimeInMillis();
                     String todayStartTime = DateUtil.format(DateUtil.beginOfDay(now), "yyyy-MM-dd HH:mm:ss");
                     String tomorrowStartTime = DateUtil.format(DateUtil.endOfDay(now), "yyyy-MM-dd HH:mm:ss");
                     StringBuilder sqlBuilder = new StringBuilder();
@@ -913,7 +915,7 @@ public class SwmDashboardController extends BaseController {
                             }
                         }
                     }
-//                    swmWarningManagementService.fillWorkGroupInfo(list);
+                    swmWarningManagementService.fillWorkGroupInfo(list);
                     swmWarningManagementService.fillLocationInfoV1(list);
                     for (SwmWarningManagement warning : list) {
                         if (Arrays.asList(dictLabel1, dictLabel2, dictLabel3).contains(warning.getWarningContent())){
@@ -924,6 +926,8 @@ public class SwmDashboardController extends BaseController {
                     result.put("record", list);
                 } catch (Exception e) {
                     logger.error("获取已处置数据异常", e);
+                } finally {
+                    CorpUtils.removeCurrentCorpCode(null);
                 }
             }, swmExecutor);
 
