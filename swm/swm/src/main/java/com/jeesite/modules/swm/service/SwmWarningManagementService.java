@@ -2048,7 +2048,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     .collect(Collectors.joining(","));
 
             String sql = String.format(
-                    "SELECT * FROM %s.swm_warning_management WHERE type IN (%s) " +
+                    "SELECT * FROM %s.swm_warning_management_today WHERE type IN (%s) " +
                             "AND warning_time >= %d AND warning_time < %d " +
                             "AND warning_content NOT IN ('考勤打卡', '进入大门') " +
                             "AND front_alarm = '1' " +
@@ -2056,7 +2056,6 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     dbname, inCondition, todayStartTime, todayEndTime);
 
             logger.info("执行TDengine查询: {}", sql);
-            String corpCode = CorpUtils.getCurrentCorpCode();
             R<JSONObject> tdResult = tdengineService.executeTDengineSQL(sql);
 
             if (tdResult.getCode() == R.SUCCESS && tdResult.getData() != null) {
@@ -2081,13 +2080,6 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                                 tdEntity.setWarningTime(calendar.getTime());
                             }
 
-//                            // 2. 在MySQL中检查是否存在相同ID和身份证号的记录
-//                            SwmWarningManagement query = new SwmWarningManagement();
-//                            query.setId(tdEntity.getId());
-//                            if (tdEntity.getIdCard() != null) {
-//                                query.setIdCard(tdEntity.getIdCard());
-//                            }
-//                            SwmWarningManagement mysqlEntity = super.get(query);
 
                             String key = tdEntity.getId() + "_" + (tdEntity.getIdCard() == null ? "" : tdEntity.getIdCard());
                             SwmWarningManagement mysqlEntity = warningMap.get(key);

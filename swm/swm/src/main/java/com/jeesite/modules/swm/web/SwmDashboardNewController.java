@@ -301,9 +301,9 @@ public class SwmDashboardNewController extends BaseController {
         for (SwmPerson p : swmPersonList) {
             String type = p.getPersonType();
             if (type.equals(SwmPerson.PersonTypeEnum.MANAGER) || type.equals(SwmPerson.PersonTypeEnum.TEAMLEADER)) {
-                todayAttendanceWorkerWhiteCount++;
-            } else {
                 todayAttendanceManagerWhiteCount++;
+            } else {
+                todayAttendanceWorkerWhiteCount++;
             }
         }
 

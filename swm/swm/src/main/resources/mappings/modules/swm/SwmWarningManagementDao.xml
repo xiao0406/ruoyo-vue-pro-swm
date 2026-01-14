@@ -506,7 +506,7 @@
         FROM
             swm_warning_management
         WHERE
-            front_alarm != '0'
+            front_alarm = '1'
     </select>
     <select id="theAlarmHasBeenDealtWith" resultType="java.lang.Long">
         SELECT
