@@ -1679,7 +1679,7 @@ public class AttendanceTask {
             return;
         }
 
-        List<SwmDailyAttendance> clockOutRecords = Collections.synchronizedList(new ArrayList<>());
+        List<SwmDailyAttendance> clockOutRecords = new ArrayList<>();
 
         Date now = new Date();
         Date threeMinutesAgo = DateUtil.offsetMinute(now, -10);
@@ -1689,69 +1689,61 @@ public class AttendanceTask {
         String startDay = DateUtil.formatDateTime(DateUtil.beginOfDay(now));
         String nowDay = DateUtil.formatDateTime(now);
 
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
 
         for (SwmDailyAttendance item : records) {
+            try {
+                String deviceId = item.getDeviceId();
 
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                try {
-                    String deviceId = item.getDeviceId();
-
-                    //1.先判断是否有打上班卡，没有打则跳过
-                    if (item.getClockInDate() == null) {
-                        return;
-                    }
-
-                    //2.判断今天有没有数据，没有则跳过
-                    Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId, startDay, nowDay,corpCode);
-                    if (dayCount == null || dayCount == 0) {
-                        return;
-                    }
-
-                    // 3. 查询最近3分钟蓝牙信号
-                    Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, startTime, endTime,corpCode);
-                    // ============= 【A. 有信号 → 重置补偿状态】 =============
-                    if (count != null && count > 0) {
-                        // 说明员工又出现了 → 补偿机制恢复可再次触发
-                        item.setPendingClockOutCompensate(false);
-                        // 这里不做下班打卡动作，因为信标机制会更新
-                        clockOutRecords.add( item);
-                        return;
-                    }
-                    // ============= 【B. 无信号 → 判断是否要补卡】 =============
-                    // 无信号超过3分钟，但之前已经补偿过但未恢复 → 不能再补
-                    if (Boolean.TRUE.equals(item.isPendingClockOutCompensate())) {
-                        return;
-                    }
-
-                    // 无信号，未补偿过 → 触发补卡
-                    if (count != null && count == 0) {
-                        // 补偿下班卡
-                        ZoneId zoneId = ZoneId.systemDefault();
-                        // 当前时间
-                        LocalDateTime nowDateTime = LocalDateTime.now(zoneId);
-                        // 如果极端情况下出现 24:00:00（理论上不会，但兜底）
-                        if (nowDateTime.getHour() == 0 && nowDateTime.getMinute() == 0 && nowDateTime.getSecond() == 0) {
-                            // 统一压成 23:59:59（不跨天）
-                            nowDateTime = nowDateTime.minusSeconds(1);
-                        }
-                        Date clockOutDate = Date.from(nowDateTime.atZone(zoneId).toInstant());
-                        item.setClockOutDate(clockOutDate);
-                        item.setClockOutTime(clockOutDate);
-                        // 标记今天已补偿
-                        item.setPendingClockOutCompensate(true);
-                        clockOutRecords.add(item);
-                        XxlJobHelper.log("下班补卡人员：{}", item.getEmployeeName());
-                    }
-                } catch (Exception e) {
-                    log.error("处理人员 {} 下班补卡失败", item.getEmployeeName(), e);
+                //1.先判断是否有打上班卡，没有打则跳过
+                if (item.getClockInDate() == null) {
+                    return;
                 }
-            }, swmExecutor);
-            futures.add(future);
-        }
-        // 等待全部执行完
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
+                //2.判断今天有没有数据，没有则跳过
+                Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId, startDay, nowDay,corpCode);
+                if (dayCount == null || dayCount == 0) {
+                    return;
+                }
+
+                // 3. 查询最近3分钟蓝牙信号
+                Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, startTime, endTime,corpCode);
+                // ============= 【A. 有信号 → 重置补偿状态】 =============
+                if (count != null && count > 0) {
+                    // 说明员工又出现了 → 补偿机制恢复可再次触发
+                    item.setPendingClockOutCompensate(false);
+                    // 这里不做下班打卡动作，因为信标机制会更新
+                    clockOutRecords.add( item);
+                    return;
+                }
+                // ============= 【B. 无信号 → 判断是否要补卡】 =============
+                // 无信号超过3分钟，但之前已经补偿过但未恢复 → 不能再补
+                if (Boolean.TRUE.equals(item.isPendingClockOutCompensate())) {
+                    return;
+                }
+
+                // 无信号，未补偿过 → 触发补卡
+                if (count != null && count == 0) {
+                    // 补偿下班卡
+                    ZoneId zoneId = ZoneId.systemDefault();
+                    // 当前时间
+                    LocalDateTime nowDateTime = LocalDateTime.now(zoneId);
+                    // 如果极端情况下出现 24:00:00（理论上不会，但兜底）
+                    if (nowDateTime.getHour() == 0 && nowDateTime.getMinute() == 0 && nowDateTime.getSecond() == 0) {
+                        // 统一压成 23:59:59（不跨天）
+                        nowDateTime = nowDateTime.minusSeconds(1);
+                    }
+                    Date clockOutDate = Date.from(nowDateTime.atZone(zoneId).toInstant());
+                    item.setClockOutDate(clockOutDate);
+                    item.setClockOutTime(clockOutDate);
+                    // 标记今天已补偿
+                    item.setPendingClockOutCompensate(true);
+                    clockOutRecords.add(item);
+                    XxlJobHelper.log("下班补卡人员：{}", item.getEmployeeName());
+                }
+            } catch (Exception e) {
+                log.error("处理人员 {} 下班补卡失败", item.getEmployeeName(), e);
+            }
+        }
         //批量更新
         List<List<SwmDailyAttendance>> lists = BatchOperationsUtil.batchCutting(clockOutRecords, 50);
         for (List<SwmDailyAttendance> list : lists) {
@@ -1771,9 +1763,10 @@ public class AttendanceTask {
             String sql = "SELECT count(1) FROM " + dbname + ".raw_message_log_" + deviceId +
                     " WHERE time BETWEEN '" + start + "' AND '" + end + "'";
 
-            log.info("查询最近 3 分钟 TDengine 记录数量 SQL: {}", sql);
+            log.info("查询最近 10 分钟 TDengine 记录数量 SQL: {}", sql);
 
             R<JSONObject> result = tdengineService.executeTDengineSQLByXXJOB(sql,corpCode);
+            XxlJobHelper.log("下班卡查询 TDengine SQL: {}", sql);
 
             if (result.getCode() == R.SUCCESS && result.getData() != null) {
                 JSONArray rows = result.getData().getJSONArray("data");
@@ -1806,6 +1799,7 @@ public class AttendanceTask {
             log.info("查询时间范围内第一条 TDengine 记录 SQL: {}", sql);
 
             R<JSONObject> result = tdengineService.executeTDengineSQLByXXJOB(sql,corpCode);
+            XxlJobHelper.log("上班卡查询 TDengine SQL: {}", sql);
 
             if (result.getCode() == R.SUCCESS && result.getData() != null) {
                 JSONArray rows = result.getData().getJSONArray("data");

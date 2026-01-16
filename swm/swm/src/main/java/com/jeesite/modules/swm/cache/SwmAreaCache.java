@@ -71,7 +71,7 @@ public class SwmAreaCache {
                 List<SwmArea> list = swmAreaService.findList(swmArea);
                 if (list == null || list.isEmpty()) {
                     log.warn("未查询到工作区数据");
-                    return;
+                    continue;
                 }
                 // 清除旧缓存
                 redisService.del(corpCode+ SwmRedisConstant.RedisSwmKey.AREA_CACHE);
