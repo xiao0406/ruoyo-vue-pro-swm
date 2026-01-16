@@ -188,7 +188,7 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
 
     List<SwmDailyAttendance> findClockInCardList(String date,Integer random);
 
-    List<SwmDailyAttendance> findClockOutCardList(String yestDay, String nowDate,Integer random);
+    List<SwmDailyAttendance> findClockOutCardList(String yestDay, String nowDate,Integer random,String corpCode);
 
     List<SwmDashboardNewController.AttendanceAnalysis> getAllTeamNumber(String companyCode);
 

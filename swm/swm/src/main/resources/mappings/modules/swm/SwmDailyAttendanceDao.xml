@@ -895,6 +895,7 @@
             ((attendance_date = #{yestDay} and classes = '3')
           or  attendance_date = #{nowDate})
           and #{random} = #{random}
+        and corp_code = #{corpCode}
     </select>
     <select id="getAllTeamNumber"
             resultType="com.jeesite.modules.swm.web.SwmDashboardNewController$AttendanceAnalysis">

@@ -1670,7 +1670,7 @@ public class AttendanceTask {
         String yestDay = LocalDate.parse(nowDate).minusDays(1).toString();
         // 1. 查询两天所有的打卡记录
         Integer random = new Random().nextInt(1_000_000);
-        List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockOutCardList(yestDay, nowDate,random);
+        List<SwmDailyAttendance> records = swmDailyAttendanceService.findClockOutCardList(yestDay, nowDate,random,corpCode);
         //List<SwmDailyAttendance> records = queryPendingAttendanceRecords(params);
         XxlJobHelper.log("下班卡查询范围{}，{}，条数{}", yestDay, nowDate, records.size());
 
@@ -1694,15 +1694,16 @@ public class AttendanceTask {
             try {
                 String deviceId = item.getDeviceId();
 
+
                 //1.先判断是否有打上班卡，没有打则跳过
                 if (item.getClockInDate() == null) {
-                    return;
+                    continue;
                 }
 
                 //2.判断今天有没有数据，没有则跳过
                 Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId, startDay, nowDay,corpCode);
                 if (dayCount == null || dayCount == 0) {
-                    return;
+                    continue;
                 }
 
                 // 3. 查询最近3分钟蓝牙信号
@@ -1713,12 +1714,12 @@ public class AttendanceTask {
                     item.setPendingClockOutCompensate(false);
                     // 这里不做下班打卡动作，因为信标机制会更新
                     clockOutRecords.add( item);
-                    return;
+                    continue;
                 }
                 // ============= 【B. 无信号 → 判断是否要补卡】 =============
                 // 无信号超过3分钟，但之前已经补偿过但未恢复 → 不能再补
                 if (Boolean.TRUE.equals(item.isPendingClockOutCompensate())) {
-                    return;
+                    continue;
                 }
 
                 // 无信号，未补偿过 → 触发补卡
