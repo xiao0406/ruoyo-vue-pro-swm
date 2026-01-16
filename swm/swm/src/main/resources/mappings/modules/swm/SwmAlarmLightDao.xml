@@ -85,47 +85,4 @@
 		</choose>
 	</select>
 	
-	<insert id="insert">
-		INSERT INTO swm_alarm_light(
-			id,
-			light_name,
-			sn_code,
-			enable_alarm,
-			status,
-			create_by,
-			create_date,
-			update_by,
-			update_date,
-			remarks
-		) VALUES (
-			#{id},
-			#{lightName},
-			#{snCode},
-			#{enableAlarm},
-			#{status},
-			#{createBy},
-			#{createDate},
-			#{updateBy},
-			#{updateDate},
-			#{remarks}
-		)
-	</insert>
-	
-	<update id="update">
-		UPDATE swm_alarm_light SET
-			light_name = #{lightName},
-			sn_code = #{snCode},
-			enable_alarm = #{enableAlarm},
-			update_by = #{updateBy},
-			update_date = #{updateDate},
-			remarks = #{remarks}
-		WHERE id = #{id}
-	</update>
-	
-	<update id="delete">
-		UPDATE swm_alarm_light SET 
-			status = #{STATUS_DELETE}
-		WHERE id = #{id}
-	</update>
-	
 </mapper>

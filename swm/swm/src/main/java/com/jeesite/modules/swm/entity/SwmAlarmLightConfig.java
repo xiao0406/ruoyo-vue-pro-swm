@@ -8,6 +8,7 @@ import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
+import lombok.Data;
 
 /**
  * 报警灯配置关联Entity
@@ -20,9 +21,10 @@ import com.jeesite.common.mybatis.annotation.Table;
 	@Column(name="alarm_config_id", attrName="alarmConfigId", label="报警配置ID"),
 	@Column(name="voice_template_id", attrName="voiceTemplateId", label="语音模板ID"),
 	@Column(includeEntity = DataEntity.class),
-		@Column(includeEntity= BaseEntity.class),
+	@Column(includeEntity= BaseEntity.class),
 }, orderBy="a.create_date ASC"
 )
+@Data
 public class SwmAlarmLightConfig extends DataEntity<SwmAlarmLightConfig> {
 	
 	private static final long serialVersionUID = 1L;

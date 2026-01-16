@@ -4,6 +4,7 @@
  */
 package com.jeesite.modules.swm.service;
 
+import com.jeesite.modules.sys.utils.CorpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +57,8 @@ public class SwmAlarmLightService extends CrudService<SwmAlarmLightDao, SwmAlarm
 	@Override
 	@Transactional(readOnly = false)
 	public void save(SwmAlarmLight swmAlarmLight) {
+		String corpCode = CorpUtils.getCurrentCorpCode();
+		String currentCorpName = CorpUtils.getCurrentCorpName();
 		// 如果是新记录且ID为空，则自动生成ID
 		if (swmAlarmLight.getIsNewRecord() && StringUtils.isBlank(swmAlarmLight.getId())) {
 			swmAlarmLight.setId(IdGen.nextId());
@@ -65,7 +68,6 @@ public class SwmAlarmLightService extends CrudService<SwmAlarmLightDao, SwmAlarm
 		if (swmAlarmLight.getIsNewRecord() && StringUtils.isBlank(swmAlarmLight.getStatus())) {
 			swmAlarmLight.setStatus(DataEntity.STATUS_NORMAL);
 		}
-
 		super.save(swmAlarmLight);
 	}
 	

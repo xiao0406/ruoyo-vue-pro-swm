@@ -8,6 +8,7 @@ import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
+import lombok.Data;
 
 /**
  * 报警灯设备Entity
@@ -23,6 +24,7 @@ import com.jeesite.common.mybatis.annotation.Table;
 		@Column(includeEntity = DataEntity.class),
 		@Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmAlarmLight extends DataEntity<SwmAlarmLight> {
 
 	private static final long serialVersionUID = 1L;
