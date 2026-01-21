@@ -86,6 +86,7 @@ public class SwmSafetyFileManageService extends CrudService<SwmSafetyFileManageD
 		if (StringUtils.isBlank(swmSafetyFileManage.getPushStatus())){
 			swmSafetyFileManage.setPushStatus("0");
 		}
+		super.save(swmSafetyFileManage);
 		//判断推送日期是否为今天，是则立即推送
 		Date pushDate = swmSafetyFileManage.getPushDate();
 		String pushDateStr = DateUtil.format(pushDate, DatePattern.NORM_DATE_PATTERN);
@@ -94,7 +95,6 @@ public class SwmSafetyFileManageService extends CrudService<SwmSafetyFileManageD
 			this.pushDate(swmSafetyFileManage);
 		}
 
-		super.save(swmSafetyFileManage);
 	}
 	
 	/**
