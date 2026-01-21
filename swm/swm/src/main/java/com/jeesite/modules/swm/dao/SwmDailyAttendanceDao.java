@@ -207,4 +207,8 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
     List<SwmDashboardDto.NoAttendancePerson> beLatePerson(SwmDashboardDto.NoAttendancePerson vo);
 
     List<SwmDashboardDto.NoAttendancePerson> leaveEarlyPerson(SwmDashboardDto.NoAttendancePerson vo);
+
+    SwmDailyAttendance findClasses(@Param("nowDate") String nowDate, @Param("classes") String classes);
+
+    List<SwmDailyAttendance> findDateByIdCards(@Param("idCard") List<String> idCard, @Param("nowDate") String nowDate);
 }

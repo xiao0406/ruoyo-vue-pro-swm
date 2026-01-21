@@ -5,6 +5,7 @@
 package com.jeesite.modules.swm.excel;
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -13,6 +14,9 @@ import org.apache.commons.lang3.StringUtils;
  */
 @Data
 public class SwmPersonExcelEnhancedModel {
+
+    @ExcelProperty("人员编码")
+    private String personNumber;
 
     @ExcelProperty("姓名")
     private String name;
@@ -66,6 +70,13 @@ public class SwmPersonExcelEnhancedModel {
 
     // 行号（用于错误定位）
     private Integer rowIndex;
+
+    @ExcelProperty("年龄")
+    private String age;
+    @ExcelProperty("紧急联系人")
+    private String urgentPerson;
+    @ExcelProperty("紧急联系人手机号")
+    private String urgentPhoneNumber;
 
     /**
      * 检查是否为厂内员工

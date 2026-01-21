@@ -44,8 +44,6 @@ public class DeviceCorpTask {
     @Transactional(rollbackFor = Exception.class)
     public void deviceCorpMapping() {
 
-        XxlJobHelper.log("定时生成设备租户的映射关系===================================");
-
         List<User> corpList = userService.findCorpList(new User());
         if (CollectionUtils.isEmpty(corpList)) {
             XxlJobHelper.log("没有租户信息");
@@ -55,47 +53,52 @@ public class DeviceCorpTask {
         List<SwmHelmetDevice> deviceListAll = new ArrayList<>();
 
         for (User user : corpList) {
-            String corpCode = user.getCorpCode();
-            String corpName = user.getCorpName();
+            try {
+                String corpCode = user.getCorpCode();
+                String corpName = user.getCorpName();
 
-            // 设置当前线程租户
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                // 设置当前线程租户
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
 
-            SwmHelmetDevice device = new SwmHelmetDevice();
-            device.setRandom(new Random().nextInt(1_000_000));  // 防止一级缓存
+                SwmHelmetDevice device = new SwmHelmetDevice();
+                device.setRandom(new Random().nextInt(1_000_000));  // 防止一级缓存
 
-            List<SwmHelmetDevice> deviceList = deviceService.findDeviceCorpMapping(device);
+                List<SwmHelmetDevice> deviceList = deviceService.findDeviceCorpMapping(device);
 
-            if (CollectionUtils.isEmpty(deviceList)) {
-                XxlJobHelper.log("租户 {} 没有设备", corpCode);
-                continue;
+                if (CollectionUtils.isEmpty(deviceList)) {
+                    XxlJobHelper.log("租户 {} 没有设备", corpCode);
+                    continue;
+                }
+                deviceListAll.addAll(deviceList);
+            } catch (Exception e) {
+                XxlJobHelper.log("租户 {} 获取设备列表异常", user.getCorpCode(), e);
+            } finally {
+                CorpUtils.removeCurrentCorpCode(null);
             }
-            deviceListAll.addAll(deviceList);
+
+            // 构建一个临时 key
+            String tempKey = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP + "_TMP";
+
+            // 先写入临时 key
+            Map<String, String> map = new HashMap<>();
+            for (SwmHelmetDevice d : deviceListAll) {
+                map.put(d.getDeviceId(), d.getCorpCode());
+            }
+            redisTemplate.opsForHash().putAll(tempKey, map);
+
+            // 原子替换旧 key
+            redisTemplate.execute((RedisCallback<Object>) connection -> {
+                byte[] temp = tempKey.getBytes(StandardCharsets.UTF_8);
+                byte[] real = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP.getBytes(StandardCharsets.UTF_8);
+
+                connection.rename(temp, real); // 原子操作
+                return null;
+            });
+
+            XxlJobHelper.log("设备租户映射关系生成完成");
+            // 刷新缓存
+            deviceCorpMappingCache.refreshCache();
         }
-
-        // 构建一个临时 key
-        String tempKey = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP + "_TMP";
-
-        // 先写入临时 key
-        Map<String, String> map = new HashMap<>();
-        for (SwmHelmetDevice d : deviceListAll) {
-            map.put(d.getDeviceId(), d.getCorpCode());
-        }
-        redisTemplate.opsForHash().putAll(tempKey, map);
-
-        // 原子替换旧 key
-        redisTemplate.execute((RedisCallback<Object>) connection -> {
-            byte[] temp = tempKey.getBytes(StandardCharsets.UTF_8);
-            byte[] real = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP.getBytes(StandardCharsets.UTF_8);
-
-            connection.rename(temp, real); // 原子操作
-            return null;
-        });
-
-        XxlJobHelper.log("设备租户映射关系生成完成");
-
-        // 刷新缓存
-        deviceCorpMappingCache.refreshCache();
     }
 
 }

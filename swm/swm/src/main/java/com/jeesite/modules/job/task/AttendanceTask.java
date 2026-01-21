@@ -1701,13 +1701,13 @@ public class AttendanceTask {
                 }
 
                 //2.判断今天有没有数据，没有则跳过
-                Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId, startDay, nowDay,corpCode);
+                Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId,item.getIdentityCard(), startDay, nowDay,corpCode);
                 if (dayCount == null || dayCount == 0) {
                     continue;
                 }
 
                 // 3. 查询最近3分钟蓝牙信号
-                Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, startTime, endTime,corpCode);
+                Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, item.getIdentityCard(),startTime, endTime,corpCode);
                 // ============= 【A. 有信号 → 重置补偿状态】 =============
                 if (count != null && count > 0) {
                     // 说明员工又出现了 → 补偿机制恢复可再次触发
@@ -1756,12 +1756,12 @@ public class AttendanceTask {
     /**
      * 查询打卡时间范围内是否有数据（用于下班卡）
      */
-    private Integer getLast3MinutesBluetoothCountByClockOut(String deviceId, String start, String end,String corpCode) {
+    private Integer getLast3MinutesBluetoothCountByClockOut(String deviceId,String idCard, String start, String end,String corpCode) {
 
         Integer res  = null;
 
         try {
-            String sql = "SELECT count(1) FROM " + dbname + ".raw_message_log_" + deviceId +
+            String sql = "SELECT count(1) FROM " + dbname + ".external_coordinate_data_" + deviceId + "_" + idCard +
                     " WHERE time BETWEEN '" + start + "' AND '" + end + "'";
 
             log.info("查询最近 10 分钟 TDengine 记录数量 SQL: {}", sql);

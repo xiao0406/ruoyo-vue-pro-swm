@@ -123,4 +123,6 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
     List<SwmDashboardNewController.Person> findManageTodayList(SwmDashboardNewController.Person vo);
 
     void updateBatch(List<SwmPersonExport> list);
+
+    List<SwmPerson> findListByJobTypeList(List<String> jobtypeList);
 }

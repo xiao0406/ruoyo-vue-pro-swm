@@ -49,7 +49,7 @@ public class ClearTdengineTableDataTask {
         for (CorpDbEnum value : values) {
             String dbName = value.getDbName();
             String corpCode = value.getCorpCode();
-            String sql = "DELETE FROM " + dbName +"."+ SWM_WARNING_MANAGEMENT_SUPER_TABLE_TODAY + " WHERE time < '" + startDate + "'";
+            String sql = "DELETE FROM " + dbName +"."+ SWM_WARNING_MANAGEMENT_SUPER_TABLE_TODAY + " WHERE create_date < '" + startDate + "'";
             tDengineService.executeTDengineSQLByXXJOB(sql,corpCode);
             XxlJobHelper.log("清理swm_warning_management_today表数据 SQL: {}", sql);
         }

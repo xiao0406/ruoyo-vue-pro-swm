@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,8 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
 
     @Resource
     private SwmPersonScheduleLogService swmPersonScheduleLogService;
+    @Resource
+    private SwmDailyAttendanceService swmDailyAttendanceService;
 
     /**
      * 获取单条数据
@@ -106,35 +109,15 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
     @Transactional(readOnly = false)
     @SavePersonScheduleLog(remarkPrefix = "批量修改人员班次：目标班次") // 添加自定义注解，触发 AOP 日志记录
     public int batchUpdateClasses(SwmPersonScheduleDto dto) {
-        // 1. 安全获取用户信息（双重兜底：用户对象 + 字段值）
-        String userCode = "system";
-        User user = UserUtils.getUser();
-
-        if (user != null) {
-            // 处理 userCode 兜底：避免用户对象非 null 但 userCode 为 null
-            String tempUserCode = user.getUserCode();
-            if (tempUserCode != null && !tempUserCode.trim().isEmpty()) {
-                userCode = tempUserCode.trim();
-            }
-        }
 
         // 2. 执行批量修改（原有逻辑）
-        int affectRows = swmPersonScheduleDao.batchUpdateClasses(dto, userCode);
+        int affectRows = swmPersonScheduleDao.batchUpdateClasses(dto);
 
-//        // 3. 构建班次修改日志（完善字段赋值）
-//        SwmPersonScheduleLog scheduleLog = new SwmPersonScheduleLog();
-//        scheduleLog.setId(IdGen.uuid()); // 主键
-//        scheduleLog.setOperateUser(userCode); // 此时绝不会为 null
-//        scheduleLog.setOperateTime(new Date()); // 操作时间
-//        scheduleLog.setTargetClasses(dto.getClasses()); // 目标班次
-//        scheduleLog.setPersonCount(dto.getIds().size()); // 修改人员数量
-//        // 将人员ID列表转为逗号分隔的字符串
-//        String personIdsStr = String.join(",", dto.getIds());
-//        scheduleLog.setPersonIds(personIdsStr); // 人员ID列表
-//        scheduleLog.setRemark("批量修改人员班次：目标班次" + dto.getClasses()); // 备注
-//
-//        // 4. 保存日志（和批量修改在同一个事务中）
-//        swmPersonScheduleLogService.saveScheduleLog(scheduleLog);
+        // 3.同步调整日考勤数据
+        //3.1 先通过人员id查询出身份证编码
+        List<String> idCards = swmPersonScheduleDao.findIdCardsByIds(dto.getIds());
+        // 3.2调整班次
+        swmDailyAttendanceService.updateClasses(idCards, dto.getClasses());
 
         return affectRows;
     }
@@ -296,11 +279,21 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
         try {
             excelImport = new ExcelImport(file, 1, 0);
             List<SwmPersonScheduleExport> list = excelImport.getDataList(SwmPersonScheduleExport.class);
+            //白班身份证集合
+            List<String> dayShiftIdCards = new ArrayList<>();
+            //夜班身份证集合
+            List<String> nightShiftIdCards = new ArrayList<>();
+
             if (CollectionUtil.isNotEmpty(list)){
                 for (SwmPersonScheduleExport export : list) {
 //                    export.setMonth( month);
                     if (StringUtils.isBlank(export.getIdCard())){
                         new RuntimeException("导入数据错误：身份证号不能为空");
+                    }
+                    if ("1".equals(export.getClasses())){
+                        dayShiftIdCards.add(export.getIdCard());
+                    }else if ("3".equals(export.getClasses())){
+                        nightShiftIdCards.add(export.getIdCard());
                     }
                 }
                 List<List<SwmPersonScheduleExport>> lists = BatchOperationsUtil.batchCutting(list, 100);
@@ -309,6 +302,13 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
                 }
                 count = list.size();
             }
+
+            //新增逻辑：调整班次之后，同步修改当天的日考勤数据
+            //调整白班班次
+            swmDailyAttendanceService.updateClasses(dayShiftIdCards,"1");
+            //调整夜班班次
+            swmDailyAttendanceService.updateClasses(nightShiftIdCards,"3");
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

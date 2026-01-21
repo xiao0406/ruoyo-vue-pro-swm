@@ -1,8 +1,10 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.ObjectUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.entity.AiDto;
@@ -10,6 +12,7 @@ import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
+import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1191,5 +1194,43 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         List<SwmDashboardDto.NoAttendancePerson> list = dao.leaveEarlyPerson(vo);
         page.setList(list);
         return page;
+    }
+
+    /**
+     *
+     * @param idCards 身份证集合
+     * @param classes    班次：1-白班；3-夜班
+     */
+    public void updateClasses(List<String> idCards, String classes) {
+        if (CollectionUtils.isEmpty(idCards)){
+            return;
+        }
+        //先查出当天的一条白班和一条夜班，用于分配班次数据使用
+        Date date = new Date();
+        String nowDate = DateUtil.format(date, DatePattern.NORM_DATE_PATTERN);
+        SwmDailyAttendance classesData = this.dao.findClasses(nowDate, classes);
+        if (ObjectUtils.isEmpty(classesData)) {
+            return;
+        }
+
+        List<SwmDailyAttendance> updateList = new ArrayList<>();
+
+        //查出传入的身份证的所有今天的日考勤数据，然后统一修改数据
+        List<SwmDailyAttendance> list = this.dao.findDateByIdCards(idCards, nowDate);
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        for (SwmDailyAttendance dailyAttendance : list) {
+            dailyAttendance.setClasses(classesData.getClasses());
+            dailyAttendance.setWorkTimeRange(classesData.getWorkTimeRange());
+            dailyAttendance.setClockStartTime(classesData.getClockStartTime());
+            dailyAttendance.setClockEndTime(classesData.getClockEndTime());
+            dailyAttendance.setRestTime(classesData.getRestTime());
+            updateList.add(dailyAttendance);
+        }
+        List<List<SwmDailyAttendance>> lists = BatchOperationsUtil.batchCutting(updateList, 100);
+        for (List<SwmDailyAttendance> updateData : lists) {
+            this.dao.updateBatch(updateData);
+        }
     }
 }
