@@ -116,6 +116,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             }
         }
 
+        BigDecimal actualHours = BigDecimal.ZERO;
+
         // 计算实际考勤时长（如果上下班打卡时间都存在）
         if (swmDailyAttendance.getClockInTime() != null && swmDailyAttendance.getClockOutTime() != null) {
             // 计算上下班打卡时间的时间差（毫秒）
@@ -123,21 +125,29 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
                     - swmDailyAttendance.getClockInTime().getTime();
 
             // 转换为小时（四舍五入到2位小数）
-            BigDecimal actualHours = new BigDecimal(timeDiffMs / (1000.0 * 60 * 60))
+            actualHours = new BigDecimal(timeDiffMs / (1000.0 * 60 * 60))
                     .setScale(2, RoundingMode.HALF_UP);
+        }// 计算实际考勤时长(打卡时间不完整时)
+        else if (swmDailyAttendance.getEffectiveWorkHours() != null
+                && swmDailyAttendance.getEffectiveWorkHours().compareTo(BigDecimal.ZERO) > 0) {
+            // 统一精度为2位小数，和打卡计算的actualHours保持一致
+            actualHours = swmDailyAttendance.getEffectiveWorkHours().setScale(2, RoundingMode.HALF_UP);
+        }
+        // 设置实际考勤时长
+        swmDailyAttendance.setActualHours(actualHours);
 
-            // 设置实际考勤时长
-            swmDailyAttendance.setActualHours(actualHours);
-
-            // 计算怠工时长 = 应考勤时长 - 实际考勤时长（如果为负，则怠工时长为0）
-            if (swmDailyAttendance.getScheduledHours() != null) {
-                BigDecimal idleHours = swmDailyAttendance.getScheduledHours().subtract(actualHours);
-                if (idleHours.compareTo(BigDecimal.ZERO) > 0) {
-                    swmDailyAttendance.setIdleHours(idleHours);
-                } else {
-                    swmDailyAttendance.setIdleHours(BigDecimal.ZERO);
+        // 计算怠工时长 = 应考勤时长 - 实际考勤时长（实际时长为0 或 计算结果为负，则怠工时长为0）
+        if (swmDailyAttendance.getScheduledHours() != null) {
+            BigDecimal idleHours = BigDecimal.ZERO;
+            // 只有实际考勤时长大于0时，才计算怠工时长
+            if (actualHours.compareTo(BigDecimal.ZERO) > 0) {
+                idleHours = swmDailyAttendance.getScheduledHours().subtract(actualHours);
+                // 确保怠工时长不为负
+                if (idleHours.compareTo(BigDecimal.ZERO) < 0) {
+                    idleHours = BigDecimal.ZERO;
                 }
             }
+            swmDailyAttendance.setIdleHours(idleHours);
         }
 
         // 计算今日达成率 = 实际考勤时长 / 应考勤时长
