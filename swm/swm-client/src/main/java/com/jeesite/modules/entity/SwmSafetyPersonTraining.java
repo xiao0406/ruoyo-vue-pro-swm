@@ -61,6 +61,8 @@ public class SwmSafetyPersonTraining extends DataEntity<SwmSafetyPersonTraining>
 	private String coverUrl;
 	@ApiModelProperty(value = "文件url地址")
 	private String fileUrl;
+	@ApiModelProperty(value = "视频时长")
+	private String duration;
 
 	private String pushDateStr;
 	

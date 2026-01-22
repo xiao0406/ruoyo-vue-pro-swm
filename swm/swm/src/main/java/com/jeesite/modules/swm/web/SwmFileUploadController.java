@@ -1,9 +1,15 @@
 package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.config.MinioConfiguration;
 import com.jeesite.modules.util.MinioUtils;
+import io.minio.GetObjectArgs;
+import io.minio.MinioClient;
+import io.minio.StatObjectArgs;
+import io.minio.StatObjectResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -11,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -36,6 +43,10 @@ public class SwmFileUploadController extends BaseController {
 
     @Autowired
     private MinioUtils minioUtils;
+    @Autowired
+    private MinioClient minioClient;
+    @Autowired
+    private MinioConfiguration minioProperties;
 
     /**
      * 上传文件
@@ -368,4 +379,165 @@ public class SwmFileUploadController extends BaseController {
                 return "application/octet-stream";
         }
     }
+
+
+    /**
+     * 视频预览
+     * @param objectName
+     * @param request
+     * @param response
+     */
+    /**
+     * 在线预览视频（独立方法，不影响原有代码）
+     */
+    @GetMapping(value = "vxPreview")
+    @ApiOperation("在线查看视频（浏览器直接播放）")
+    public void viewVideo(
+            @RequestParam("objectName") String objectName,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+
+        try {
+            logger.info("在线查看视频，对象名: {}", objectName);
+
+            // 1. 获取文件大小
+            long fileSize = getFileSizeFromMinio(objectName);
+            if (fileSize == -1) {
+                logger.error("视频文件不存在: {}", objectName);
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("视频文件不存在或无法访问");
+                return;
+            }
+
+            // 2. 处理Range请求，支持视频拖拽播放
+            String rangeHeader = request.getHeader("Range");
+            long start = 0;
+            long end = fileSize - 1;
+
+            if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+                String[] ranges = rangeHeader.substring(6).split("-");
+                start = Long.parseLong(ranges[0]);
+                if (ranges.length > 1 && !ranges[1].isEmpty()) {
+                    end = Long.parseLong(ranges[1]);
+                }
+                // 设置分片响应状态码
+                response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+                response.setHeader("Content-Range", String.format("bytes %d-%d/%d", start, end, fileSize));
+            }
+
+            // 3. 设置视频播放的响应头（关键：让浏览器直接播放）
+            String contentType = getVideoContentType(objectName);
+            response.setContentType(contentType);
+            response.setHeader("Accept-Ranges", "bytes");
+            response.setHeader("Content-Length", String.valueOf(end - start + 1));
+            // 核心：inline表示浏览器直接播放，而非下载
+            response.setHeader("Content-Disposition", "inline; filename=\"" +
+                    URLEncoder.encode(objectName.substring(objectName.lastIndexOf("/") + 1), "UTF-8") + "\"");
+
+            // 4. 从MinIO读取文件流（支持起始位置）
+            inputStream = getMinioObjectStream(objectName, start);
+            if (inputStream == null) {
+                logger.error("无法获取视频流: {}", objectName);
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                response.getWriter().write("获取视频流失败");
+                return;
+            }
+
+            // 5. 分块写入响应流
+            outputStream = response.getOutputStream();
+            byte[] buffer = new byte[8192];
+            long bytesWritten = 0;
+            long bytesToWrite = end - start + 1;
+
+            int bytesRead;
+            while (bytesWritten < bytesToWrite && (bytesRead = inputStream.read(buffer)) != -1) {
+                int writeLength = (int) Math.min(bytesRead, bytesToWrite - bytesWritten);
+                outputStream.write(buffer, 0, writeLength);
+                bytesWritten += writeLength;
+            }
+            outputStream.flush();
+
+            logger.info("视频播放完成，传输字节数: {}", bytesWritten);
+
+        } catch (Exception e) {
+            logger.error("视频播放失败", e);
+            if (!response.isCommitted()) {
+                try {
+                    response.reset();
+                    response.setContentType("text/plain;charset=UTF-8");
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    response.getWriter().write("视频播放失败：" + e.getMessage());
+                } catch (IOException ex) {
+                    logger.error("写入错误信息失败", ex);
+                }
+            }
+        } finally {
+            // 关闭资源
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    logger.error("关闭输入流失败", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * 从MinIO获取文件大小（封装调用）
+     */
+    private long getFileSizeFromMinio(String objectName) {
+        try {
+            long size = minioClient.statObject(StatObjectArgs.builder()
+                    .bucket(minioProperties.getBucketName())
+                    .object(objectName)
+                    .build()).size();
+            return size;
+        } catch (Exception e) {
+            logger.error("获取文件大小失败", e);
+            return -1;
+        }
+    }
+
+    /**
+     * 从MinIO获取文件流（支持起始位置）
+     */
+    private InputStream getMinioObjectStream(String objectName, long start) {
+        try {
+            // 如果你的MinioUtils没有带start的getObject方法，可先调用默认的getObject，再跳过对应字节
+            InputStream inputStream = minioUtils.getObject(objectName);
+            if (inputStream != null && start > 0) {
+                long skipped = 0;
+                while (skipped < start) {
+                    long skip = inputStream.skip(start - skipped);
+                    if (skip == 0) break;
+                    skipped += skip;
+                }
+            }
+            return inputStream;
+        } catch (Exception e) {
+            logger.error("获取文件流失败", e);
+            return null;
+        }
+    }
+
+    /**
+     * 获取视频的Content-Type
+     */
+    private String getVideoContentType(String fileName) {
+        String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        switch (extension) {
+            case "mp4": return "video/mp4";
+            case "avi": return "video/x-msvideo";
+            case "mov": return "video/quicktime";
+            case "mkv": return "video/x-matroska";
+            case "flv": return "video/x-flv";
+            case "wmv": return "video/x-ms-wmv";
+            default: return "video/mp4"; // 默认mp4格式
+        }
+    }
+
 }

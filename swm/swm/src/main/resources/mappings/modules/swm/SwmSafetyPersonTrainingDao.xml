@@ -46,6 +46,7 @@
 		fm.type,
 		fm.cover_url,
 		fm.file_url,
+		fm.duration,
 		sp.name as personName,
 		a.*
 		FROM swm_safety_person_training a
