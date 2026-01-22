@@ -6,6 +6,7 @@ import java.util.List;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.lang.DateUtils;
+import com.jeesite.common.lang.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,6 +100,9 @@ public class SwmSafetyPersonTrainingService extends CrudService<SwmSafetyPersonT
 	@Transactional(readOnly=false)
 	public void appUpdate(SwmSafetyPersonTraining swmSafetyPersonTraining) {
 		swmSafetyPersonTraining.getSqlMap().getWhere().disableAutoAddCorpCodeWhere();
+		if (StringUtils.isNotBlank(swmSafetyPersonTraining.getCompleteStatus()) && "1".equals(swmSafetyPersonTraining.getCompleteStatus())){
+			swmSafetyPersonTraining.setCompleteDate(new Date());
+		}
 		this.dao.appUpdate(swmSafetyPersonTraining);
 	}
 }
