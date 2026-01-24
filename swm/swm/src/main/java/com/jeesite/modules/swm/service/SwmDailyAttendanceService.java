@@ -1,8 +1,10 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.ObjectUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.entity.AiDto;
@@ -10,6 +12,7 @@ import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
+import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,6 +119,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             }
         }
 
+        BigDecimal actualHours = BigDecimal.ZERO;
+
         // 计算实际考勤时长（如果上下班打卡时间都存在）
         if (swmDailyAttendance.getClockInTime() != null && swmDailyAttendance.getClockOutTime() != null) {
             // 计算上下班打卡时间的时间差（毫秒）
@@ -123,21 +128,29 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
                     - swmDailyAttendance.getClockInTime().getTime();
 
             // 转换为小时（四舍五入到2位小数）
-            BigDecimal actualHours = new BigDecimal(timeDiffMs / (1000.0 * 60 * 60))
+            actualHours = new BigDecimal(timeDiffMs / (1000.0 * 60 * 60))
                     .setScale(2, RoundingMode.HALF_UP);
+        }// 计算实际考勤时长(打卡时间不完整时)
+        else if (swmDailyAttendance.getEffectiveWorkHours() != null
+                && swmDailyAttendance.getEffectiveWorkHours().compareTo(BigDecimal.ZERO) > 0) {
+            // 统一精度为2位小数，和打卡计算的actualHours保持一致
+            actualHours = swmDailyAttendance.getEffectiveWorkHours().setScale(2, RoundingMode.HALF_UP);
+        }
+        // 设置实际考勤时长
+        swmDailyAttendance.setActualHours(actualHours);
 
-            // 设置实际考勤时长
-            swmDailyAttendance.setActualHours(actualHours);
-
-            // 计算怠工时长 = 应考勤时长 - 实际考勤时长（如果为负，则怠工时长为0）
-            if (swmDailyAttendance.getScheduledHours() != null) {
-                BigDecimal idleHours = swmDailyAttendance.getScheduledHours().subtract(actualHours);
-                if (idleHours.compareTo(BigDecimal.ZERO) > 0) {
-                    swmDailyAttendance.setIdleHours(idleHours);
-                } else {
-                    swmDailyAttendance.setIdleHours(BigDecimal.ZERO);
+        // 计算怠工时长 = 应考勤时长 - 实际考勤时长（实际时长为0 或 计算结果为负，则怠工时长为0）
+        if (swmDailyAttendance.getScheduledHours() != null) {
+            BigDecimal idleHours = BigDecimal.ZERO;
+            // 只有实际考勤时长大于0时，才计算怠工时长
+            if (actualHours.compareTo(BigDecimal.ZERO) > 0) {
+                idleHours = swmDailyAttendance.getScheduledHours().subtract(actualHours);
+                // 确保怠工时长不为负
+                if (idleHours.compareTo(BigDecimal.ZERO) < 0) {
+                    idleHours = BigDecimal.ZERO;
                 }
             }
+            swmDailyAttendance.setIdleHours(idleHours);
         }
 
         // 计算今日达成率 = 实际考勤时长 / 应考勤时长
@@ -1181,5 +1194,43 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         List<SwmDashboardDto.NoAttendancePerson> list = dao.leaveEarlyPerson(vo);
         page.setList(list);
         return page;
+    }
+
+    /**
+     *
+     * @param idCards 身份证集合
+     * @param classes    班次：1-白班；3-夜班
+     */
+    public void updateClasses(List<String> idCards, String classes) {
+        if (CollectionUtils.isEmpty(idCards)){
+            return;
+        }
+        //先查出当天的一条白班和一条夜班，用于分配班次数据使用
+        Date date = new Date();
+        String nowDate = DateUtil.format(date, DatePattern.NORM_DATE_PATTERN);
+        SwmDailyAttendance classesData = this.dao.findClasses(nowDate, classes);
+        if (ObjectUtils.isEmpty(classesData)) {
+            return;
+        }
+
+        List<SwmDailyAttendance> updateList = new ArrayList<>();
+
+        //查出传入的身份证的所有今天的日考勤数据，然后统一修改数据
+        List<SwmDailyAttendance> list = this.dao.findDateByIdCards(idCards, nowDate);
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        for (SwmDailyAttendance dailyAttendance : list) {
+            dailyAttendance.setClasses(classesData.getClasses());
+            dailyAttendance.setWorkTimeRange(classesData.getWorkTimeRange());
+            dailyAttendance.setClockStartTime(classesData.getClockStartTime());
+            dailyAttendance.setClockEndTime(classesData.getClockEndTime());
+            dailyAttendance.setRestTime(classesData.getRestTime());
+            updateList.add(dailyAttendance);
+        }
+        List<List<SwmDailyAttendance>> lists = BatchOperationsUtil.batchCutting(updateList, 100);
+        for (List<SwmDailyAttendance> updateData : lists) {
+            this.dao.updateBatch(updateData);
+        }
     }
 }

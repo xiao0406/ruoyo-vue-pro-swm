@@ -1701,13 +1701,13 @@ public class AttendanceTask {
                 }
 
                 //2.判断今天有没有数据，没有则跳过
-                Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId, startDay, nowDay,corpCode);
+                Integer dayCount = getLast3MinutesBluetoothCountByClockOut(deviceId,item.getIdentityCard(), startDay, nowDay,corpCode);
                 if (dayCount == null || dayCount == 0) {
                     continue;
                 }
 
                 // 3. 查询最近3分钟蓝牙信号
-                Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, startTime, endTime,corpCode);
+                Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, item.getIdentityCard(),startTime, endTime,corpCode);
                 // ============= 【A. 有信号 → 重置补偿状态】 =============
                 if (count != null && count > 0) {
                     // 说明员工又出现了 → 补偿机制恢复可再次触发
@@ -1756,12 +1756,12 @@ public class AttendanceTask {
     /**
      * 查询打卡时间范围内是否有数据（用于下班卡）
      */
-    private Integer getLast3MinutesBluetoothCountByClockOut(String deviceId, String start, String end,String corpCode) {
+    private Integer getLast3MinutesBluetoothCountByClockOut(String deviceId,String idCard, String start, String end,String corpCode) {
 
         Integer res  = null;
 
         try {
-            String sql = "SELECT count(1) FROM " + dbname + ".raw_message_log_" + deviceId +
+            String sql = "SELECT count(1) FROM " + dbname + ".external_coordinate_data_" + deviceId + "_" + idCard +
                     " WHERE time BETWEEN '" + start + "' AND '" + end + "'";
 
             log.info("查询最近 10 分钟 TDengine 记录数量 SQL: {}", sql);
@@ -2073,7 +2073,7 @@ public class AttendanceTask {
         // 新逻辑：实际考勤时长 = 上下班打卡时间范围内的工作区域活动时长
         // @author: Shawn
         // @date: 2025-08-20
-        if (shouldCalculateActualHours(record)) {
+        if (shouldCalculateActualHours(record)  || shouldCalculateActualHoursOther(record)) {
             BigDecimal workAreaHours = calculateWorkAreaHours(record,corpCode);
             if (workAreaHours != null) {
                 record.setActualHours(workAreaHours);
@@ -2105,16 +2105,36 @@ public class AttendanceTask {
                     record.getEmployeeId(), record.getEmployeeName(), 
                     record.getEffectiveWorkHours());
             }
-            
-            // 计算怠工时长
-            BigDecimal idleHours = calculateIdleAreaHours(record,corpCode);
-            if (idleHours != null) {
-                record.setIdleHours(idleHours);
+        }
+
+        // 如果实际考勤时长为0 ,判断工作区时长不为0 则实际考勤时长为工作区时长
+        if ((record.getActualHours() != null && record.getActualHours().compareTo(BigDecimal.ZERO) == 0 ) &&
+                (record.getEffectiveWorkHours() != null && record.getEffectiveWorkHours().compareTo(BigDecimal.ZERO) > 0)){
+            record.setActualHours(record.getEffectiveWorkHours());
+            updated = true;
+            XxlJobHelper.log("实际考勤时长为0,工作区时长不为0--员工[{}]{}最终实际工作时长: {} 小时",
+                    record.getEmployeeId(), record.getEmployeeName(),
+                    record.getEffectiveWorkHours());
+        }
+
+        // 计算怠工时长
+        if (shouldCalculateWorkHours(record)) {
+            if(record.getActualHours() != null && record.getActualHours().compareTo(BigDecimal.ZERO) == 0){
+                record.setIdleHours(BigDecimal.ZERO);
                 updated = true;
-                XxlJobHelper.log("员工[{}]{}怠工时长更新为: {} 小时",
-                    record.getEmployeeId(), record.getEmployeeName(), idleHours);
+                XxlJobHelper.log("员工[{}]{},实际工作时长为0,怠工时长也为0",
+                        record.getEmployeeId(), record.getEmployeeName());
+            }else {
+                BigDecimal idleHours = calculateIdleAreaHours(record,corpCode);
+                if (idleHours != null) {
+                    record.setIdleHours(idleHours);
+                    updated = true;
+                    XxlJobHelper.log("员工[{}]{}怠工时长更新为: {} 小时",
+                            record.getEmployeeId(), record.getEmployeeName(), idleHours);
+                }
             }
         }
+
         
         // 后续可以添加其他计算
         // if (shouldCalculateIdleHours(record)) {
@@ -2179,6 +2199,20 @@ public class AttendanceTask {
      */
     private boolean shouldCalculateActualHours(SwmDailyAttendance record) {
         return record.getClockInDate() != null && record.getClockOutDate() != null;
+    }
+
+    /**
+     * 判断是否需要计算实际考勤时长（上下班打卡时间不全，且应考勤时长>0）
+     * 打卡不全场景：有上班无下班、有下班无上班、都无
+     */
+    private boolean shouldCalculateActualHoursOther(SwmDailyAttendance record) {
+        // 1. 打卡时间不全（核心判断）
+        boolean isClockIncomplete = (record.getClockInDate() == null || record.getClockOutDate() == null);
+        // 2. 应考勤时长>0（业务前提，避免无意义计算）
+        boolean isScheduledHoursValid = record.getScheduledHours() != null
+                && record.getScheduledHours().compareTo(BigDecimal.ZERO) > 0;
+
+        return isClockIncomplete && isScheduledHoursValid;
     }
 
     /**
@@ -3263,9 +3297,20 @@ public class AttendanceTask {
     private BigDecimal calculateWorkAreaHours24h(SwmDailyAttendance record,String corpCode) {
         try {
             // 直接使用当天24小时范围
-            String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(record.getAttendanceDate());
-            String startTime = dateStr + " 00:00:00";
-            String endTime = dateStr + " 23:59:59";
+//            String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(record.getAttendanceDate());
+
+            // 根据班次确定时间范围
+            String[] timeRange = determineQueryTimeRange(record);
+            if (timeRange == null) {
+                XxlJobHelper.log("员工[{}]{}无法确定时间范围，跳过工作区域时长计算",
+                        record.getEmployeeId(), record.getEmployeeName());
+                return null;
+            }
+//            String startTime = dateStr + " 00:00:00";
+//            String endTime = dateStr + " 23:59:59";
+
+            String startTime = timeRange[0];
+            String endTime = timeRange[1];
             
             XxlJobHelper.log("员工[{}]{}使用24小时时间范围: {} 到 {}", 
                 record.getEmployeeId(), record.getEmployeeName(), startTime, endTime);

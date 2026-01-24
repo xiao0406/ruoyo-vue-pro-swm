@@ -486,6 +486,21 @@
                 <if test="item.pendingClockOutCompensate != null">
                     pending_clock_out_compensate = #{item.pendingClockOutCompensate},
                 </if>
+                <if test="item.classes != null and item.classes != ''">
+                    classes = #{item.classes},
+                </if>
+                <if test="item.workTimeRange != null and item.workTimeRange != ''">
+                    work_time_range = #{item.workTimeRange},
+                </if>
+                <if test="item.clockStartTime != null ">
+                    clock_start_time = #{item.clockStartTime},
+                </if>
+                <if test="item.clockEndTime != null ">
+                    clock_end_time = #{item.clockEndTime},
+                </if>
+                <if test="item.restTime != null ">
+                    rest_time = #{item.restTime},
+                </if>
                 update_date = NOW()
             </set>
             WHERE id = #{item.id}
@@ -1068,6 +1083,31 @@
         AND TIME(a.clock_out_date) &lt; STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', - 1), '%H:%i')
         ORDER BY
         a.clock_out_date
+    </select>
+    <select id="findClasses" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
+        SELECT
+            *
+        FROM
+            swm_daily_attendance
+        WHERE
+            attendance_date = #{nowDate}
+          and classes = #{classes}
+          and `status` = '0'
+        GROUP BY
+            classes
+    </select>
+    <select id="findDateByIdCards" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
+        SELECT
+            *
+        FROM
+            swm_daily_attendance
+        WHERE
+            identity_card IN
+            <foreach collection="idCard"  item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+          and `status` = '0'
+          and attendance_date = #{nowDate}
     </select>
 
 </mapper>

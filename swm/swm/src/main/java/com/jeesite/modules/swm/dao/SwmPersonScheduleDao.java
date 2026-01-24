@@ -7,6 +7,7 @@ import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.entity.dto.SwmPersonScheduleDto;
 import org.apache.ibatis.annotations.Param;
 
+import javax.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Map;
 
@@ -75,8 +76,9 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
      * 批量修改人员排班班次
      *
      * @param dto      包含人员ID列表和目标班次
-     * @param userCode
      * @return 影响行数
      */
-    int batchUpdateClasses(@Param("dto") SwmPersonScheduleDto dto, @Param("userCode") String userCode);
+    int batchUpdateClasses(@Param("dto") SwmPersonScheduleDto dto);
+
+    List<String> findIdCardsByIds(@Param("ids") List<String> ids);
 }

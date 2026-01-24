@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmSafetyPersonTrainingDao">
+	<update id="appUpdate">
+		UPDATE swm_safety_person_training
+		<set>
+			<if test="progress != null and progress != ''">progress=#{progress},</if>
+			<if test="completeDate != null ">complete_date=#{completeDate},</if>
+			<if test="completeStatus != null and jobType != ''">complete_status=#{completeStatus},</if>
+			update_date=now()
+		</set>
+		WHERE id = #{id}
+	</update>
+
+
+	<select id="findList" resultType="SwmSafetyPersonTraining">
+		SELECT
+		fm.title,
+		fm.push_date,
+		fm.job_type,
+		fm.type,
+		sp.name as personName,
+		a.*
+		FROM swm_safety_person_training a
+		JOIN swm_safety_file_manage fm ON a.safety_manage_id = fm.id
+		JOIN swm_person sp ON a.identity_card = sp.identity_card
+		<where>
+			${sqlMap.where.toSql()}
+			 <if test="personName != null and personName != ''">
+				AND sp.name LIKE concat('%',#{personName},'%')
+			</if>
+			<if test="pushDateStr != null and pushDateStr != ''">
+				AND fm.push_date = #{pushDateStr}
+			</if>
+			<if test="title != null and title != ''">
+				AND fm.title LIKE concat('%',#{title},'%')
+			</if>
+		</where>
+		ORDER BY ${sqlMap.order.toSql()}
+	</select>
+	<select id="appPageList" resultType="com.jeesite.modules.entity.SwmSafetyPersonTraining">
+		SELECT
+		fm.title,
+		fm.push_date,
+		fm.job_type,
+		fm.type,
+		fm.cover_url,
+		fm.file_url,
+		fm.duration,
+		sp.name as personName,
+		a.*
+		FROM swm_safety_person_training a
+		JOIN swm_safety_file_manage fm ON a.safety_manage_id = fm.id
+		JOIN swm_person sp ON a.identity_card = sp.identity_card
+		<where>
+			${sqlMap.where.toSql()}
+		</where>
+		ORDER BY ${sqlMap.order.toSql()}
+	</select>
+
+</mapper>

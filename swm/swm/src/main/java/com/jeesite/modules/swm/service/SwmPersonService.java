@@ -411,4 +411,8 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         }
         return count;
     }
+
+    public List<SwmPerson> findListByJobTypeList(List<String> jobtypeList) {
+        return this.dao.findListByJobTypeList(jobtypeList);
+    }
 }
