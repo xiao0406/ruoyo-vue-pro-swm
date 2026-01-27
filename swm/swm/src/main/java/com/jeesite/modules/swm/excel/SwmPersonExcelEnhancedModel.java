@@ -51,8 +51,7 @@ public class SwmPersonExcelEnhancedModel {
     @ExcelProperty("所属工种")
     private String jobType;
 
-    @ExcelProperty("备注")
-    private String remarks;
+
 
     @ExcelProperty("部门")
     //字典：swm_dept
@@ -64,6 +63,9 @@ public class SwmPersonExcelEnhancedModel {
 
     @ExcelProperty("安全帽编码")
     private String safetyHelmetCode;
+
+    @ExcelProperty("备注")
+    private String remarks;
 
     // 错误信息（不会导出到模板中）
     private String errorMsg;

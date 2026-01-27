@@ -75,7 +75,7 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private BigDecimal effectiveWorkHours; // 实际工作时长(h)
     private BigDecimal dailyEfficiency; // 今日功效
     private BigDecimal dailyAchievementRate; // 今日达成率
-    private String attendanceNormal; // 考勤是否正常(0正常 1异常)
+    private String attendanceNormal; // 考勤是否正常(1出勤，2休息日，3未出勤)
     private String currentPosition; // 当前位置(0工作区 1休息区)
 
     // 查询条件字段
@@ -84,6 +84,9 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
 
     /** 当天该员工是否已经触发过补偿并且未恢复， true -已经补卡了 */
     private boolean pendingClockOutCompensate;
+
+    //考勤状态，中文，迟到早退
+    private String attendanceStatus;
 
 
     @ApiModelProperty(value = "所属车间")

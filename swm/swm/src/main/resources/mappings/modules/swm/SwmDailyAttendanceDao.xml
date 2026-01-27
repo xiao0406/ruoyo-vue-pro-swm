@@ -352,7 +352,8 @@
             a.create_date AS "createDate",
             a.update_by AS "updateBy",
             a.update_date AS "updateDate",
-            a.remarks AS "remarks"
+            a.remarks AS "remarks",
+            a.attendance_normal AS "attendanceNormal"
         FROM swm_daily_attendance a
         <where>
             a.employee_id = #{employeeId}
@@ -569,7 +570,8 @@
             a.create_date AS "createDate",
             a.update_by AS "updateBy",
             a.update_date AS "updateDate",
-            a.remarks AS "remarks"
+            a.remarks AS "remarks",
+            a.classes AS "classes"
         FROM swm_daily_attendance a
         WHERE a.identity_card = #{identityCard}
           AND DATE_FORMAT(a.attendance_date, '%Y-%m') = #{month}
@@ -629,7 +631,7 @@
                 AND sp.team = #{team}
             </if>
             <if test="employeeName != null and employeeName != ''">
-                AND a.employee_name LIKE concat('%', #{employeeName}, '%')
+                AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
             </if>
         </where>
         GROUP BY sda.employee_name
