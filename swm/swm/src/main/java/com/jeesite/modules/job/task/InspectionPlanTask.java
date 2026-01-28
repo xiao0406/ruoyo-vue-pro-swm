@@ -294,7 +294,7 @@ public class InspectionPlanTask {
             }catch (Exception e){
                 XxlJobHelper.log(e);
             }finally {
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
             }
         }
     }

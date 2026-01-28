@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.service;
 
+import com.alibaba.cloud.commons.lang.StringUtils;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmAttendanceSummaryDao;
@@ -16,8 +17,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * 考勤月统计表Service
@@ -256,7 +256,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal idleHours = calculateIdleHoursFromList(dailyAttendanceList);
         summary.setIdleHours(idleHours);
 
-        // 应考勤时长(小时)
+        // 应考勤时长(小时)  去排班时间管理查出那些天是休息日，然后日考勤去掉这几天
         BigDecimal scheduledHours = calculateScheduledHoursFromList(dailyAttendanceList);
         summary.setScheduledHours(scheduledHours);
 
@@ -268,14 +268,16 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         BigDecimal attendanceRate = calculateAttendanceRate(actualDays, scheduledDays);
         summary.setAttendanceRate(attendanceRate);
 
-        // 计算考勤达成率
-        BigDecimal attendanceAchievementRate = calculateAttendanceAchievementRate(actualHours, scheduledHours);
+        // 计算考勤达成率  ：实际正常考勤天数/应考勤人员天数
+        //先计算实际正常考勤天数
+        BigDecimal actualNormalAttendanceDays = calculateActualNormalAttendanceDaysFromList(dailyAttendanceList);
+        BigDecimal attendanceAchievementRate = calculateAttendanceAchievementRate(actualNormalAttendanceDays, scheduledDays);
         summary.setAttendanceAchievementRate(attendanceAchievementRate);
 
         // 计算实际考勤时长
         BigDecimal actualAttendanceHours = calculateActualAttendanceHoursFromList(dailyAttendanceList);
 
-        // 计算工效
+        // 计算工效，实际考勤时长/应该考勤时长
         BigDecimal efficiency = calculateEfficiency(actualAttendanceHours, scheduledHours);
         summary.setEfficiency(efficiency);
 
@@ -310,7 +312,7 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
             // 2. 根据身份证号查询该月的排班信息
             List<SwmPersonSchedule> personScheduleList = swmPersonScheduleService.findByIdCardAndMonth(identityCard,
-                    month);
+                    null);
 
             if (personScheduleList == null || personScheduleList.isEmpty()) {
                 // 没有排班信息，应出勤天数为0
@@ -451,12 +453,21 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
         if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
             return BigDecimal.ZERO;
         }
+        BigDecimal scheduledHours = BigDecimal.ZERO;
 
-        // 累加所有日考勤记录的应考勤时长
-        return dailyAttendanceList.stream()
-                .map(SwmDailyAttendance::getScheduledHours)
-                .filter(scheduledHours -> scheduledHours != null) // 过滤null值
-                .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
+        for (SwmDailyAttendance attendance : dailyAttendanceList) {
+            if ("2".equals(attendance.getAttendanceNormal())){
+                continue;
+            }
+            scheduledHours = scheduledHours.add(attendance.getScheduledHours());
+        }
+        return scheduledHours;
+
+//        // 累加所有日考勤记录的应考勤时长
+//        return dailyAttendanceList.stream()
+//                .map(SwmDailyAttendance::getScheduledHours)
+//                .filter(scheduledHours -> scheduledHours != null) // 过滤null值
+//                .reduce(BigDecimal.ZERO, BigDecimal::add); // 累加
     }
 
     /**
@@ -556,34 +567,106 @@ public class SwmAttendanceSummaryService extends CrudService<SwmAttendanceSummar
 
     /**
      * 计算考勤达成率
-     * 考勤达成率 = 实际工作时长 ÷ 应考勤时长（返回小数形式）
+     * 考勤达成率=实际正常考勤天数（正常上班且没有迟早早退）/应考勤人员天数
      *
-     * @param actualHours    实际工作时长
-     * @param scheduledHours 应考勤时长
+     * @param actualNormalAttendanceDays    实际正常考勤天数
+     * @param scheduledDays 应考勤人员天数
      * @return 考勤达成率(小数形式，保留4位小数)
      * @author Shawn
      * @date 2025-08-21
      */
-    private BigDecimal calculateAttendanceAchievementRate(BigDecimal actualHours, BigDecimal scheduledHours) {
+    private BigDecimal calculateAttendanceAchievementRate(BigDecimal actualNormalAttendanceDays, BigDecimal scheduledDays) {
         try {
             // 应考勤时长为0或null时，考勤达成率为0
-            if (scheduledHours == null || scheduledHours.compareTo(BigDecimal.ZERO) == 0) {
+            if (scheduledDays == null || scheduledDays.compareTo(BigDecimal.ZERO) == 0) {
                 return BigDecimal.ZERO;
             }
 
             // 实际工作时长为null时，按0处理
-            if (actualHours == null) {
+            if (actualNormalAttendanceDays == null) {
                 return BigDecimal.ZERO;
             }
 
             // 计算考勤达成率：实际工作时长 ÷ 应考勤时长（返回小数形式）
-            return actualHours.divide(scheduledHours, 4, RoundingMode.HALF_UP);
+            return actualNormalAttendanceDays.divide(scheduledDays, 4, RoundingMode.HALF_UP);
 
         } catch (Exception e) {
             // 发生异常时返回0
             return BigDecimal.ZERO;
         }
     }
+
+
+    /**
+     * 正常考勤天数（无迟到、无早退即为正常）
+     * @author Shawn
+     * @date 2025-08-21
+     */
+    private BigDecimal calculateActualNormalAttendanceDaysFromList(List<SwmDailyAttendance> dailyAttendanceList) {
+
+        if (dailyAttendanceList == null || dailyAttendanceList.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal normalAttendanceDays = BigDecimal.ZERO;
+
+        for (SwmDailyAttendance attendance : dailyAttendanceList) {
+
+            // ===== 1. 基础校验 =====
+            if (attendance.getClockInTime() == null || attendance.getClockOutTime() == null || com.jeesite.common.lang.StringUtils.isBlank(attendance.getWorkTimeRange())) {
+                continue;
+            }
+
+            try {
+                // ===== 2. 解析工作时间段 =====
+                String[] timeRange = attendance.getWorkTimeRange().split("-");
+                if (timeRange.length != 2) {
+                    continue;
+                }
+
+                Date clockInTime = attendance.getClockInTime();
+                Date clockOutTime = attendance.getClockOutTime();
+
+                // 标准上班时间
+                Date standardStart = buildStandardTime(clockInTime, timeRange[0]);
+                // 标准下班时间
+                Date standardEnd = buildStandardTime(clockOutTime, timeRange[1]);
+
+                boolean late = clockInTime.after(standardStart);
+                boolean earlyLeave = clockOutTime.before(standardEnd);
+
+                // ===== 3. 设置考勤状态 =====
+                if (!late && !earlyLeave) {
+                    normalAttendanceDays = normalAttendanceDays.add(BigDecimal.ONE);
+                }
+            } catch (Exception e) {
+                logger.error("计算考勤状态失败，attendanceId={}", attendance.getId(), e);
+            }
+        }
+        return normalAttendanceDays;
+    }
+
+
+    /**
+     * 构建标准时间
+     * @param baseDate
+     * @param timeStr
+     * @return
+     */
+    private Date buildStandardTime(Date baseDate, String timeStr) {
+        String[] parts = timeStr.trim().split(":");
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(baseDate);
+        cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(parts[0]));
+        cal.set(Calendar.MINUTE, Integer.parseInt(parts[1]));
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        return cal.getTime();
+    }
+
+
 
     /**
      * 计算工效

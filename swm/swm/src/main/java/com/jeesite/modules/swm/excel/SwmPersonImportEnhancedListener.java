@@ -557,6 +557,11 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         }
 
         person.setRemarks(trimToNull(excelModel.getRemarks()));
+        person.setPersonNumber(trimToNull(excelModel.getPersonNumber()));
+        person.setAge(trimToNull(excelModel.getAge()));
+        person.setUrgentPerson(trimToNull(excelModel.getUrgentPerson()));
+        person.setUrgentPhoneNumber(trimToNull(excelModel.getUrgentPhoneNumber()));
+
     }
 
     private void validateHelmetBinding(EnhancedRowContext context, int rowIndex) {

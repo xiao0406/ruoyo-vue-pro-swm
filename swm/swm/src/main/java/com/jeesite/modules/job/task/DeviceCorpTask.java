@@ -73,7 +73,7 @@ public class DeviceCorpTask {
             } catch (Exception e) {
                 XxlJobHelper.log("租户 {} 获取设备列表异常", user.getCorpCode(), e);
             } finally {
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
             }
 
             // 构建一个临时 key

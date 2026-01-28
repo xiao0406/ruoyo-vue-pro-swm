@@ -125,7 +125,7 @@ public class SafetyManageTask {
             }catch (Exception e){
                 XxlJobHelper.log("租户 {} 推送安全教育视频失败：{}", user.getCorpCode(), e);
             }finally {
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
             }
         }
 

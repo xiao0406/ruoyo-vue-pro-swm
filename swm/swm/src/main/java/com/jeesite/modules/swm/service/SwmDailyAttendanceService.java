@@ -41,6 +41,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     @Autowired
     private SwmPersonCacheService swmPersonCacheService;
 
+
+    @Autowired
+    private SwmScheduleTimeService swmScheduleTimeService;
+
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     /**
@@ -381,7 +385,50 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     public SwmDailyAttendance findByEmployeeIdAndDate(String employeeId, Date attendanceDate) {
         // 处理日期，去除时间部分
         attendanceDate = truncateTime(attendanceDate);
-        return dao.findByEmployeeIdAndDate(employeeId, attendanceDate);
+        SwmDailyAttendance byEmployeeIdAndDate = dao.findByEmployeeIdAndDate(employeeId, attendanceDate);
+
+        //计算考勤是否正常
+        if(ObjectUtils.isNotEmpty(byEmployeeIdAndDate)){
+            if (byEmployeeIdAndDate.getClockInTime() != null && byEmployeeIdAndDate.getClockOutTime() != null
+                    && StringUtils.isNotBlank(byEmployeeIdAndDate.getWorkTimeRange())){
+
+                // 解析工作时间范围，格式如："07:00-18:00"
+                String[] timeRange = byEmployeeIdAndDate.getWorkTimeRange().split("-");
+                    try {
+                        Date clockInTime = byEmployeeIdAndDate.getClockInTime();
+                        Date clockOutTime = byEmployeeIdAndDate.getClockOutTime();
+
+                        // 解析标准时间
+                        String[] startTimeParts = timeRange[0].trim().split(":");
+                        String[] endTimeParts = timeRange[1].trim().split(":");
+
+                        Calendar cal = Calendar.getInstance();
+
+                        // 构建标准上班时间
+                        cal.setTime(clockInTime);
+                        cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(startTimeParts[0]));
+                        cal.set(Calendar.MINUTE, Integer.parseInt(startTimeParts[1]));
+                        Date standardStart = cal.getTime();
+
+                        // 构建标准下班时间
+                        cal.setTime(clockOutTime);
+                        cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(endTimeParts[0]));
+                        cal.set(Calendar.MINUTE, Integer.parseInt(endTimeParts[1]));
+
+                        // 判断考勤状态
+                        List<String> statusList = new ArrayList<>();
+                        if (clockInTime.after(standardStart)) statusList.add("迟到");
+
+                        String status = statusList.isEmpty() ? "正常" : String.join("，", statusList);
+                        byEmployeeIdAndDate.setAttendanceStatus(status);
+                    }catch (Exception e){
+                        logger.error("计算考勤状态失败", e);
+                    }
+            }else {
+                byEmployeeIdAndDate.setAttendanceStatus("未出勤");
+            }
+        }
+        return byEmployeeIdAndDate;
     }
 
     /**
@@ -564,7 +611,11 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             // 如果该天有记录，则添加对应的数据；否则添加0
             SwmDailyAttendance record = recordsByDay.get(day);
             if (record != null) {
-                scheduledHours.add(record.getScheduledHours() != null ? record.getScheduledHours() : BigDecimal.ZERO);
+                if ("2".equals(record.getAttendanceNormal())){
+                    scheduledHours.add(BigDecimal.ZERO);
+                }else {
+                    scheduledHours.add(record.getScheduledHours() != null ? record.getScheduledHours() : BigDecimal.ZERO);
+                }
                 idleHours.add(record.getIdleHours() != null ? record.getIdleHours() : BigDecimal.ZERO);
                 efficiency.add(record.getDailyEfficiency() != null ? record.getDailyEfficiency() : BigDecimal.ZERO);
             } else {
@@ -624,7 +675,11 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             // 如果该天有记录，则添加对应的数据；否则添加0
             SwmDailyAttendance record = recordsByDay.get(day);
             if (record != null) {
-                scheduledHours.add(record.getScheduledHours() != null ? record.getScheduledHours() : BigDecimal.ZERO);
+                if ("2".equals(record.getAttendanceNormal())){
+                    scheduledHours.add(BigDecimal.ZERO);
+                }else {
+                    scheduledHours.add(record.getScheduledHours() != null ? record.getScheduledHours() : BigDecimal.ZERO);
+                }
                 actualHours.add(record.getActualHours() != null ? record.getActualHours() : BigDecimal.ZERO);
             } else {
                 scheduledHours.add(BigDecimal.ZERO);
@@ -639,6 +694,25 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         data.put("actualHours", actualHours);
         data.put("records", records);
         return data;
+    }
+
+
+    /**
+     * 解析休息日
+     * @param restDays
+     * @return
+     */
+    private Set<Integer> parseRestDays(String restDays) {
+        Set<Integer> restSet = new HashSet<>();
+        if (com.alibaba.cloud.commons.lang.StringUtils.isBlank(restDays)) {
+            return restSet;
+        }
+
+        String[] days = restDays.split(",");
+        for (String day : days) {
+            restSet.add(Integer.parseInt(day.trim()));
+        }
+        return restSet;
     }
 
     /**

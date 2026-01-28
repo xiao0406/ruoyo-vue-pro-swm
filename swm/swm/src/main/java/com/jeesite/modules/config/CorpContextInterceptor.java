@@ -31,7 +31,7 @@ public class CorpContextInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
 
         // 1. 先清理，防止线程复用带来的脏数据（非常关键）
-        CorpUtils.removeCurrentCorpCode(null);
+        CorpUtils.setCurrentCorpCode(null,null);
 
         // 2. Header 优先（接口级切换）
         String headerCorpCode = request.getHeader(HEADER_CORP_CODE);
@@ -59,6 +59,6 @@ public class CorpContextInterceptor implements HandlerInterceptor {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         // 4. 请求结束必须清理 ThreadLocal
-        CorpUtils.removeCurrentCorpCode(null);
+        CorpUtils.setCurrentCorpCode(null,null);
     }
 }

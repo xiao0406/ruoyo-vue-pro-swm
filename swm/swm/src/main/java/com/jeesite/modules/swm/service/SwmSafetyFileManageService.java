@@ -114,6 +114,11 @@ public class SwmSafetyFileManageService extends CrudService<SwmSafetyFileManageD
 	@Override
 	@Transactional(readOnly=false)
 	public void delete(SwmSafetyFileManage swmSafetyFileManage) {
+		//删除子表
+		SwmSafetyPersonTraining detail = new SwmSafetyPersonTraining();
+		detail.setSafetyManageId(swmSafetyFileManage.getId());
+		swmSafetyPersonTrainingDao.delete(detail);
+		//删除主表
 		super.delete(swmSafetyFileManage);
 	}
 

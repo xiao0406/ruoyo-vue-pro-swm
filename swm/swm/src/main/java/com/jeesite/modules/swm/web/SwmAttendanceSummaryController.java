@@ -252,6 +252,7 @@ public class SwmAttendanceSummaryController extends BaseController {
         result.put("createBy", attendance.getCreateBy());
         result.put("updateBy", attendance.getUpdateBy());
         result.put("remarks", attendance.getRemarks());
+        result.put("attendanceStatus", attendance.getAttendanceStatus());
 
         // 格式化日期字段
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

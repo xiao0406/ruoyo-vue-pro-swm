@@ -122,18 +122,21 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             //为每个租户都生成排班计划
             for (User user : corpList) {
                 try {
+                    String corpCode1 = CorpUtils.getCurrentCorpCode();
                     String corpCode = user.getCorpCode();
                     String corpName = user.getCorpName();
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
                     // 查询所有头盔设备数据（框架自动添加status='0'条件）
                     SwmHelmetDevice queryCondition = new SwmHelmetDevice();
                     queryCondition.setRandom(new Random().nextInt(1_000_000));
+                    queryCondition.setCorpCode(corpCode);
+                    String corpCode2 = CorpUtils.getCurrentCorpCode();
                     List<SwmHelmetDevice> list = this.findListInit(queryCondition);
                     allDevices.addAll( list);
                 } catch (Exception e) {
                     logger.error("初始化头盔设备Redis缓存失败", e);
                 }finally {
-                    CorpUtils.removeCurrentCorpCode(null);
+                    CorpUtils.setCurrentCorpCode(null,null);
                 }
             }
 
