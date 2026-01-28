@@ -6,20 +6,30 @@ package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.csp.sentinel.util.StringUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
+import com.jeesite.modules.config.RabbitMqConfig;
+import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.dao.SwmBeaconStationDao;
 import com.jeesite.modules.swm.entity.SwmArea;
 import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.swm.util.MqSendUtil;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.entity.SwmBeaconStationExport;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +49,9 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     @Autowired
     @Lazy
     private SwmAreaService swmAreaService;
+
+    @Autowired
+    private MqSendUtil mqSendUtil;
 
     /**
      * 获取单条数据
@@ -82,12 +95,17 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     @Override
     @Transactional(readOnly = false)
     public void save(SwmBeaconStation swmBeaconStation) {
+//        SyncDataOperateTypeEnum operateType = (swmBeaconStation.getId() == null || swmBeaconStation.getId().isEmpty())
+//                ? SyncDataOperateTypeEnum.BEACON_ADD
+//                : SyncDataOperateTypeEnum.BEACON_EDIT;
         // 如果是电子围栏且MAC地址为空，自动生成
         generateBeaconIdForElectronicFence(swmBeaconStation);
 
         // 校验MAC地址重复性
         validateBeaconIdDuplicate(swmBeaconStation);
         super.save(swmBeaconStation);
+//        SwmBeaconStation beaconStation = super.get(swmBeaconStation.getId());
+//        mqSendUtil.sendBeaconSingleChangeMsg(operateType.getCode(), beaconStation);
     }
 
     /**
@@ -200,6 +218,7 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     @Transactional(readOnly = false)
     public void delete(SwmBeaconStation swmBeaconStation) {
         super.delete(swmBeaconStation);
+//        mqSendUtil.sendBeaconDeleteMqMessage(SyncDataOperateTypeEnum.BEACON_DELETE.getCode(), swmBeaconStation.getId());
     }
 
     /**
@@ -528,6 +547,25 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
                     this.dao.insertBatch(list1);
                 }
                 count = list.size();
+//
+//                // ========== 构建MQ消息数据 ==========
+//                List<SwmBeaconStation> fullBeacons = swmBeaconStationList.stream()
+//                        .map(SwmBeaconStation::getBeaconId)
+//                        .filter(StringUtils::isNotBlank)
+//                        .collect(Collectors.collectingAndThen(
+//                                Collectors.toList(), // 去重：避免重复ID查库
+//                                deviceIds -> deviceIds.isEmpty()
+//                                        ? new ArrayList<>() // 无有效ID时返回空列表
+//                                        : this.dao.findByBeaconIds(deviceIds) // 有ID则批量查完整记录
+//                        ));
+//
+//
+//                // ========== 发送批量导入MQ消息 ==========
+//                if (!fullBeacons.isEmpty()) {
+//                    mqSendUtil.sendBeaconBatchChangeMsg(SyncDataOperateTypeEnum.BEACON_IMPORT.getCode(), fullBeacons);
+//                } else {
+//                    logger.warn("============批量导入Excel无成功数据，不发送MQ============");
+//                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

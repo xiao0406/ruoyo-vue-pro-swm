@@ -16,10 +16,12 @@ import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.entity.SwmBeaconStationExport;
 import com.jeesite.modules.entity.SwmHelmetDeviceExport;
+import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmHelmetDeviceDao;
 import com.jeesite.modules.swm.dao.SwmSafetyHelmetOrderDao;
 import com.jeesite.modules.swm.entity.*;
+import com.jeesite.modules.swm.util.MqSendUtil;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.service.UserService;
 import com.jeesite.modules.sys.utils.CorpUtils;
@@ -28,8 +30,10 @@ import com.jeesite.modules.utils.R;
 import com.xxl.job.core.context.XxlJobHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -86,6 +90,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
      * 安全帽超级表名称
      */
     private static final String HELMET_SUPER_TABLE_NAME = "helmet_runde_ca_report_location";
+
+    @Autowired
+    private MqSendUtil mqSendUtil;
 
     /**
      * 程序启动时初始化设备缓存
@@ -567,6 +574,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     @Override
     @Transactional(readOnly = false)
     public void save(SwmHelmetDevice device) {
+        String operateType = (device.getId() == null || device.getId().isEmpty())
+                ? SyncDataOperateTypeEnum.HELMET_ADD.getCode()
+                : SyncDataOperateTypeEnum.HELMET_EDIT.getCode();
         super.save(device);
 
         // 更新缓存
@@ -577,6 +587,10 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             helmetCacheService.updateDevicePersonMapping(device.getDeviceId(), device.getAssignedPerson());
             logger.debug("已更新设备缓存: {}", device.getDeviceId());
         }
+
+        // 调用新的设备消息发送方法
+        SwmHelmetDevice swmHelmetDevice = super.get(device.getId());
+        mqSendUtil.sendDeviceSingleChangeMsg(operateType, swmHelmetDevice);
     }
 
     /**
@@ -627,6 +641,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             // 更新Redis缓存 - 清除分配关系
             helmetCacheService.updateDevicePersonMapping(deviceId, null);
             logger.info("已强制清空设备{}的绑定信息", deviceId);
+            // 调用新的设备消息发送方法
+            SwmHelmetDevice swmHelmetDevice = dao.getByDeviceId(deviceId);
+            mqSendUtil.sendDeviceSingleChangeMsg(SyncDataOperateTypeEnum.HELMET_UNBIND.getCode(), swmHelmetDevice);
         } else {
             logger.warn("清空设备{}绑定信息失败，可能设备不存在", deviceId);
         }
@@ -648,6 +665,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     @Override
     @Transactional(readOnly = false)
     public void delete(SwmHelmetDevice device) {
+        SwmHelmetDevice swmHelmetDevice = super.get(device.getId());
         super.delete(device);
 
         // 从缓存中移除
@@ -657,6 +675,11 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             // 清除Redis缓存
             helmetCacheService.clearDeviceCache(device.getDeviceId());
             logger.debug("已从缓存中移除安全帽: {}", device.getDeviceId());
+        }
+
+        if (swmHelmetDevice != null && swmHelmetDevice.getDeviceId() != null){
+            mqSendUtil.sendDeviceDeleteMqMessage(SyncDataOperateTypeEnum.HELMET_DELETE.getCode(),swmHelmetDevice.getDeviceId());
+
         }
     }
 
@@ -757,6 +780,25 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                     this.dao.insertBatch(list1);
                 }
                 count = list.size();
+
+                // ========== 构建MQ消息数据 ==========
+                List<SwmHelmetDevice> fullDevices = deviceList.stream()
+                        .map(SwmHelmetDevice::getId)
+                        .filter(StringUtils::isNotBlank)
+                        .collect(Collectors.collectingAndThen(
+                                Collectors.toList(), // 去重：避免重复ID查库
+                                deviceIds -> deviceIds.isEmpty()
+                                        ? new ArrayList<>() // 无有效ID时返回空列表
+                                        : this.dao.findHelmetDeviceListByIds(deviceIds) // 有ID则批量查完整记录
+                        ));
+
+
+                // ========== 发送批量导入MQ消息 ==========
+                if (!fullDevices.isEmpty()) {
+                    mqSendUtil.sendDeviceBatchChangeMsg(SyncDataOperateTypeEnum.HELMET_IMPORT.getCode(), fullDevices);
+                } else {
+                    logger.warn("============批量导入Excel无成功数据，不发送MQ============");
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

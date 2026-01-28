@@ -611,4 +611,99 @@
             AND personnel_status = '1'
         </where>
     </select>
+
+    <resultMap id="SwmPersonResultMap" type="com.jeesite.modules.swm.entity.SwmPerson"> <!-- 替换为实体类包路径 -->
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="personType" property="personType"/>
+        <result column="gender" property="gender"/>
+        <result column="company" property="company"/>
+        <result column="department" property="department"/>
+        <result column="prodLine" property="prodLine"/>
+        <result column="team" property="team"/>
+        <result column="jobType" property="jobType"/>
+        <result column="safetyHelmetId" property="safetyHelmetId"/>
+        <result column="personnelStatus" property="personnelStatus"/>
+        <result column="safetyEducation" property="safetyEducation"/>
+        <result column="identityCard" property="identityCard"/>
+        <result column="phoneNumber" property="phoneNumber"/>
+        <result column="helmetReturned" property="helmetReturned"/>
+        <result column="departureType" property="departureType"/>
+        <result column="departureReason" property="departureReason"/>
+        <result column="departureDate" property="departureDate"/>
+        <result column="isExternalPersonnel" property="isExternalPersonnel"/>
+        <result column="createBy" property="createBy"/>
+        <result column="createDate" property="createDate"/>
+        <result column="updateBy" property="updateBy"/>
+        <result column="updateDate" property="updateDate"/>
+        <result column="remarks" property="remarks"/>
+        <result column="status" property="status"/>
+        <result column="dept" property="dept"/>
+        <result column="position" property="position"/>
+        <result column="personNumber" property="personNumber"/>
+        <result column="age" property="age"/>
+        <result column="urgentPerson" property="urgentPerson"/>
+        <result column="urgentPhoneNumber" property="urgentPhoneNumber"/>
+        <result column="corpCode" property="corpCode"/>
+        <result column="corpName" property="corpName"/>
+    </resultMap>
+
+    <!-- 自定义查询：无corpCode过滤的人员列表（核心方法） -->
+    <select id="findListWithoutCorpCode" parameterType="com.jeesite.modules.swm.entity.SwmPerson" resultMap="SwmPersonResultMap">
+        SELECT DISTINCT
+        a.id AS "id",
+        a.NAME AS "name",
+        a.person_type AS "personType",
+        a.gender AS "gender",
+        jso.office_name AS "company",
+        pa.position_name AS "department",
+        pl.prod_line_name AS "prodLine",
+        wg.work_group_name AS "team",
+        a.job_type AS "jobType",
+        a.safety_helmet_id AS "safetyHelmetId",
+        a.personnel_status AS "personnelStatus",
+        a.safety_education AS "safetyEducation",
+        a.identity_card AS "identityCard",
+        a.phone_number AS "phoneNumber",
+        a.helmet_returned AS "helmetReturned",
+        a.departure_type AS "departureType",
+        a.departure_reason AS "departureReason",
+        a.departure_date AS "departureDate",
+        a.is_external_personnel AS "isExternalPersonnel",
+        a.create_by AS "createBy",
+        a.create_date AS "createDate",
+        a.update_by AS "updateBy",
+        a.update_date AS "updateDate",
+        a.remarks AS "remarks",
+        a.STATUS AS "status",
+        a.dept,
+        a.position,
+        a.person_number AS "personNumber",
+        a.age,
+        a.urgent_person AS "urgentPerson",
+        a.urgent_phone_number AS "urgentPhoneNumber",
+        a.corp_code AS "corpCode",
+        a.corp_name AS "corpName"
+        FROM
+        `swm_person` a
+        LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+        WHERE
+        1=1
+          and a.corp_code is not null
+        <!-- 动态条件：status（匹配传入的参数） -->
+        <if test="status != null and status != ''">
+            AND a.STATUS = #{status}
+        </if>
+        <!-- 动态条件：personnelStatus（匹配传入的参数） -->
+        <if test="personnelStatus != null and personnelStatus != ''">
+            AND a.personnel_status = #{personnelStatus}
+        </if>
+        ORDER BY
+        a.update_date DESC
+    </select>
 </mapper>

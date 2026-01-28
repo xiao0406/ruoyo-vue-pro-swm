@@ -125,4 +125,14 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
     void updateBatch(List<SwmPersonExport> list);
 
     List<SwmPerson> findListByJobTypeList(List<String> jobtypeList);
+
+    /**
+     * 自定义查询：查询人员列表（不自动拼接corpCode租户条件）
+     * 解决多租户场景下需要查询所有租户人员数据的问题
+     * @param person 查询条件对象（包含status、personnelStatus等）
+     * @return 人员列表（无corpCode过滤）
+     */
+    List<SwmPerson> findListWithoutCorpCode(SwmPerson person);
+
+
 }
