@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -29,7 +31,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class SwmAreaCache {
+public class SwmAreaCache implements ApplicationListener<ApplicationReadyEvent> {
 
     @Autowired
     private RedisService redisService;
@@ -38,12 +40,17 @@ public class SwmAreaCache {
     @Autowired
     private UserService userService;
 
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        initAreaCache();
+    }
+
     /**
      * 程序启动时初始化危险源缓存服务
      * 延迟初始化，避免循环依赖问题
      *
      */
-    @PostConstruct
+//    @PostConstruct
     public void initAreaCache() {
 
 

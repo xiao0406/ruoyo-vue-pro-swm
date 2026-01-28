@@ -29,7 +29,9 @@ import com.xxl.job.core.context.XxlJobHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -55,7 +57,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @Transactional(readOnly = true)
 @Slf4j
-public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmHelmetDevice> {
+public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmHelmetDevice>
+            implements ApplicationListener<ApplicationReadyEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(SwmHelmetDeviceService.class);
 
@@ -87,6 +90,11 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
      */
     private static final String HELMET_SUPER_TABLE_NAME = "helmet_runde_ca_report_location";
 
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        initCache();
+    }
+
     /**
      * 程序启动时初始化设备缓存
      * 框架会自动添加status='0'条件，只查询正常状态的设备
@@ -94,7 +102,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
      * @author Shawn
      * @date 2025-01-13
      */
-    @PostConstruct
+//    @PostConstruct
     public void initCache() {
         try {
             // 检查Redis连接状态
@@ -115,7 +123,6 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             //为每个租户都生成排班计划
             for (User user : corpList) {
                 try {
-                    String corpCode1 = CorpUtils.getCurrentCorpCode();
                     String corpCode = user.getCorpCode();
                     String corpName = user.getCorpName();
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
@@ -123,7 +130,6 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                     SwmHelmetDevice queryCondition = new SwmHelmetDevice();
                     queryCondition.setRandom(new Random().nextInt(1_000_000));
                     queryCondition.setCorpCode(corpCode);
-                    String corpCode2 = CorpUtils.getCurrentCorpCode();
                     List<SwmHelmetDevice> list = this.findListInit(queryCondition);
                     allDevices.addAll( list);
                 } catch (Exception e) {

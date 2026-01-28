@@ -12,6 +12,8 @@ import com.jeesite.modules.sys.utils.DictUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +30,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class SwmPersonCacheService {
+public class SwmPersonCacheService implements ApplicationListener<ApplicationReadyEvent> {
 
     @Autowired
     private RedisService redisService;
@@ -39,6 +41,11 @@ public class SwmPersonCacheService {
     private UserService userService;
 
 
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        initActivePersonCache();
+    }
+
     /**
      * 程序启动时初始化在职人员缓存
      * 延迟初始化，避免循环依赖问题
@@ -46,7 +53,7 @@ public class SwmPersonCacheService {
      * @author Shawn
      * @date 2025/06/23 - 修改为使用自定义SQL获取完整信息
      */
-    @PostConstruct
+//    @PostConstruct
     public void initActivePersonCache() {
 
         //获取系统所有租户信息
