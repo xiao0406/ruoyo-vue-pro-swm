@@ -798,7 +798,7 @@ public class SwmDashboardController extends BaseController {
                 } catch (Exception e) {
                     logger.error("统计累计报警数异常", e);
                 }finally {
-                    CorpUtils.setCurrentCorpCode(null,null););
+                    CorpUtils.setCurrentCorpCode(null,null);
                 }
             }, swmExecutor);
 
