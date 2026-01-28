@@ -798,7 +798,7 @@ public class SwmDashboardController extends BaseController {
                 } catch (Exception e) {
                     logger.error("统计累计报警数异常", e);
                 }finally {
-                    CorpUtils.removeCurrentCorpCode(null);
+                    CorpUtils.setCurrentCorpCode(null,null););
                 }
             }, swmExecutor);
 
@@ -810,7 +810,7 @@ public class SwmDashboardController extends BaseController {
                 } catch (Exception e) {
                     logger.error("统计今日报警数异常", e);
                 }finally {
-                    CorpUtils.removeCurrentCorpCode(null);
+                    CorpUtils.setCurrentCorpCode(null,null);
                 }
             }, swmExecutor);
 
@@ -822,7 +822,7 @@ public class SwmDashboardController extends BaseController {
                 } catch (Exception e) {
                     logger.error("统计近五分钟报警数异常", e);
                 }finally {
-                    CorpUtils.removeCurrentCorpCode(null);
+                    CorpUtils.setCurrentCorpCode(null,null);
                 }
             }, swmExecutor);
 
@@ -895,7 +895,7 @@ public class SwmDashboardController extends BaseController {
                 } catch (Exception e) {
                     logger.error("获取已处置数据异常", e);
                 } finally {
-                    CorpUtils.removeCurrentCorpCode(null);
+                    CorpUtils.setCurrentCorpCode(null,null);
                 }
             }, swmExecutor);
 

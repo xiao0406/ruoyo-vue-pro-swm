@@ -124,12 +124,12 @@ public class PersonScheduleTask {
                 for (List<SwmPersonSchedule> list : lists) {
                     swmPersonScheduleService.insertBatch(list);
                 }
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
                 XxlJobHelper.log("生成排班计划成功：{} 共条 =============================", insertList.size());
             }catch (Exception e){
                 XxlJobHelper.log("生成排班计划失败：{}", e.getMessage());
             }finally {
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
             }
         }
     }

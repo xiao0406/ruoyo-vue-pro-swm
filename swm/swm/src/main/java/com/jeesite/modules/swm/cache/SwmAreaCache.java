@@ -80,7 +80,7 @@ public class SwmAreaCache {
             } catch (Exception e) {
                 log.error("初始化工作缓存失败", e);
             }finally {
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
             }
         }
     }

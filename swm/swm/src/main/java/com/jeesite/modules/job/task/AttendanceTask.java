@@ -470,7 +470,7 @@ public class AttendanceTask {
             }catch (Exception e){
                 XxlJobHelper.log("月考勤统计失败：{}", e.getMessage());
             }finally {
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
             }
         }
 
@@ -1491,7 +1491,7 @@ public class AttendanceTask {
                 jobLog.setEndTime(new Date());
                 jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
                 swmJobLogService.save(jobLog);
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
             }
         }
     }
@@ -1559,7 +1559,7 @@ public class AttendanceTask {
                 jobLog.setEndTime(new Date());
                 jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
                 swmJobLogService.save(jobLog);
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
             }
         }
     }
@@ -2352,7 +2352,7 @@ public class AttendanceTask {
                 jobLog.setExceptionInfo(e.getMessage());
             } finally {
                 saveJobLog(jobLog);
-                CorpUtils.removeCurrentCorpCode(null);
+                CorpUtils.setCurrentCorpCode(null,null);
             }
         }
     }
