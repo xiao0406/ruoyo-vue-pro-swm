@@ -2,6 +2,7 @@ package com.jeesite.modules.job.task;
 
 
 import cn.hutool.core.date.DateUtil;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.service.SwmPersonScheduleService;
@@ -60,6 +61,7 @@ public class PersonScheduleTask {
             String corpName = user.getCorpName();
             //设置当前线程的租户信息
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
 
@@ -124,12 +126,14 @@ public class PersonScheduleTask {
                 for (List<SwmPersonSchedule> list : lists) {
                     swmPersonScheduleService.insertBatch(list);
                 }
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode( null);
+                TenantContext.clear();
                 XxlJobHelper.log("生成排班计划成功：{} 共条 =============================", insertList.size());
             }catch (Exception e){
                 XxlJobHelper.log("生成排班计划失败：{}", e.getMessage());
             }finally {
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.jeesite.modules.job.task;
 
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.swm.entity.SwmInspectionList;
 import com.jeesite.modules.swm.entity.SwmInspectionPlan;
 import com.jeesite.modules.swm.service.SwmInspectionListService;
@@ -59,6 +60,7 @@ public class InspectionPlanTask {
             String corpName = user.getCorpName();
             //设置当前线程的租户信息
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
             try {
@@ -294,7 +296,8 @@ public class InspectionPlanTask {
             }catch (Exception e){
                 XxlJobHelper.log(e);
             }finally {
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
     }

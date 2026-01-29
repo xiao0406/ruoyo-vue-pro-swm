@@ -14,6 +14,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.entity.SwmBeaconStationExport;
 import com.jeesite.modules.entity.SwmHelmetDeviceExport;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
@@ -126,6 +127,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                     String corpCode = user.getCorpCode();
                     String corpName = user.getCorpName();
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                    TenantContext.set(corpCode);
                     // 查询所有头盔设备数据（框架自动添加status='0'条件）
                     SwmHelmetDevice queryCondition = new SwmHelmetDevice();
                     queryCondition.setRandom(new Random().nextInt(1_000_000));
@@ -135,7 +137,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                 } catch (Exception e) {
                     logger.error("初始化头盔设备Redis缓存失败", e);
                 }finally {
-                    CorpUtils.setCurrentCorpCode(null,null);
+                    CorpUtils.removeCurrentCorpCode(null);
+                    TenantContext.clear();
                 }
             }
 

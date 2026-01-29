@@ -6,6 +6,7 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.StringUtils;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
@@ -793,42 +794,49 @@ public class SwmDashboardController extends BaseController {
             CompletableFuture<Void> totalFuture = CompletableFuture.runAsync(() -> {
                 try {
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                    TenantContext.set(corpCode);
                     String totalAlarmNumber = warningStatistics(null, null);
                     warningMap.put("累计报警数", totalAlarmNumber);
                 } catch (Exception e) {
                     logger.error("统计累计报警数异常", e);
                 }finally {
-                    CorpUtils.setCurrentCorpCode(null,null);
+                    CorpUtils.removeCurrentCorpCode(null);
+                    TenantContext.clear();
                 }
             }, swmExecutor);
 
             CompletableFuture<Void> todayFuture = CompletableFuture.runAsync(() -> {
                 try {
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                    TenantContext.set(corpCode);
                     String nowDayAlarmNumber = warningStatistics(nowDayStartTime, nowDayEndTime);
                     warningMap.put("今日报警数", nowDayAlarmNumber);
                 } catch (Exception e) {
                     logger.error("统计今日报警数异常", e);
                 }finally {
-                    CorpUtils.setCurrentCorpCode(null,null);
+                    CorpUtils.removeCurrentCorpCode(null);
+                    TenantContext.clear();
                 }
             }, swmExecutor);
 
             CompletableFuture<Void> fiveMinuteFuture = CompletableFuture.runAsync(() -> {
                 try {
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                    TenantContext.set(corpCode);
                     String fiveMinuteAlarmNumber = warningStatistics(fiveMinuteStartTime, nowDayEndTime);
                     warningMap.put("当前报警数", fiveMinuteAlarmNumber);
                 } catch (Exception e) {
                     logger.error("统计近五分钟报警数异常", e);
                 }finally {
-                    CorpUtils.setCurrentCorpCode(null,null);
+                    CorpUtils.removeCurrentCorpCode(null);
+                    TenantContext.clear();
                 }
             }, swmExecutor);
 
             CompletableFuture<Void> recordFuture = CompletableFuture.runAsync(() -> {
                 try {
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                    TenantContext.set(corpCode);
                     String dictLabel1 = DictUtils.getDictLabel("warning_content_enum", "长时间静止报警", "长时间静止报警");
                     String dictLabel2 = DictUtils.getDictLabel("warning_content_enum", "脱帽报警", "脱帽报警");
                     String dictLabel3 = DictUtils.getDictLabel("warning_content_enum", "跌落报警", "跌落报警");
@@ -895,7 +903,8 @@ public class SwmDashboardController extends BaseController {
                 } catch (Exception e) {
                     logger.error("获取已处置数据异常", e);
                 } finally {
-                    CorpUtils.setCurrentCorpCode(null,null);
+                    CorpUtils.removeCurrentCorpCode(null);
+                    TenantContext.clear();
                 }
             }, swmExecutor);
 

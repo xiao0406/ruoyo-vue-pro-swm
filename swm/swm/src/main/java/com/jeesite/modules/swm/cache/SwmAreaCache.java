@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.cache;
 
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmArea;
 import com.jeesite.modules.swm.entity.SwmHazardSource;
@@ -66,6 +67,7 @@ public class SwmAreaCache implements ApplicationListener<ApplicationReadyEvent> 
             String corpName = user.getCorpName();
             //设置当前线程的租户信息
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
             try {
@@ -87,7 +89,8 @@ public class SwmAreaCache implements ApplicationListener<ApplicationReadyEvent> 
             } catch (Exception e) {
                 log.error("初始化工作缓存失败", e);
             }finally {
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
     }

@@ -31,7 +31,8 @@ public class CorpContextInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
 
         // 1. 先清理，防止线程复用带来的脏数据（非常关键）
-        CorpUtils.setCurrentCorpCode(null,null);
+        TenantContext.clear();
+        CorpUtils.removeCurrentCorpCode(null);
 
         // 2. Header 优先（接口级切换）
         String headerCorpCode = request.getHeader(HEADER_CORP_CODE);
@@ -44,12 +45,13 @@ public class CorpContextInterceptor implements HandlerInterceptor {
         // 3. Session 租户（switch 接口写入的）
         Session session = UserUtils.getSession();
         if (session != null) {
-            String sessionCorpCode = (String) session.getAttribute(SESSION_CORP_CODE);
-            String sessionCorpName = (String) session.getAttribute(SESSION_CORP_NAME);
+            String corpCode = (String) session.getAttribute(SESSION_CORP_CODE);
+            String corpName = (String) session.getAttribute(SESSION_CORP_NAME);
 
-            if (StringUtils.isNotBlank(sessionCorpCode)) {
-                CorpUtils.setCurrentCorpCode(sessionCorpCode, sessionCorpName);
-                log.debug("使用 Session 租户: {}", sessionCorpCode);
+            if (StringUtils.isNotBlank(corpCode)) {
+                TenantContext.set(corpCode);
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                log.debug("使用 Session 租户: {}", corpCode);
             }
         }
 
@@ -59,6 +61,7 @@ public class CorpContextInterceptor implements HandlerInterceptor {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         // 4. 请求结束必须清理 ThreadLocal
-        CorpUtils.setCurrentCorpCode(null,null);
+        TenantContext.clear();
+        CorpUtils.removeCurrentCorpCode(null);
     }
 }

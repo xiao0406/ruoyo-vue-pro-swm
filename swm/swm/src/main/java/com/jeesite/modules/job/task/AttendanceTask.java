@@ -6,6 +6,7 @@ import cn.hutool.json.JSONObject;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
@@ -340,6 +341,7 @@ public class AttendanceTask {
             String corpName = user.getCorpName();
             //设置当前线程的租户信息
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
             try {
@@ -470,7 +472,8 @@ public class AttendanceTask {
             }catch (Exception e){
                 XxlJobHelper.log("月考勤统计失败：{}", e.getMessage());
             }finally {
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
 
@@ -1451,6 +1454,7 @@ public class AttendanceTask {
             String corpName = user.getCorpName();
             //设置当前线程的租户信息
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
             try {
@@ -1491,7 +1495,8 @@ public class AttendanceTask {
                 jobLog.setEndTime(new Date());
                 jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
                 swmJobLogService.save(jobLog);
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
     }
@@ -1530,6 +1535,7 @@ public class AttendanceTask {
             String corpCode = corp.getCorpCode();
             String corpName = corp.getCorpName();
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
             try {
 
@@ -1559,7 +1565,8 @@ public class AttendanceTask {
                 jobLog.setEndTime(new Date());
                 jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
                 swmJobLogService.save(jobLog);
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
     }
@@ -2325,6 +2332,7 @@ public class AttendanceTask {
             String corpName = user.getCorpName();
             //设置当前线程的租户信息
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
             try {
@@ -2352,7 +2360,8 @@ public class AttendanceTask {
                 jobLog.setExceptionInfo(e.getMessage());
             } finally {
                 saveJobLog(jobLog);
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
     }

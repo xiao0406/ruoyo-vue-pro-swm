@@ -1,6 +1,7 @@
 package com.jeesite.modules.job.task;
 
 
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.swm.cache.DeviceCorpMappingCache;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
@@ -59,6 +60,7 @@ public class DeviceCorpTask {
 
                 // 设置当前线程租户
                 CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
 
                 SwmHelmetDevice device = new SwmHelmetDevice();
                 device.setRandom(new Random().nextInt(1_000_000));  // 防止一级缓存
@@ -73,7 +75,8 @@ public class DeviceCorpTask {
             } catch (Exception e) {
                 XxlJobHelper.log("租户 {} 获取设备列表异常", user.getCorpCode(), e);
             } finally {
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
 
             // 构建一个临时 key
