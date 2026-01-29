@@ -135,7 +135,7 @@
                 </choose>
             </when>
             <otherwise>
-                group by sp.identity_card
+                group by a.identity_card
                 ORDER BY
                     CASE
                         WHEN a.clock_in_time IS NOT NULL
