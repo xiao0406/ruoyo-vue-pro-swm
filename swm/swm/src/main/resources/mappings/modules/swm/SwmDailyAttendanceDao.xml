@@ -65,7 +65,7 @@
         LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
         <where>
             ${sqlMap.where.toSql()}
-             a.`status` = '0'
+            and  a.`status` = '0'
             <!-- 自定义条件 -->
             <if test="sqlMap.where.sqlSegment != null and sqlMap.where.sqlSegment != ''">
                 AND (${sqlMap.where.sqlSegment})
