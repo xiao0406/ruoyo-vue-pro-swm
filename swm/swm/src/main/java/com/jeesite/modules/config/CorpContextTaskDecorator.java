@@ -17,15 +17,18 @@ public class CorpContextTaskDecorator implements TaskDecorator {
         return () -> {
             try {
                 // 2. 设置到异步线程
-                if (corpCode != null) {
+                if (corpCode != null && !corpCode.isEmpty()) {
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                    TenantContext.set(corpCode);
                 }
                 runnable.run();
             } finally {
-                // 3. 必须清理，防止线程复用污染
-                CorpUtils.removeCurrentCorpCode( null);
+                // 3. 清理线程上下文
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         };
     }
 }
+
 

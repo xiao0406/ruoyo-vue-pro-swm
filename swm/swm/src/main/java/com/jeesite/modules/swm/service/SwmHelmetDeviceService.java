@@ -14,6 +14,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.entity.SwmBeaconStationExport;
 import com.jeesite.modules.entity.SwmHelmetDeviceExport;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
@@ -32,7 +33,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,7 +62,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @Transactional(readOnly = true)
 @Slf4j
-public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmHelmetDevice> {
+public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmHelmetDevice>
+            implements ApplicationListener<ApplicationReadyEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(SwmHelmetDeviceService.class);
 
@@ -86,13 +90,23 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private MqSendUtil mqSendUtil;
+
     /**
      * 安全帽超级表名称
      */
     private static final String HELMET_SUPER_TABLE_NAME = "helmet_runde_ca_report_location";
 
-    @Autowired
-    private MqSendUtil mqSendUtil;
+
+
+
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        initCache();
+    }
+
+
 
     /**
      * 程序启动时初始化设备缓存
@@ -101,7 +115,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
      * @author Shawn
      * @date 2025-01-13
      */
-    @PostConstruct
+//    @PostConstruct
     public void initCache() {
         try {
             // 检查Redis连接状态
@@ -126,17 +140,18 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                     String corpCode = user.getCorpCode();
                     String corpName = user.getCorpName();
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                    TenantContext.set(corpCode);
                     // 查询所有头盔设备数据（框架自动添加status='0'条件）
                     SwmHelmetDevice queryCondition = new SwmHelmetDevice();
                     queryCondition.setRandom(new Random().nextInt(1_000_000));
                     queryCondition.setCorpCode(corpCode);
-                    String corpCode2 = CorpUtils.getCurrentCorpCode();
                     List<SwmHelmetDevice> list = this.findListInit(queryCondition);
                     allDevices.addAll( list);
                 } catch (Exception e) {
                     logger.error("初始化头盔设备Redis缓存失败", e);
                 }finally {
-                    CorpUtils.setCurrentCorpCode(null,null);
+                    CorpUtils.removeCurrentCorpCode(null);
+                    TenantContext.clear();
                 }
             }
 

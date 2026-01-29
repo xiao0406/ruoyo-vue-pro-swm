@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.cache;
 
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmArea;
 import com.jeesite.modules.swm.entity.SwmHazardSource;
@@ -18,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -29,7 +32,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class SwmAreaCache {
+public class SwmAreaCache implements ApplicationListener<ApplicationReadyEvent> {
 
     @Autowired
     private RedisService redisService;
@@ -38,12 +41,17 @@ public class SwmAreaCache {
     @Autowired
     private UserService userService;
 
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        initAreaCache();
+    }
+
     /**
      * 程序启动时初始化危险源缓存服务
      * 延迟初始化，避免循环依赖问题
      *
      */
-    @PostConstruct
+//    @PostConstruct
     public void initAreaCache() {
 
 
@@ -59,6 +67,7 @@ public class SwmAreaCache {
             String corpName = user.getCorpName();
             //设置当前线程的租户信息
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
             try {
@@ -80,7 +89,8 @@ public class SwmAreaCache {
             } catch (Exception e) {
                 log.error("初始化工作缓存失败", e);
             }finally {
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
     }

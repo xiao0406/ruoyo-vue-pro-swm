@@ -2,6 +2,7 @@ package com.jeesite.modules.job.task;
 
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.swm.dao.SwmSafetyPersonTrainingDao;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.entity.SwmSafetyFileManage;
@@ -65,6 +66,7 @@ public class SafetyManageTask {
                 String corpName = user.getCorpName();
                 // 设置当前线程租户
                 CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
                 XxlJobHelper.log("租户 {}，{} 推送安全教育视频开始=============", corpCode, corpName);
 
                 //1.先查询安全管理表，查出今天需要推送的视频，然后根据工种发送给不同的人员
@@ -125,7 +127,8 @@ public class SafetyManageTask {
             }catch (Exception e){
                 XxlJobHelper.log("租户 {} 推送安全教育视频失败：{}", user.getCorpCode(), e);
             }finally {
-                CorpUtils.setCurrentCorpCode(null,null);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
 
