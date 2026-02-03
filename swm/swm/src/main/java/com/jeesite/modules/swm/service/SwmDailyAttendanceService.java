@@ -4,14 +4,18 @@ import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.idgen.IdGen;
 import com.jeesite.common.lang.ObjectUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.entity.AiDto;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
+import com.jeesite.modules.swm.dao.SwmPersonScheduleLogDao;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
+import com.jeesite.modules.sys.utils.DictUtils;
+import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import org.apache.commons.collections.CollectionUtils;
@@ -41,11 +45,13 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     @Autowired
     private SwmPersonCacheService swmPersonCacheService;
 
-
     @Autowired
-    private SwmScheduleTimeService swmScheduleTimeService;
+    private SwmPersonScheduleLogDao swmPersonScheduleLogDao;
+
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+
+    private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy年MM月dd日HH点mm分");
 
     /**
      * 获取单条数据
@@ -1305,6 +1311,46 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         List<List<SwmDailyAttendance>> lists = BatchOperationsUtil.batchCutting(updateList, 100);
         for (List<SwmDailyAttendance> updateData : lists) {
             this.dao.updateBatch(updateData);
+            insertPersonScheduleLog(updateData);
         }
+    }
+
+    /**
+     * 记录人员班次修改日志
+     */
+    private void insertPersonScheduleLog(List<SwmDailyAttendance> updateData){
+
+        if (CollectionUtils.isEmpty(updateData)){
+            return;
+        }
+        String userCode = UserUtils.getUser().getUserCode();
+        String corpCode = UserUtils.getUser().getCorpCode();
+        String corpName = UserUtils.getUser().getCorpName();
+
+        Date operateTime = new Date();
+        String formatOperateTime = DATE_FORMATTER.format(operateTime);
+        List<SwmPersonScheduleLog> logList = new ArrayList<>();
+
+        for (SwmDailyAttendance datum : updateData) {
+            String classes = datum.getClasses();
+            String personId = datum.getEmployeeId();
+            String employeeName = datum.getEmployeeName();
+            String classesName = DictUtils.getDictValue("swm_person_schedule_classes", classes, "");
+            String operateDesc = String.format("%s于%s，班次调整为‘%s’", employeeName, formatOperateTime, classesName);
+            String remark = String.format("批量修改人员班次：目标班次%s", classes);
+
+            SwmPersonScheduleLog scheduleLog = new SwmPersonScheduleLog();
+            scheduleLog.setOperateUser(userCode);
+            scheduleLog.setOperateTime(operateTime);
+            scheduleLog.setTargetClasses(classes);
+            scheduleLog.setPersonId(personId);
+            scheduleLog.setRemark(remark);
+            scheduleLog.setOperateDesc(operateDesc); // 赋值新增字段
+            scheduleLog.setCorpCode(corpCode);
+            scheduleLog.setCorpName(corpName);
+
+            logList.add(scheduleLog);
+        }
+        swmPersonScheduleLogDao.insertBatch(logList);
     }
 }

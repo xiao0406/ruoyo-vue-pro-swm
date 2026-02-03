@@ -15,9 +15,9 @@ import java.util.List;
 public interface SwmPersonScheduleLogDao extends CrudDao<SwmPersonScheduleLog> {
     @Insert("INSERT INTO swm_person_schedule_log " +
             "(id, operate_user, operate_time, target_classes, person_id, " +
-            " remark, operate_desc, del_flag) " +
+            " remark, operate_desc, del_flag,corp_code,corp_name) " +
             "VALUES (#{id}, #{operateUser}, #{operateTime}, #{targetClasses}, #{personId}, " +
-            "#{remark}, #{operateDesc}, '0')")
+            "#{remark}, #{operateDesc}, '0',corpCode,corpName)")
     void insertLog(SwmPersonScheduleLog log);
 
     /**

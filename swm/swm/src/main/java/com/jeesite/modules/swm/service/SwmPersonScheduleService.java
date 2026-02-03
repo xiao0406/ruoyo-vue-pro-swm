@@ -2,14 +2,17 @@ package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.jeesite.common.entity.Page;
+import com.jeesite.common.idgen.IdGen;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.annotation.SavePersonScheduleLog;
 import com.jeesite.modules.entity.SwmPersonScheduleExport;
 import com.jeesite.modules.swm.dao.SwmPersonScheduleDao;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
+import com.jeesite.modules.swm.entity.SwmPersonScheduleLog;
 import com.jeesite.modules.swm.entity.dto.SwmPersonScheduleDto;
 import com.jeesite.modules.sys.entity.User;
+import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
@@ -21,10 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * 人员排班Service

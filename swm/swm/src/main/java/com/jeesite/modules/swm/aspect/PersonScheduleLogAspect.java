@@ -43,6 +43,8 @@ public class PersonScheduleLogAspect {
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         // 1. 执行目标方法（单/批量修改）
         Object result = joinPoint.proceed();
+        String corpCode = UserUtils.getUser().getCorpCode();
+        String corpName = UserUtils.getUser().getCorpName();
 
         // 2. 提取人员ID列表和目标班次（原有逻辑，保持不变）
         Object[] args = joinPoint.getArgs();
@@ -120,6 +122,8 @@ public class PersonScheduleLogAspect {
             scheduleLog.setPersonId(singlePersonId);
             scheduleLog.setRemark(remark);
             scheduleLog.setOperateDesc(operateDesc); // 赋值新增字段
+            scheduleLog.setCorpCode(corpCode);
+            scheduleLog.setCorpName(corpName);
 
             // 7. 保存日志（原有逻辑，保持不变）
             swmPersonScheduleLogService.saveScheduleLog(scheduleLog);
