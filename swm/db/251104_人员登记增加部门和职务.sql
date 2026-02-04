@@ -70,3 +70,7 @@ INSERT INTO `fms_work_group` (`id`, `work_group_name`, `work_group_code`, `head_
 # 增加脱帽报警时间间隔
 ALTER TABLE swm_helmet_device_config
     ADD hat_off_alarm_interval VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '脱帽报警时间间隔' AFTER beacon_filter_name;
+
+# 增加脱帽报警时间间隔
+ALTER TABLE swm_helmet_device
+    ADD hat_off_alarm_interval VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '脱帽报警时间间隔' AFTER beacon_filter_name;
