@@ -12,35 +12,52 @@ import com.jeesite.modules.config.RabbitMqConfig;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.util.MqSendUtil;
+import com.jeesite.modules.swm.util.SignatureUtil;
 import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
 public class PersonChangeConsumer {
     private static final Logger logger = LoggerFactory.getLogger(PersonChangeConsumer.class);
-//    private static final String THIRD_PARTY_PERSON_URL = "http://第三方服务器/notify/personChange";
-    // 新增：批量接口（如果第三方支持，优先调用批量接口，效率更高）
-    private static final String THIRD_PARTY_PERSON_BATCH_URL = "http://第三方服务器/notify/personBatchChange";
 
-    // 第三方接口配置
-    private static final String THIRD_PARTY_BASE_URL = "/api/Open/Personnel/";
-    private static final String THIRD_PARTY_PERSON_URL = THIRD_PARTY_BASE_URL + "/api/Open/Personnel";
-    private static final String THIRD_PARTY_PERSON_BIND_URL = THIRD_PARTY_BASE_URL + "/api/Open/Personnel/Bind";
-    private static final String THIRD_PARTY_PERSON_DELETE_URL = THIRD_PARTY_BASE_URL + "/api/Open/Personnel";
+    // ====================== 配置项（从配置文件读取，避免硬编码） ======================
+    @Value("${third-party.base-url:https://lbsapi.vgomap.com}")
+    private String thirdPartyBaseUrl;
 
+    @Value("${third-party.person.base-url:/api/Open/Personnel}")
+    private String thirdPartyPersonBasePath;
 
-    private static final int TIMEOUT = 5000;
+    @Value("${third-party.person.bind-url:/api/Open/Personnel/Bind}")
+    private String thirdPartyPersonBindPath;
+
+    @Value("${third-party.person.batch-delete-url:/api/Open/Personnel/BatchDelete}")
+    private String thirdPartyPersonBatchDeletePath;
+
+    @Value("${third-party.person.batch-sync-url:/api/Open/Personnel/Sync}")
+    private String thirdPartyPersonBatchSyncPath;
+
+    @Value("${third-party.app-key:fBPMJTYsQ8ndmNVz6SxzmZz7rdTVdkEf}")
+    private String appKey;
+
+    @Value("${third-party.app-secret:XAt3NFSxQUpkH7UaATAStTYK7XB8JFct}")
+    private String appSecret;
+
+    @Value("${third-party.request.timeout:5000}")
+    private int timeout;
 
     /**
      * 处理消息
@@ -82,39 +99,6 @@ public class PersonChangeConsumer {
             logger.error("消费消息异常，已确认（不重试），deliveryTag:{}", deliveryTag, e);
         }
     }
-
-//    /**
-//     * 处理单条人员变更消息
-//     * 兼容场景：新增、编辑、绑定安全帽、处理离职
-//     */
-//    private boolean handleSingleMsg(MqSendUtil.BasePersonMsg msg) {
-//        try {
-//            JSONObject param = new JSONObject();
-//            param.put("msgId", msg.getMsgId());
-//            param.put("operateType", msg.getOperateType());
-//            param.put("changeData", msg.getPersonData());
-//            param.put("operateTime", msg.getOperateTime());
-//
-//            System.out.println("================================"+param.toJSONString()+"=======================================");
-//            System.out.println("================================"+param.toJSONString()+"=======================================");
-//            System.out.println("================================"+param.toJSONString()+"=======================================");
-//
-////            String result = HttpUtil.createPost(THIRD_PARTY_PERSON_URL)
-////                    .body(param.toJSONString()) // 替换 setBody -> body
-////                    .contentType("application/json") // 必须设置 JSON 格式
-////                    // 方式1：推荐（Hutool 5.x+）：分别设置连接超时和读取超时（更灵活）
-////                    .setReadTimeout(TIMEOUT)       // 读取超时
-////                    // 方式2（兼容旧版本）：一次性设置超时（连接+读取）
-////                    // .timeout(THIRD_PARTY_TIMEOUT)
-////                    .execute()
-////                    .body();
-////            return "success".equals(JSONObject.parseObject(result).getString("code"));
-//            return true;
-//        } catch (Exception e) {
-//            logger.error("处理单条消息失败，personData:{}", msg.getPersonData(), e);
-//            return false;
-//        }
-//    }
 
     /**
      * 处理单条人员变更消息
@@ -162,16 +146,18 @@ public class PersonChangeConsumer {
                     }
                     requestParam.put("gender", addGenderCode);// 性别（0/1等，按第三方要求）
                     requestParam.put("phoneNumber",
-                            (personData.getPhoneNumber()!= null && !personData.getPhoneNumber().trim().isEmpty())
+                            (personData.getPhoneNumber() != null && !personData.getPhoneNumber().trim().isEmpty())
                                     ? personData.getPhoneNumber().trim()
                                     : "");
                     requestParam.put("deviceId", StringUtils.isNotBlank(personData.getSafetyHelmetId()) ? personData.getSafetyHelmetId().trim() : "");
                     requestParam.put("identityCard", StringUtils.isNotBlank(personData.getIdentityCard()) ? personData.getIdentityCard().trim() : "");
                     // 发送POST请求
-//                    result = sendPostRequest(THIRD_PARTY_PERSON_URL, requestParam);
-                System.out.println("================================"+requestParam.toJSONString()+"=======================================");
-                System.out.println("================================"+requestParam.toJSONString()+"=======================================");
-                System.out.println("================================"+requestParam.toJSONString()+"=======================================");
+
+                    System.out.println("================================" + requestParam.toJSONString() + "=======================================");
+                    System.out.println("================================" + requestParam.toJSONString() + "=======================================");
+                    System.out.println("================================" + requestParam.toJSONString() + "=======================================");
+
+                    result = sendPostRequest(thirdPartyBaseUrl+thirdPartyPersonBasePath, requestParam);
                     break;
 
                 case "PERSON_EDIT": // 编辑人员 - 调用PUT /api/Open/Personnel
@@ -194,16 +180,16 @@ public class PersonChangeConsumer {
                     }
                     requestParam.put("gender", editGenderCode);// 性别（0/1等，按第三方要求）
                     requestParam.put("phoneNumber",
-                            (personData.getPhoneNumber()!= null && !personData.getPhoneNumber().trim().isEmpty())
+                            (personData.getPhoneNumber() != null && !personData.getPhoneNumber().trim().isEmpty())
                                     ? personData.getPhoneNumber().trim()
                                     : "");
                     requestParam.put("deviceId", StringUtils.isNotBlank(personData.getSafetyHelmetId()) ? personData.getSafetyHelmetId().trim() : "");
                     requestParam.put("identityCard", StringUtils.isNotBlank(personData.getIdentityCard()) ? personData.getIdentityCard().trim() : "");
                     // 发送PUT请求
-//                    result = sendPutRequest(THIRD_PARTY_PERSON_URL, requestParam);
-                    System.out.println("================================"+requestParam.toJSONString()+"=======================================");
-                    System.out.println("================================"+requestParam.toJSONString()+"=======================================");
-                    System.out.println("================================"+requestParam.toJSONString()+"=======================================");
+                    System.out.println("================================" + requestParam.toJSONString() + "=======================================");
+                    System.out.println("================================" + requestParam.toJSONString() + "=======================================");
+                    System.out.println("================================" + requestParam.toJSONString() + "=======================================");
+                    result = sendPutRequest(thirdPartyBaseUrl+thirdPartyPersonBasePath, requestParam);
                     break;
 
                 case "PERSON_BIND_HELMET": // 绑定安全帽 - 调用POST /api/Open/Personnel/Bind
@@ -211,10 +197,10 @@ public class PersonChangeConsumer {
                     requestParam.put("deviceId", personData.getSafetyHelmetId()); // 安全帽设备ID
                     requestParam.put("syncId", personData.getId());     // 人员唯一标识
                     // 发送POST请求
-//                    result = sendPostRequest(THIRD_PARTY_PERSON_BIND_URL, requestParam);
-                    System.out.println("================================"+requestParam.toJSONString()+"=======================================");
-                    System.out.println("================================"+requestParam.toJSONString()+"=======================================");
-                    System.out.println("================================"+requestParam.toJSONString()+"=======================================");
+                    result = sendPostRequest(thirdPartyBaseUrl+thirdPartyPersonBindPath, requestParam);
+                    System.out.println("================================" + requestParam.toJSONString() + "=======================================");
+                    System.out.println("================================" + requestParam.toJSONString() + "=======================================");
+                    System.out.println("================================" + requestParam.toJSONString() + "=======================================");
                     break;
 
                 default: // 未知操作类型
@@ -228,13 +214,19 @@ public class PersonChangeConsumer {
                 return false;
             }
             JSONObject resultJson = JSONObject.parseObject(result);
-            // 假设第三方返回code为"success"表示成功（根据实际第三方文档调整）
-            boolean isSuccess = "success".equals(resultJson.getString("code"));
+            // ✅ 校验真正成功的字段：isSuccess == true 且 code == 200（可选）
+            boolean isSuccess = resultJson.getBoolean("isSuccess") != null
+                    && resultJson.getBoolean("isSuccess")
+                    && (resultJson.getIntValue("code") == 200); // 可根据业务放宽为只要 isSuccess=true
+
             if (!isSuccess) {
-                logger.error("处理单条消息失败：第三方接口返回失败，msgId:{}, result:{}", msgId, result);
+                String message = resultJson.getString("message");
+                logger.error("处理单条消息失败：第三方接口返回失败，msgId:{}, code:{}, message:{}",
+                        msgId, resultJson.getIntValue("code"), message != null ? message : "无错误信息");
             } else {
                 logger.info("处理单条消息成功，msgId:{}", msgId);
             }
+
             return isSuccess;
 
         } catch (Exception e) {
@@ -246,23 +238,53 @@ public class PersonChangeConsumer {
     /**
      * 发送POST请求（封装通用POST逻辑）
      *
-     * @param url    请求地址
-     * @param param  请求参数（JSON）
+     * @param url   请求地址
+     * @param param 请求参数（JSON）
      * @return 响应体字符串（null表示请求失败）
      */
     private String sendPostRequest(String url, JSONObject param) {
-        try (HttpResponse response = HttpRequest.post(url)
-                .body(param.toJSONString())          // 设置JSON请求体
-                .contentType("application/json")     // 设置Content-Type为JSON
-                .setReadTimeout(TIMEOUT)             // 读取超时
-                .execute()) {                        // 执行请求
+        try {
+            // 🔑 步骤1：生成签名所需参数（时间戳、随机串等）
+            long timestamp = System.currentTimeMillis();
+            String nonce = UUID.randomUUID().toString().replace("-", ""); // 防重放
 
-            logger.info("发送POST请求，url:{}, param:{}", url, param.toJSONString());
-            if (response.isOk()) { // 状态码200-299
-                return response.body();
-            } else {
-                logger.error("POST请求失败，url:{}, status:{}, error:{}", url, response.getStatus(), response.body());
-                return null;
+            // 🔐 步骤2：构造待签名字符串（按第三方要求拼接，示例为：appKey+timestamp+nonce+body）
+            String signContent = appKey + timestamp + appSecret + nonce;
+
+            System.out.println("=============signContent===================" + signContent + "=======================================");
+
+            // 3. 计算SHA256签名（纯哈希，无额外密钥）
+            String sign = SignatureUtil.sha256(signContent);
+
+            System.out.println("=============sign===================" + sign + "=======================================");
+            // 📡 步骤3：构建带签名的请求
+            try (HttpResponse response = HttpRequest.post(url)
+                    .body(param.toJSONString())
+                    .contentType("application/json")
+                    .header("AppId", appKey)        // 必选：应用标识
+                    .header("Timestamp", String.valueOf(timestamp)) // 必选：时间戳
+                    .header("Nonce", nonce)            // 可选：防重放随机数
+                    .header("Sign", sign)         // 必选：签名值
+                    .setReadTimeout(timeout)
+                    .execute()) {
+
+                logger.info("发送POST请求，url:{}, param:{}, headers:{{X-App-Key, X-Timestamp, X-Signature}}",
+                        url, param.toJSONString());
+                if (response.isOk()) {
+                    String body = response.body();
+                    // ✅ 新增：校验业务层是否成功
+                    if (SignatureUtil.isBusinessSuccess(body)) {
+                        return body;
+                    } else {
+                        logger.error("POST请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(body));
+                        return null;
+                    }
+                } else {
+                    logger.error("POST请求HTTP失败，url:{}, status:{}, response:{}",
+                            url, response.getStatus(), SignatureUtil.getErrorMessage(response.body()));
+                    return null;
+                }
+
             }
         } catch (Exception e) {
             logger.error("发送POST请求异常，url:{}, param:{}", url, param.toJSONString(), e);
@@ -270,32 +292,64 @@ public class PersonChangeConsumer {
         }
     }
 
+
     /**
-     * 发送PUT请求（封装通用PUT逻辑）
+     * 发送PUT请求（封装通用PUT逻辑，含签名）
      *
-     * @param url    请求地址
-     * @param param  请求参数（JSON）
+     * @param url   请求地址
+     * @param param 请求参数（JSON）
      * @return 响应体字符串（null表示请求失败）
      */
     private String sendPutRequest(String url, JSONObject param) {
-        try (HttpResponse response = HttpRequest.put(url)
-                .body(param.toJSONString())          // 设置JSON请求体
-                .contentType("application/json")     // 设置Content-Type为JSON
-                .setReadTimeout(TIMEOUT)             // 读取超时
-                .execute()) {                        // 执行请求
+        try {
+            // 🔑 步骤1：生成签名所需参数（时间戳、随机串等）
+            long timestamp = System.currentTimeMillis();
+            String nonce = UUID.randomUUID().toString().replace("-", ""); // 防重放
 
-            logger.info("发送PUT请求，url:{}, param:{}", url, param.toJSONString());
-            if (response.isOk()) { // 状态码200-299
-                return response.body();
-            } else {
-                logger.error("PUT请求失败，url:{}, status:{}, error:{}", url, response.getStatus(), response.body());
-                return null;
+            // 🔐 步骤2：构造待签名字符串（注意：此处仍存在安全风险，建议后续改为 AppKey+Timestamp+Nonce+Body）
+            String signContent = appKey + timestamp + appSecret + nonce;
+
+            System.out.println("=============signContent===================" + signContent + "=======================================");
+
+            // 3. 计算SHA256签名
+            String sign = SignatureUtil.sha256(signContent);
+            System.out.println("=============sign===================" + sign + "=======================================");
+
+            // 📡 步骤3：构建带签名的PUT请求
+            try (HttpResponse response = HttpRequest.put(url)
+                    .body(param.toJSONString())
+                    .contentType("application/json")
+                    .header("AppId", appKey)        // 必选：应用标识
+                    .header("Timestamp", String.valueOf(timestamp)) // 必选：时间戳
+                    .header("Nonce", nonce)            // 可选：防重放随机数
+                    .header("Sign", sign)              // 必选：签名值
+                    .setReadTimeout(timeout)
+                    .execute()) {
+
+                logger.info("发送PUT请求，url:{}, param:{}, headers:{{AppId, Timestamp, Nonce, Sign}}",
+                        url, param.toJSONString());
+                if (response.isOk()) {
+                    String body = response.body();
+                    // ✅ 新增：校验业务层是否成功
+                    if (SignatureUtil.isBusinessSuccess(body)) {
+                        return body;
+                    } else {
+                        logger.error("PUT请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(body));
+                        return null;
+                    }
+                } else {
+                    logger.error("PUT请求HTTP失败，url:{}, status:{}, response:{}",
+                            url, response.getStatus(), SignatureUtil.getErrorMessage(response.body()));
+                    return null;
+                }
+
             }
         } catch (Exception e) {
             logger.error("发送PUT请求异常，url:{}, param:{}", url, param.toJSONString(), e);
             return null;
         }
     }
+
 
     /**
      * 处理批量人员变更消息
@@ -334,7 +388,7 @@ public class PersonChangeConsumer {
             logger.warn("批量消息无有效业务数据，batchMsgId:{}, operateType:{}, personListSize:{}, personIdListSize:{}",
                     batchMsgId, operateType,
                     personList != null ? personList.size() : 0,
-                    personIds != null ?  personIds.size() : 0);
+                    personIds != null ? personIds.size() : 0);
             return true;
         }
 
@@ -369,7 +423,7 @@ public class PersonChangeConsumer {
             logger.error("批量同步失败：人员列表为空，batchMsgId:{}", batchMsgId);
             return false;
         }
-        if (StringUtils.isBlank(THIRD_PARTY_PERSON_BATCH_URL)) {
+        if (StringUtils.isBlank(thirdPartyBaseUrl+thirdPartyPersonBatchSyncPath)) {
             logger.error("批量同步失败：第三方批量接口地址未配置，batchMsgId:{}", batchMsgId);
             return false;
         }
@@ -427,18 +481,12 @@ public class PersonChangeConsumer {
             batchParam.put("datas", datasArray);
             logger.info("构造批量同步请求参数，batchMsgId:{}, datas:{}", batchMsgId, batchParam.toJSONString());
 
-            System.out.println("================================"+batchParam.toJSONString()+"=======================================");
-            System.out.println("================================"+batchParam.toJSONString()+"=======================================");
-            System.out.println("================================"+batchParam.toJSONString()+"=======================================");
+            System.out.println("================================" + batchParam.toJSONString() + "=======================================");
+            System.out.println("================================" + batchParam.toJSONString() + "=======================================");
+            System.out.println("================================" + batchParam.toJSONString() + "=======================================");
 
             // 3. 调用第三方批量同步接口（POST + JSON格式）
-            String result = null ;
-//            String result = HttpRequest.post(THIRD_PARTY_PERSON_BATCH_URL)
-//                    .body(batchParam.toJSONString())          // 设置JSON请求体
-//                    .contentType("application/json")         // 严格匹配接口的Content-Type
-//                    .setReadTimeout(TIMEOUT)                 // 读取超时
-//                    .execute()
-//                    .body();
+            String result = sendPostRequest(thirdPartyBaseUrl+thirdPartyPersonBatchSyncPath, batchParam);
 
             // 4. 响应校验（简洁版）
             boolean isSuccess = (result != null && "success".equals(JSONObject.parseObject(result).getString("code")));
@@ -455,11 +503,8 @@ public class PersonChangeConsumer {
         }
     }
 
-    /**
-     * 处理批量删除人员消息（单/批量统一调用DELETE接口，无降级逻辑）
-     */
     private boolean handleBatchDelete(String batchMsgId, List<String> personIds) {
-        // 1. 前置核心校验：batchMsgId非空 + 人员ID列表非空
+        // 1. 前置校验
         if (StringUtils.isBlank(batchMsgId)) {
             logger.error("批量删除失败：batchMsgId为空");
             return false;
@@ -470,46 +515,25 @@ public class PersonChangeConsumer {
         }
 
         try {
-            // 2. 过滤空值：避免数组中有空字符串/null，保证请求体格式合法
+            // 2. 过滤空值
             List<String> validSyncIds = personIds.stream()
                     .filter(StringUtils::isNotBlank)
                     .collect(Collectors.toList());
-
-            // 二次校验：过滤后为空则返回失败
             if (CollectionUtils.isEmpty(validSyncIds)) {
                 logger.error("批量删除失败：人员ID列表过滤空值后为空，batchMsgId:{}", batchMsgId);
                 return false;
             }
 
-            // 3. 构造请求体：纯JSON数组（["1","3","6"]），适配接口要求
+            // 3. 构造请求体
             String requestBody = JSON.toJSONString(validSyncIds);
             logger.info("构造批量删除请求体，batchMsgId:{}, 请求体:{}", batchMsgId, requestBody);
-            System.out.println("================================"+requestBody+"=======================================");
-            System.out.println("================================"+requestBody+"=======================================");
-            System.out.println("================================"+requestBody+"=======================================");
+            System.out.println("================================" + requestBody + "=======================================");
 
-            // 4. 调用第三方DELETE接口（核心适配：JSON请求体 + application/json格式）
-            String result = HttpRequest.delete(THIRD_PARTY_PERSON_DELETE_URL)
-                    .body(requestBody) // DELETE请求设置JSON请求体（Hutool支持）
-                    .contentType("application/json") // 必须指定JSON格式
-                    .setReadTimeout(TIMEOUT)
-                    .execute()
-                    .body();
+            // 4. 调用通用 DELETE 方法（已含签名）
+            String result = sendDeleteRequest(thirdPartyBaseUrl+thirdPartyPersonBatchDeletePath, requestBody);
 
-            // 5. 响应校验：判断接口返回是否成功
-            boolean isSuccess = false;
-            if (result != null) {
-                try {
-                    // 适配接口返回的JSON格式（取code字段判断）
-                    String code = JSONObject.parseObject(result).getString("code");
-                    isSuccess = "success".equals(code);
-                } catch (Exception e) {
-                    logger.warn("批量删除接口响应格式异常，无法解析code字段，batchMsgId:{}, result:{}", batchMsgId, result);
-                    isSuccess = false;
-                }
-            }
-
-            // 6. 日志输出结果
+            // 5. 响应校验
+            boolean isSuccess = result != null && "success".equals(JSONObject.parseObject(result).getString("code"));
             if (isSuccess) {
                 logger.info("批量删除人员成功，batchMsgId:{}, syncIds:{}", batchMsgId, validSyncIds);
             } else {
@@ -524,41 +548,57 @@ public class PersonChangeConsumer {
     }
 
 
-
-
     /**
-     * 处理批量导入、批量完成安全教育、全量同步人员信息
+     * 发送DELETE请求（封装通用DELETE逻辑，含签名）
+     *
+     * @param url  请求地址
+     * @param body 请求体（JSON字符串，如 ["id1","id2"]）
+     * @return 响应体字符串（null 表示失败）
      */
-//    private boolean handleBatchOperation(String batchMsgId, List<SwmPerson> personList, String operateType) {
-//        // 优先调用第三方批量全量同步接口（效率最高）
-//        if (StringUtils.isNotBlank(THIRD_PARTY_PERSON_BATCH_URL)) {
-//            try {
-//                JSONObject batchParam = new JSONObject();
-//                batchParam.put("msgId", batchMsgId);
-//                batchParam.put("operateType", operateType);
-//                batchParam.put("changeData", personList);
-//                batchParam.put("operateTime", System.currentTimeMillis());
-//
-//                System.out.println("================================"+batchParam.toJSONString()+"=======================================");
-//                System.out.println("================================"+batchParam.toJSONString()+"=======================================");
-//                System.out.println("================================"+batchParam.toJSONString()+"=======================================");
-//
-////              String result = HttpUtil.createPost(THIRD_PARTY_PERSON_URL)
-////                    .body(batchParam.toJSONString()) // 替换 setBody -> body
-////                    .contentType("application/json") // 必须设置 JSON 格式
-////                    // 方式1：推荐（Hutool 5.x+）：分别设置连接超时和读取超时（更灵活）
-////                    .setReadTimeout(TIMEOUT)       // 读取超时
-////                    // 方式2（兼容旧版本）：一次性设置超时（连接+读取）
-////                    // .timeout(THIRD_PARTY_TIMEOUT)
-////                    .execute()
-////                    .body();
-////            return "success".equals(JSONObject.parseObject(result).getString("code"));
-//            } catch (Exception e) {
-//                logger.error("调用第三方批量操作接口异常，batchMsgId:{}", batchMsgId, e);
-//            }
-//        }
-//        return true;
-//    }
+    private String sendDeleteRequest(String url, String body) {
+        try {
+            long timestamp = System.currentTimeMillis();
+            String nonce = UUID.randomUUID().toString().replace("-", "");
+
+            // 构造待签名字符串（注意：此处仍建议后续改为含 body 的拼接）
+            String signContent = appKey + timestamp + appSecret + nonce;
+            System.out.println("=============signContent (DELETE)===================" + signContent + "=======================================");
+
+            String sign = SignatureUtil.sha256(signContent);
+            System.out.println("=============sign (DELETE)===================" + sign + "=======================================");
+
+            try (HttpResponse response = HttpRequest.delete(url)
+                    .body(body)
+                    .contentType("application/json")
+                    .header("AppId", appKey)
+                    .header("Timestamp", String.valueOf(timestamp))
+                    .header("Nonce", nonce)
+                    .header("Sign", sign)
+                    .setReadTimeout(timeout)
+                    .execute()) {
+
+                logger.info("发送DELETE请求，url:{}, bodyLength:{}", url, body.length());
+                if (response.isOk()) {
+                    String message = response.body();
+                    // ✅ 新增：校验业务层是否成功
+                    if (SignatureUtil.isBusinessSuccess(message)) {
+                        return body;
+                    } else {
+                        logger.error("请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(message));
+                        return null;
+                    }
+                } else {
+                    logger.error("POST请求HTTP失败，url:{}, status:{}, response:{}",
+                            url, response.getStatus(), SignatureUtil.getErrorMessage(response.body()));
+                    return null;
+                }
+
+            }
+        } catch (Exception e) {
+            logger.error("发送DELETE请求异常，url:{}, body:{}", url, body, e);
+            return null;
+        }
+    }
 
 
 }

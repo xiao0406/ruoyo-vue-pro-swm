@@ -11,16 +11,19 @@ import com.jeesite.modules.config.RabbitMqConfig;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.util.MqSendUtil;
+import com.jeesite.modules.swm.util.SignatureUtil;
 import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -29,14 +32,29 @@ public class DeviceChangeConsumer {
     private static final Logger logger = LoggerFactory.getLogger(DeviceChangeConsumer.class);
     // 第三方设备接口（和人员接口风格统一）
 
-    private static final String THIRD_PARTY_DEVICE_BATCH_SYNC_URL = "你的第三方接口基础地址/api/Open/Device/SyncDevice";
-    private static final String THIRD_PARTY_DEVICE_URL = "你的第三方接口基础地址/api/Open/Device";
-    private static final String THIRD_PARTY_DEVICE_BATCH_URL = "http://第三方服务器/notify/deviceBatchChange";
+    @Value("${third-party.base-url:https://lbsapi.vgomap.com}")
+    private String thirdPartyBaseUrl;
 
-    // 第三方接口配置
-    private static final String THIRD_PARTY_BASE_URL = "/api/Open/Personnel";
-    private static final String THIRD_PARTY_UNBIND_URL = THIRD_PARTY_BASE_URL + "/UnBind";
-    private static final int TIMEOUT = 5000;
+    @Value("${third-party.device.base-url:/api/Open/Device}")
+    private String thirdPartyDeviceBasePath;
+
+    @Value("${third-party.device.batch-sync-url:/api/Open/Device/SyncDevice}")
+    private String thirdPartyDeviceBatchSyncPath;
+
+    @Value("${third-party.device.unbind-url:/api/Open/Personnel/UnBind}")
+    private String thirdPartyDeviceUnbindPath;
+
+    @Value("${third-party.app-key:fBPMJTYsQ8ndmNVz6SxzmZz7rdTVdkEf}")
+    private String appKey;
+
+    @Value("${third-party.app-secret:XAt3NFSxQUpkH7UaATAStTYK7XB8JFct}")
+    private String appSecret;
+
+    @Value("${third-party.request.timeout:5000}")
+    private int timeout;
+
+    // 设备类型固定值（安全帽设备类型为5，抽成常量便于维护）
+    private static final int DEVICE_TYPE_SAFETY_HELMET = 5;
 
     /**
      * 处理设备消息（完全复用人员消费端的结构：单条+批量解析、手动ACK、异常处理）
@@ -79,40 +97,6 @@ public class DeviceChangeConsumer {
         }
     }
 
-    /**
-     * 处理单条设备消息 新增、编辑、解绑 、删除
-     */
-//    private boolean handleSingleMsg(MqSendUtil.BaseDeviceMsg msg) {
-//        try {
-//            JSONObject param = new JSONObject();
-//            param.put("msgId", msg.getMsgId());
-//            param.put("operateType", msg.getOperateType());
-//            if (msg.getOperateType().equals(SyncDataOperateTypeEnum.HELMET_DELETE.getCode())){
-//                param.put("deviceId", msg.getDeviceId());
-//            }
-//            param.put("changeData", msg.getDeviceData());
-//            param.put("operateTime", msg.getOperateTime());
-//
-//            System.out.println("================================"+param.toJSONString()+"=======================================");
-//            System.out.println("================================"+param.toJSONString()+"=======================================");
-//            System.out.println("================================"+param.toJSONString()+"=======================================");
-//
-////            String result = HttpUtil.createPost(THIRD_PARTY_PERSON_URL)
-////                    .body(param.toJSONString()) // 替换 setBody -> body
-////                    .contentType("application/json") // 必须设置 JSON 格式
-////                    // 方式1：推荐（Hutool 5.x+）：分别设置连接超时和读取超时（更灵活）
-////                    .setReadTimeout(TIMEOUT)       // 读取超时
-////                    // 方式2（兼容旧版本）：一次性设置超时（连接+读取）
-////                    // .timeout(THIRD_PARTY_TIMEOUT)
-////                    .execute()
-////                    .body();
-////            return "success".equals(JSONObject.parseObject(result).getString("code"));
-//            return true;
-//        } catch (Exception e) {
-//            logger.error("处理单条消息失败，personData:{}", msg.getDeviceData(), e);
-//            return false;
-//        }
-//    }
 
     /**
      * 处理单条设备消息（完整支持：新增/删除/更新/解绑设备）
@@ -149,7 +133,7 @@ public class DeviceChangeConsumer {
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
-//                result = sendPutRequest(THIRD_PARTY_UNBIND_URL, requestParam);
+                result = sendPutRequest(thirdPartyBaseUrl+thirdPartyDeviceUnbindPath, requestParam);
 
                 // ========== 分支2：新增设备（POST + JSON格式） ==========
             } else if (SyncDataOperateTypeEnum.HELMET_ADD.getCode().equals(operateType)) {
@@ -177,13 +161,7 @@ public class DeviceChangeConsumer {
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 // 发送POST请求
-//                result = HttpRequest.post(THIRD_PARTY_DEVICE_URL)
-//                        .body(requestParam.toJSONString())
-//                        .contentType("application/json")
-//                        .setReadTimeout(TIMEOUT)
-//                        .execute()
-//                        .body();
-
+                result = sendPostRequest(thirdPartyBaseUrl+thirdPartyDeviceBasePath, requestParam);
                 // ========== 分支3：删除设备（DELETE + x-www-form-urlencoded） ==========
             } else if (SyncDataOperateTypeEnum.HELMET_DELETE.getCode().equals(operateType)) {
                 // 获取deviceId（非必传，但空则提示）
@@ -196,11 +174,7 @@ public class DeviceChangeConsumer {
                 System.out.println("================================"+deviceId+"=======================================");
                 System.out.println("================================"+deviceId+"=======================================");
                 // 发送DELETE请求：query参数传deviceId（x-www-form-urlencoded格式）
-//                result = HttpRequest.delete(THIRD_PARTY_DEVICE_URL)
-//                        .form("deviceId", deviceId) // 自动拼接到query
-//                        .setReadTimeout(TIMEOUT)
-//                        .execute()
-//                        .body();
+                result = sendDeleteRequest(thirdPartyBaseUrl+thirdPartyDeviceBasePath,deviceId);
 
                 // ========== 分支4：更新设备（PUT + JSON格式） ==========
             } else if (SyncDataOperateTypeEnum.HELMET_EDIT.getCode().equals(operateType)) {
@@ -228,50 +202,35 @@ public class DeviceChangeConsumer {
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 // 发送PUT请求
-//                result = HttpRequest.put(THIRD_PARTY_DEVICE_URL)
-//                        .body(requestParam.toJSONString())
-//                        .contentType("application/json")
-//                        .setReadTimeout(TIMEOUT)
-//                        .execute()
-//                        .body();
-
-                // ========== 分支5：不支持的操作类型 ==========
+                result = sendPutRequest(thirdPartyBaseUrl+thirdPartyDeviceBasePath, requestParam);
             } else {
+                // ========== 分支5：不支持的操作类型 ==========
                 logger.warn("暂不支持的设备操作类型，msgId:{}, type:{}", msgId, operateType);
                 return false;
             }
 
-            // 调试打印请求参数
-            System.out.println("================================"+requestParam.toJSONString()+"=======================================");
+            // 统一响应校验（和人员端一致：isSuccess+code=200）
+            if (result == null) {
+                logger.error("处理设备消息失败：第三方接口无响应，msgId:{}", msgId);
+                return false;
+            }
+            JSONObject resultJson = JSONObject.parseObject(result);
+            boolean isSuccess = resultJson.getBoolean("isSuccess") != null
+                    && resultJson.getBoolean("isSuccess")
+                    && resultJson.getIntValue("code") == 200;
 
-            // 响应校验：统一判断code=success
-            boolean isSuccess = (result != null && "success".equals(JSONObject.parseObject(result).getString("code")));
             if (!isSuccess) {
-                logger.error("设备消息处理失败，msgId:{}, result:{}", msgId, result);
+                String errMsg = resultJson.getString("message") != null ? resultJson.getString("message") : "无错误信息";
+                logger.error("处理设备消息失败：第三方接口返回失败，msgId:{}, code:{}, message:{}",
+                        msgId, resultJson.getIntValue("code"), errMsg);
             } else {
-                logger.info("设备消息处理成功，msgId:{}", msgId);
+                logger.info("处理设备消息成功，msgId:{}", msgId);
             }
             return isSuccess;
 
         } catch (Exception e) {
             logger.error("处理设备消息异常，deviceData:{}", msg.getDeviceData(), e);
             return false;
-        }
-    }
-
-    /**
-     * 通用PUT请求封装（解绑接口用）
-     */
-    private String sendPutRequest(String url, JSONObject param) {
-        try (HttpResponse res = HttpRequest.put(url)
-                .body(param.toJSONString())
-                .contentType("application/json")
-                .setReadTimeout(TIMEOUT)
-                .execute()) {
-            return res.isOk() ? res.body() : null;
-        } catch (Exception e) {
-            logger.error("PUT请求异常，url:{}, param:{}", url, param.toJSONString(), e);
-            return null;
         }
     }
 
@@ -341,7 +300,7 @@ public class DeviceChangeConsumer {
             for (SwmHelmetDevice device : validDeviceList) {
                 JSONObject deviceObj = new JSONObject();
                 // deviceType：默认值5（匹配接口示例），空则补默认值
-                deviceObj.put("deviceType", 5);
+                deviceObj.put("deviceType", DEVICE_TYPE_SAFETY_HELMET);
                 // deviceId：已过滤空值，直接赋值
                 deviceObj.put("deviceId", device.getDeviceId().trim());
                 datasArray.add(deviceObj);
@@ -357,13 +316,7 @@ public class DeviceChangeConsumer {
             System.out.println("------------------"+operateType+"---------------========="+requestBody+"=======================================");
 
             // 3. 调用第三方批量同步接口（POST + JSON格式）
-            String result = null ;
-//            String result = HttpRequest.post(THIRD_PARTY_DEVICE_BATCH_SYNC_URL)
-//                    .body(requestBody)
-//                    .contentType("application/json") // 严格匹配接口格式
-//                    .setReadTimeout(TIMEOUT)
-//                    .execute()
-//                    .body();
+            String result = sendPostRequest(thirdPartyBaseUrl+thirdPartyDeviceBatchSyncPath, requestParam);
 
             // 4. 响应校验：统一判断code=success
             boolean isSuccess = (result != null && "success".equals(JSONObject.parseObject(result).getString("code")));
@@ -377,6 +330,132 @@ public class DeviceChangeConsumer {
         } catch (Exception e) {
             logger.error("调用批量同步设备接口异常，batchMsgId:{}, deviceListSize:{}", batchMsgId, deviceList.size(), e);
             return false;
+        }
+    }
+
+    /**
+     * 通用POST请求封装（含签名，和人员端完全一致）
+     */
+    private String sendPostRequest(String url, JSONObject param) {
+        try {
+            long timestamp = System.currentTimeMillis();
+            String nonce = UUID.randomUUID().toString().replace("-", "");
+            // 构造待签名字符串（和人员端签名规则一致）
+            String signContent = appKey + timestamp + appSecret + nonce;
+            String sign = SignatureUtil.sha256(signContent);
+
+            try (HttpResponse response = HttpRequest.post(url)
+                    .body(param.toJSONString())
+                    .contentType("application/json")
+                    .header("AppId", appKey)
+                    .header("Timestamp", String.valueOf(timestamp))
+                    .header("Nonce", nonce)
+                    .header("Sign", sign)
+                    .setReadTimeout(timeout)
+                    .execute()) {
+
+                logger.info("发送设备POST请求，url:{}, param:{}, headers:{AppId, Timestamp, Nonce, Sign}",
+                        url, param.toJSONString());
+                if (response.isOk()) {
+                    String body = response.body();
+                    if (SignatureUtil.isBusinessSuccess(body)) {
+                        return body;
+                    } else {
+                        logger.error("设备POST请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(body));
+                        return null;
+                    }
+                } else {
+                    logger.error("设备POST请求HTTP失败，url:{}, status:{}, response:{}",
+                            url, response.getStatus(), SignatureUtil.getErrorMessage(response.body()));
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("发送设备POST请求异常，url:{}, param:{}", url, param.toJSONString(), e);
+            return null;
+        }
+    }
+
+    /**
+     * 通用PUT请求封装（含签名，和人员端完全一致）
+     */
+    private String sendPutRequest(String url, JSONObject param) {
+        try {
+            long timestamp = System.currentTimeMillis();
+            String nonce = UUID.randomUUID().toString().replace("-", "");
+            String signContent = appKey + timestamp + appSecret + nonce;
+            String sign = SignatureUtil.sha256(signContent);
+
+            try (HttpResponse response = HttpRequest.put(url)
+                    .body(param.toJSONString())
+                    .contentType("application/json")
+                    .header("AppId", appKey)
+                    .header("Timestamp", String.valueOf(timestamp))
+                    .header("Nonce", nonce)
+                    .header("Sign", sign)
+                    .setReadTimeout(timeout)
+                    .execute()) {
+
+                logger.info("发送设备PUT请求，url:{}, param:{}, headers:{AppId, Timestamp, Nonce, Sign}",
+                        url, param.toJSONString());
+                if (response.isOk()) {
+                    String body = response.body();
+                    if (SignatureUtil.isBusinessSuccess(body)) {
+                        return body;
+                    } else {
+                        logger.error("设备PUT请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(body));
+                        return null;
+                    }
+                } else {
+                    logger.error("设备PUT请求HTTP失败，url:{}, status:{}, response:{}",
+                            url, response.getStatus(), SignatureUtil.getErrorMessage(response.body()));
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("发送设备PUT请求异常，url:{}, param:{}", url, param.toJSONString(), e);
+            return null;
+        }
+    }
+
+    /**
+     * 通用DELETE请求封装（含签名，和人员端完全一致）
+     */
+    private String sendDeleteRequest(String url, String deviceId) {
+        try {
+            long timestamp = System.currentTimeMillis();
+            String nonce = UUID.randomUUID().toString().replace("-", "");
+            String signContent = appKey + timestamp + appSecret + nonce;
+            String sign = SignatureUtil.sha256(signContent);
+
+            try (HttpResponse response = HttpRequest.delete(url)
+                    .form("body", deviceId)
+                    .contentType("application/json")
+                    .header("AppId", appKey)
+                    .header("Timestamp", String.valueOf(timestamp))
+                    .header("Nonce", nonce)
+                    .header("Sign", sign)
+                    .setReadTimeout(timeout)
+                    .execute()) {
+
+                logger.info("发送设备DELETE请求，url:{}, bodyLength:{}", url, deviceId.length());
+                if (response.isOk()) {
+                    String resBody = response.body();
+                    if (SignatureUtil.isBusinessSuccess(resBody)) {
+                        return resBody;
+                    } else {
+                        logger.error("设备DELETE请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(resBody));
+                        return null;
+                    }
+                } else {
+                    logger.error("设备DELETE请求HTTP失败，url:{}, status:{}, response:{}",
+                            url, response.getStatus(), SignatureUtil.getErrorMessage(response.body()));
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("发送设备DELETE请求异常，url:{}, body:{}", url, deviceId, e);
+            return null;
         }
     }
 
