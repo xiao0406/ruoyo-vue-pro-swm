@@ -25,7 +25,10 @@
             create_date,
             update_by,
             update_date,
-            remarks
+            remarks,
+            corp_code,
+            corp_name,
+            hat_off_alarm_interval
         ) VALUES (
             #{id},
             #{deviceId},
@@ -47,7 +50,10 @@
             NOW(),
             #{updateBy},
             NOW(),
-            #{remarks}
+            #{remarks},
+            #{corpCode},
+            #{corpName},
+            #{hatOffAlarmInterval}
         )
         ON DUPLICATE KEY UPDATE
             server_ip = IFNULL(NULLIF(VALUES(server_ip), ''), server_ip),
@@ -66,7 +72,10 @@
             status = '0',
             update_by = VALUES(update_by),
             update_date = NOW(),
-            remarks = IFNULL(NULLIF(VALUES(remarks), ''), remarks)
+            remarks = IFNULL(NULLIF(VALUES(remarks), ''), remarks),
+            corp_code = IFNULL(NULLIF(VALUES(corp_code), ''), corp_code),
+            corp_name = IFNULL(NULLIF(VALUES(corp_name), ''), corp_name),
+            hat_off_alarm_interval = IFNULL(NULLIF(VALUES(hat_off_alarm_interval), ''), hat_off_alarm_interval)
     </insert>
     
 </mapper>

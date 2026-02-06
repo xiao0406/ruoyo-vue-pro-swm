@@ -52,20 +52,20 @@
 
     <!-- 查询数据 -->
     <select id="findList" resultType="SwmDailyAttendance">
-        SELECT DISTINCT ${sqlMap.column.toSql()}
+        SELECT  ${sqlMap.column.toSql()}
         ,jso.office_name AS company,
         pa.position_name AS department,
         pl.prod_line_name AS prodLine,
         wg.work_group_name AS team
         FROM ${sqlMap.table.toSql()}
-         JOIN swm_person sp ON a.identity_card = sp.identity_card
+         JOIN swm_person sp ON a.identity_card = sp.identity_card AND sp.STATUS = '0' AND sp.personnel_status = '1'
         LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
         <where>
             ${sqlMap.where.toSql()}
-            and  sp.status = '0' and a.`status` = '0' and sp.personnel_status = '1'
+            and  a.`status` = '0'
             <!-- 自定义条件 -->
             <if test="sqlMap.where.sqlSegment != null and sqlMap.where.sqlSegment != ''">
                 AND (${sqlMap.where.sqlSegment})
@@ -135,7 +135,7 @@
                 </choose>
             </when>
             <otherwise>
-                group by sp.identity_card
+                group by a.identity_card
                 ORDER BY
                     CASE
                         WHEN a.clock_in_time IS NOT NULL
@@ -146,7 +146,8 @@
                         ELSE 1
                     END ASC,
                     a.attendance_date DESC,
-                    a.update_date DESC
+                    a.update_date DESC,
+                    a.id DESC
             </otherwise>
         </choose>
 

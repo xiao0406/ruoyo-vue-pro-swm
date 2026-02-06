@@ -603,10 +603,10 @@ public class SwmWarningManagementController extends BaseController {
     /**
      * 确认告警
      */
-    @RequestMapping(value = "confirmWarning")
+    @RequestMapping(value = "confirmWarning/{id}")
     @ResponseBody
     @ApiOperation("确认告警")
-    public R confirmWarning(String id) {
+    public R confirmWarning(@PathVariable String id) {
         logger.info("接收到告警确认请求，ID: {}", id);
 
         if (id == null || id.isEmpty()) {

@@ -858,6 +858,26 @@ public class SwmDailyAttendanceController extends BaseController {
                 }
             }
 
+            // 3. 在线/离线筛选（核心修复：处理空集合+表别名+逻辑兜底）
+            String powerOnStatus = swmDailyAttendance.getPowerOnStatus();
+            if (StringUtils.isNotEmpty(powerOnStatus)) {
+                List<String> idCardList = new ArrayList<>(todayOnSiteIdCards);
+                // 关键：表别名建议通过常量/配置获取，避免硬编码
+                String identityCardColumn = "a.identity_card";
+
+                if ("0".equals(powerOnStatus)) {
+                    // 在线：空集合时不拼接条件（或根据业务返回空）
+                    if (!idCardList.isEmpty()) {
+                        swmDailyAttendance.getSqlMap().getWhere().and(identityCardColumn, QueryType.IN, idCardList);
+                    }
+                } else {
+                    // 离线：空集合时拼接 1=1（或根据业务调整），非空时拼接NOT IN
+                    if (!idCardList.isEmpty()) {
+                        swmDailyAttendance.getSqlMap().getWhere().and(identityCardColumn, QueryType.NOT_IN, idCardList);
+                    }
+                }
+            }
+
 
             // 获取所有符合条件的数据（不分页）
             List<SwmDailyAttendance> list = swmDailyAttendanceService.findExportList(swmDailyAttendance);

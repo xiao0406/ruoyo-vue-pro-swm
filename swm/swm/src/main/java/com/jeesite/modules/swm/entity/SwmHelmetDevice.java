@@ -58,6 +58,7 @@ import java.util.List;
         @Column(name = "hazard_retrigger_interval", attrName = "hazardRetriggerInterval", label = "危险源重新触发间隔(秒)"),
         @Column(name = "sleep_wakeup_time", attrName = "sleepWakeupTime", label = "休眠唤醒时间(秒)"),
         @Column(name = "beacon_filter_name", attrName = "beaconFilterName", label = "接收信标(名称)"),
+        @Column(name = "hat_off_alarm_interval", attrName = "hatOffAlarmInterval", label = "脱帽报警时间间隔"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
@@ -193,6 +194,7 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     private String powerOnStatus;
     //在线人数
     private List<String> deviceOnlist;
+    private String hatOffAlarmInterval;
 
 
     /**

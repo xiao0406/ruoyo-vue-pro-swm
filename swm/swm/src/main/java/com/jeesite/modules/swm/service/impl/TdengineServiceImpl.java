@@ -7,6 +7,7 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.OkHttpClientManager;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.constant.RedisConstant;
 import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.cache.DeviceCorpMappingCache;
@@ -840,7 +841,8 @@ public class TdengineServiceImpl implements TDengineService {
     public R<JSONObject> executeTDengineSQL(String sql) {
 
         String dbNameNew = dbname;
-        String corpCode = CorpUtils.getCurrentCorpCode();
+//        String corpCode = CorpUtils.getCurrentCorpCode();
+        String corpCode = TenantContext.get();
         if (StringUtils.isNotBlank(corpCode)) {
             dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
         }

@@ -4,6 +4,7 @@ import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.annotation.Column;
+import lombok.Data;
 
 /**
  * 头盔设备配置实体
@@ -26,9 +27,11 @@ import com.jeesite.common.mybatis.annotation.Column;
         @Column(name = "hazard_retrigger_interval", attrName = "hazardRetriggerInterval", label = "危险源重新触发间隔"),
         @Column(name = "sleep_wakeup_time", attrName = "sleepWakeupTime", label = "休眠唤醒时间"),
         @Column(name = "beacon_filter_name", attrName = "beaconFilterName", label = "接收信标名称"),
+        @Column(name = "hat_off_alarm_interval", attrName = "hatOffAlarmInterval", label = "脱帽报警时间间隔"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmHelmetDeviceConfig extends DataEntity<SwmHelmetDeviceConfig> {
     
     private static final long serialVersionUID = 1L;
@@ -47,6 +50,8 @@ public class SwmHelmetDeviceConfig extends DataEntity<SwmHelmetDeviceConfig> {
     private Integer hazardRetriggerInterval;
     private Integer sleepWakeupTime;
     private String beaconFilterName;
+    private String hatOffAlarmInterval;
+
     
     public SwmHelmetDeviceConfig() {
         this(null);
