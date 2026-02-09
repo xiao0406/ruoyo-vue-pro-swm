@@ -119,8 +119,8 @@ public class DeviceChangeConsumer {
             // ========== 分支1：解绑安全帽（原有逻辑，保留） ==========
             if (SyncDataOperateTypeEnum.HELMET_UNBIND.getCode().equals(operateType)) {
                 // 解绑安全帽：调用PUT /api/Open/Personnel/UnBind，仅需syncId
-                String syncId = (msg.getDeviceData() != null && StringUtils.isNotBlank(msg.getDeviceData().getDeviceId()))
-                        ? msg.getDeviceData().getDeviceId().trim()
+                String syncId = (msg.getDeviceData() != null && StringUtils.isNotBlank(msg.getDeviceData().getPersonId()))
+                        ? msg.getDeviceData().getPersonId().trim()
                         : "";
 
                 if (syncId.isEmpty()) {
@@ -183,9 +183,14 @@ public class DeviceChangeConsumer {
                     logger.error("更新设备缺少deviceData，msgId:{}", msgId);
                     return false;
                 }
-                // 三目运算获取参数（空值处理）
+                // 三目运算获取设备id
                 String deviceId = StringUtils.isNotBlank(msg.getDeviceData().getDeviceId())
                         ? msg.getDeviceData().getDeviceId().trim() : "";
+
+                // 三目运算获取原设备id
+                String oldDeviceId = (msg.getDeviceData() != null && StringUtils.isNotBlank(msg.getDeviceData().getOldDeviceId()))
+                        ? msg.getDeviceData().getOldDeviceId().trim()
+                        : "";
 
                 // 必传参数校验：deviceId不能为空
                 if (deviceId.isEmpty()) {
@@ -196,6 +201,7 @@ public class DeviceChangeConsumer {
                 // 构造更新请求参数
                 requestParam.put("deviceType", 5);
                 requestParam.put("deviceId", deviceId);
+                requestParam.put("oldDeviceId", oldDeviceId);
                 logger.info("构造更新设备请求参数，msgId:{}, param:{}", msgId, requestParam.toJSONString());
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
@@ -401,6 +407,8 @@ public class DeviceChangeConsumer {
                 if (response.isOk()) {
                     String body = response.body();
                     if (SignatureUtil.isBusinessSuccess(body)) {
+                        logger.info("设备PUT请求成功，url:{}, HTTP状态:{}, 响应体:{}",
+                                url, response.getStatus(), body);
                         return body;
                     } else {
                         logger.error("设备PUT请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(body));

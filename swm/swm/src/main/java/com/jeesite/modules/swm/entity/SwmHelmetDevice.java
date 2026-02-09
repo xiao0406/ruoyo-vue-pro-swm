@@ -202,6 +202,18 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
      */
     private Integer random;
 
+    /**
+     * 旧设备ID - 非数据库字段，仅用于数据传递
+     */
+    @ApiModelProperty(value = "旧设备ID（仅用于数据传递）")
+    private String oldDeviceId;
+
+    /**
+     * 绑定人员主键id - 非数据库字段，仅用于数据传递
+     */
+    @ApiModelProperty(value = "绑定人员主键id（仅用于数据传递）")
+    private String personId;
+
 
     @ExcelFields({
             @ExcelField(title="设备编号", attrName = "deviceId", align = ExcelField.Align.CENTER, sort = 10),
@@ -507,4 +519,27 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     public void setBeaconFilterName(String beaconFilterName) {
         this.beaconFilterName = beaconFilterName;
     }
+
+    /**
+     * 获取旧设备ID（非数据库字段）
+     */
+    public String getOldDeviceId() {
+        return oldDeviceId;
+    }
+
+    /**
+     * 设置旧设备ID（非数据库字段）
+     */
+    public void setOldDeviceId(String oldDeviceId) {
+        this.oldDeviceId = oldDeviceId;
+    }
+
+    public String getPersonId() {
+        return personId;
+    }
+
+    public void setPersonId(String personId) {
+        this.personId = personId;
+    }
+
 }

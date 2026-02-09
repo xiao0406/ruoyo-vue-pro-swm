@@ -592,9 +592,15 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     @Override
     @Transactional(readOnly = false)
     public void save(SwmHelmetDevice device) {
+        String oldDeviceId="";
         String operateType = (device.getId() == null || device.getId().isEmpty())
                 ? SyncDataOperateTypeEnum.HELMET_ADD.getCode()
                 : SyncDataOperateTypeEnum.HELMET_EDIT.getCode();
+        if (operateType.equals(SyncDataOperateTypeEnum.HELMET_EDIT.getCode())){
+            //修改之前查询下原deviceId
+            SwmHelmetDevice oldSwmHelmetDevice = super.get(device.getId());
+            oldDeviceId = oldSwmHelmetDevice.getDeviceId();
+        }
         super.save(device);
 
         // 更新缓存
@@ -608,6 +614,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
         // 调用新的设备消息发送方法
         SwmHelmetDevice swmHelmetDevice = super.get(device.getId());
+        swmHelmetDevice.setOldDeviceId(oldDeviceId);
         mqSendUtil.sendDeviceSingleChangeMsg(operateType, swmHelmetDevice);
     }
 
@@ -650,6 +657,10 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         if (deviceId == null || deviceId.trim().isEmpty()) {
             throw new IllegalArgumentException("设备ID不能为空");
         }
+        //根据身份证号查询人员主键id
+        // 调用新的设备消息发送方法
+        SwmHelmetDevice swmHelmetDevice = dao.getByDeviceId(deviceId);
+        SwmPerson byIdentityCard = swmPersonService.getByIdentityCard(swmHelmetDevice.getAssignedPerson());
 
         // 直接使用DAO执行SQL更新，强制将字段设置为null
         int result = dao.clearDeviceAssignment(deviceId);
@@ -659,9 +670,10 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             // 更新Redis缓存 - 清除分配关系
             helmetCacheService.updateDevicePersonMapping(deviceId, null);
             logger.info("已强制清空设备{}的绑定信息", deviceId);
-            // 调用新的设备消息发送方法
-            SwmHelmetDevice swmHelmetDevice = dao.getByDeviceId(deviceId);
-            mqSendUtil.sendDeviceSingleChangeMsg(SyncDataOperateTypeEnum.HELMET_UNBIND.getCode(), swmHelmetDevice);
+            if (byIdentityCard != null && byIdentityCard.getId() != null){
+                swmHelmetDevice.setPersonId(byIdentityCard.getId());
+                mqSendUtil.sendDeviceSingleChangeMsg(SyncDataOperateTypeEnum.HELMET_UNBIND.getCode(), swmHelmetDevice);
+            }
         } else {
             logger.warn("清空设备{}绑定信息失败，可能设备不存在", deviceId);
         }
