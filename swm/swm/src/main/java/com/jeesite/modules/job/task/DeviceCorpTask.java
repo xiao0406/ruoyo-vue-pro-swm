@@ -3,7 +3,7 @@ package com.jeesite.modules.job.task;
 
 import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.swm.cache.DeviceCorpMappingCache;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.sys.entity.User;

@@ -5,7 +5,6 @@
 package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.collection.CollectionUtil;
-import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.google.common.collect.Lists;
 import com.jeesite.common.entity.Page;
@@ -13,13 +12,10 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.cache.service.RedisService;
-import com.jeesite.modules.entity.SwmBeaconStationExport;
 import com.jeesite.modules.entity.SwmPersonExport;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
-import com.jeesite.modules.swm.entity.SwmArea;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.entity.AiDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
@@ -33,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;

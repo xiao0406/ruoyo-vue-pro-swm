@@ -2,10 +2,8 @@ package com.jeesite.modules.swm.cache;
 
 import com.alibaba.cloud.commons.lang.StringUtils;
 import com.jeesite.common.lang.ObjectUtils;
-import com.jeesite.modules.constant.RedisConstant;
 import com.jeesite.modules.enums.CorpDbEnum;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
-import com.jeesite.modules.swm.entity.HelmetDevice;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.xxl.job.core.context.XxlJobHelper;

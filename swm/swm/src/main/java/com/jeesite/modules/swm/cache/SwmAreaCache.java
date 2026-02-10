@@ -1,29 +1,22 @@
 package com.jeesite.modules.swm.cache;
 
 
-import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.TenantContext;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmArea;
-import com.jeesite.modules.swm.entity.SwmHazardSource;
-import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmAreaService;
-import com.jeesite.modules.swm.service.SwmHazardSourceService;
-import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.service.UserService;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.xxl.job.core.context.XxlJobHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.stream.Collectors;
 

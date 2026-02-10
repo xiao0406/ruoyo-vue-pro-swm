@@ -7,6 +7,7 @@ import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.dao.SwmAlarmConfigDao;
 import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.swm.entity.SwmAlarmConfig;
@@ -1701,7 +1702,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT device_id, id_card, area_name, time FROM ")
-                    .append(dbname).append(".area_fence_data")
+                    .append(dbname).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA)
                     .append(" WHERE (");
 
             // 添加每个设备ID和时间范围的条件
@@ -1834,7 +1835,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                 }
 
                 // 子表名示例：plb.area_fence_data_设备id_身份证
-                String tableName = dbname +".area_fence_data_" + deviceId + "_" + idCard;
+                String tableName = dbname +"."+TdengineSuperTableConstant.AREA_FENCE_DATA+"_" + deviceId + "_" + idCard;
                 String key = deviceId + ":" + idCard;
                 if (deviceLocationMap.containsKey(key)) {
                     continue; // 避免重复

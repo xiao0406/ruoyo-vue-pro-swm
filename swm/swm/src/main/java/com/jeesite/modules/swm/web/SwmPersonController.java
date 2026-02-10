@@ -4,7 +4,6 @@
  */
 package com.jeesite.modules.swm.web;
 
-import cn.hutool.core.date.DateUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelReader;
 import com.alibaba.excel.context.AnalysisContext;
@@ -17,8 +16,7 @@ import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
-import com.jeesite.modules.entity.SwmPersonExport;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmPersonDeparture;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
@@ -34,14 +32,9 @@ import com.jeesite.modules.swm.service.SwmPersonCacheService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.service.SwmHelmetCacheService;
 import com.jeesite.modules.swm.service.TDengineService;
-import com.jeesite.modules.sys.entity.User;
-import com.jeesite.modules.sys.service.UserService;
 import com.jeesite.modules.sys.utils.CorpUtils;
-import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import com.jeesite.modules.utils.R;
-import com.xxl.job.core.context.XxlJobHelper;
-import org.apache.commons.collections.CollectionUtils;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
@@ -60,8 +53,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -1630,8 +1621,9 @@ public class SwmPersonController extends BaseController {
         try {
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
-            sqlBuilder.append("SELECT id_card, area_name FROM ").append(tdengineDbName)
-                    .append(".area_fence_data WHERE id_card IN (");
+            sqlBuilder.append("SELECT id_card, area_name FROM ").append(tdengineDbName).append(".")
+                    .append(TdengineSuperTableConstant.AREA_FENCE_DATA)
+                    .append(" WHERE id_card IN (");
 
             // 添加身份证号列表
             int i = 0;

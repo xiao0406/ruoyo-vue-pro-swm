@@ -518,8 +518,8 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
             // 查询进入休闲区的次数
             // 修改查询，不使用DISTINCT，改为查询所有area_id，然后在Java中去重
             String countSql = String.format(
-                    "SELECT area_id FROM %s.area_fence_data WHERE %s AND area_id IN %s",
-                    dbname, whereClause.toString(), areaIdsClause.toString());
+                    "SELECT area_id FROM %s.%s WHERE %s AND area_id IN %s",
+                    dbname,TdengineSuperTableConstant.AREA_FENCE_DATA, whereClause.toString(), areaIdsClause.toString());
 
             logger.debug("查询休闲区进入次数SQL: {}", countSql);
 
@@ -553,8 +553,8 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
             // 查询在休闲区的总时长（以分钟为单位）
             // 简单查询在指定时间范围内进入休闲区的记录总数
             String durationSql = String.format(
-                    "SELECT COUNT(*) FROM %s.area_fence_data WHERE %s AND area_id IN %s",
-                    dbname, whereClause.toString(), areaIdsClause.toString());
+                    "SELECT COUNT(*) FROM %s.%s WHERE %s AND area_id IN %s",
+                    dbname,TdengineSuperTableConstant.AREA_FENCE_DATA, whereClause.toString(), areaIdsClause.toString());
 
             logger.debug("查询休闲区进入总次数SQL: {}", durationSql);
             R<cn.hutool.json.JSONObject> durationResult = tdengineService.executeTDengineSQL(durationSql);

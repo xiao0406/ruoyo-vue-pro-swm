@@ -1,18 +1,16 @@
 package com.jeesite.modules.swm.service;
 
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.jeesite.common.lang.DateUtils;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
@@ -22,10 +20,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.concurrent.atomic.AtomicInteger;
+
 import java.util.stream.IntStream;
-import java.text.SimpleDateFormat;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 大屏数据看板Service

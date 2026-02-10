@@ -1,4 +1,4 @@
-package com.jeesite.modules.swm.constant;
+package com.jeesite.modules.constant;
 
 /**
  * 调试模式常量

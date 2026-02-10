@@ -4,7 +4,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.modules.cache.service.RedisService;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
 import com.jeesite.modules.swm.service.TDengineService;
 import com.jeesite.modules.sys.utils.CorpUtils;
