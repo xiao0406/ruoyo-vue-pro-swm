@@ -15,6 +15,7 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.TenantContext;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.entity.SwmBeaconStationExport;
 import com.jeesite.modules.entity.SwmHelmetDeviceExport;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
@@ -86,10 +87,6 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
     @Autowired
     private UserService userService;
 
-    /**
-     * 安全帽超级表名称
-     */
-    private static final String HELMET_SUPER_TABLE_NAME = "helmet_runde_ca_report_location";
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -384,7 +381,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                         "AND time >= NOW() - 5m \n" +
                         "ORDER BY time DESC \n" +
                         "LIMIT 1;",
-                dbname, HELMET_SUPER_TABLE_NAME, swmHelmetDevice.getDeviceId());
+                dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION, swmHelmetDevice.getDeviceId());
 
         try {
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
@@ -431,7 +428,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                         "WHERE time >= NOW() - 5m " +
                         "GROUP BY device_id " +
                         "HAVING LAST_ROW(bat_l) <= %d;",
-                dbname, HELMET_SUPER_TABLE_NAME, batteryLevel);
+                dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION, batteryLevel);
 
         try {
             logger.info("根据电量条件{}%查询设备ID的SQL: {}", batteryLevel, sql);
@@ -486,7 +483,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                         "WHERE time >= NOW() - 5m " +
                         "GROUP BY device_id " +
                         "HAVING LAST_ROW(bat_l) <= %d;",
-                dbname, HELMET_SUPER_TABLE_NAME, batteryLevel);
+                dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION, batteryLevel);
 
         try {
             logger.info("根据电量条件{}%查询设备ID的SQL: {}", batteryLevel, sql);

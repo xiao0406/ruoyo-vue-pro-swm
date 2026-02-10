@@ -9,6 +9,7 @@ import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.OkHttpClientManager;
 import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.constant.RedisConstant;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.cache.DeviceCorpMappingCache;
 import com.jeesite.modules.swm.constant.DebugConstant;
@@ -145,7 +146,7 @@ public class TdengineServiceImpl implements TDengineService {
         }
         try {
             // 检查是否为安全帽超级表
-            if ("helmet_runde_ca_report_location".equals(deviceDataDTO.getDeviceNum())) {
+            if (TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION.equals(deviceDataDTO.getDeviceNum())) {
                 return insertHelmetSuperTableData(deviceDataDTO);
             }
 
@@ -274,7 +275,7 @@ public class TdengineServiceImpl implements TDengineService {
                         JSONArray row = dataArray.getJSONArray(i);
                         if (row != null && row.size() > 0) {
                             String tableName = row.getStr(0);
-                            if ("helmet_runde_ca_report_location".equals(tableName)) {
+                            if (TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION.equals(tableName)) {
                                 superTableExists = true;
                                 break;
                             }
@@ -333,7 +334,7 @@ public class TdengineServiceImpl implements TDengineService {
                         JSONArray row = dataArray.getJSONArray(i);
                         if (row != null && row.size() > 0) {
                             String tableName = row.getStr(0);
-                            if ("helmet_runde_ca_report_location".equals(tableName)) {
+                            if (TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION.equals(tableName)) {
                                 log.info("安全帽超级表已存在: {}", tableName);
                                 return R.ok();
                             }
@@ -344,7 +345,7 @@ public class TdengineServiceImpl implements TDengineService {
 
             // 超级表不存在，创建超级表
             StringBuilder createSuperTableSql = new StringBuilder("create stable if not exists ")
-                    .append(dbname).append(".helmet_runde_ca_report_location (time TIMESTAMP");
+                    .append(dbname).append("." +TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+ " (time TIMESTAMP");
 
             // 添加数据字段（排除device_id和id_card，因为它们是标签）
             sampleData.forEach((key, value) -> {
@@ -412,7 +413,7 @@ public class TdengineServiceImpl implements TDengineService {
             // 如果身份证ID为空，使用空字符串
             String idCardValue = (idCard != null && !idCard.trim().isEmpty()) ? idCard : "";
             String createSubTableSql = "create table if not exists " + dbname + "." + subTableName
-                    + " using " + dbname + ".helmet_runde_ca_report_location tags ('" + deviceId + "', '" + idCardValue
+                    + " using " + dbname + "."+TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+" tags ('" + deviceId + "', '" + idCardValue
                     + "')";
 
             log.info("创建安全帽子表SQL: {}", createSubTableSql);
@@ -513,7 +514,7 @@ public class TdengineServiceImpl implements TDengineService {
     @Override
     public Map<String, Object> getLastRow(String deviceNum) {
         // 检查是否为安全帽超级表查询
-        if ("helmet_runde_ca_report_location".equals(deviceNum)) {
+        if (TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION.equals(deviceNum)) {
             return getLastRowForHelmetSuperTable();
         }
 
@@ -539,7 +540,7 @@ public class TdengineServiceImpl implements TDengineService {
      */
     private Map<String, Object> getLastRowForHelmetSuperTable() {
         try {
-            String sql = "select LAST_ROW(*) from " + dbname + ".helmet_runde_ca_report_location";
+            String sql = "select LAST_ROW(*) from " + dbname + "." + TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION;
             log.info("安全帽超级表最新记录查询SQL: {}", sql);
 
             R<JSONObject> lastRowR = execute(sql);
@@ -596,7 +597,7 @@ public class TdengineServiceImpl implements TDengineService {
         }
 
         // 检查是否为安全帽超级表查询
-        if ("helmet_runde_ca_report_location".equals(param.getDeviceCode())) {
+        if (TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION.equals(param.getDeviceCode())) {
             return listPageForHelmetSuperTable(param);
         }
 
@@ -659,7 +660,7 @@ public class TdengineServiceImpl implements TDengineService {
                 sql += "* ";
             }
 
-            sql += "from " + dbname + ".helmet_runde_ca_report_location ";
+            sql += "from " + dbname + "."+TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+" ";
 
             // 添加时间条件
             if (StringUtils.isNotBlank(param.getStartTime()) && StringUtils.isNotBlank(param.getEndTime())) {
@@ -708,7 +709,7 @@ public class TdengineServiceImpl implements TDengineService {
     @Override
     public Long count(QueryParamDTO param) {
         // 检查是否为安全帽超级表查询
-        if ("helmet_runde_ca_report_location".equals(param.getDeviceCode())) {
+        if (TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION.equals(param.getDeviceCode())) {
             return countForHelmetSuperTable(param);
         }
 
@@ -745,7 +746,7 @@ public class TdengineServiceImpl implements TDengineService {
      */
     private Long countForHelmetSuperTable(QueryParamDTO param) {
         try {
-            String countSql = "select count(1) from " + dbname + ".helmet_runde_ca_report_location ";
+            String countSql = "select count(1) from " + dbname + "." +TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+" ";
 
             if (StringUtils.isNotBlank(param.getStartTime()) && StringUtils.isNotBlank(param.getEndTime())) {
                 countSql += "where time>='" + param.getStartTime() + "' and time<='" + param.getEndTime() + "' ";
@@ -782,7 +783,7 @@ public class TdengineServiceImpl implements TDengineService {
     private R<String> rebuildSuperTable() {
         try {
             // 删除旧的超级表（如果存在）
-            String dropSuperTableSql = "drop stable if exists " + dbname + ".helmet_runde_ca_report_location";
+            String dropSuperTableSql = "drop stable if exists " + dbname + "."+TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION;
             log.info("删除超级表SQL: {}", dropSuperTableSql);
             R<JSONObject> dropResult = execute(dropSuperTableSql);
             if (dropResult.getCode() != R.SUCCESS) {
@@ -917,6 +918,6 @@ public class TdengineServiceImpl implements TDengineService {
         String safeIdCard = (idCard != null && !idCard.trim().isEmpty())
                 ? idCard.replaceAll("[^a-zA-Z0-9]", "_")
                 : "unknown";
-        return "helmet_runde_ca_report_location_" + deviceId + "_" + safeIdCard;
+        return TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+"_" + deviceId + "_" + safeIdCard;
     }
 }

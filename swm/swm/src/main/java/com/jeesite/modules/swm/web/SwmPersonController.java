@@ -16,6 +16,7 @@ import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.entity.SwmPersonExport;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmPerson;
@@ -1567,7 +1568,7 @@ public class SwmPersonController extends BaseController {
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT device_id, bat_l FROM ").append(tdengineDbName)
-                    .append(".helmet_runde_ca_report_location WHERE device_id IN (");
+                    .append("." + TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+ " WHERE device_id IN (");
 
             // 添加设备ID列表
             for (int i = 0; i < deviceIds.size(); i++) {

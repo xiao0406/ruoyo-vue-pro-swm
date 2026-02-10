@@ -4,6 +4,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -169,7 +170,7 @@ public class SwmDashboardService {
             // 查询20分钟内有数据的设备和人员
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT DISTINCT device_id, id_card FROM ")
-                     .append(dbname).append(".helmet_runde_ca_report_location")
+                     .append(dbname).append("."+ TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION)
                      .append(" WHERE time > ").append(twentyMinutesAgo);
             
             R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
@@ -598,7 +599,7 @@ public class SwmDashboardService {
             // 使用TDengine的last_row函数获取每个设备最新的一条记录
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT device_id, LAST_ROW(bat_l) as bat_l FROM ")
-                      .append(dbname).append(".helmet_runde_ca_report_location")
+                      .append(dbname).append("."+TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION)
                       .append(" WHERE bat_l IS NOT NULL")
                       .append(" GROUP BY device_id");
             

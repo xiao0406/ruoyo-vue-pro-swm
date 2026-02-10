@@ -1,5 +1,8 @@
 package com.jeesite.modules.swm.web;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.format.DatePrinter;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
@@ -96,8 +99,19 @@ public class SwmWarningManagementController extends BaseController {
         }
 
         // 处理时间范围查询条件
-        String beginTime = request.getParameter("timeRange[0]");
-        String endTime = request.getParameter("timeRange[1]");
+//        String beginTime = request.getParameter("timeRange[0]");
+//        String endTime = request.getParameter("timeRange[1]");
+        String beginTime = "";
+        String endTime = "";
+        Date startDate = swmWarningManagement.getStartDate();
+        Date endDate = swmWarningManagement.getEndDate();
+        if (startDate != null && endDate != null) {
+            beginTime = DateUtil.format(startDate, DatePattern.NORM_DATETIME_PATTERN);
+        }
+        if (endDate != null && endDate != null) {
+            endTime = DateUtil.format(endDate, DatePattern.NORM_DATETIME_PATTERN);
+        }
+
 
         if (com.jeesite.common.lang.StringUtils.isNotBlank(beginTime) && com.jeesite.common.lang.StringUtils.isNotBlank(endTime)) {
             // 设置开始时间和结束时间条件

@@ -2,6 +2,7 @@ package com.jeesite.modules.swm.service;
 
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.dao.SwmPersonnelBoardDao;
 import com.jeesite.modules.swm.entity.SwmPersonnelBoard;
 import com.jeesite.modules.swm.service.TDengineService;
@@ -256,7 +257,7 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
 
             // 构建查询SQL - 查询5分钟内该设备是否有数据
             String sql = String.format(
-                    "SELECT COUNT(*) FROM %s.helmet_runde_ca_report_location WHERE device_id='%s' AND time >= '%s'",
+                    "SELECT COUNT(*) FROM %s."+TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+" WHERE device_id='%s' AND time >= '%s'",
                     dbname, deviceId, fiveMinutesAgoStr);
 
             logger.debug("查询设备5分钟内数据SQL: {}", sql);
@@ -621,7 +622,7 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
             if ("1".equals(workStatus)) {
                 // 查询工作中的设备：5分钟内有数据的设备
                 String sql = String.format(
-                        "SELECT DISTINCT device_id FROM %s.helmet_runde_ca_report_location WHERE time >= '%s'",
+                        "SELECT DISTINCT device_id FROM %s." +TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+ " WHERE time >= '%s'",
                         dbname, fiveMinutesAgoStr);
 
                 logger.debug("查询工作中设备SQL: {}", sql);
@@ -652,8 +653,8 @@ public class SwmPersonnelBoardService extends CrudService<SwmPersonnelBoardDao, 
                 // 1. 先查询工作中的设备ID
                 List<String> workingDeviceIds = new ArrayList<>();
                 String sql = String.format(
-                        "SELECT DISTINCT device_id FROM %s.helmet_runde_ca_report_location WHERE time >= '%s'",
-                        dbname, fiveMinutesAgoStr);
+                        "SELECT DISTINCT device_id FROM %s.%s WHERE time >= '%s'",
+                        dbname,TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION, fiveMinutesAgoStr);
 
                 logger.debug("查询工作中设备SQL（用于排除）: {}", sql);
 
