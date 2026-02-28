@@ -15,18 +15,16 @@ import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.job.task.AttendanceTask;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.job.FmsMonthPlanProlongTask;
 import com.jeesite.modules.swm.service.AreaFenceDataService;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
 import com.jeesite.modules.sys.utils.CorpUtils;
-import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.util.MinioUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.apache.shiro.session.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.mock.web.MockMultipartFile;
@@ -42,8 +40,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
-import static net.oschina.j2cache.Level2Cache.log;
 
 /**
  * 日考勤统计表Controller

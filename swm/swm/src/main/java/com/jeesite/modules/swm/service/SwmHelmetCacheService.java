@@ -1,7 +1,7 @@
 package com.jeesite.modules.swm.service;
 
 import com.jeesite.modules.cache.service.RedisService;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

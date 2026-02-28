@@ -1,6 +1,7 @@
 package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.service.PersonTrackService;
 import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
 import com.jeesite.modules.swm.service.SwmHelmetCacheService;
@@ -976,8 +977,8 @@ public class PersonTrackController extends BaseController {
             // 构建SQL查询语句
             // device_id格式为 B0:8E:22:31:03:39，直接进行完全匹配
             StringBuilder sqlBuilder = new StringBuilder();
-            sqlBuilder.append("SELECT time, area_name FROM ").append(dbname).append(".area_fence_data ");
-            sqlBuilder.append("WHERE device_id = '").append(deviceId).append("' ");
+            sqlBuilder.append("SELECT time, area_name FROM ").append(dbname).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA);
+            sqlBuilder.append(" WHERE device_id = '").append(deviceId).append("' ");
 
             // 构建时间条件
             String timeCondition = buildTimeCondition(startDate, endDate, startTime, endTime);

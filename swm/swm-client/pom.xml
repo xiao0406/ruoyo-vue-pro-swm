@@ -47,7 +47,7 @@
 		<repository>
 			<!--            这个ID就是刚才setting.xml文件中的id -->
 			<id>cscec-repos</id>
-			<url>http://10.50.103.162:8081/nexus/repository/maven-releases/</url>
+			<url>http://10.50.103.163:8081/nexus/repository/maven-releases/</url>
 		</repository>
 		<!--        仓库的路径-->
 		<snapshotRepository>

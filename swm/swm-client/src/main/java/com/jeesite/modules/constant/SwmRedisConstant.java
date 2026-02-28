@@ -1,4 +1,4 @@
-package com.jeesite.modules.swm.constant;
+package com.jeesite.modules.constant;
 
 /**
  * SWM模块Redis缓存常量
@@ -22,7 +22,6 @@ public class SwmRedisConstant {
          */
         public static final String DEVICE_TO_CORP = SWM_PREFIX + "DEVICE_TO_CORP";
 
-
         /**
          * 设备ID到分配人员的映射缓存   HGETALL SWM:HELMET:DEVICE_PERSON_MAP
          */
@@ -42,6 +41,10 @@ public class SwmRedisConstant {
          * 身份证到人员ID映射的Redis Key
          */
         public static final String IDENTITY_CARD_MAP_KEY = "SWM:IDENTITY_CARD_MAP";
+
+        //电量redi
+        public static final String BATTERY_WARN_KEY_PREFIX = IOT_PREFIX + "battery:warn:";
+
 
 
     }

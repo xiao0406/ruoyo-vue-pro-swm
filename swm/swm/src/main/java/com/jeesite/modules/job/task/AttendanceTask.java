@@ -7,6 +7,7 @@ import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.TenantContext;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
@@ -3469,13 +3470,13 @@ public class AttendanceTask {
         try {
             // 查询指定区域的时间戳
             String sql = String.format(
-                "SELECT time FROM %s.area_fence_data " +
+                "SELECT time FROM %s.%s " +
                 "WHERE id_card = '%s' " +
                 "AND area_type = '%s' " +
                 "AND time >= '%s' " +
                 "AND time <= '%s' " +
                 "ORDER BY time ASC",
-                dbname, idCard, areaType, startTime, endTime
+                dbname, TdengineSuperTableConstant.AREA_FENCE_DATA, idCard, areaType, startTime, endTime
             );
             
             XxlJobHelper.log("查询区域数据SQL: {}", sql);

@@ -20,6 +20,8 @@ import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.entity.SwmPersonExport;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmPersonDeparture;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
@@ -68,6 +70,13 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -707,6 +716,7 @@ public class SwmPersonController extends BaseController {
                 result.put("message", message.toString());
             }
         } catch (Exception e) {
+            logger.error("导入Excel异常", e);
             result.put("success", false);
             result.put("message", "导入失败：" + e.getMessage());
         }
@@ -1674,7 +1684,7 @@ public class SwmPersonController extends BaseController {
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT device_id, bat_l FROM ").append(tdengineDbName)
-                    .append(".helmet_runde_ca_report_location WHERE device_id IN (");
+                    .append("." + TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+ " WHERE device_id IN (");
 
             // 添加设备ID列表
             for (int i = 0; i < deviceIds.size(); i++) {
@@ -1736,8 +1746,9 @@ public class SwmPersonController extends BaseController {
         try {
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
-            sqlBuilder.append("SELECT id_card, area_name FROM ").append(tdengineDbName)
-                    .append(".area_fence_data WHERE id_card IN (");
+            sqlBuilder.append("SELECT id_card, area_name FROM ").append(tdengineDbName).append(".")
+                    .append(TdengineSuperTableConstant.AREA_FENCE_DATA)
+                    .append(" WHERE id_card IN (");
 
             // 添加身份证号列表
             int i = 0;

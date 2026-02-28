@@ -3,6 +3,7 @@ package com.jeesite.modules.swm.service.impl;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.entity.SwmAreaFenceData;
 import com.jeesite.modules.swm.entity.vo.SwmAreaFenceDataVO;
 import com.jeesite.modules.swm.service.SwmAreaFenceDataService;
@@ -129,7 +130,7 @@ public class SwmAreaFenceDataServiceImpl implements SwmAreaFenceDataService {
     private String buildQuerySql(SwmAreaFenceData entity, boolean isPaging, int pageNo, int pageSize) {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT time, x, y, area_name, area_id, remarks, area_type, device_id, id_card ");
-        sql.append("FROM ").append(tdengineDbName).append(".area_fence_data ");
+        sql.append("FROM ").append(tdengineDbName).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA).append(" ");
 
         List<String> conditions = buildWhereConditions(entity);
         if (!conditions.isEmpty()) {
@@ -154,8 +155,7 @@ public class SwmAreaFenceDataServiceImpl implements SwmAreaFenceDataService {
 
     private String buildCountSql(SwmAreaFenceData entity) {
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT COUNT(*) FROM ").append(tdengineDbName).append(".area_fence_data ");
-
+        sql.append("SELECT COUNT(*) FROM ").append(tdengineDbName).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA).append(" ");
         List<String> conditions = buildWhereConditions(entity);
         if (!conditions.isEmpty()) {
             sql.append("WHERE ").append(String.join(" AND ", conditions));

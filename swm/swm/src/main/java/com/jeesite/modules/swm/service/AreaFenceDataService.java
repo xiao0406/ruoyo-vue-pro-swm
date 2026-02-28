@@ -8,8 +8,9 @@ package com.jeesite.modules.swm.service;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.lang.StringUtils;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.cache.DeviceCorpMappingCache;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.AreaFenceData;
 import com.jeesite.modules.swm.entity.AttendanceCheckResult;
 import com.jeesite.modules.swm.entity.SwmPerson;
@@ -27,8 +28,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Comparator;
@@ -251,7 +250,7 @@ public class AreaFenceDataService {
             // 查询当天是否有任何数据
             StringBuilder sql = new StringBuilder();
             sql.append("SELECT COUNT(*) ");
-            sql.append("FROM ").append(dbname).append(".area_fence_data ");
+            sql.append("FROM ").append(dbname).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA).append(" ");
             sql.append("WHERE id_card = '").append(idCard).append("' ");
             sql.append("AND time >= '").append(checkDate).append(" 08:02:00' ");
             sql.append("AND time <= '").append(checkDate).append(" 16:00:00' ");
@@ -293,7 +292,7 @@ public class AreaFenceDataService {
             // 查询08:02-08:05之间是否有数据
             StringBuilder sql = new StringBuilder();
             sql.append("SELECT COUNT(*) ");
-            sql.append("FROM ").append(dbname).append(".area_fence_data ");
+            sql.append("FROM ").append(dbname).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA).append(" ");
             sql.append("WHERE id_card = '").append(idCard).append("' ");
             sql.append("AND time >= '").append(checkDate).append(" 08:02:00' ");
             sql.append("AND time <= '").append(checkDate).append(" 08:05:00' ");
@@ -335,7 +334,7 @@ public class AreaFenceDataService {
             // 查询15:55-16:00之间是否有数据
             StringBuilder sql = new StringBuilder();
             sql.append("SELECT COUNT(*) ");
-            sql.append("FROM ").append(dbname).append(".area_fence_data ");
+            sql.append("FROM ").append(dbname).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA).append(" ");
             sql.append("WHERE id_card = '").append(idCard).append("' ");
             sql.append("AND time >= '").append(checkDate).append(" 15:55:00' ");
             sql.append("AND time <= '").append(checkDate).append(" 16:00:00' ");
@@ -380,7 +379,7 @@ public class AreaFenceDataService {
             // 查询当天在工作区域的数据总数（用于估算在岗时间）
             StringBuilder sql = new StringBuilder();
             sql.append("SELECT COUNT(*) ");
-            sql.append("FROM ").append(dbname).append(".area_fence_data ");
+            sql.append("FROM ").append(dbname).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA).append(" ");
             sql.append("WHERE id_card = '").append(idCard).append("' ");
             sql.append("AND time >= '").append(checkDate).append(" 08:02:00' ");
             sql.append("AND time <= '").append(checkDate).append(" 16:00:00' ");
@@ -712,13 +711,13 @@ public class AreaFenceDataService {
             // 查询指定工作时间范围内该身份证的所有区域围栏数据，按时间排序
             String sql = String.format(
                     "SELECT time, x, y, area_name, area_id, device_id, id_card " +
-                            "FROM %s.area_fence_data " +
+                            "FROM %s.%s " +
                             "WHERE id_card = '%s' " +
                             "AND time >= '%s' " +
                             "AND time <= '%s' " +
                             "AND %s " +
                             "ORDER BY time ASC",
-                    dbname, idCard, queryStartDateTime, queryEndDateTime, areaIdCondition.toString());
+                    dbname,TdengineSuperTableConstant.AREA_FENCE_DATA, idCard, queryStartDateTime, queryEndDateTime, areaIdCondition.toString());
 
             logger.debug("查询区域围栏数据SQL: {}", sql);
 
@@ -921,13 +920,13 @@ public class AreaFenceDataService {
             // 3. 查询指定时间范围内该身份证在休息区域的数据
             String sql = String.format(
                     "SELECT COUNT(*) " +
-                            "FROM %s.area_fence_data " +
+                            "FROM %s.%s " +
                             "WHERE id_card = '%s' " +
                             "AND time >= '%s' " +
                             "AND time <= '%s' " +
                             "AND %s " +
                             "LIMIT 1",
-                    dbname, idCard, startTime, endTime, areaIdCondition.toString());
+                    dbname,TdengineSuperTableConstant.AREA_FENCE_DATA, idCard, startTime, endTime, areaIdCondition.toString());
 
             logger.debug("查询休息区域数据SQL: {}", sql);
 
@@ -1209,12 +1208,12 @@ public class AreaFenceDataService {
             // 直接查询所有数据，不过滤区域
             String sql = String.format(
                     "SELECT time, x, y, area_name, area_id, device_id, id_card " +
-                            "FROM %s.area_fence_data " +
+                            "FROM %s.%s " +
                             "WHERE id_card = '%s' " +
                             "AND time >= '%s' " +
                             "AND time <= '%s' " +
                             "ORDER BY time ASC",
-                    dbname, idCard, queryStartDateTime, queryEndDateTime);
+                    dbname,TdengineSuperTableConstant.AREA_FENCE_DATA, idCard, queryStartDateTime, queryEndDateTime);
 
             logger.debug("查询所有区域心跳数据SQL: {}", sql);
 
@@ -1477,10 +1476,10 @@ public class AreaFenceDataService {
             areaIdCondition.append(")");
 
             String sql = String.format(
-                    "SELECT area_id FROM %s.area_fence_data " +
+                    "SELECT area_id FROM %s.%s " +
                             "WHERE id_card = '%s' AND time >= '%s' AND time <= '%s' AND %s " +
                             "ORDER BY time DESC LIMIT 1",
-                    dbname, idCard, startTime, endTime, areaIdCondition.toString());
+                    dbname,TdengineSuperTableConstant.AREA_FENCE_DATA, idCard, startTime, endTime, areaIdCondition.toString());
 
             logger.debug("获取实时位置SQL: {}", sql);
 

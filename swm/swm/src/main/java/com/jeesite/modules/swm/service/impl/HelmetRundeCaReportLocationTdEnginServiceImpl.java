@@ -5,6 +5,7 @@ import cn.hutool.http.HttpRequest;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.dao.HelmetDeviceDao;
 import com.jeesite.modules.swm.service.HelmetRundeCaReportLocationTdEnginService;
 import com.jeesite.modules.swm.service.TDengineService;
@@ -43,10 +44,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
     @Value("${tdengine.retentionPolicy}")
     private String retentionPolicy;
 
-    /**
-     * 安全帽超级表名称
-     */
-    private static final String HELMET_SUPER_TABLE_NAME = "helmet_runde_ca_report_location";
+
 
     /**
      * 生成复合子表名称，包含设备ID和身份证信息
@@ -62,7 +60,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
         String safeIdCard = (idCard != null && !idCard.trim().isEmpty())
                 ? idCard.replaceAll("[^a-zA-Z0-9]", "_")
                 : "unknown";
-        return "helmet_runde_ca_report_location_" + deviceId + "_" + safeIdCard;
+        return TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+ "_" + deviceId + "_" + safeIdCard;
     }
 
     /**
@@ -168,7 +166,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
     private R<JSONObject> ensureHelmetSuperTableExists(Map<String, Object> sampleData) {
         try {
             // 检查超级表是否存在
-            String checkSql = "show " + dbname + ".stables like '" + HELMET_SUPER_TABLE_NAME + "'";
+            String checkSql = "show " + dbname + ".stables like '" + TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION + "'";
             R<JSONObject> checkResult = tdengineService.executeTDengineSQL(checkSql);
 
             if (checkResult.getCode() == R.SUCCESS) {
@@ -179,7 +177,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
                         JSONArray row = dataArray.getJSONArray(i);
                         if (row != null && row.size() > 0) {
                             String tableName = row.getStr(0);
-                            if (HELMET_SUPER_TABLE_NAME.equals(tableName)) {
+                            if (TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION.equals(tableName)) {
                                 log.info("安全帽超级表已存在: {}", tableName);
                                 return R.ok();
                             }
@@ -190,11 +188,11 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
 
             // 超级表不存在，创建超级表
             StringBuilder createSuperTableSql = new StringBuilder("create stable if not exists ")
-                    .append(dbname).append(".").append(HELMET_SUPER_TABLE_NAME).append(" (time TIMESTAMP");
+                    .append(dbname).append(".").append(TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION).append(" (time TIMESTAMP");
 
             // 添加固定的x和y坐标字段
-            createSuperTableSql.append(",x DOUBLE");
-            createSuperTableSql.append(",y DOUBLE");
+//            createSuperTableSql.append(",x DOUBLE");
+//            createSuperTableSql.append(",y DOUBLE");
 
             // 添加数据字段（排除device_id、id_card、x、y，因为device_id和id_card是标签，x和y已经添加）
             sampleData.forEach((key, value) -> {
@@ -211,7 +209,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
             R<JSONObject> result = tdengineService.executeTDengineSQL(createSuperTableSql.toString());
 
             if (result.getCode() == R.SUCCESS) {
-                log.info("安全帽超级表创建成功: {}", HELMET_SUPER_TABLE_NAME);
+                log.info("安全帽超级表创建成功: {}", TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION);
             } else {
                 log.error("安全帽超级表创建失败: {}", result.getMsg());
             }
@@ -252,7 +250,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
             // 子表不存在，创建子表
             String createSubTableSql = String.format(
                     "create table if not exists %s.%s using %s.%s TAGS ('%s', '%s')",
-                    dbname, subTableName, dbname, HELMET_SUPER_TABLE_NAME, deviceId, idCard);
+                    dbname, subTableName, dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION, deviceId, idCard);
 
             log.info("创建安全帽子表SQL: {}", createSubTableSql);
             R<JSONObject> result = tdengineService.executeTDengineSQL(createSubTableSql);
@@ -436,7 +434,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
 
         try {
             String sql = String.format("select LAST_ROW(*) from %s.%s where device_id='%s'",
-                    dbname, HELMET_SUPER_TABLE_NAME, deviceId);
+                    dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION, deviceId);
 
             log.info("查询最新数据SQL: {}", sql);
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
@@ -485,7 +483,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
 
         try {
             StringBuilder sqlBuilder = new StringBuilder("select * from ")
-                    .append(dbname).append(".").append(HELMET_SUPER_TABLE_NAME)
+                    .append(dbname).append(".").append(TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION)
                     .append(" where device_id='").append(deviceId).append("'");
 
             if (StringUtils.isNotBlank(startTime) && StringUtils.isNotBlank(endTime)) {
@@ -509,7 +507,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
 
                 // 查询总数
                 String countSql = String.format("select count(*) from %s.%s where device_id='%s'",
-                        dbname, HELMET_SUPER_TABLE_NAME, deviceId);
+                        dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION, deviceId);
 
                 if (StringUtils.isNotBlank(startTime) && StringUtils.isNotBlank(endTime)) {
                     countSql += String.format(" and time>='%s' and time<='%s'", startTime, endTime);
@@ -553,7 +551,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
         log.info("获取所有安全帽设备列表");
 
         try {
-            String sql = String.format("select distinct device_id from %s.%s", dbname, HELMET_SUPER_TABLE_NAME);
+            String sql = String.format("select distinct device_id from %s.%s", dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION);
             log.info("查询设备列表SQL: {}", sql);
 
             R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
@@ -596,7 +594,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
 
         try {
             StringBuilder sqlBuilder = new StringBuilder("select count(*) from ")
-                    .append(dbname).append(".").append(HELMET_SUPER_TABLE_NAME);
+                    .append(dbname).append(".").append(TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION);
 
             List<String> conditions = new ArrayList<>();
             if (StringUtils.isNotBlank(deviceId)) {
@@ -647,17 +645,17 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
         try {
             // 查询设备总数
             String deviceCountSql = String.format("select count(distinct device_id) from %s.%s",
-                    dbname, HELMET_SUPER_TABLE_NAME);
+                    dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION);
 
             // 查询记录总数
             String recordCountSql = String.format("select count(*) from %s.%s",
-                    dbname, HELMET_SUPER_TABLE_NAME);
+                    dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION);
 
             R<JSONObject> deviceCountResult = tdengineService.executeTDengineSQL(deviceCountSql);
             R<JSONObject> recordCountResult = tdengineService.executeTDengineSQL(recordCountSql);
 
             Map<String, Object> statistics = new HashMap<>();
-            statistics.put("superTableName", HELMET_SUPER_TABLE_NAME);
+            statistics.put("superTableName", TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION);
 
             if (deviceCountResult.getCode() == R.SUCCESS) {
                 List<Map<String, Object>> rows = processQueryResult(deviceCountResult.getData());
@@ -710,7 +708,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
                 List<Map<String, Object>> rows = processQueryResult(result.getData());
                 List<String> subTables = new ArrayList<>();
 
-                String prefix = "helmet_runde_ca_report_location_" + deviceId + "_";
+                String prefix = TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION +"_" + deviceId + "_";
                 for (Map<String, Object> row : rows) {
                     String tableName = (String) row.values().iterator().next();
                     if (tableName != null && tableName.startsWith(prefix)) {
@@ -857,7 +855,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
      */
     @Override
     public String getHelmetSuperTableName() {
-        return HELMET_SUPER_TABLE_NAME;
+        return TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION;
     }
 
     /**
@@ -1109,10 +1107,10 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
 
             // 使用LAST_ROW函数配合PARTITION BY进行批量查询
             String sql = String.format(
-                    "select LAST_ROW(id_card, x, y, time) from %s.%s " +
+                    "select LAST_ROW(id_card, time) from %s.%s " +
                             "where %s and time >= '%s' and time <= '%s' " +
                             "partition by id_card",
-                    dbname, HELMET_SUPER_TABLE_NAME,
+                    dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION,
                     idCardCondition.toString(), startTime, endTime);
 
             log.info("查询身份证坐标SQL: {}", sql);
@@ -1125,22 +1123,22 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
                 for (Map<String, Object> row : rows) {
                     // 处理LAST_ROW函数返回的字段名
                     String idCard = (String) row.get("last_row(id_card)");
-                    Object xObj = row.get("last_row(x)");
-                    Object yObj = row.get("last_row(y)");
+//                    Object xObj = row.get("last_row(x)");
+//                    Object yObj = row.get("last_row(y)");
                     Object timeObj = row.get("last_row(time)");
 
-                    log.debug("原始数据 - idCard: {}, x: {}, y: {}, time: {}", idCard, xObj, yObj, timeObj);
+//                    log.debug("原始数据 - idCard: {}, x: {}, y: {}, time: {}", idCard, xObj, yObj, timeObj);
 
                     if (idCard != null && !idCard.trim().isEmpty()) {
                         Map<String, Object> locationInfo = new HashMap<>();
-                        locationInfo.put("x", xObj);
-                        locationInfo.put("y", yObj);
+//                        locationInfo.put("x", xObj);
+//                        locationInfo.put("y", yObj);
                         locationInfo.put("time", timeObj);
                         locationInfo.put("id_card", idCard);
 
                         locationMap.put(idCard, locationInfo);
-                        log.info("找到身份证 {} 的坐标: x={}, y={}, time={}",
-                                idCard, xObj, yObj, timeObj);
+//                        log.info("找到身份证 {} 的坐标: x={}, y={}, time={}",
+//                                idCard, xObj, yObj, timeObj);
                     }
                 }
 
@@ -1213,10 +1211,10 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
 
             // 查询当天该身份证的所有坐标数据，按时间排序
             String sql = String.format(
-                    "select id_card, x, y, time from %s.%s " +
+                    "select id_card, time from %s.%s " +
                             "where id_card='%s' and time >= '%s' and time <= '%s' " +
                             "order by time asc",
-                    dbname, HELMET_SUPER_TABLE_NAME,
+                    dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION,
                     idCard, startTime, endTime);
 
             log.info("查询轨迹坐标SQL: {}", sql);
@@ -1228,14 +1226,14 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
 
                 for (Map<String, Object> row : rows) {
                     String resultIdCard = (String) row.get("id_card");
-                    Object xObj = row.get("x");
-                    Object yObj = row.get("y");
+//                    Object xObj = row.get("x");
+//                    Object yObj = row.get("y");
                     Object timeObj = row.get("time");
 
-                    if (resultIdCard != null && !resultIdCard.trim().isEmpty() && xObj != null && yObj != null) {
+                    if (resultIdCard != null && !resultIdCard.trim().isEmpty()) {
                         Map<String, Object> point = new HashMap<>();
-                        point.put("x", xObj);
-                        point.put("y", yObj);
+//                        point.put("x", xObj);
+//                        point.put("y", yObj);
                         point.put("time", timeObj);
                         point.put("id_card", resultIdCard);
 
@@ -1285,7 +1283,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
                     "select time from %s.%s " +
                             "where id_card='%s' and time >= '%s' and time <= '%s' " +
                             "order by time asc limit 1",
-                    dbname, HELMET_SUPER_TABLE_NAME,
+                    dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION,
                     idCard, startTime, endTime);
 
             // 查询最后一条时间记录
@@ -1293,7 +1291,7 @@ public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRund
                     "select time from %s.%s " +
                             "where id_card='%s' and time >= '%s' and time <= '%s' " +
                             "order by time desc limit 1",
-                    dbname, HELMET_SUPER_TABLE_NAME,
+                    dbname, TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION,
                     idCard, startTime, endTime);
 
             log.info("查询第一条时间SQL: {}", firstSql);

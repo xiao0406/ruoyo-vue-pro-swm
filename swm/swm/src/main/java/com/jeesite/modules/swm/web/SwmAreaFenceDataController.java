@@ -4,6 +4,7 @@ import com.alibaba.excel.EasyExcel;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.entity.SwmAreaFenceData;
 import com.jeesite.modules.swm.entity.vo.SwmAreaFenceDataVO;
 import com.jeesite.modules.swm.service.SwmAreaFenceDataService;
@@ -114,7 +115,7 @@ public class SwmAreaFenceDataController extends BaseController {
                 return renderResult(Global.FALSE, text("没有符合条件的数据可以导出！"));
             }
 
-            String fileName = "area_fence_data_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".xlsx";
+            String fileName = TdengineSuperTableConstant.AREA_FENCE_DATA+"_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".xlsx";
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("utf-8");
             response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + URLEncoder.encode(fileName, "UTF-8"));
