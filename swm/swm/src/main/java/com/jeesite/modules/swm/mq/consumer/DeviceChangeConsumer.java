@@ -89,11 +89,19 @@ public class DeviceChangeConsumer {
                 channel.basicAck(deliveryTag, false);
                 logger.info("消费设备消息成功，deliveryTag:{}", deliveryTag);
             } else {
-                logger.error("消费设备消息失败，已确认（不重试），deliveryTag:{}，msg:{}", deliveryTag, jsonStr);
+                // 失败时：拒绝并重新入队（关键修改）
+                channel.basicNack(deliveryTag, false, false);
+                logger.error("消费消息失败，已拒绝并重新入队，deliveryTag:{}，msg:{}", deliveryTag, jsonStr);
             }
 
         } catch (Exception e) {
-            logger.error("消费设备消息异常，已确认（不重试），deliveryTag:{}", deliveryTag, e);
+            logger.error("消费消息异常，拒绝并重新入队，deliveryTag:{}", deliveryTag, e);
+            // 异常时：确保执行Nack（捕获IO异常，避免二次报错）
+            try {
+                channel.basicNack(deliveryTag, false, false);
+            } catch (IOException ioEx) {
+                logger.error("执行basicNack失败，deliveryTag:{}", deliveryTag, ioEx);
+            }
         }
     }
 
