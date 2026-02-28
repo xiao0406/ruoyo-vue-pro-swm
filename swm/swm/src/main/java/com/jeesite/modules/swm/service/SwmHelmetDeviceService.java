@@ -19,7 +19,6 @@ import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.entity.SwmHelmetDeviceExport;
 import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
-import com.jeesite.modules.swm.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmHelmetDeviceDao;
 import com.jeesite.modules.swm.dao.SwmSafetyHelmetOrderDao;
 import com.jeesite.modules.swm.entity.*;
