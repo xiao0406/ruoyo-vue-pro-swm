@@ -2042,7 +2042,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             Calendar cal = Calendar.getInstance();
             long currentTime = cal.getTimeInMillis(); // UTC时间戳
             //long twentyFourHoursAgo = currentTime - (24 * 60 * 60 * 1000); // 24小时前的UTC时间戳
-            long twentyFourHoursAgo = currentTime - (30 * 60 * 1000); // 10分钟前的UTC时间戳
+            long twentyFourHoursAgo = currentTime - (3 * 60 * 1000); // 10分钟前的UTC时间戳
 
 
             // 直接使用UTC时间戳，无需额外时区转换
