@@ -24,6 +24,13 @@ public class SwmMonthlyAttendance extends DataEntity<SwmMonthlyAttendance> {
 
     private Date currentMonth; //月份
 
+    private Date stratDate; //开始时间
+    private Date endDate; //结束时间
+
+    private String personType; //人员类型
+
+    private String timeRange;
+
     @Length(min = 0, max = 64, message = "员工ID长度不能超过 64 个字符")
     public String getEmployeeId() {
         return employeeId;
@@ -130,5 +137,37 @@ public class SwmMonthlyAttendance extends DataEntity<SwmMonthlyAttendance> {
 
     public void setMonthly(String monthly) {
         this.monthly = monthly;
+    }
+
+    public Date getStratDate() {
+        return stratDate;
+    }
+
+    public void setStratDate(Date stratDate) {
+        this.stratDate = stratDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getPersonType() {
+        return personType;
+    }
+
+    public void setPersonType(String personType) {
+        this.personType = personType;
+    }
+
+    public String getTimeRange() {
+        return timeRange;
+    }
+
+    public void setTimeRange(String timeRange) {
+        this.timeRange = timeRange;
     }
 }

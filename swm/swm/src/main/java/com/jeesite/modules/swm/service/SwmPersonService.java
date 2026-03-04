@@ -14,10 +14,14 @@ import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.entity.SwmPersonExport;
 import com.jeesite.modules.constant.SwmRedisConstant;
+import com.jeesite.modules.fms.entity.FmsPositionArchive;
+import com.jeesite.modules.fms.entity.FmsProdLine;
+import com.jeesite.modules.fms.entity.FmsWorkGroup;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.entity.AiDto;
+import com.jeesite.modules.swm.excel.SwmPersonSwitcWorkshopImport;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.sys.utils.CorpUtils;
@@ -29,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -384,26 +389,122 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     @Transactional(readOnly = false)
     public Integer importData(MultipartFile file) {
+
         ExcelImport excelImport = null;
         Integer count = 0;
-        try {
-            excelImport = new ExcelImport(file, 1, 0);
-            List<SwmPersonExport> list = excelImport.getDataList(SwmPersonExport.class);
-            if (CollectionUtil.isNotEmpty(list)){
-                for (SwmPersonExport export : list) {
-                    if (StringUtils.isBlank(export.getIdentityCard())){
-                        new RuntimeException("导入数据错误：身份证号不能为空");
-                    }
-                }
-                List<List<SwmPersonExport>> lists = BatchOperationsUtil.batchCutting(list, 100);
-                for (List<SwmPersonExport> list1 : lists) {
-                    this.dao.updateBatch(list1);
-                }
-                count = list.size();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+//
+//        try {
+//            excelImport = new ExcelImport(file, 1, 0);
+//            List<SwmPersonSwitcWorkshopImport> list =
+//                    excelImport.getDataList(SwmPersonSwitcWorkshopImport.class);
+//
+//            if (CollectionUtil.isEmpty(list)) {
+//                return 0;
+//            }
+//
+//            // 1. 收集 Excel 中所有数据
+//
+//            // 车间
+//            List<String> departments = list.stream()
+//                    .map(SwmPersonSwitcWorkshopImport::getDepartment)
+//                    .filter(StringUtils::isNotBlank)
+//                    .distinct()
+//                    .collect(Collectors.toList());
+//
+//            // 产线
+//            List<String> productionLines = list.stream()
+//                    .map(SwmPersonSwitcWorkshopImport::getProdLine)
+//                    .filter(StringUtils::isNotBlank)
+//                    .distinct()
+//                    .collect(Collectors.toList());
+//
+//            // 班组
+//            List<String> teams = list.stream()
+//                    .map(SwmPersonSwitcWorkshopImport::getTeam)
+//                    .filter(StringUtils::isNotBlank)
+//                    .distinct()
+//                    .collect(Collectors.toList());
+//
+//            // 2. 一次性查询数据库
+//            List<FmsPositionArchive> dbDepartments = this.dao.selectByNames(departments);
+//            List<FmsProdLine> dbLines = this.dao.selectByNames(productionLines);
+//            List<FmsWorkGroup> dbTeams = this.dao.selectByNames(teams);
+//
+//            // 3. 转成 Map 提高匹配效率
+//            Map<String, FmsPositionArchive> departmentMap =
+//                    dbDepartments.stream()
+//                            .collect(Collectors.toMap(
+//                                    FmsPositionArchive::getPositionName,
+//                                    e -> e,
+//                                    (a, b) -> a
+//                            ));
+//
+//            Map<String, FmsProdLine> lineMap =
+//                    dbLines.stream()
+//                            .collect(Collectors.toMap(
+//                                    FmsProdLine::getProdLineName,
+//                                    e -> e,
+//                                    (a, b) -> a
+//                            ));
+//
+//            Map<String, FmsWorkGroup> teamMap =
+//                    dbTeams.stream()
+//                            .collect(Collectors.toMap(
+//                                    FmsWorkGroup::getWorkGroupName,
+//                                    e -> e,
+//                                    (a, b) -> a
+//                            ));
+//
+//            // =============================
+//            // 4. 循环校验 & 组装数据
+//            // =============================
+//
+//            for (SwmPersonSwitcWorkshopImport item : list) {
+//
+//                String departmentName = item.getDepartment();
+//                String lineName = item.getProductionLine();
+//                String teamName = item.getTeam();
+//
+//                SwmDepartment department = departmentMap.get(departmentName);
+//                if (department == null) {
+//                    throw new RuntimeException("车间不存在：" + departmentName);
+//                }
+//
+//                SwmProductionLine line = lineMap.get(lineName);
+//                if (line == null) {
+//                    throw new RuntimeException("产线不存在：" + lineName);
+//                }
+//
+//                SwmTeam team = teamMap.get(teamName);
+//                if (team == null) {
+//                    throw new RuntimeException("班组不存在：" + teamName);
+//                }
+//
+//                // =============================
+//                // 如果需要校验层级关系（非常重要）
+//                // =============================
+//
+//                if (!line.getDepartmentId().equals(department.getId())) {
+//                    throw new RuntimeException("产线【" + lineName + "】不属于车间【" + departmentName + "】");
+//                }
+//
+//                if (!team.getProductionLineId().equals(line.getId())) {
+//                    throw new RuntimeException("班组【" + teamName + "】不属于产线【" + lineName + "】");
+//                }
+//
+//                // =============================
+//                // 保存或更新逻辑
+//                // =============================
+//
+//                // TODO: 你的业务保存逻辑
+//            }
+//
+//            count = list.size();
+//
+//        } catch (Exception e) {
+//            throw new RuntimeException("导入失败：" + e.getMessage(), e);
+//        }
+
         return count;
     }
 

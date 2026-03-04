@@ -1,22 +1,31 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.date.BetweenFormater;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.idgen.IdGen;
 import com.jeesite.common.lang.ObjectUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.config.TenantContext;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.entity.AiDto;
+import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.dao.SwmPersonScheduleLogDao;
 import com.jeesite.modules.swm.entity.*;
+import com.jeesite.modules.swm.entity.dto.SwmAttendanceDto;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.utils.BatchOperationsUtil;
+import com.jeesite.modules.utils.R;
 import com.xxl.job.core.context.XxlJobHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +36,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -47,6 +58,9 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     @Autowired
     private SwmPersonScheduleLogDao swmPersonScheduleLogDao;
+
+    @Autowired
+    protected TDengineService tdengineService;
 
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
@@ -1352,5 +1366,198 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             logList.add(scheduleLog);
         }
         swmPersonScheduleLogDao.insertBatch(logList);
+    }
+
+    /**'
+     * 工作区考勤时长和怠工（休闲区）停留时长
+     * 去查询Tdengine的 area_fence_data_设备号_身份证号 这张表
+     *
+     * 大概思路：查询前端传入时间的所有数据，然后就就可以知道当天工人都进去了哪些区域，用area_type知道工人都在哪个区域（0-工作区，1-休闲区）
+     * 并且再增加一个逻辑，如果在同一个区域内，下一个数据的时间和上一个数据时间间隔大于10分钟，
+     那就说明关机过一次，也同样增加一条记录
+     * @param vo
+     * @return
+     */
+    public SwmAttendanceDto findAttendanceRange(SwmAttendanceDto vo) {
+        String identityCard = vo.getIdentityCard();
+        String deviceId = vo.getDeviceId();
+        Date startDate = vo.getAttendanceDate();
+        Date endDate = DateUtil.offsetDay(startDate, 1);
+
+        // 获取库名
+        String corpCode = TenantContext.get();
+        String dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
+
+        // 查询 TDengine
+        String sql = "select time,area_name,area_type from "
+                + dbNameNew + "." + TdengineSuperTableConstant.AREA_FENCE_DATA +"_" + deviceId + "_" + identityCard
+                + " where time >= '" + DateUtil.format(startDate, DatePattern.NORM_DATE_PATTERN)
+                + "'and time <= '" + DateUtil.format(endDate, DatePattern.NORM_DATE_PATTERN)
+                + "' limit 1000000";
+
+        List<JSONObject> list = new ArrayList<>();
+        R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+        if (result.getCode() == R.SUCCESS && result.getData() != null){
+            JSONObject data = result.getData();
+            JSONArray rows = data.getJSONArray("data");
+            if (rows != null){
+                for (int i = 0; i < rows.size(); i++) {
+                    JSONArray row = rows.getJSONArray(i);
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.set("time", row.getDate(0));
+                    jsonObject.set("area_name", row.getStr(1));
+                    jsonObject.set("area_type", row.get(2)); // 原样取值，不转换
+                    list.add(jsonObject);
+                }
+            }
+        }
+
+        if (CollectionUtil.isEmpty(list)) {
+            return null;
+        }
+
+        // ================== 轨迹分段统计 ==================
+        List<SwmAttendanceDto> workList = new ArrayList<>();
+        List<SwmAttendanceDto> restList = new ArrayList<>();
+
+        JSONObject firstObj = list.get(0);
+        Date enterTime = firstObj.getDate("time");
+        String enterAreaName = firstObj.getStr("area_name");
+        Object segmentAreaTypeRaw = firstObj.get("area_type");
+        AreaType segmentAreaType = convertAreaType(segmentAreaTypeRaw);
+
+        Date prevTime = enterTime;
+
+        for (int i = 1; i < list.size(); i++) {
+            JSONObject current = list.get(i);
+            Date currentTime = current.getDate("time");
+            String currentAreaName = current.getStr("area_name");
+            Object currentAreaTypeRaw = current.get("area_type");
+            AreaType currentAreaType = convertAreaType(currentAreaTypeRaw);
+
+            // 跳过无法识别或空值
+            if (currentAreaType == null || segmentAreaType == null) {
+                prevTime = currentTime;
+                continue;
+            }
+
+            long diff = currentTime.getTime() - prevTime.getTime();
+
+            // ================== 区域变化断段 ==================
+            if (currentAreaType != segmentAreaType) {
+                SwmAttendanceDto segment = buildSegment(enterTime, enterAreaName, prevTime, enterAreaName);
+                if (segmentAreaType == AreaType.WORK) workList.add(segment);
+                else restList.add(segment);
+
+                // 开启新段
+                enterTime = currentTime;
+                enterAreaName = currentAreaName;
+                segmentAreaType = currentAreaType;
+                prevTime = currentTime;
+                continue;
+            }
+
+            // ================== 时间连续性断段（10分钟） ==================
+            if (diff > 10 * 60 * 1000) {
+                SwmAttendanceDto segment = buildSegment(enterTime, enterAreaName, prevTime, enterAreaName);
+                if (segmentAreaType == AreaType.WORK) workList.add(segment);
+                else restList.add(segment);
+
+                // 重启新段
+                enterTime = currentTime;
+                enterAreaName = currentAreaName;
+                segmentAreaType = currentAreaType;
+            }
+
+            prevTime = currentTime;
+        }
+
+        // ================== 结算最后一段 ==================
+        if (segmentAreaType != null) {
+            SwmAttendanceDto lastSegment = buildSegment(enterTime, enterAreaName, prevTime, enterAreaName);
+            if (segmentAreaType == AreaType.WORK) workList.add(lastSegment);
+            else restList.add(lastSegment);
+        }
+
+        // ================== 组装返回 ==================
+        SwmAttendanceDto resultDto = new SwmAttendanceDto();
+        resultDto.setAttendanceDate(startDate);
+        resultDto.setIdentityCard(identityCard);
+        resultDto.setDeviceId(deviceId);
+        resultDto.setWorkList(workList);
+        resultDto.setRestList(restList);
+
+        // 计算总时长
+        long workSeconds = workList.stream().mapToLong(dto -> parseDurationToSeconds(dto.getDurationOf())).sum();
+        long restSeconds = restList.stream().mapToLong(dto -> parseDurationToSeconds(dto.getDurationOf())).sum();
+        resultDto.setWorkOf(formatDuration(workSeconds));
+        resultDto.setRestOf(formatDuration(restSeconds));
+
+        return resultDto;
+    }
+
+    public Page<SwmMonthlyAttendance> findWeeklyByPage(SwmMonthlyAttendance swmMonthlyAttendance) {
+        Page<SwmMonthlyAttendance> page = swmMonthlyAttendance.getPage();
+        //分页查询处理
+        List<SwmMonthlyAttendance> list = dao.findStatisticsByWeekWithPage(swmMonthlyAttendance);
+        page.setList(list);
+        return page;
+
+    }
+
+    /**
+     * 转换 area_type 为统一枚举
+     */
+    private enum AreaType {WORK, REST}
+
+    private AreaType convertAreaType(Object raw) {
+        if (raw == null) return null;
+        String s = String.valueOf(raw).trim();
+        if ("0".equals(s) || "工作区".equals(s)) return AreaType.WORK;
+        if ("1".equals(s) || "休闲区".equals(s)) return AreaType.REST;
+        return null; // 无法识别
+    }
+
+    /**
+     * 处理对象
+     */
+    private SwmAttendanceDto buildSegment(Date enterTime, String enterAreaName, Date outTime, String outAreaName) {
+        SwmAttendanceDto dto = new SwmAttendanceDto();
+        dto.setEnterTime(enterTime);
+        dto.setEnterAreaName(enterAreaName);
+        dto.setOutTime(outTime);
+        dto.setOutAreaName(outAreaName);
+        dto.setDurationOf(DateUtil.formatBetween(enterTime,outTime, BetweenFormater.Level.SECOND));
+        return dto;
+    }
+
+    /**
+     * 解析已有 durationOf 字符串 → 秒
+     */
+    private long parseDurationToSeconds(String duration) {
+        if (duration == null || duration.isEmpty()) return 0;
+        long seconds = 0;
+        Pattern p = Pattern.compile("(\\d+)小时|(\\d+)分|(\\d+)秒");
+        Matcher m = p.matcher(duration);
+        while (m.find()) {
+            if (m.group(1) != null) seconds += Integer.parseInt(m.group(1)) * 3600;
+            else if (m.group(2) != null) seconds += Integer.parseInt(m.group(2)) * 60;
+            else if (m.group(3) != null) seconds += Integer.parseInt(m.group(3));
+        }
+        return seconds;
+    }
+
+    /**
+     * 秒 → “小时分秒”
+     */
+    private String formatDuration(long totalSeconds) {
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        StringBuilder sb = new StringBuilder();
+        if (hours > 0) sb.append(hours).append("小时");
+        if (minutes > 0) sb.append(minutes).append("分");
+        sb.append(seconds).append("秒");
+        return sb.toString();
     }
 }

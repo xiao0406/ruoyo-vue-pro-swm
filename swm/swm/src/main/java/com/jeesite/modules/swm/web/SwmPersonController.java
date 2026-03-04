@@ -2132,7 +2132,7 @@ public class SwmPersonController extends BaseController {
         return result;
     }
 
-    @ApiOperation("人员台账excel导入（临时用于人员编码、年龄、紧急联系人、紧急联系人手机号）")
+    @ApiOperation("人员台账excel导入（切换车间、产线、班组）")
     @RequestMapping("/importData")
     @ResponseBody
     public String importData(MultipartFile file) {

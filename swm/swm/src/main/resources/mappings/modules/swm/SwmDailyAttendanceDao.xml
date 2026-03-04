@@ -613,7 +613,7 @@
         DATE_FORMAT(sda.attendance_date,'%Y-%m') as monthly,
         sda.employee_name as employee_name,
         sp.phone_number as phone_number,
-        sp.team as team,
+        fwg.work_group_name as team,
         sp.job_type as job_type,
         SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
         CONCAT(ROUND(
@@ -625,6 +625,7 @@
         FROM swm_daily_attendance sda
         LEFT JOIN swm_person sp
         ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+        LEFT JOIN  fms_work_group fwg on sp.team = fwg.id COLLATE utf8mb4_general_ci
         <where>
              sp.personnel_status = '1' and sp.status = '0' and
             DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
@@ -1112,5 +1113,38 @@
           and `status` = '0'
           and attendance_date = #{nowDate}
     </select>
-
+    <select id="findStatisticsByWeekWithPage" resultType="com.jeesite.modules.swm.entity.SwmMonthlyAttendance">
+            SELECT
+            sda.employee_id as employee_id,
+            sda.identity_card as identity_card,
+            sda.employee_name as employee_name,
+            sp.phone_number as phone_number,
+            fwg.work_group_name as team,
+            sp.job_type as job_type,
+            SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendanceDay,
+            CONCAT(ROUND(
+            SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
+            2),'%') as monthlyAttendanceRate,
+            SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as validAttendanceDays,
+            SUM(sda.actual_hours) as actualHours,
+            SUM(sda.idle_hours) as idleHours
+            FROM swm_daily_attendance sda
+            LEFT JOIN swm_person sp
+            ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+            LEFT JOIN  fms_work_group fwg on sp.team = fwg.id COLLATE utf8mb4_general_ci
+        <where>
+                sp.personnel_status = '1' and sp.status = '0' and
+                sda.attendance_date between #{stratDate} and #{endDate}
+                <if test="team != null and team != ''">
+                    AND sp.team = #{team}
+                </if>
+                <if test="employeeName != null and employeeName != ''">
+                    AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
+                </if>
+            <if test="personType != null and personType != ''">
+                AND sp.person_type = #{personType}
+            </if>
+            </where>
+            GROUP BY sda.employee_name
+    </select>
 </mapper>

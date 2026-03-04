@@ -1,5 +1,7 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
@@ -2031,12 +2033,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.info("获取到{}个需要弹窗确认的告警配置: {}",
                     needConfirmConfigs.size(), alarmKeyList);
 
+            //查询近5分钟所有人的确认，确认了则五分钟就不进行弹框
+            DateTime dateTime = DateUtil.offsetMinute(new Date(), -5);
+            List<String> idCardList = this.dao.getWarnIdCardByFiveMinute(dateTime);
+
             // 2. 构建查询过去24小时数据的SQL
             // 获取当前时间往前24小时的时间范围（long时间戳本身就是UTC时间）
             Calendar cal = Calendar.getInstance();
             long currentTime = cal.getTimeInMillis(); // UTC时间戳
             //long twentyFourHoursAgo = currentTime - (24 * 60 * 60 * 1000); // 24小时前的UTC时间戳
-            long twentyFourHoursAgo = currentTime - (3 * 60 * 1000); // 10分钟前的UTC时间戳
+            long twentyFourHoursAgo = currentTime - (30 * 60 * 1000); // 10分钟前的UTC时间戳
 
 
             // 直接使用UTC时间戳，无需额外时区转换
@@ -2052,23 +2058,36 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     "SELECT * FROM %s.swm_warning_management_today WHERE type IN (%s) " +
                             "AND warning_time >= %d AND warning_time < %d " +
                             "AND warning_content NOT IN ('考勤打卡', '进入大门') " +
-                            "AND front_alarm = '1' " +
-                            "ORDER BY warning_time DESC",
+                            "AND front_alarm = '1' ",
                     dbname, inCondition, todayStartTime, todayEndTime);
+
+            if (idCardList != null && !idCardList.isEmpty()){
+                String idcard = idCardList.stream()
+                        .map(key -> "'" + key + "'")
+                        .collect(Collectors.joining(","));
+                sql += "AND id_card not in (" + idcard + ")";
+            }
+
+            sql +="ORDER BY warning_time DESC";
 
             logger.info("执行TDengine查询: {}", sql);
             R<JSONObject> tdResult = tdengineService.executeTDengineSQL(sql);
+
 
             if (tdResult.getCode() == R.SUCCESS && tdResult.getData() != null) {
                 JSONObject data = tdResult.getData();
                 JSONArray rows = data.getJSONArray("data");
                 JSONArray columnMeta = data.getJSONArray("column_meta");
 
+                Set<String> idCardSet = new HashSet<>();
                 if (rows != null) {
                     for (int i = 0; i < rows.size(); i++) {
                         try {
                             JSONArray row = rows.getJSONArray(i);
                             SwmWarningManagement tdEntity = convertToEntity(row, columnMeta);
+                            if (!idCardSet.add(tdEntity.getIdCard())) {
+                                continue;
+                            }
                             if (tdEntity == null || tdEntity.getId() == null) {
                                 continue;
                             }
@@ -2153,6 +2172,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             logger.warn("告警ID为空，无法处理确认");
             return false;
         }
+
+        id = id.replaceFirst("id=", "");
 
         try {
             // ========== 第一步：从 TDengine 查询记录，包含 tbname 和原始时间戳 ==========

@@ -211,4 +211,7 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
     SwmDailyAttendance findClasses(@Param("nowDate") String nowDate, @Param("classes") String classes);
 
     List<SwmDailyAttendance> findDateByIdCards(@Param("idCard") List<String> idCard, @Param("nowDate") String nowDate);
+
+    List<SwmMonthlyAttendance> findStatisticsByWeekWithPage(SwmMonthlyAttendance swmMonthlyAttendance);
+
 }
