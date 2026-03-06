@@ -5,6 +5,8 @@ import com.jeesite.common.utils.excel.annotation.ExcelFields;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class WeeklyListDtoExprot {
 
@@ -31,9 +33,9 @@ public class WeeklyListDtoExprot {
     private String phoneNumber;
     private String team;
     private String jobType;
-    private String attendanceDay;
+    private BigDecimal attendanceDay;
     private String monthlyAttendanceRate;
-    private String validAttendanceDays;
-    private String actualHours;
-    private String idleHours;
+    private BigDecimal validAttendanceDays;
+    private BigDecimal actualHours;
+    private BigDecimal idleHours;
 }

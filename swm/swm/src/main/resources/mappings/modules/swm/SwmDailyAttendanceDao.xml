@@ -633,7 +633,7 @@
                 AND sp.team = #{team}
             </if>
             <if test="employeeName != null and employeeName != ''">
-                AND sp.name LIKE concat('%', #{employeeName}, '%')
+                AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
             </if>
         </where>
         GROUP BY sda.employee_name
@@ -668,7 +668,7 @@
                 AND sp.team = #{team}
             </if>
             <if test="employeeName != null and employeeName != ''">
-                AND sp.name LIKE concat('%', #{employeeName}, '%')
+                AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
             </if>
         </where>
         GROUP BY sda.employee_name ) monthly_attendance

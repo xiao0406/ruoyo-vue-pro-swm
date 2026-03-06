@@ -1066,7 +1066,16 @@ public class SwmDailyAttendanceController extends BaseController {
             String stratDateStr = DateUtils.formatDate(stratDate, DatePattern.NORM_DATE_PATTERN);
             String endDateStr = DateUtils.formatDate(endDate, DatePattern.NORM_DATE_PATTERN);
             record.setTimeRange(stratDateStr + "~" + endDateStr);
-            BeanUtils.copyProperties(record, exprot);
+            exprot.setEmployeeName(record.getEmployeeName());
+            exprot.setPhoneNumber(record.getPhoneNumber());
+            exprot.setTeam(record.getTeam());
+            exprot.setJobType(record.getJobType());
+            exprot.setAttendanceDay(record.getAttendanceDay());
+            exprot.setMonthlyAttendanceRate(record.getMonthlyAttendanceRate());
+            exprot.setValidAttendanceDays(record.getValidAttendanceDays());
+            exprot.setActualHours(record.getActualHours());
+            exprot.setIdleHours(record.getIdleHours());
+
             exportList.add(exprot);
         }
 
