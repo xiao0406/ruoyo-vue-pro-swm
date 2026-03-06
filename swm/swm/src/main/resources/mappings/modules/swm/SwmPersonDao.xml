@@ -349,9 +349,7 @@
     <!-- 根据身份证号列表查询人员 -->
     <select id="findByIdCards" resultType="SwmPerson">
         SELECT
-            id, name, identity_card, person_type, phone_number, status, personnel_status,
-            team, department, prod_line, job_type, safety_helmet_id, company,
-            create_by, create_date, update_by, update_date, remarks,dept , position,  gender
+            *
         FROM swm_person
         WHERE status = '0' and personnel_status = '1'
           AND identity_card IN
@@ -604,6 +602,24 @@
             WHERE identity_card = #{item.identityCard}
         </foreach>
     </update>
+    <update id="updateTeamBatch">
+        <foreach collection="list" item="item" separator=";">
+        UPDATE swm_person
+        <set>
+            <if test="item.department != null and item.department != ''">
+                department = #{item.department},
+            </if>
+            <if test="item.prodLine != null and item.prodLine != ''">
+                prod_line = #{item.prodLine},
+            </if>
+            <if test="item.team != null and item.team != ''">
+                team = #{item.team},
+            </if>
+            update_date = NOW()
+        </set>
+        WHERE identity_card = #{item.identityCard}
+        </foreach>
+    </update>
 
     <select id="findListByJobTypeList" resultType="com.jeesite.modules.swm.entity.SwmPerson">
         SELECT id,name,identity_card,phone_number
@@ -618,5 +634,51 @@
             AND STATUS = '0'
             AND personnel_status = '1'
         </where>
+    </select>
+    <select id="selectByNames" resultType="com.jeesite.modules.fms.entity.FmsPositionArchive">
+        SELECT
+        *
+        FROM
+        fms_position_archive
+        WHERE
+            corp_code = #{corpCode} and
+        position_name IN
+        <foreach collection="departments" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+    <select id="selectProdLineByNames" resultType="com.jeesite.modules.fms.entity.FmsProdLine">
+        SELECT
+        *
+        FROM
+        fms_prod_line
+        WHERE
+        corp_code = #{corpCode} and
+        prod_line_name IN
+        <foreach collection="productionLines" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+    <select id="selectWorkGroupByNames" resultType="com.jeesite.modules.fms.entity.FmsWorkGroup">
+        SELECT
+        *
+        FROM
+        fms_work_group
+        WHERE
+        corp_code = #{corpCode} and
+        work_group_name IN
+        <foreach collection="teams" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+    <select id="findListByPersonNames" resultType="com.jeesite.modules.swm.entity.SwmPerson">
+        SELECT
+        *
+        FROM swm_person
+        WHERE status = '0' and personnel_status = '1'
+        AND name IN
+        <foreach collection="personNames" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
     </select>
 </mapper>

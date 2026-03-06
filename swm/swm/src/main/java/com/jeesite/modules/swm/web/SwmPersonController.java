@@ -2141,6 +2141,23 @@ public class SwmPersonController extends BaseController {
     }
 
 
+    @ApiOperation("人员台账切换班组excel导出")
+    @PostMapping("teamTempExport")
+    @ResponseBody
+    public String teamTempExport() {
+
+        String name;
+        String fileName = "班组模板导出" + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
+        try (ExcelExport ee = new ExcelExport("班组模板导出", SwmPersonSwitcWorkshopImport.class)) {
+            List<SwmPersonSwitcWorkshopImport> list = new ArrayList<>();
+            name = ExcelExportUtil.uploadOss(ee.setDataList(list), fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return renderResult(Global.TRUE, text("成功！"), name);
+    }
+
+
     /**
      * 导出分页数据
      */
