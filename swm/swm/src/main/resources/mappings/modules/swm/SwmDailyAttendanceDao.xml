@@ -1122,9 +1122,6 @@
             fwg.work_group_name as team,
             sp.job_type as job_type,
             SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendanceDay,
-            CONCAT(ROUND(
-            SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
-            2),'%') as monthlyAttendanceRate,
             SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as validAttendanceDays,
             SUM(sda.actual_hours) as actualHours,
             SUM(sda.idle_hours) as idleHours

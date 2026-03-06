@@ -1,10 +1,7 @@
 package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.date.BetweenFormater;
-import cn.hutool.core.date.DatePattern;
-import cn.hutool.core.date.DateTime;
-import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.*;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
@@ -34,8 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1498,11 +1497,33 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     public Page<SwmMonthlyAttendance> findWeeklyByPage(SwmMonthlyAttendance swmMonthlyAttendance) {
         Page<SwmMonthlyAttendance> page = swmMonthlyAttendance.getPage();
-        //分页查询处理
+        // 分页查询基础数据（无出勤率）
         List<SwmMonthlyAttendance> list = dao.findStatisticsByWeekWithPage(swmMonthlyAttendance);
+
+        // 1. 获取时间范围参数（startDate/endDate）
+        Date startDate = swmMonthlyAttendance.getStratDate();
+        Date endDate = swmMonthlyAttendance.getEndDate();
+        long totalDays = DateUtil.between(startDate, endDate, DateUnit.DAY);
+
+        // 3. 遍历列表，计算出勤率 + 补充时间范围
+        for (SwmMonthlyAttendance item : list) {
+            // 计算出勤率（核心逻辑）
+            BigDecimal attendanceDay = item.getAttendanceDay(); // 出勤天数
+            if (attendanceDay == null) {
+                attendanceDay = BigDecimal.ZERO;
+            }
+            String attendanceRate = "0.00%"; // 默认值
+            if (totalDays > 0) { // 避免除以0
+                // 计算出勤率：(出勤天数 / 总天数) * 100，保留2位小数
+                double rate  = (attendanceDay.multiply(new BigDecimal(100))).divide(new BigDecimal(totalDays), 2, RoundingMode.HALF_UP).doubleValue();
+                attendanceRate = String.format("%.2f%%", rate);
+            }
+            item.setMonthlyAttendanceRate(attendanceRate);
+        }
+
+        // 4. 设置列表并返回
         page.setList(list);
         return page;
-
     }
 
     /**
