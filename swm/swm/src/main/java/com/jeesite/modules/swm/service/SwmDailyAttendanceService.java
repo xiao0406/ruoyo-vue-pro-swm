@@ -1503,7 +1503,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         // 1. 获取时间范围参数（startDate/endDate）
         Date startDate = swmMonthlyAttendance.getStratDate();
         Date endDate = swmMonthlyAttendance.getEndDate();
-        long totalDays = DateUtil.between(startDate, endDate, DateUnit.DAY);
+        long totalDays = DateUtil.between(startDate, endDate, DateUnit.DAY) -1;
 
         // 3. 遍历列表，计算出勤率 + 补充时间范围
         for (SwmMonthlyAttendance item : list) {
