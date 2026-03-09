@@ -395,7 +395,7 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
         int count = 0;
 
         try {
-            excelImport = new ExcelImport(file, 1, 0);
+            excelImport = new ExcelImport(file, 2, 0);
             List<SwmPersonSwitcWorkshopImport> list = excelImport.getDataList(SwmPersonSwitcWorkshopImport.class);
 
             if (CollectionUtil.isEmpty(list)) {
@@ -497,7 +497,11 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
             }
 
             // 5. 查询人员
-            List<SwmPerson> byIdCards = this.dao.findByIdCards(new ArrayList<>(idCards));
+            List<SwmPerson> byIdCards = new ArrayList<>();
+            if (!idCards.isEmpty()){
+                byIdCards = this.dao.findByIdCards(new ArrayList<>(idCards));
+            }
+
 
             Map<String, SwmPerson> idCardMap = byIdCards.stream().collect(Collectors.toMap(
                             SwmPerson::getIdentityCard,
@@ -505,8 +509,10 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
                             (a, b) -> a
                     ));
 
-            List<SwmPerson> byNames =
-                    this.dao.findListByPersonNames(new ArrayList<>(personNames));
+            List<SwmPerson> byNames = new ArrayList<>();
+            if (!personNames.isEmpty()){
+                byNames = this.dao.findListByPersonNames(new ArrayList<>(personNames));
+            }
 
             Map<String, SwmPerson> nameMap = byNames.stream().collect(Collectors.toMap(
                             SwmPerson::getName,
