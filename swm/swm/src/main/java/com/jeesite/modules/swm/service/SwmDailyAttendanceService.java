@@ -19,6 +19,7 @@ import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.entity.dto.SwmAttendanceDto;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.utils.BatchOperationsUtil;
@@ -1337,9 +1338,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             return;
         }
         String userCode = UserUtils.getUser().getUserCode();
-        String corpCode = UserUtils.getUser().getCorpCode();
-        String corpName = UserUtils.getUser().getCorpName();
-
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        String corpName = CorpUtils.getCurrentCorpName();
         Date operateTime = new Date();
         String formatOperateTime = DATE_FORMATTER.format(operateTime);
         List<SwmPersonScheduleLog> logList = new ArrayList<>();
