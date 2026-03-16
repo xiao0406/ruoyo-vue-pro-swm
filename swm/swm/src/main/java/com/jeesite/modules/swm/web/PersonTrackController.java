@@ -1,34 +1,30 @@
 package com.jeesite.modules.swm.web;
 
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
-import com.jeesite.modules.swm.service.PersonTrackService;
-import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
-import com.jeesite.modules.swm.service.SwmHelmetCacheService;
-import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
-import com.jeesite.modules.swm.service.TDengineService;
+import com.jeesite.modules.swm.service.*;
+import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
 
-import java.util.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import org.apache.commons.lang3.StringUtils;
-import com.jeesite.modules.sys.utils.DictUtils;
+import java.util.*;
 
 /**
  * 人员追踪控制器
@@ -208,6 +204,67 @@ public class PersonTrackController extends BaseController {
         try {
             // 从数据库查询人员数据
             List<Map<String, Object>> allPositions = queryPersonsFromDatabase(searchName, organizationKey,personTypeList);
+
+            // 根据搜索条件过滤数据
+            for (Map<String, Object> position : allPositions) {
+                boolean shouldInclude = true;
+
+                // 按姓名搜索过滤
+                if (searchName != null && !searchName.trim().isEmpty()) {
+                    String name = (String) position.get("name");
+                    if (name == null || !name.contains(searchName.trim())) {
+                        shouldInclude = false;
+                    }
+                }
+
+                // 按组织结构过滤（这里可以根据实际需求扩展）
+                if (organizationKey != null && !organizationKey.trim().isEmpty()) {
+                    // 可以根据organizationKey来过滤相应的人员
+                }
+
+                if (shouldInclude) {
+                    positions.add(position);
+                }
+            }
+
+            result.put("success", true);
+            result.put("data", positions);
+            result.put("total", positions.size());
+            result.put("message", "获取人员位置数据成功");
+
+        } catch (Exception e) {
+            logger.error("获取人员位置数据失败", e);
+            result.put("success", false);
+            result.put("message", "获取人员位置数据失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+
+    /**
+     * 获取mqtt人员位置数据
+     *
+     * @param personPositions 人员定位参数
+     * @return mqtt人员位置数据
+     * @author fangxiaolong
+     * @date 2026-03-12
+     */
+    @PostMapping("/getMqttPersonPositions")
+    @ResponseBody
+    @ApiOperation("获取mqtt人员位置数据")
+    public Map<String, Object> getMqttPersonPositions(@RequestBody PersonPositions personPositions) {
+        String searchName = personPositions.getSearchName();
+        String organizationKey = personPositions.getOrganizationKey();
+        List<String> personTypeList = personPositions.getPersonTypeList();
+        String displayType = personPositions.getDisplayType();
+
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> positions = new ArrayList<>();
+
+        try {
+            // 从数据库查询人员数据
+            List<Map<String, Object>> allPositions = personTrackService.queryMqttPersonsFromDatabase(searchName, organizationKey,personTypeList);
 
             // 根据搜索条件过滤数据
             for (Map<String, Object> position : allPositions) {
@@ -1248,4 +1305,282 @@ public class PersonTrackController extends BaseController {
             return utcTimeStr;
         }
     }
+
+
+    /**
+     * 获取 MQTT 设备位置轨迹数据（精确到秒）
+     *
+     * @param syncId    人员 ID（可选）
+     * @param deviceId  设备 ID（可选）
+     * @param idCard    身份证号（可选）
+     * @param name      人员名称（可选）
+     * @param floorId   楼层 ID（可选）
+     * @param startDate 开始时间 (格式：yyyy-MM-dd HH:mm:ss)
+     * @param endDate   结束时间 (格式：yyyy-MM-dd HH:mm:ss)
+     * @return 轨迹数据
+     * @author Shawn
+     * @date 2026/03/11
+     */
+    @GetMapping("/getMqttDevicePositionTrajectory")
+    @ResponseBody
+    @ApiOperation("获取 MQTT 设备位置轨迹数据")
+    public Map<String, Object> getMqttDevicePositionTrajectory(
+            @ApiParam(value = "人员 ID") @RequestParam(required = false) String syncId,
+            @ApiParam(value = "设备 ID") @RequestParam(required = false) String deviceId,
+            @ApiParam(value = "身份证号码") @RequestParam(required = false) String idCard,
+            @ApiParam(value = "人员名称") @RequestParam(required = false) String name,
+            @ApiParam(value = "楼层 ID") @RequestParam(required = false) String floorId,
+            @ApiParam(value = "开始时间 (格式：yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String startDate,
+            @ApiParam(value = "结束时间 (格式：yyyy-MM-dd HH:mm:ss)") @RequestParam(required = false) String endDate) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // --- 解析时间参数 ---
+            String parsedStartDate = null;
+            String parsedEndDate = null;
+            Integer startTime = null;
+            Integer endTime = null;
+
+            if (startDate != null && !startDate.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(startDate, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    parsedStartDate = startDate.substring(0, 10);
+                    LocalTime localStartTime = LocalTime.parse(startDate.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    startTime = localStartTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析开始时间格式错误：{}", startDate, e);
+                    result.put("success", false);
+                    result.put("message", "开始时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            if (endDate != null && !endDate.trim().isEmpty()) {
+                try {
+                    LocalDateTime.parse(endDate, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    parsedEndDate = endDate.substring(0, 10);
+                    LocalTime localEndTime = LocalTime.parse(endDate.substring(11),
+                            DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    endTime = localEndTime.toSecondOfDay();
+                } catch (Exception e) {
+                    logger.error("解析结束时间格式错误：{}", endDate, e);
+                    result.put("success", false);
+                    result.put("message", "结束时间格式错误，请使用 yyyy-MM-dd HH:mm:ss 格式。");
+                    return result;
+                }
+            }
+
+            // --- 验证查询条件 ---
+            if (StringUtils.isBlank(syncId) && StringUtils.isBlank(deviceId) &&
+                    StringUtils.isBlank(idCard) && StringUtils.isBlank(name) &&
+                    StringUtils.isBlank(floorId)) {
+                result.put("success", false);
+                result.put("message", "至少需要一个查询条件（syncId、deviceId、idCard、name、floorId）");
+                return result;
+            }
+
+            // --- 查询轨迹数据 ---
+            List<Map<String, Object>> trajectoryPoints = getMqttTrajectoryPoints(
+                    syncId,
+                    deviceId,
+                    idCard,
+                    name,
+                    floorId,
+                    parsedStartDate,
+                    parsedEndDate,
+                    startTime,
+                    endTime);
+
+            List<Map<String, Object>> timelineEvents = new ArrayList<>();
+
+            Map<String, Object> data = new HashMap<>();
+            logger.info("MQTT 轨迹点个数：{}", trajectoryPoints.size());
+            data.put("trajectoryPoints", trajectoryPoints);
+            data.put("timelineEvents", timelineEvents);
+
+            result.put("success", true);
+            result.put("data", data);
+            result.put("message", "获取 MQTT 设备位置轨迹数据成功");
+
+        } catch (Exception e) {
+            logger.error("获取 MQTT 设备位置轨迹数据失败", e);
+            result.put("success", false);
+            result.put("message", "获取 MQTT 设备位置轨迹数据失败：" + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取 MQTT 轨迹点
+     *
+     * @param syncId     人员 ID
+     * @param deviceId   设备 ID
+     * @param idCard     身份证号
+     * @param name       人员名称
+     * @param floorId    楼层 ID
+     * @param startDate  开始日期
+     * @param endDate    结束日期
+     * @param startTime  开始时间（秒数）
+     * @param endTime    结束时间（秒数）
+     * @return 轨迹点列表
+     * @author Shawn
+     * @date 2026/03/11
+     */
+    private List<Map<String, Object>> getMqttTrajectoryPoints(String syncId, String deviceId,
+                                                              String idCard, String name, String floorId,
+                                                              String startDate, String endDate, Integer startTime, Integer endTime) {
+
+        List<Map<String, Object>> trajectoryPoints = new ArrayList<>();
+
+        try {
+            // 构建 SQL 查询条件
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT time, lng, lat , name, ");
+            sqlBuilder.append("phone_number, floor_id, id, sync_id, device_id, id_card ");
+            sqlBuilder.append("FROM ").append(dbname).append(".").append(TdengineSuperTableConstant.MQTT_DEVICE_POSITION);
+
+            List<String> conditions = new ArrayList<>();
+
+            // 添加查询条件
+            if (StringUtils.isNotBlank(syncId)) {
+                conditions.add("sync_id = '" + syncId.trim().replace("'", "''") + "'");
+            }
+            if (StringUtils.isNotBlank(deviceId)) {
+                conditions.add("device_id = '" + deviceId.trim().replace("'", "''") + "'");
+            }
+            if (StringUtils.isNotBlank(idCard)) {
+                conditions.add("id_card = '" + idCard.trim().replace("'", "''") + "'");
+            }
+            if (StringUtils.isNotBlank(name)) {
+                conditions.add("name = '" + name.trim().replace("'", "''") + "'");
+            }
+            if (StringUtils.isNotBlank(floorId)) {
+                conditions.add("floor_id = '" + floorId.trim().replace("'", "''") + "'");
+            }
+
+            // 添加时间条件
+            String timeCondition = buildTimeCondition(startDate, endDate, startTime, endTime);
+            if (timeCondition != null && !timeCondition.trim().isEmpty()) {
+                conditions.add(timeCondition);
+            } else {
+                // 默认查询当天
+                conditions.add("time >= TODAY() AND time < TODAY() + 1d");
+            }
+
+            // 拼接 WHERE 子句
+            if (!conditions.isEmpty()) {
+                sqlBuilder.append(" WHERE ").append(String.join(" AND ", conditions)).append(" ");
+            }
+
+            sqlBuilder.append("ORDER BY time DESC");
+
+            String sql = sqlBuilder.toString();
+            logger.info("查询 mqtt_device_position 的 SQL: {}", sql);
+
+            // 执行查询
+            R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
+
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                JSONObject data = queryResult.getData();
+                JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null && rows.size() > 0) {
+                    logger.info("查询到 {} 条 MQTT 轨迹数据", rows.size());
+
+                    // 解析查询结果
+                    for (int i = 0; i < rows.size(); i++) {
+                        JSONArray row = rows.getJSONArray(i);
+                        if (row != null) {
+                            Map<String, Object> point = new HashMap<>();
+
+                            // time (索引 0)
+                            String timeStr = String.valueOf(row.get(0));
+                            String beijingTime = convertUtcToBeijingTime(timeStr);
+                            point.put("time", beijingTime);
+
+                            // lng (索引 1)
+                            Object lngObj = row.get(1);
+                            if (lngObj != null && !"null".equals(String.valueOf(lngObj))) {
+                                try {
+                                    point.put("lng", Double.parseDouble(String.valueOf(lngObj)));
+                                } catch (NumberFormatException e) {
+                                    point.put("lng", null);
+                                }
+                            } else {
+                                point.put("lng", null);
+                            }
+
+                            // lat (索引 2)
+                            Object latObj = row.get(2);
+                            if (latObj != null && !"null".equals(String.valueOf(latObj))) {
+                                try {
+                                    point.put("lat", Double.parseDouble(String.valueOf(latObj)));
+                                } catch (NumberFormatException e) {
+                                    point.put("lat", null);
+                                }
+                            } else {
+                                point.put("lat", null);
+                            }
+
+                            // name (索引 3)
+                            point.put("name", String.valueOf(row.get(3)));
+
+                            // phoneNumber (索引 4)
+                            point.put("phoneNumber", String.valueOf(row.get(4)));
+
+                            // floorId (索引 5)
+                            point.put("floorId", String.valueOf(row.get(5)));
+
+                            // id (索引 6)
+                            Object idObj = row.get(6);
+                            if (idObj != null) {
+                                point.put("id", idObj);
+                            } else {
+                                point.put("id", null);
+                            }
+
+                            // syncId (索引 7)
+                            point.put("syncId", String.valueOf(row.get(7)));
+
+                            // deviceId (索引 8)
+                            point.put("deviceId", String.valueOf(row.get(8)));
+
+                            // idCard (索引 9)
+                            point.put("idCard", String.valueOf(row.get(9)));
+
+                            trajectoryPoints.add(point);
+                        }
+                    }
+
+                    // 对轨迹点进行间隔抽样，减少数据量
+                    int sampleInterval = 1;
+                    try {
+                        String intervalStr = DictUtils.getDictLabel("sample_trajectory_points", "time", "1");
+                        sampleInterval = Integer.parseInt(intervalStr);
+                        logger.info("从字典获取 MQTT 轨迹抽样间隔：{} 分钟", sampleInterval);
+                    } catch (Exception e) {
+                        logger.warn("获取轨迹抽样间隔失败，使用默认值：{} 分钟", sampleInterval);
+                    }
+
+                    List<Map<String, Object>> sampledPoints = sampleTrajectoryPoints(trajectoryPoints, sampleInterval);
+                    logger.info("MQTT 原始轨迹点：{} 个，{}分钟间隔抽样后：{} 个",
+                            trajectoryPoints.size(), sampleInterval, sampledPoints.size());
+                    return sampledPoints;
+                } else {
+                    logger.info("未找到匹配的 MQTT 轨迹数据");
+                }
+            } else {
+                logger.error("查询 mqtt_device_position 失败：{}", queryResult.getMsg());
+            }
+
+        } catch (Exception e) {
+            logger.error("获取 MQTT 轨迹点失败", e);
+        }
+
+        return trajectoryPoints;
+    }
+
 }
