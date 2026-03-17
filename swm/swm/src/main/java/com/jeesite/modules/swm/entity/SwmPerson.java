@@ -53,6 +53,7 @@ import java.util.Set;
         @Column(name = "departure_reason", attrName = "departureReason", label = "离职原因"),
         @Column(name = "departure_date", attrName = "departureDate", label = "离职时间"),
         @Column(name = "is_external_personnel", attrName = "isExternalPersonnel", label = "是否厂内员工"),
+        @Column(name = "blood_type", attrName = "bloodType", label = "血型"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
@@ -165,6 +166,7 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String dept;// 部门
     private String position;// 职务
     private List<String> idCards;
+    private List<String> ids; //主键id
     /**
      * 随机值，目的取消一级缓存
      */
@@ -181,6 +183,8 @@ public class SwmPerson extends DataEntity<SwmPerson> {
     private String urgentPhoneNumber;
     //在线人数
     private List<String> todayOnSiteIdCards;
+    @ApiModelProperty(value = "血型")
+    private String bloodType;
 
 
     public SwmPerson() {

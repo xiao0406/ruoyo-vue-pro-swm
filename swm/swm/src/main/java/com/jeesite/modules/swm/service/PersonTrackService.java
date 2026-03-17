@@ -1,11 +1,15 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.entity.SwmSafetyPersonTraining;
 import com.jeesite.modules.swm.dao.PersonTrackDao;
 import com.jeesite.modules.swm.entity.PersonTrackInfo;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
 import com.jeesite.modules.swm.service.SwmPersonCacheService;
@@ -18,6 +22,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.Date;
@@ -51,7 +56,10 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
     @Qualifier("swmExecutor")
     @Autowired
     private ThreadPoolTaskExecutor swmExecutor;
-
+    @Resource
+    private SwmSafetyPersonTrainingService swmSafetyPersonTrainingService;
+    @Autowired
+    private SwmHelmetDeviceService swmHelmetDeviceService;
     /**
      * 从数据库查询人员数据并转换为位置信息
      * 
@@ -171,6 +179,23 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
             Map<String, String> workHoursMap = workHoursFuture.get();
             Map<String, String> attendanceStatusMap = attendanceFuture.get();
 
+            //查询人员是否完成安全教育视频情况，每个月看一次
+            Date date = new Date();
+            DateTime startMonth = DateUtil.beginOfMonth(date);
+            DateTime endMonth = DateUtil.endOfMonth(date);
+            Set<String> safetyStrList = swmSafetyPersonTrainingService.findListByIdCard(identityCards,startMonth,endMonth);
+
+            //查询电量
+            SwmHelmetDevice swmHelmetDevice  = new SwmHelmetDevice();
+            swmHelmetDevice.setPage(new Page<>(1, 10000));
+            Page<SwmHelmetDevice> page = swmHelmetDeviceService.findPage(swmHelmetDevice);
+            List<SwmHelmetDevice> list = page.getList();
+            Map<String, Object> batteryMap = new HashMap<>();
+            for (SwmHelmetDevice device : list) {
+                if (device.getAssignedPerson() != null) {
+                    batteryMap.put(device.getAssignedPerson(), device.getBatteryLevel());
+                }
+            }
 
             for (PersonTrackInfo person : dbResults) {
                 String name = person.getName();
@@ -234,7 +259,9 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                                     identityCard,
                                     true, // 标记为真实位置
                                     person, // 传入完整的person对象
-                                    colorMap); // 传入颜色映射
+                                    colorMap, // 传入颜色映射
+                                    safetyStrList,batteryMap);// 传入是否安全培训状态
+
 
                             positions.add(position);
                             logger.info("添加身份证 {} ({}) 的真实坐标: x={}, y={}", identityCard, name, x, y);
@@ -397,7 +424,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
     private Map<String, Object> createPersonPositionWithColors(String id, String name, int x, int y, String workType,
             String organization, String workShop, String teamGroup,
             String workHours, String attendance, String identityCard, boolean hasRealLocation,
-            PersonTrackInfo person, Map<String, String> colorMap) {
+            PersonTrackInfo person, Map<String, String> colorMap,Set<String> safetyStrList,Map<String, Object> batteryMap ) {
 
         // 创建基础的人员位置信息
         Map<String, Object> position = createPersonPosition(id, name, x, y, workType, organization, workShop, teamGroup,
@@ -426,7 +453,16 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         // 添加手机号字段
         position.put("phoneNumber", person.getPhoneNumber());
         position.put("gender", person.getGender());
+        position.put("bloodType", person.getBloodType());
 
+        //判断是否进行安全检查
+        position.put("safety", "未受教育");
+        if (safetyStrList.contains(person.getIdentityCard())){
+            position.put("safety", "已受教育");
+        }
+        position.put("powerOnStatus","在线");
+
+        position.put("battery", batteryMap.get(person.getIdentityCard()));
         return position;
     }
 
@@ -670,7 +706,9 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                     String attendanceNormal = attendance.getAttendanceNormal();
                     if ("1".equals(attendanceNormal)) {
                         result.put(identityCard, "异常考勤");
-                    } else {
+                    }else if ("2".equals(attendanceNormal)){
+                        result.put(identityCard, "休息日");
+                    } else if ("3".equals(attendanceNormal)){
                         result.put(identityCard, "正常考勤");
                     }
                 }

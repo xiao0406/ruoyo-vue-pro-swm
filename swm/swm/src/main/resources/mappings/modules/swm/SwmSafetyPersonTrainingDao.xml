@@ -57,5 +57,13 @@
 		</where>
 		ORDER BY ${sqlMap.order.toSql()}
 	</select>
+	<select id="findListByIdCard" resultType="java.lang.String">
+		SELECT
+			a.identity_card
+		FROM swm_safety_person_training a
+		where a.status = '0'
+		  and a.complete_status = '1'
+		  and a.create_date between #{startMonth} and #{endMonth}
+	</select>
 
 </mapper>

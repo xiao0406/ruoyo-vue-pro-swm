@@ -954,7 +954,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         }
         //分页查询处理
         List<SwmMonthlyAttendance> list = dao.findStatisticsByMonthWithPage(swmMonthlyAttendance.getTeam(), swmMonthlyAttendance.getEmployeeName(),
-                month, swmMonthlyAttendance.getPageNo(), swmMonthlyAttendance.getPageSize());
+                month, swmMonthlyAttendance.getPageNo() -1, swmMonthlyAttendance.getPageSize());
         //查询对应的总数据量
         Long statisticsCount = dao.findStatisticsTotalByMonth(swmMonthlyAttendance.getTeam(), swmMonthlyAttendance.getEmployeeName(), month);
         //组装返回结果
@@ -1070,9 +1070,19 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     public Page<SwmDashboardDto.IdleHoursRankingDto> idleHoursRanking(SwmDashboardDto.IdleHoursRankingDto  vo) {
         Page<SwmDashboardDto.IdleHoursRankingDto> page = vo.getPage();
+//        Date date = new Date();
+//        vo.setStartDate(DateUtil.beginOfMonth( date));
+//        vo.setEndDate(DateUtil.endOfMonth(date));
+
+        //得到上个月16号和这个月15号作为开始和结束时间
         Date date = new Date();
-        vo.setStartDate(DateUtil.beginOfMonth( date));
-        vo.setEndDate(DateUtil.endOfMonth(date));
+        // 上个月16号
+        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
+        // 本月15号
+        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
+        vo.setStartDate(lastMonth16);
+        vo.setEndDate(currentMonth15);
+
         List<SwmDashboardDto.IdleHoursRankingDto> list = dao.idleHoursRankingList(vo);
         page.setList(list);
         return page;
@@ -1080,9 +1090,19 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     public Page<SwmDashboardDto.ManagementOnDutyDto> managementOnDuty(SwmDashboardDto.ManagementOnDutyDto vo) {
         Page<SwmDashboardDto.ManagementOnDutyDto> page = vo.getPage();
+//        Date date = new Date();
+//        vo.setStartDate(DateUtil.beginOfMonth( date));
+//        vo.setEndDate(DateUtil.endOfMonth(date));
+
+        //得到上个月16号和这个月15号作为开始和结束时间
         Date date = new Date();
-        vo.setStartDate(DateUtil.beginOfMonth( date));
-        vo.setEndDate(DateUtil.endOfMonth(date));
+        // 上个月16号
+        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
+        // 本月15号
+        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
+        vo.setStartDate(lastMonth16);
+        vo.setEndDate(currentMonth15);
+
         List<SwmDashboardDto.ManagementOnDutyDto> list = dao.managementOnDuty(vo);
         page.setList(list);
         return page;
@@ -1091,9 +1111,19 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     public List<SwmDashboardDto.TeamAttendanceAnalysis> teamAttendanceAnalysis(
             SwmDashboardDto.TeamAttendanceAnalysis vo) {
 
+//        Date date = new Date();
+//        vo.setStartDate(DateUtil.beginOfMonth(date));
+//        vo.setEndDate(DateUtil.endOfMonth(date));
+
+        //得到上个月16号和这个月15号作为开始和结束时间
         Date date = new Date();
-        vo.setStartDate(DateUtil.beginOfMonth(date));
-        vo.setEndDate(DateUtil.endOfMonth(date));
+        // 上个月16号
+        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
+        // 本月15号
+        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
+        vo.setStartDate(lastMonth16);
+        vo.setEndDate(currentMonth15);
+
         vo.setPage(null);
         List<SwmDashboardDto.TeamAttendanceAnalysis> list = dao.teamAttendanceAnalysis(vo);
         if (CollectionUtils.isEmpty(list)) {
@@ -1178,9 +1208,18 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     public List<SwmDashboardDto.TeamAttendanceAnalysis> departmentAttendanceAnalysis(
             SwmDashboardDto.TeamAttendanceAnalysis vo) {
 
+//        Date date = new Date();
+//        vo.setStartDate(DateUtil.beginOfMonth(date));
+//        vo.setEndDate(DateUtil.endOfMonth(date));
+        //得到上个月16号和这个月15号作为开始和结束时间
         Date date = new Date();
-        vo.setStartDate(DateUtil.beginOfMonth(date));
-        vo.setEndDate(DateUtil.endOfMonth(date));
+        // 上个月16号
+        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
+        // 本月15号
+        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
+        vo.setStartDate(lastMonth16);
+        vo.setEndDate(currentMonth15);
+
         vo.setPage(null);
         List<SwmDashboardDto.TeamAttendanceAnalysis> list = dao.departmentAttendanceAnalysis(vo);
         if (CollectionUtils.isEmpty(list)) {
@@ -1265,6 +1304,28 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     public Page<SwmDashboardDto.NoAttendancePerson> noAttendancePerson(SwmDashboardDto.NoAttendancePerson vo) {
         Page<SwmDashboardDto.NoAttendancePerson> page = vo.getPage();
         List<SwmDashboardDto.NoAttendancePerson> list = dao.noAttendancePerson(vo);
+
+        List<String> ids = list.stream().map(SwmDashboardDto.NoAttendancePerson::getId).collect(Collectors.toList());
+        vo.setIds(ids);
+        //查询本月未出勤时间人数
+        //得到上个月16号和这个月15号作为开始和结束时间
+        Date date = new Date();
+        // 上个月16号
+        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
+        // 本月15号
+        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
+        vo.setStartDate(lastMonth16);
+        vo.setEndDate(currentMonth15);
+
+        List<SwmDashboardDto.NoAttendancePerson> monthList = dao.noMonthAttendancePerson(vo);
+        for (SwmDashboardDto.NoAttendancePerson person : list) {
+            for (SwmDashboardDto.NoAttendancePerson month : monthList) {
+                if (person.getId().equals(month.getId())){
+                    person.setAbsentMonthDays(month.getAbsentDays());
+                }
+            }
+        }
+
         page.setList(list);
         return page;
     }

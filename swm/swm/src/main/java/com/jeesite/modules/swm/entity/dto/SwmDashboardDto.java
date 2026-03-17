@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 劳务看板dto
@@ -96,6 +97,7 @@ public class SwmDashboardDto {
      */
     @Data
     public static class NoAttendancePerson extends DataEntity<NoAttendancePerson> {
+        private String id;
 
         @ApiModelProperty(value = "班组名称")
         private String teamName;
@@ -106,6 +108,9 @@ public class SwmDashboardDto {
         @ApiModelProperty(value = "累计未出勤时间")
         private Integer absentDays;
 
+        @ApiModelProperty(value = "本月累计未出勤时间")
+        private Integer absentMonthDays;
+
         //上班卡
         private Date clockInDate;
         //下班卡
@@ -114,5 +119,6 @@ public class SwmDashboardDto {
 
         private Date startDate;
         private Date endDate;
+        private List<String> ids;
     }
 }

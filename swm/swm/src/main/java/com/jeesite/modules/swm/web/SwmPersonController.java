@@ -36,6 +36,7 @@ import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
 import com.jeesite.modules.utils.BatchOperationsUtil;
@@ -188,6 +189,8 @@ public class SwmPersonController extends BaseController {
             personMap.put("age", person.getAge());
             personMap.put("urgentPerson", person.getUrgentPerson());
             personMap.put("urgentPhoneNumber", person.getUrgentPhoneNumber());
+            //血型
+            personMap.put("bloodType", person.getBloodType());
 
             // 添加到列表
             enhancedList.add(personMap);
@@ -265,8 +268,7 @@ public class SwmPersonController extends BaseController {
             SwmPerson existingPerson = swmPersonService.getByIdentityCard(swmPerson.getIdentityCard());
 
             // 如果是新增，或者是修改但身份证号码不是当前记录的
-            if (existingPerson != null &&
-                    (swmPerson.getIsNewRecord() || !existingPerson.getId().equals(swmPerson.getId()))) {
+            if (existingPerson != null && (swmPerson.getIsNewRecord() || !existingPerson.getId().equals(swmPerson.getId()))) {
 
                 // 检查是否存在相同身份证的在职人员
                 if (SwmPerson.PersonStatusEnum.ACTIVE.equals(existingPerson.getPersonnelStatus())) {
@@ -277,6 +279,20 @@ public class SwmPersonController extends BaseController {
 
         swmPersonService.save(swmPerson);
         return renderResult(Global.TRUE, text("保存人员登记成功！"));
+    }
+
+
+    /**
+     * 批量修改人员登记
+     */
+    @PostMapping(value = "updateBatch")
+    @ResponseBody
+    public String updateBatch(@Validated SwmPerson swmPerson) {
+        if (CollectionUtils.isNotEmpty(swmPerson.getIds())){
+            return renderResult(Global.FALSE, text("所传主键id不能为空"));
+        }
+        swmPersonService.updateBatch(swmPerson);
+        return renderResult(Global.TRUE, text("批量修改人员登记成功！"));
     }
 
     /**

@@ -214,4 +214,5 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
 
     List<SwmMonthlyAttendance> findStatisticsByWeekWithPage(SwmMonthlyAttendance swmMonthlyAttendance);
 
+    List<SwmDashboardDto.NoAttendancePerson> noMonthAttendancePerson(SwmDashboardDto.NoAttendancePerson vo);
 }

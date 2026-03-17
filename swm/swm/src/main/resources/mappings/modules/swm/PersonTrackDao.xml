@@ -5,39 +5,12 @@
     <!-- 查询人员追踪信息 -->
     <select id="findPersonTrackInfo" resultType="com.jeesite.modules.swm.entity.PersonTrackInfo">
         SELECT
-        a.id AS id,
-        a.NAME AS NAME,
-        a.person_type AS personType,
-        a.gender AS gender,
+        a.*,
         jso.office_name AS organization,
         pa.position_name AS workShop,
         pl.prod_line_name AS prodLine,
         wg.work_group_name AS teamGroup,
-        a.job_type AS workType,
-        a.safety_helmet_id AS safetyHelmetId,
-        a.personnel_status AS personnelStatus,
-        a.safety_education AS safetyEducation,
-        a.identity_card AS identityCard,
-        a.phone_number AS phoneNumber,
-        a.helmet_returned AS helmetReturned,
-        a.departure_type AS departureType,
-        a.departure_reason AS departureReason,
-        a.departure_date AS departureDate,
-        a.create_by AS createBy,
-        a.create_date AS createDate,
-        a.update_by AS updateBy,
-        a.update_date AS updateDate,
-        a.remarks AS remarks,
-        a.STATUS AS STATUS,
-        f.id AS workerArchiveId,
-        a.company AS officeCode,
-        a.department AS positionArchiveId,
-        a.team AS workGroupId,
-        a.prod_line AS prodLineId,
-        a.person_number,
-        a.age,
-        a.urgent_person,
-        a.urgent_phone_number
+        f.id AS workerArchiveId
         FROM
         swm_person a
         LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci

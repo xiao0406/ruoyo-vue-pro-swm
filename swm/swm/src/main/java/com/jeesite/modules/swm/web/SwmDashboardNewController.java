@@ -2,16 +2,14 @@ package com.jeesite.modules.swm.web;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONObject;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.constant.SwmRedisConstant;
-import com.jeesite.modules.swm.entity.SwmDailyAttendance;
-import com.jeesite.modules.swm.entity.SwmPerson;
-import com.jeesite.modules.swm.entity.SwmWarningManagement;
-import com.jeesite.modules.swm.entity.TreeNode;
+import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.utils.CorpUtils;
@@ -45,6 +43,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 
 @Slf4j
@@ -78,6 +78,9 @@ public class SwmDashboardNewController extends BaseController {
     @Autowired
     private ThreadPoolTaskExecutor swmExecutor;
 
+    @Autowired
+    private SwmScheduleTimeService timeService;
+
 
 
     //******************************************************************************数据看板-人员分布******************************************************************//
@@ -103,18 +106,87 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
+    /**
+     * 白班折线图
+     * @return
+     */
     @GetMapping("/hourWorkingCount")
     @ResponseBody
-    @ApiOperation("今日作业人数变化趋势")
+    @ApiOperation("白班折线图")
     public Map<String, Object> hourWorkingCount() {
-        // 查询所有在职人员
-        Map<String, Object> hourWorkingCount = getHourWorkingCount();
-        return hourWorkingCount;
+        // 1. 查询白班排班时间（1-白班）
+        SwmScheduleTime query = new SwmScheduleTime();
+        query.setShiftType("1");
+        List<SwmScheduleTime> scheduleList = timeService.findList(query);
+
+        // 2. 空数据返回空Map（前端更友好）
+        if (CollectionUtils.isEmpty(scheduleList)) {
+            return Collections.emptyMap();
+        }
+
+        // 3. 提取起止小时
+        SwmScheduleTime schedule = scheduleList.get(0);
+        int startHour = Integer.parseInt(schedule.getStartTime().split(":")[0].trim());
+        int endHour = Integer.parseInt(schedule.getEndTime().split(":")[0].trim());
+
+        // 4. 流式生成小时列表（补全导入后即可正常使用）
+        List<String> hourList = IntStream.rangeClosed(startHour, endHour)
+                .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
+                .collect(Collectors.toList());
+
+        // 5. 返回结果
+        return getHourWorkingCount(hourList);
     }
 
-    private Map<String, Object> getHourWorkingCount() {
+    /**
+     * 夜班折线图
+     * @return
+     */
+    @GetMapping("/hourNightWorkingCount")
+    @ResponseBody
+    @ApiOperation("夜班折线图")
+    public Map<String, Object> hourNightWorkingCount() {
+
+        // 1. 查询夜班排班时间（3-夜班）
+        SwmScheduleTime query = new SwmScheduleTime();
+        query.setShiftType("3");
+        List<SwmScheduleTime> scheduleList = timeService.findList(query);
+
+        // 2. 空数据返回空Map（前端更友好）
+        if (CollectionUtils.isEmpty(scheduleList)) {
+            return Collections.emptyMap();
+        }
+        SwmScheduleTime schedule = scheduleList.get(0);
+        //18:00
+        int startHour = Integer.parseInt(schedule.getStartTime().split(":")[0].trim());
+        //03:40  夜班默认加1天
+        int endHour = Integer.parseInt(schedule.getEndTime().split(":")[0].trim()) +1;
+
+        // 4. 流式生成小时列表（补全导入后即可正常使用）
+        List<String> hourList = IntStream.rangeClosed(0, endHour)
+                .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
+                .collect(Collectors.toList());
+
+        Map<String, Object> hourWorkingCount = getHourWorkingCount(hourList);
+
+
+        List<String> hourList1 = IntStream.rangeClosed(startHour, 23)
+                .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
+                .collect(Collectors.toList());
+
+        Map<String, Object> hourWorkingCount1 = getHourWorkingCount(hourList1);
+
         Map<String, Object> result = new HashMap<>();
-        List<String> todayHour = getTodayHour();
+        // 合并x轴
+        result.put("x", Stream.concat(((List<String>)hourWorkingCount1.get("x")).stream(), ((List<String>)hourWorkingCount.get("x")).stream()).collect(Collectors.toList()));
+        // 合并y轴
+        result.put("y", Stream.concat(((List<Integer>)hourWorkingCount1.get("y")).stream(), ((List<Integer>)hourWorkingCount.get("y")).stream()).collect(Collectors.toList()));
+        return result;
+    }
+
+    private Map<String, Object> getHourWorkingCount(List<String> todayHour) {
+        Map<String, Object> result = new HashMap<>();
+
         List<Integer> countList = new ArrayList<>();
 
         LocalDate today = LocalDate.now(); // 获取当前日期
@@ -146,6 +218,7 @@ public class SwmDashboardNewController extends BaseController {
         result.put("x", todayHour);
         return result;
     }
+
 
     private Map<String, Object> getAbnormalCount(List<SwmPerson> swmPersonList){
         Map<String, Object> result = new HashMap<>();

@@ -588,4 +588,27 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
     public List<SwmPerson> findListByJobTypeList(List<String> jobtypeList) {
         return this.dao.findListByJobTypeList(jobtypeList);
     }
+
+    public void updateBatch(SwmPerson swmPerson) {
+        List<String> ids = swmPerson.getIds();
+        Set< String> idSet = new HashSet<>(ids);
+        List<SwmPerson> personList = this.dao.findListByIds(idSet);
+        for (SwmPerson person : personList) {
+            person.setCompany(swmPerson.getCompany());
+            person.setDepartment(swmPerson.getDepartment());
+            person.setProdLine(swmPerson.getProdLine());
+            person.setTeam(swmPerson.getTeam());
+            super.update(swmPerson);
+            // 更新缓存（避免循环依赖）
+            try {
+                SwmPersonCacheService cacheService = applicationContext.getBean(SwmPersonCacheService.class);
+                if (cacheService != null) {
+                    cacheService.updatePersonCache(swmPerson);
+                }
+            } catch (Exception e) {
+                // 忽略缓存更新异常，不影响主要业务
+                logger.debug("更新人员缓存失败", e);
+            }
+        }
+    }
 }

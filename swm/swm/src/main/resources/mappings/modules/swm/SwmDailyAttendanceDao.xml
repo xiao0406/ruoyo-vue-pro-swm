@@ -633,7 +633,7 @@
                 AND sp.team = #{team}
             </if>
             <if test="employeeName != null and employeeName != ''">
-                AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
+                AND sp.name LIKE concat('%', #{employeeName}, '%')
             </if>
         </where>
         GROUP BY sda.employee_name
@@ -1038,7 +1038,8 @@
             sp.NAME AS employeeName,
             IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
             sp.phone_number AS phoneNumber,
-            DATEDIFF(CURDATE(), IFNULL(last_att.last_clock_date, sp.create_date)) AS absentDays
+            DATEDIFF(CURDATE(), IFNULL(last_att.last_clock_date, sp.create_date)) AS absentDays,
+            sp.id
         FROM
             swm_person sp
                 LEFT JOIN (SELECT employee_id, MAX(attendance_date) AS last_clock_date FROM swm_daily_attendance WHERE clock_in_date IS NOT NULL GROUP BY employee_id) last_att ON sp.id = last_att.employee_id
@@ -1143,5 +1144,29 @@
             </if>
             </where>
             GROUP BY sda.employee_name
+    </select>
+    <select id="noMonthAttendancePerson"
+            resultType="com.jeesite.modules.swm.entity.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+            sp.NAME AS employeeName,
+            sp.id,
+            sp.phone_number AS phoneNumber,
+            DATEDIFF( #{endDate},GREATEST( IFNULL(last_att.last_clock_date, #{startDate}),sp.create_date ) ) AS absentDays
+        FROM
+            swm_person sp
+                LEFT JOIN (SELECT employee_id, MAX(attendance_date) AS last_clock_date
+                FROM swm_daily_attendance
+                WHERE  clock_in_date IS NOT NULL AND attendance_date BETWEEN #{startDate} AND #{endDate}
+                GROUP BY
+                    employee_id
+            ) last_att ON sp.id = last_att.employee_id
+                LEFT JOIN fms_work_group fwg
+                          ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+           sp.`status` = '0'
+          AND sp.personnel_status = '1'
+          AND sp.person_type != '1'
+        ORDER BY
+            absentDays DESC
     </select>
 </mapper>
