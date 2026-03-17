@@ -19,6 +19,7 @@ import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.entity.dto.SwmAttendanceDto;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
+import com.jeesite.modules.sys.service.support.adapt.GlobalCalculateAdapter;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
@@ -61,6 +62,9 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     @Autowired
     protected TDengineService tdengineService;
+
+    @Autowired
+    private GlobalCalculateAdapter globalCalculateAdapter;
 
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
@@ -1074,14 +1078,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 //        vo.setStartDate(DateUtil.beginOfMonth( date));
 //        vo.setEndDate(DateUtil.endOfMonth(date));
 
-        //得到上个月16号和这个月15号作为开始和结束时间
-        Date date = new Date();
-        // 上个月16号
-        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
-        // 本月15号
-        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
-        vo.setStartDate(lastMonth16);
-        vo.setEndDate(currentMonth15);
+        Date ofDateFirst = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateFirst();
+        Date ofDateLast = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateLast();
+        vo.setStartDate(ofDateFirst);
+        vo.setEndDate(ofDateLast);
 
         List<SwmDashboardDto.IdleHoursRankingDto> list = dao.idleHoursRankingList(vo);
         page.setList(list);
@@ -1094,14 +1094,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 //        vo.setStartDate(DateUtil.beginOfMonth( date));
 //        vo.setEndDate(DateUtil.endOfMonth(date));
 
-        //得到上个月16号和这个月15号作为开始和结束时间
-        Date date = new Date();
-        // 上个月16号
-        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
-        // 本月15号
-        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
-        vo.setStartDate(lastMonth16);
-        vo.setEndDate(currentMonth15);
+        Date ofDateFirst = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateFirst();
+        Date ofDateLast = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateLast();
+        vo.setStartDate(ofDateFirst);
+        vo.setEndDate(ofDateLast);
 
         List<SwmDashboardDto.ManagementOnDutyDto> list = dao.managementOnDuty(vo);
         page.setList(list);
@@ -1117,13 +1113,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
         //得到上个月16号和这个月15号作为开始和结束时间
         Date date = new Date();
-        // 上个月16号
-        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
-        // 本月15号
-        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
-        vo.setStartDate(lastMonth16);
-        vo.setEndDate(currentMonth15);
-
+        Date ofDateFirst = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateFirst();
+        Date ofDateLast = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateLast();
+        vo.setStartDate(ofDateFirst);
+        vo.setEndDate(ofDateLast);
         vo.setPage(null);
         List<SwmDashboardDto.TeamAttendanceAnalysis> list = dao.teamAttendanceAnalysis(vo);
         if (CollectionUtils.isEmpty(list)) {
@@ -1213,12 +1206,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 //        vo.setEndDate(DateUtil.endOfMonth(date));
         //得到上个月16号和这个月15号作为开始和结束时间
         Date date = new Date();
-        // 上个月16号
-        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
-        // 本月15号
-        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
-        vo.setStartDate(lastMonth16);
-        vo.setEndDate(currentMonth15);
+        Date ofDateFirst = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateFirst();
+        Date ofDateLast = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateLast();
+        vo.setStartDate(ofDateFirst);
+        vo.setEndDate(ofDateLast);
 
         vo.setPage(null);
         List<SwmDashboardDto.TeamAttendanceAnalysis> list = dao.departmentAttendanceAnalysis(vo);
@@ -1308,14 +1299,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         List<String> ids = list.stream().map(SwmDashboardDto.NoAttendancePerson::getId).collect(Collectors.toList());
         vo.setIds(ids);
         //查询本月未出勤时间人数
-        //得到上个月16号和这个月15号作为开始和结束时间
-        Date date = new Date();
-        // 上个月16号
-        DateTime lastMonth16 = DateUtil.offsetDay(DateUtil.offsetMonth(DateUtil.beginOfMonth(date), -1), 15);
-        // 本月15号
-        DateTime currentMonth15 = DateUtil.offsetDay(DateUtil.beginOfMonth(date), 14);
-        vo.setStartDate(lastMonth16);
-        vo.setEndDate(currentMonth15);
+        Date ofDateFirst = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateFirst();
+        Date ofDateLast = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateLast();
+        vo.setStartDate(ofDateFirst);
+        vo.setEndDate(ofDateLast);
 
         List<SwmDashboardDto.NoAttendancePerson> monthList = dao.noMonthAttendancePerson(vo);
         for (SwmDashboardDto.NoAttendancePerson person : list) {
