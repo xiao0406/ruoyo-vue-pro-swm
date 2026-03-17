@@ -107,6 +107,24 @@ public class SwmDashboardNewController extends BaseController {
     }
 
     /**
+     * 全班折线图（24小时）
+     * @return
+     */
+    @GetMapping("/hourWorkingCount24")
+    @ResponseBody
+    @ApiOperation("全班次折线图")
+    public Map<String, Object> hourWorkingCount24() {
+
+        //流式生成小时列表（补全导入后即可正常使用）
+        List<String> hourList = IntStream.rangeClosed(0, 23)
+                .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
+                .collect(Collectors.toList());
+
+        // 返回结果
+        return getHourWorkingCount(hourList);
+    }
+
+    /**
      * 白班折线图
      * @return
      */
