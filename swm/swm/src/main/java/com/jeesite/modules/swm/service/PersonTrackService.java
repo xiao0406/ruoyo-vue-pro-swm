@@ -4,26 +4,15 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
-import com.jeesite.modules.entity.SwmSafetyPersonTraining;
 import com.jeesite.modules.enums.CorpDbEnum;
-import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.dao.PersonTrackDao;
 import com.jeesite.modules.swm.entity.PersonTrackInfo;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
-import com.jeesite.modules.swm.entity.SwmHelmetDevice;
-import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
-import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
-import com.jeesite.modules.swm.service.SwmPersonCacheService;
-
 import com.jeesite.modules.utils.R;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +27,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -702,48 +690,12 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
      * @date 2025/06/24
      */
     private Map<String, Object> createPersonPositionWithColors(String id, String name, int x, int y, String workType,
-            String organization, String workShop, String teamGroup,
-            String workHours, String attendance, String identityCard, boolean hasRealLocation,
-            PersonTrackInfo person, Map<String, String> colorMap) {
+                                                               String organization, String workShop, String teamGroup,
+                                                               String workHours, String attendance, String identityCard, boolean hasRealLocation,
+                                                               PersonTrackInfo person, Map<String, String> colorMap,Set<String> safetyStrList,Map<String,Integer> batteryMap) {
 
         // 创建基础的人员位置信息
         Map<String, Object> position = createPersonPosition(id, name, x, y, workType, organization, workShop, teamGroup,
-                workHours, attendance, identityCard, hasRealLocation);
-
-        // 添加颜色信息 2025/06/24 Shawn 添加
-        position.put("personTypeColor", colorMap.get(person.getPersonType()));
-        position.put("workTypeColor", colorMap.get(person.getWorkType()));
-        position.put("workerArchiveColor", colorMap.get(person.getWorkerArchiveId()));
-        position.put("officeCodeColor", colorMap.get(person.getOfficeCode()));
-        position.put("positionArchiveColor", colorMap.get(person.getPositionArchiveId()));
-        position.put("workGroupColor", colorMap.get(person.getWorkGroupId()));
-        position.put("prodLineColor", colorMap.get(person.getProdLineId()));
-
-        // 添加ID字段，便于前端使用
-        position.put("workerArchiveId", person.getWorkerArchiveId());
-        position.put("officeCode", person.getOfficeCode());
-        position.put("positionArchiveId", person.getPositionArchiveId());
-        position.put("workGroupId", person.getWorkGroupId());
-        position.put("prodLineId", person.getProdLineId());
-        position.put("personNumber",person.getPersonNumber());
-        position.put("age", person.getAge());
-        position.put("urgentPerson", person.getUrgentPerson());
-        position.put("urgentPhoneNumber", person.getUrgentPhoneNumber());
-
-        // 添加手机号字段
-        position.put("phoneNumber", person.getPhoneNumber());
-        position.put("gender", person.getGender());
-
-        return position;
-    }
-
-    private Map<String, Object> createMqttPersonPositionWithColors(String id, String name, String x, String y, String floorId, String workType,
-                                                               String organization, String workShop, String teamGroup,
-                                                               String workHours, String attendance, String identityCard, boolean hasRealLocation,
-                                                               PersonTrackInfo person, Map<String, String> colorMap) {
-
-        // 创建基础的人员位置信息
-        Map<String, Object> position = createMqttPersonPosition(id, name, x, y,floorId, workType, organization, workShop, teamGroup,
                 workHours, attendance, identityCard, hasRealLocation);
 
         // 添加颜色信息 2025/06/24 Shawn 添加
@@ -779,6 +731,41 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         position.put("powerOnStatus","在线");
 
         position.put("battery", batteryMap.get(person.getIdentityCard()));
+        return position;
+    }
+
+    private Map<String, Object> createMqttPersonPositionWithColors(String id, String name, String x, String y, String floorId, String workType,
+                                                               String organization, String workShop, String teamGroup,
+                                                               String workHours, String attendance, String identityCard, boolean hasRealLocation,
+                                                               PersonTrackInfo person, Map<String, String> colorMap) {
+
+        // 创建基础的人员位置信息
+        Map<String, Object> position = createMqttPersonPosition(id, name, x, y,floorId, workType, organization, workShop, teamGroup,
+                workHours, attendance, identityCard, hasRealLocation);
+
+        // 添加颜色信息 2025/06/24 Shawn 添加
+        position.put("personTypeColor", colorMap.get(person.getPersonType()));
+        position.put("workTypeColor", colorMap.get(person.getWorkType()));
+        position.put("workerArchiveColor", colorMap.get(person.getWorkerArchiveId()));
+        position.put("officeCodeColor", colorMap.get(person.getOfficeCode()));
+        position.put("positionArchiveColor", colorMap.get(person.getPositionArchiveId()));
+        position.put("workGroupColor", colorMap.get(person.getWorkGroupId()));
+        position.put("prodLineColor", colorMap.get(person.getProdLineId()));
+
+        // 添加ID字段，便于前端使用
+        position.put("workerArchiveId", person.getWorkerArchiveId());
+        position.put("officeCode", person.getOfficeCode());
+        position.put("positionArchiveId", person.getPositionArchiveId());
+        position.put("workGroupId", person.getWorkGroupId());
+        position.put("prodLineId", person.getProdLineId());
+        position.put("personNumber",person.getPersonNumber());
+        position.put("age", person.getAge());
+        position.put("urgentPerson", person.getUrgentPerson());
+        position.put("urgentPhoneNumber", person.getUrgentPhoneNumber());
+
+        // 添加手机号字段
+        position.put("phoneNumber", person.getPhoneNumber());
+        position.put("gender", person.getGender());
         return position;
     }
 
