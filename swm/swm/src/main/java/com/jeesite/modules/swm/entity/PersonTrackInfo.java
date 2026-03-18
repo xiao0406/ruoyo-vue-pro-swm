@@ -56,6 +56,7 @@ public class PersonTrackInfo extends DataEntity<PersonTrackInfo> {
     @ApiModelProperty(value = "紧急联系人手机号")
     private String urgentPhoneNumber;
     private String bloodType;//血型
+    private String jobType;
 
     public PersonTrackInfo() {
         this(null);

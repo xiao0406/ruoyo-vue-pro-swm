@@ -201,7 +201,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
             for (PersonTrackInfo person : dbResults) {
                 String name = person.getName();
-                String workType = person.getWorkType();
+                String workType = person.getJobType();
                 String organization = person.getOrganization();
                 String workShop = person.getWorkShop();
                 String teamGroup = person.getTeamGroup();
@@ -209,16 +209,16 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                 String id = person.getId();
 
                 // 如果某些字段为空，设置默认值
-                if (workType == null)
-                    workType = "待分配";
-                if (organization == null)
-                    organization = "未知单位";
-                if (workShop == null)
-                    workShop = "未知车间";
-                if (teamGroup == null)
-                    teamGroup = "未知班组";
-                if (identityCard == null)
-                    identityCard = "未登记";
+//                if (workType == null)
+//                    workType = "待分配";
+//                if (organization == null)
+//                    organization = "未知单位";
+//                if (workShop == null)
+//                    workShop = "未知车间";
+//                if (teamGroup == null)
+//                    teamGroup = "未知班组";
+//                if (identityCard == null)
+//                    identityCard = "未登记";
 
                 String personId = id; // 直接使用字符串ID，不转换为整数
 
