@@ -1151,7 +1151,7 @@
             sp.NAME AS employeeName,
             sp.id,
             sp.phone_number AS phoneNumber,
-            DATEDIFF( #{endDate},GREATEST( IFNULL(last_att.last_clock_date, #{startDate}),sp.create_date ) ) AS absentDays
+            DATEDIFF( #{now},GREATEST( IFNULL(last_att.last_clock_date, #{startDate}),sp.create_date ) ) AS absentDays
         FROM
             swm_person sp
                 LEFT JOIN (SELECT employee_id, MAX(attendance_date) AS last_clock_date
@@ -1166,6 +1166,7 @@
            sp.`status` = '0'
           AND sp.personnel_status = '1'
           AND sp.person_type != '1'
+        AND DATEDIFF(#{now}, IFNULL(last_att.last_clock_date, sp.create_date)) >= 1
         ORDER BY
             absentDays DESC
     </select>

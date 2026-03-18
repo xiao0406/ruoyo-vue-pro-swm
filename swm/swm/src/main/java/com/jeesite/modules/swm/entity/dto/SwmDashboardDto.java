@@ -1,6 +1,8 @@
 package com.jeesite.modules.swm.entity.dto;
 
 import com.jeesite.common.entity.DataEntity;
+import com.jeesite.common.utils.excel.annotation.ExcelField;
+import com.jeesite.common.utils.excel.annotation.ExcelFields;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -120,5 +122,19 @@ public class SwmDashboardDto {
         private Date startDate;
         private Date endDate;
         private List<String> ids;
+
+        private Date now;
+
+
+        @ExcelFields({
+                @ExcelField(title="姓名", attrName = "employeeName",align = ExcelField.Align.CENTER, sort = 10),
+                @ExcelField(title="班组", attrName = "teamName", align = ExcelField.Align.CENTER, sort = 20),
+                @ExcelField(title="手机号", attrName = "phoneNumber",align = ExcelField.Align.CENTER, sort = 30),
+                @ExcelField(title="月未出勤", attrName = "absentMonthDays",align = ExcelField.Align.CENTER, sort = 40),
+                @ExcelField(title="累计未出勤天数", attrName = "absentDays",align = ExcelField.Align.CENTER, sort = 50),
+        })
+
+        public NoAttendancePerson() {
+        }
     }
 }

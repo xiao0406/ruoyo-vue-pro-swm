@@ -3,9 +3,11 @@ package com.jeesite.modules.swm.web;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONObject;
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
+import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.constant.SwmRedisConstant;
@@ -13,6 +15,7 @@ import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.utils.CorpUtils;
+import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -32,6 +35,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
@@ -1333,6 +1337,25 @@ public class SwmDashboardNewController extends BaseController {
     public Page<SwmDashboardDto.NoAttendancePerson> noAttendancePerson(SwmDashboardDto.NoAttendancePerson  vo) {
         Page<SwmDashboardDto.NoAttendancePerson> result  = swmDailyAttendanceService.noAttendancePerson(vo);
         return result;
+    }
+
+    @GetMapping("/noAttendancePersonExport")
+    @ResponseBody
+    @ApiOperation("长时间未出勤人员-导出")
+    public String noAttendancePersonExport(SwmDashboardDto.NoAttendancePerson  vo) {
+        Page<SwmDashboardDto.NoAttendancePerson> page  = swmDailyAttendanceService.noAttendancePerson(vo);
+
+        String name;
+        List<SwmDashboardDto.NoAttendancePerson > list =  page.getList();
+
+        String fileName = "长时间未出勤人员导出" + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
+
+        try (ExcelExport ee = new ExcelExport("长时间未出勤人员导出", SwmDashboardDto.NoAttendancePerson.class)) {
+            name = ExcelExportUtil.uploadOss(ee.setDataList(list), fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return renderResult(Global.TRUE, text("成功！"), name);
     }
 
     @GetMapping("/beLatePerson")

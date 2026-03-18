@@ -1299,10 +1299,12 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         List<String> ids = list.stream().map(SwmDashboardDto.NoAttendancePerson::getId).collect(Collectors.toList());
         vo.setIds(ids);
         //查询本月未出勤时间人数
+        Date date = new Date();
         Date ofDateFirst = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateFirst();
         Date ofDateLast = globalCalculateAdapter.getOfMonthFirst_Last().getOfDateLast();
         vo.setStartDate(ofDateFirst);
         vo.setEndDate(ofDateLast);
+        vo.setNow(date);
 
         List<SwmDashboardDto.NoAttendancePerson> monthList = dao.noMonthAttendancePerson(vo);
         for (SwmDashboardDto.NoAttendancePerson person : list) {
