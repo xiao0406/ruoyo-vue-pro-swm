@@ -7,6 +7,7 @@ import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.entity.SwmPersonScheduleLog;
 import com.jeesite.modules.swm.entity.dto.SwmPersonScheduleDto;
 import com.jeesite.modules.swm.service.SwmPersonScheduleLogService;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -43,8 +44,8 @@ public class PersonScheduleLogAspect {
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         // 1. 执行目标方法（单/批量修改）
         Object result = joinPoint.proceed();
-        String corpCode = UserUtils.getUser().getCorpCode();
-        String corpName = UserUtils.getUser().getCorpName();
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        String corpName = CorpUtils.getCurrentCorpName();
 
         // 2. 提取人员ID列表和目标班次（原有逻辑，保持不变）
         Object[] args = joinPoint.getArgs();

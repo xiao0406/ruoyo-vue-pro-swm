@@ -1,5 +1,7 @@
 package com.jeesite.modules.swm.web;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +11,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.DateUtils;
+import com.jeesite.common.lang.ObjectUtils;
 import com.jeesite.common.lang.StringUtils;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.utils.excel.ExcelExport;
@@ -17,14 +20,18 @@ import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.job.task.AttendanceTask;
 import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.entity.*;
+import com.jeesite.modules.swm.entity.dto.SwmAttendanceDto;
+import com.jeesite.modules.swm.excel.WeeklyListDtoExprot;
 import com.jeesite.modules.swm.job.FmsMonthPlanProlongTask;
 import com.jeesite.modules.swm.service.AreaFenceDataService;
 import com.jeesite.modules.swm.service.SwmAttendanceSummaryService;
 import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
 import com.jeesite.modules.sys.utils.CorpUtils;
+import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import com.jeesite.modules.util.MinioUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.mock.web.MockMultipartFile;
@@ -998,6 +1005,93 @@ public class SwmDailyAttendanceController extends BaseController {
     }
 
     /**
+     * 周考核查询列表数据
+     */
+    @RequestMapping(value = "weeklyListData")
+    @ResponseBody
+    public Page<Map<String, Object>> weeklyListData(SwmMonthlyAttendance swmMonthlyAttendance, HttpServletRequest request,
+                                                     HttpServletResponse response) {
+        //如果没有传入时间，则系统默认给本周
+        if (ObjectUtils.isEmpty(swmMonthlyAttendance.getStratDate()) || ObjectUtils.isEmpty(swmMonthlyAttendance.getEndDate())){
+            Date date = new Date();
+            swmMonthlyAttendance.setStratDate(DateUtil.beginOfWeek(date));
+            swmMonthlyAttendance.setEndDate(DateUtil.endOfWeek(date));
+        }
+        swmMonthlyAttendance.setPage(new Page<>(request, response));
+
+        Page<SwmMonthlyAttendance> originalPage = swmDailyAttendanceService.findWeeklyByPage(swmMonthlyAttendance);
+
+        // 创建新的分页对象，用于存储格式化后的数据
+        Page<Map<String, Object>> formattedPage = new Page<>(request, response);
+        formattedPage.setCount(originalPage.getCount());
+        formattedPage.setPageNo(originalPage.getPageNo());
+        formattedPage.setPageSize(originalPage.getPageSize());
+
+        // 处理日期格式并计算怠工时长
+        List<Map<String, Object>> formattedList = new ArrayList<>();
+
+        for (SwmMonthlyAttendance record : originalPage.getList()) {
+            formattedList.add(convertToMap(record));
+        }
+
+        formattedPage.setList(formattedList);
+
+        return formattedPage;
+    }
+
+    /**
+     * 周考核查询列表数据
+     */
+    @RequestMapping(value = "exportWeeklyListData")
+    @ResponseBody
+    public String exportWeeklyListData(SwmMonthlyAttendance swmMonthlyAttendance, HttpServletRequest request,
+                                                    HttpServletResponse response) {
+        //如果没有传入时间，则系统默认给本周
+        if (ObjectUtils.isEmpty(swmMonthlyAttendance.getStratDate()) || ObjectUtils.isEmpty(swmMonthlyAttendance.getEndDate())){
+            Date date = new Date();
+            swmMonthlyAttendance.setStratDate(DateUtil.beginOfWeek(date));
+            swmMonthlyAttendance.setEndDate(DateUtil.endOfWeek(date));
+        }
+        swmMonthlyAttendance.setPage(new Page<>(1, 99999));
+
+        Page<SwmMonthlyAttendance> originalPage = swmDailyAttendanceService.findWeeklyByPage(swmMonthlyAttendance);
+
+        List<WeeklyListDtoExprot> exportList = new ArrayList<>();
+
+        Date stratDate = swmMonthlyAttendance.getStratDate();
+        Date endDate = swmMonthlyAttendance.getEndDate();
+
+        for (SwmMonthlyAttendance record : originalPage.getList()) {
+            WeeklyListDtoExprot exprot = new WeeklyListDtoExprot();
+            String stratDateStr = DateUtils.formatDate(stratDate, DatePattern.NORM_DATE_PATTERN);
+            String endDateStr = DateUtils.formatDate(endDate, DatePattern.NORM_DATE_PATTERN);
+            record.setTimeRange(stratDateStr + "~" + endDateStr);
+            exprot.setEmployeeName(record.getEmployeeName());
+            exprot.setPhoneNumber(record.getPhoneNumber());
+            exprot.setTeam(record.getTeam());
+            exprot.setJobType(record.getJobType());
+            exprot.setAttendanceDay(record.getAttendanceDay());
+            exprot.setMonthlyAttendanceRate(record.getMonthlyAttendanceRate());
+            exprot.setValidAttendanceDays(record.getValidAttendanceDays());
+            exprot.setActualHours(record.getActualHours());
+            exprot.setIdleHours(record.getIdleHours());
+
+            exportList.add(exprot);
+        }
+
+        String name;
+        String fileName = "周考勤导出" + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
+
+        try (ExcelExport ee = new ExcelExport("周考勤导出", WeeklyListDtoExprot.class)) {
+            name = ExcelExportUtil.uploadOss(ee.setDataList(exportList), fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return renderResult(Global.TRUE, text("成功！"), name);
+    }
+
+    /**
      * 月考核查询列表数据
      */
     @RequestMapping(value = "monthlyListData")
@@ -1031,5 +1125,15 @@ public class SwmDailyAttendanceController extends BaseController {
         formattedPage.setList(formattedList);
 
         return formattedPage;
+    }
+
+
+    /**
+     * 工作区考勤时长和怠工（休闲区）停留时长
+     */
+    @RequestMapping(value = "findAttendanceRange")
+    @ResponseBody
+    public SwmAttendanceDto findAttendanceRange(SwmAttendanceDto vo) {
+        return swmDailyAttendanceService.findAttendanceRange(vo);
     }
 }

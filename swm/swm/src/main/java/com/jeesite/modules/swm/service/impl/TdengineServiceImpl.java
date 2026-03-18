@@ -102,7 +102,7 @@ public class TdengineServiceImpl implements TDengineService {
 
     /**
      * 执行任意sql
-     * 
+     *
      * @param sql 操作语句
      */
     @Override
@@ -801,39 +801,6 @@ public class TdengineServiceImpl implements TDengineService {
         }
     }
 
-    /**
-     * 执行TDengine SQL语句
-     *
-     * @param sql SQL语句
-     * @return 执行结果
-     * @author Shawn
-     * @date 2025-05-30
-     */
-//    @Override
-//    public R<JSONObject> executeTDengineSQL(String sql) {
-//        try {
-//            String result = HttpRequest.post(url)
-//                    .header("Authorization", authorization)
-//                    .body(sql)
-//                    .execute()
-//                    .body();
-//
-////            log.debug("执行SQL: {}", sql);
-////            log.debug("执行结果: {}", result);
-//
-//            JSONObject jsonObject = JSONUtil.parseObj(result);
-//            if (!"succ".equals(jsonObject.getStr("status"))
-//                    && (jsonObject.getInt("code") == null || jsonObject.getInt("code") != 0)) { // jsonObject.getInt("code")为空，新版的tdengine返回code为0表示成功
-//                log.error("SQL执行失败: {}", result);
-//                log.error("失败SQL: {}", sql);
-//                return R.fail(jsonObject.getStr("desc"));
-//            }
-//            return R.ok(jsonObject);
-//        } catch (Exception e) {
-//            log.error("执行TDengine SQL异常: {}", sql, e);
-//            return R.fail("SQL执行异常: " + e.getMessage());
-//        }
-//    }
 
     @Override
     public R<JSONObject> executeTDengineSQL(String sql) {

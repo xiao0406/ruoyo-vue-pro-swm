@@ -7,6 +7,9 @@ package com.jeesite.modules.swm.dao;
 import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.entity.SwmPersonExport;
+import com.jeesite.modules.fms.entity.FmsPositionArchive;
+import com.jeesite.modules.fms.entity.FmsProdLine;
+import com.jeesite.modules.fms.entity.FmsWorkGroup;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.entity.AiDto;
@@ -125,6 +128,16 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
     void updateBatch(List<SwmPersonExport> list);
 
     List<SwmPerson> findListByJobTypeList(List<String> jobtypeList);
+
+    List<FmsPositionArchive> selectByNames(@Param("departments") List<String> departments, @Param("corpCode") String corpCode);
+
+    List<FmsProdLine> selectProdLineByNames(@Param("productionLines") List<String> productionLines, @Param("corpCode") String corpCode);
+
+    List<FmsWorkGroup> selectWorkGroupByNames(@Param("teams") List<String> teams, @Param("corpCode") String corpCode);
+
+    List<SwmPerson> findListByPersonNames(@Param("personNames") List<String> personNames);
+
+    void updateTeamBatch(List<SwmPerson> updatePersons);
 
     /**
      * 自定义查询：查询人员列表（不自动拼接corpCode租户条件）

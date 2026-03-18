@@ -613,7 +613,7 @@
         DATE_FORMAT(sda.attendance_date,'%Y-%m') as monthly,
         sda.employee_name as employee_name,
         sp.phone_number as phone_number,
-        sp.team as team,
+        fwg.work_group_name as team,
         sp.job_type as job_type,
         SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
         CONCAT(ROUND(
@@ -625,6 +625,7 @@
         FROM swm_daily_attendance sda
         LEFT JOIN swm_person sp
         ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+        LEFT JOIN  fms_work_group fwg on sp.team = fwg.id COLLATE utf8mb4_general_ci
         <where>
              sp.personnel_status = '1' and sp.status = '0' and
             DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
@@ -632,7 +633,7 @@
                 AND sp.team = #{team}
             </if>
             <if test="employeeName != null and employeeName != ''">
-                AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
+                AND sp.name LIKE concat('%', #{employeeName}, '%')
             </if>
         </where>
         GROUP BY sda.employee_name
@@ -667,7 +668,7 @@
                 AND sp.team = #{team}
             </if>
             <if test="employeeName != null and employeeName != ''">
-                AND a.employee_name LIKE concat('%', #{employeeName}, '%')
+                AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
             </if>
         </where>
         GROUP BY sda.employee_name ) monthly_attendance
@@ -835,7 +836,9 @@
         a.employee_id AS "employeeId",
         a.identity_card AS "identityCard",
         a.effective_work_hours AS "effectiveWorkHours",
-        a.attendance_normal AS "attendanceNormal"
+        a.attendance_normal AS "attendanceNormal",
+        a.clock_in_time AS "clockInTime",
+        a.work_time_range AS "workTimeRange"
         FROM swm_daily_attendance a
         <where>
             <if test="employeeIds != null and employeeIds.size() > 0">
@@ -1037,7 +1040,8 @@
             sp.NAME AS employeeName,
             IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
             sp.phone_number AS phoneNumber,
-            DATEDIFF(CURDATE(), IFNULL(last_att.last_clock_date, sp.create_date)) AS absentDays
+            DATEDIFF(CURDATE(), IFNULL(last_att.last_clock_date, sp.create_date)) AS absentDays,
+            sp.id
         FROM
             swm_person sp
                 LEFT JOIN (SELECT employee_id, MAX(attendance_date) AS last_clock_date FROM swm_daily_attendance WHERE clock_in_date IS NOT NULL GROUP BY employee_id) last_att ON sp.id = last_att.employee_id
@@ -1112,5 +1116,60 @@
           and `status` = '0'
           and attendance_date = #{nowDate}
     </select>
-
+    <select id="findStatisticsByWeekWithPage" resultType="com.jeesite.modules.swm.entity.SwmMonthlyAttendance">
+            SELECT
+            sda.employee_id as employee_id,
+            sda.identity_card as identity_card,
+            sda.employee_name as employee_name,
+            sp.phone_number as phone_number,
+            fwg.work_group_name as team,
+            sp.job_type as job_type,
+            SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendanceDay,
+            SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as validAttendanceDays,
+            SUM(sda.actual_hours) as actualHours,
+            SUM(sda.idle_hours) as idleHours
+            FROM swm_daily_attendance sda
+            LEFT JOIN swm_person sp
+            ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+            LEFT JOIN  fms_work_group fwg on sp.team = fwg.id COLLATE utf8mb4_general_ci
+        <where>
+                sp.personnel_status = '1' and sp.status = '0' and
+                sda.attendance_date between #{stratDate} and #{endDate}
+                <if test="team != null and team != ''">
+                    AND sp.team = #{team}
+                </if>
+                <if test="employeeName != null and employeeName != ''">
+                    AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
+                </if>
+            <if test="personType != null and personType != ''">
+                AND sp.person_type = #{personType}
+            </if>
+            </where>
+            GROUP BY sda.employee_name
+    </select>
+    <select id="noMonthAttendancePerson"
+            resultType="com.jeesite.modules.swm.entity.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+            sp.NAME AS employeeName,
+            sp.id,
+            sp.phone_number AS phoneNumber,
+            DATEDIFF( #{now},GREATEST( IFNULL(last_att.last_clock_date, #{startDate}),sp.create_date ) ) AS absentDays
+        FROM
+            swm_person sp
+                LEFT JOIN (SELECT employee_id, MAX(attendance_date) AS last_clock_date
+                FROM swm_daily_attendance
+                WHERE  clock_in_date IS NOT NULL AND attendance_date BETWEEN #{startDate} AND #{endDate}
+                GROUP BY
+                    employee_id
+            ) last_att ON sp.id = last_att.employee_id
+                LEFT JOIN fms_work_group fwg
+                          ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+           sp.`status` = '0'
+          AND sp.personnel_status = '1'
+          AND sp.person_type != '1'
+        AND DATEDIFF(#{now}, IFNULL(last_att.last_clock_date, sp.create_date)) >= 1
+        ORDER BY
+            absentDays DESC
+    </select>
 </mapper>

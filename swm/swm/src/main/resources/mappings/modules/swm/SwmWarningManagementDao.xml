@@ -520,4 +520,14 @@
         </if>
         </where>
     </select>
+    <select id="getWarnIdCardByFiveMinute" resultType="java.lang.String">
+        SELECT
+            id_card
+        FROM
+            swm_warning_management
+        WHERE
+            warning_time >= #{startTime}
+        GROUP BY
+            id_card
+    </select>
 </mapper>

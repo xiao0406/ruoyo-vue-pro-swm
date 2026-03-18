@@ -2,8 +2,10 @@ package com.jeesite.modules.swm.service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.lang.StringUtils;
@@ -104,5 +106,9 @@ public class SwmSafetyPersonTrainingService extends CrudService<SwmSafetyPersonT
 			swmSafetyPersonTraining.setCompleteDate(new Date());
 		}
 		this.dao.appUpdate(swmSafetyPersonTraining);
+	}
+
+	public Set<String> findListByIdCard(List<String> identityCards, DateTime startMonth, DateTime endMonth) {
+		return this.dao.findListByIdCard(identityCards, startMonth,endMonth);
 	}
 }

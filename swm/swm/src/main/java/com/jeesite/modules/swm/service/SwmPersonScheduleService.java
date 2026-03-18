@@ -12,6 +12,7 @@ import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.entity.SwmPersonScheduleLog;
 import com.jeesite.modules.swm.entity.dto.SwmPersonScheduleDto;
 import com.jeesite.modules.sys.entity.User;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.sys.utils.UserUtils;
 import com.jeesite.modules.utils.BatchOperationsUtil;
@@ -101,6 +102,8 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
     @Transactional(readOnly = false)
     @SavePersonScheduleLog(remarkPrefix = "单个修改人员班次：目标班次")
     public void save(SwmPersonSchedule swmPersonSchedule) {
+        swmPersonSchedule.setCorpCode(CorpUtils.getCurrentCorpCode());
+        swmPersonSchedule.setCorpName(CorpUtils.getCurrentCorpName());
         super.save(swmPersonSchedule);
     }
 

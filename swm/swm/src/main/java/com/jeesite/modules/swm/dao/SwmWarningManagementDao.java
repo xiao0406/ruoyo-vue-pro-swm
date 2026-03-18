@@ -1,5 +1,6 @@
 package com.jeesite.modules.swm.dao;
 
+import cn.hutool.core.date.DateTime;
 import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
@@ -210,4 +211,6 @@ public interface SwmWarningManagementDao extends CrudDao<SwmWarningManagement> {
     List<SwmWarningManagement> getWarningManagementList();
 
     Long theAlarmHasBeenDealtWith(String startTime, String endTime);
+
+    List<String> getWarnIdCardByFiveMinute(DateTime dateTime);
 }

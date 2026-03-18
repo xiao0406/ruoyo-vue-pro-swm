@@ -15,6 +15,7 @@ import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
@@ -28,7 +29,11 @@ import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.ApplicationContext;
+import com.jeesite.modules.utils.BatchOperationsUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -177,6 +182,8 @@ public class SwmPersonController extends BaseController {
             personMap.put("age", person.getAge());
             personMap.put("urgentPerson", person.getUrgentPerson());
             personMap.put("urgentPhoneNumber", person.getUrgentPhoneNumber());
+            //血型
+            personMap.put("bloodType", person.getBloodType());
 
             // 添加到列表
             enhancedList.add(personMap);
@@ -258,8 +265,7 @@ public class SwmPersonController extends BaseController {
             SwmPerson existingPerson = swmPersonService.getByIdentityCard(swmPerson.getIdentityCard());
 
             // 如果是新增，或者是修改但身份证号码不是当前记录的
-            if (existingPerson != null &&
-                    (swmPerson.getIsNewRecord() || !existingPerson.getId().equals(swmPerson.getId()))) {
+            if (existingPerson != null && (swmPerson.getIsNewRecord() || !existingPerson.getId().equals(swmPerson.getId()))) {
 
                 // 检查是否存在相同身份证的在职人员
                 if (SwmPerson.PersonStatusEnum.ACTIVE.equals(existingPerson.getPersonnelStatus())) {
@@ -341,6 +347,20 @@ public class SwmPersonController extends BaseController {
     }
 
 
+
+
+    /**
+     * 批量修改人员登记
+     */
+    @PostMapping(value = "updateBatch")
+    @ResponseBody
+    public String updateBatch(@Validated SwmPerson swmPerson) {
+        if (CollectionUtils.isNotEmpty(swmPerson.getIds())){
+            return renderResult(Global.FALSE, text("所传主键id不能为空"));
+        }
+        swmPersonService.updateBatch(swmPerson);
+        return renderResult(Global.TRUE, text("批量修改人员登记成功！"));
+    }
 
     /**
      * 删除人员登记
@@ -2235,12 +2255,29 @@ public class SwmPersonController extends BaseController {
         return result;
     }
 
-    @ApiOperation("人员台账excel导入（临时用于人员编码、年龄、紧急联系人、紧急联系人手机号）")
+    @ApiOperation("人员台账excel导入（切换车间、产线、班组）")
     @RequestMapping("/importData")
     @ResponseBody
     public String importData(MultipartFile file) {
         Integer count = swmPersonService.importData(file);
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
+    }
+
+
+    @ApiOperation("人员台账切换班组excel导出")
+    @PostMapping("teamTempExport")
+    @ResponseBody
+    public String teamTempExport() {
+
+        String name;
+        String fileName = "班组模板导出" + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";
+        try (ExcelExport ee = new ExcelExport("班组模板导出", SwmPersonSwitcWorkshopImport.class)) {
+            List<SwmPersonSwitcWorkshopImport> list = new ArrayList<>();
+            name = ExcelExportUtil.uploadOss(ee.setDataList(list), fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return renderResult(Global.TRUE, text("成功！"), name);
     }
 
 

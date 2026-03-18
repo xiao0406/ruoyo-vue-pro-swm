@@ -16,12 +16,16 @@ import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.entity.AiDto;
 import com.jeesite.modules.entity.SwmPersonExport;
 import com.jeesite.modules.constant.SwmRedisConstant;
+import com.jeesite.modules.fms.entity.FmsPositionArchive;
+import com.jeesite.modules.fms.entity.FmsProdLine;
+import com.jeesite.modules.fms.entity.FmsWorkGroup;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmArea;
 import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.entity.AiDto;
+import com.jeesite.modules.swm.excel.SwmPersonSwitcWorkshopImport;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.sys.utils.CorpUtils;
@@ -35,6 +39,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -392,30 +398,225 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
 
     @Transactional(readOnly = false)
     public Integer importData(MultipartFile file) {
-        ExcelImport excelImport = null;
-        Integer count = 0;
+
+        ExcelImport excelImport;
+        int count = 0;
+
         try {
-            excelImport = new ExcelImport(file, 1, 0);
-            List<SwmPersonExport> list = excelImport.getDataList(SwmPersonExport.class);
-            if (CollectionUtil.isNotEmpty(list)){
-                for (SwmPersonExport export : list) {
-                    if (StringUtils.isBlank(export.getIdentityCard())){
-                        new RuntimeException("导入数据错误：身份证号不能为空");
-                    }
-                }
-                List<List<SwmPersonExport>> lists = BatchOperationsUtil.batchCutting(list, 100);
-                for (List<SwmPersonExport> list1 : lists) {
-                    this.dao.updateBatch(list1);
-                }
-                count = list.size();
+            excelImport = new ExcelImport(file, 2, 0);
+            List<SwmPersonSwitcWorkshopImport> list = excelImport.getDataList(SwmPersonSwitcWorkshopImport.class);
+
+            if (CollectionUtil.isEmpty(list)) {
+                return 0;
             }
+
+            // 1. 收集Excel数据
+
+            Set<String> departments = list.stream().map(SwmPersonSwitcWorkshopImport::getDepartment)
+                    .filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+
+            Set<String> productionLines = list.stream().map(SwmPersonSwitcWorkshopImport::getProdLine)
+                    .filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+
+            Set<String> teams = list.stream().map(SwmPersonSwitcWorkshopImport::getTeam)
+                    .filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+
+            // 2. 查询组织架构
+            String corpCode = CorpUtils.getCurrentCorpCode();
+            List<FmsPositionArchive> dbDepartments = this.dao.selectByNames(new ArrayList<>(departments),corpCode);
+
+            List<FmsProdLine> dbLines = this.dao.selectProdLineByNames(new ArrayList<>(productionLines),corpCode);
+
+            List<FmsWorkGroup> dbTeams = this.dao.selectWorkGroupByNames(new ArrayList<>(teams),corpCode);
+
+            // 3. 构建Map
+            // 车间
+            Map<String, FmsPositionArchive> departmentMap =
+                    dbDepartments.stream().collect(Collectors.toMap(
+                            FmsPositionArchive::getPositionName,
+                            e -> e,
+                            (a, b) -> a
+                    ));
+
+            // 产线 key = 车间ID_产线名
+            Map<String, FmsProdLine> lineMap =
+                    dbLines.stream().collect(Collectors.toMap(
+                            e -> e.getWorkShopId() + "_" + e.getProdLineName(),
+                            e -> e,
+                            (a, b) -> a
+                    ));
+
+            // 班组 key = 产线ID_班组名
+            Map<String, FmsWorkGroup> teamMap =
+                    dbTeams.stream().collect(Collectors.toMap(
+                            e -> e.getProdLineId() + "_" + e.getWorkGroupName(),
+                            e -> e,
+                            (a, b) -> a
+                    ));
+
+            // 4. 收集人员查询条件
+            Set<String> idCards = new HashSet<>();
+            Set<String> personNames = new HashSet<>();
+
+            int rowNum = 2;
+            for (SwmPersonSwitcWorkshopImport item : list) {
+                String departmentName = item.getDepartment();
+                String lineName = item.getProdLine();
+                String teamName = item.getTeam();
+
+                if (StringUtils.isBlank(departmentName)) {
+                    throw new RuntimeException("第" + rowNum + "行：车间不能为空");
+                }
+
+                // ---------- 车间 ----------
+                FmsPositionArchive department = departmentMap.get(departmentName);
+                if (department == null) {
+                    throw new RuntimeException("第" + rowNum + "行：车间不存在：" + departmentName);
+                }
+
+                // ---------- 产线 ----------
+                String lineKey = department.getId() + "_" + lineName;
+                FmsProdLine prodLine = lineMap.get(lineKey);
+
+                if (prodLine == null) {
+                    throw new RuntimeException(
+                            "第" + rowNum + "行：车间【" + departmentName + "】下不存在产线：" + lineName);
+                }
+
+                // ---------- 班组 ----------
+                String teamKey = prodLine.getId() + "_" + teamName;
+                FmsWorkGroup team = teamMap.get(teamKey);
+
+                if (team == null) {
+                    throw new RuntimeException(
+                            "第" + rowNum + "行：产线【" + lineName + "】下不存在班组：" + teamName);
+                }
+
+                String name = item.getName();
+                String idCard = item.getIdentityCard();
+
+                if (StringUtils.isNotBlank(idCard)) {
+                    idCards.add(idCard);
+                } else {
+                    personNames.add(name);
+                }
+
+                rowNum++;
+            }
+
+            // 5. 查询人员
+            List<SwmPerson> byIdCards = new ArrayList<>();
+            if (!idCards.isEmpty()){
+                byIdCards = this.dao.findByIdCards(new ArrayList<>(idCards));
+            }
+
+
+            Map<String, SwmPerson> idCardMap = byIdCards.stream().collect(Collectors.toMap(
+                            SwmPerson::getIdentityCard,
+                            e -> e,
+                            (a, b) -> a
+                    ));
+
+            List<SwmPerson> byNames = new ArrayList<>();
+            if (!personNames.isEmpty()){
+                byNames = this.dao.findListByPersonNames(new ArrayList<>(personNames));
+            }
+
+            Map<String, SwmPerson> nameMap = byNames.stream().collect(Collectors.toMap(
+                            SwmPerson::getName,
+                            e -> e,
+                            (a, b) -> a
+                    ));
+
+            // 6. 处理更新
+
+            List<SwmPerson> updatePersons = new ArrayList<>();
+
+            rowNum = 2;
+            for (SwmPersonSwitcWorkshopImport item : list) {
+
+                String departmentName = item.getDepartment();
+                String lineName = item.getProdLine();
+                String teamName = item.getTeam();
+
+                FmsPositionArchive department = departmentMap.get(departmentName);
+                String lineKey = department.getId() + "_" + lineName;
+                FmsProdLine prodLine = lineMap.get(lineKey);
+
+                String teamKey = prodLine.getId() + "_" + teamName;
+                FmsWorkGroup team = teamMap.get(teamKey);
+
+                String name = item.getName();
+                String idCard = item.getIdentityCard();
+
+                SwmPerson person = null;
+
+                // 优先身份证
+                if (StringUtils.isNotBlank(idCard)) {
+                    person = idCardMap.get(idCard);
+                }
+
+                // 没身份证用姓名
+                if (person == null && StringUtils.isNotBlank(name)) {
+                    person = nameMap.get(name);
+                }
+
+                if (person == null) {
+                    logger.error("未找到人员：" + name);
+                    continue;
+                }
+
+                // 填充ID
+                person.setDepartment(department.getId());
+                person.setProdLine(prodLine.getId());
+                person.setTeam(team.getId());
+
+                updatePersons.add(person);
+
+                rowNum++;
+            }
+
+            // 7. 批量更新
+            if (!updatePersons.isEmpty()) {
+                List<List<SwmPerson>> lists = BatchOperationsUtil.batchCutting(updatePersons, 100);
+                for (List<SwmPerson> updateList : lists) {
+                    this.dao.updateTeamBatch(updateList);
+                }
+            }
+
+            count = updatePersons.size();
+
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("导入失败：" + e.getMessage(), e);
         }
+
         return count;
     }
 
     public List<SwmPerson> findListByJobTypeList(List<String> jobtypeList) {
         return this.dao.findListByJobTypeList(jobtypeList);
+    }
+
+    public void updateBatch(SwmPerson swmPerson) {
+        List<String> ids = swmPerson.getIds();
+        Set< String> idSet = new HashSet<>(ids);
+        List<SwmPerson> personList = this.dao.findListByIds(idSet);
+        for (SwmPerson person : personList) {
+            person.setCompany(swmPerson.getCompany());
+            person.setDepartment(swmPerson.getDepartment());
+            person.setProdLine(swmPerson.getProdLine());
+            person.setTeam(swmPerson.getTeam());
+            super.update(swmPerson);
+            // 更新缓存（避免循环依赖）
+            try {
+                SwmPersonCacheService cacheService = applicationContext.getBean(SwmPersonCacheService.class);
+                if (cacheService != null) {
+                    cacheService.updatePersonCache(swmPerson);
+                }
+            } catch (Exception e) {
+                // 忽略缓存更新异常，不影响主要业务
+                logger.debug("更新人员缓存失败", e);
+            }
+        }
     }
 }

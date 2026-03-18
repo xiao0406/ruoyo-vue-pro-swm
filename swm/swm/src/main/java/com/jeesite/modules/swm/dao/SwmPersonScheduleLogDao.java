@@ -17,7 +17,7 @@ public interface SwmPersonScheduleLogDao extends CrudDao<SwmPersonScheduleLog> {
             "(id, operate_user, operate_time, target_classes, person_id, " +
             " remark, operate_desc, del_flag,corp_code,corp_name) " +
             "VALUES (#{id}, #{operateUser}, #{operateTime}, #{targetClasses}, #{personId}, " +
-            "#{remark}, #{operateDesc}, '0',corpCode,corpName)")
+            "#{remark}, #{operateDesc}, '0',#{corpCode},#{corpName})")
     void insertLog(SwmPersonScheduleLog log);
 
     /**

@@ -1,14 +1,29 @@
 package com.jeesite.modules.swm.service;
 
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.config.TenantContext;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
+import com.jeesite.modules.entity.SwmSafetyPersonTraining;
+import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.swm.dao.PersonTrackDao;
 import com.jeesite.modules.swm.entity.PersonTrackInfo;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.swm.service.ExternalCoordinateDataService;
+import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
+import com.jeesite.modules.swm.service.SwmPersonCacheService;
+
 import com.jeesite.modules.utils.R;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +32,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -49,12 +69,15 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
     @Qualifier("swmExecutor")
     @Autowired
     private ThreadPoolTaskExecutor swmExecutor;
+    @Resource
+    private SwmSafetyPersonTrainingService swmSafetyPersonTrainingService;
+    @Autowired
+    private SwmHelmetDeviceService swmHelmetDeviceService;
+    @Autowired
+    private TDengineService tdengineService;
 
     @Value("${tdengine.dbname}")
     private String dbname;
-
-    @Autowired
-    private TDengineService tdengineService;
 
     /**
      * 从数据库查询人员数据并转换为位置信息
@@ -176,9 +199,19 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
             Map<String, String> attendanceStatusMap = attendanceFuture.get();
 
 
+            //查询人员是否完成安全教育视频情况，每个月看一次
+            Date date = new Date();
+            DateTime startMonth = DateUtil.beginOfMonth(date);
+            DateTime endMonth = DateUtil.endOfMonth(date);
+            Set<String> safetyStrList = swmSafetyPersonTrainingService.findListByIdCard(identityCards,startMonth,endMonth);
+
+            //查询电量
+//            identityCards
+            Map<String,Integer> batteryMap = this.getBatteryLevelsByIdCards(identityCards);
+
             for (PersonTrackInfo person : dbResults) {
                 String name = person.getName();
-                String workType = person.getWorkType();
+                String workType = person.getJobType();
                 String organization = person.getOrganization();
                 String workShop = person.getWorkShop();
                 String teamGroup = person.getTeamGroup();
@@ -186,16 +219,16 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                 String id = person.getId();
 
                 // 如果某些字段为空，设置默认值
-                if (workType == null)
-                    workType = "待分配";
-                if (organization == null)
-                    organization = "未知单位";
-                if (workShop == null)
-                    workShop = "未知车间";
-                if (teamGroup == null)
-                    teamGroup = "未知班组";
-                if (identityCard == null)
-                    identityCard = "未登记";
+//                if (workType == null)
+//                    workType = "待分配";
+//                if (organization == null)
+//                    organization = "未知单位";
+//                if (workShop == null)
+//                    workShop = "未知车间";
+//                if (teamGroup == null)
+//                    teamGroup = "未知班组";
+//                if (identityCard == null)
+//                    identityCard = "未登记";
 
                 String personId = id; // 直接使用字符串ID，不转换为整数
 
@@ -238,7 +271,9 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                                     identityCard,
                                     true, // 标记为真实位置
                                     person, // 传入完整的person对象
-                                    colorMap); // 传入颜色映射
+                                    colorMap, // 传入颜色映射
+                                    safetyStrList,batteryMap);// 传入是否安全培训状态
+
 
                             positions.add(position);
                             logger.info("添加身份证 {} ({}) 的真实坐标: x={}, y={}", identityCard, name, x, y);
@@ -454,6 +489,62 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
         logger.info("【mqtt定位数据】 -最终返回 {} 个有效位置信息", positions.size());
         return positions;
+    }
+
+    /**
+     * 根据身份证号列表查询最新电池电量
+     * @param identityCards 身份证号列表（非空）
+     * @return key=身份证号，value=最新电池电量（null表示无数据）
+     */
+    private Map<String, Integer> getBatteryLevelsByIdCards(List<String> identityCards) {
+        Map<String, Integer> batteryMap = new HashMap<>();
+
+        // 1. 边界条件校验：空列表直接返回空Map
+        if (CollectionUtils.isEmpty(identityCards)) {
+            return Collections.emptyMap();
+        }
+
+        // 2. 获取租户对应的数据库名
+        String corpCode = TenantContext.get();
+        String dbname = CorpDbEnum.getDbNameByCorpCode(corpCode);
+
+        // 3. 构建IN查询条件（防SQL注入 + 空值过滤）
+        StringBuilder idCardCondition = new StringBuilder();
+        idCardCondition.append("id_card in (");
+        for (int i = 0; i < identityCards.size(); i++) {
+            idCardCondition.append("'").append(identityCards.get(i)).append("'");
+            if (i < identityCards.size() - 1) {
+                idCardCondition.append(",");
+            }
+        }
+        idCardCondition.append(")");
+
+        // 4. 构建TDengine查询SQL（优化语法 + 防注入）
+        String sql = String.format(
+                "SELECT LAST_ROW(id_card) AS id_card, LAST_ROW(bat_l) AS latest_battery " +
+                        "FROM %s.%s " +
+                        "WHERE %s " +
+                        "PARTITION BY id_card",
+                dbname,TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION, idCardCondition.toString()
+        );
+
+        R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+        if (result != null && result.getCode() == R.SUCCESS && result.getData() != null) {
+            JSONObject obj = result.getData();
+            JSONArray dataArray = obj.getJSONArray("data");
+
+            if (dataArray != null && dataArray.size() > 0) {
+                for (int i = 0; i < dataArray.size(); i++) {
+                    JSONArray row = dataArray.getJSONArray(i);
+                    String idCard = row.getStr(0);
+                    Integer latestBattery = row.getInt(1);
+                    batteryMap.put(idCard, latestBattery);
+                }
+            }
+        }
+        return batteryMap;
+
     }
 
     /**
@@ -678,7 +769,16 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         // 添加手机号字段
         position.put("phoneNumber", person.getPhoneNumber());
         position.put("gender", person.getGender());
+        position.put("bloodType", person.getBloodType());
 
+        //判断是否进行安全检查
+        position.put("safety", "未受教育");
+        if (safetyStrList.contains(person.getIdentityCard())){
+            position.put("safety", "已受教育");
+        }
+        position.put("powerOnStatus","在线");
+
+        position.put("battery", batteryMap.get(person.getIdentityCard()));
         return position;
     }
 
@@ -920,11 +1020,36 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                     result.put(identityCard, "无考勤记录");
                 } else {
                     String attendanceNormal = attendance.getAttendanceNormal();
-                    if ("1".equals(attendanceNormal)) {
-                        result.put(identityCard, "异常考勤");
+                    //07:00 - 18:00
+                    String workTimeRange = attendance.getWorkTimeRange();
+                    //07:09:54
+                    Date clockInTime = attendance.getClockInTime();
+                    //切割时间段，然后判断是否大于上班时间，大于说明迟早，小于是正常，为空则为未出勤
+                    if (clockInTime == null) {
+                        result.put(identityCard, "未出勤");
                     } else {
-                        result.put(identityCard, "正常考勤");
+                        // 解析时间段
+                        String[] split = workTimeRange.split("-");
+                        String startTimeStr = split[0].trim(); // 07:00
+                        LocalTime workStartTime = LocalTime.parse(startTimeStr, DateTimeFormatter.ofPattern("HH:mm"));
+                        LocalTime clockInLocalTime = clockInTime.toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalTime();
+                        // 判断
+                        if (clockInLocalTime.isAfter(workStartTime)) {
+                            result.put(identityCard, "迟到");
+                        } else {
+                            result.put(identityCard, "正常考勤");
+                        }
                     }
+
+//                    if ("1".equals(attendanceNormal)) {
+//                        result.put(identityCard, "正常考勤");
+//                    }else if ("2".equals(attendanceNormal)){
+//                        result.put(identityCard, "休息日");
+//                    } else if ("3".equals(attendanceNormal)){
+//                        result.put(identityCard, "未出勤");
+//                    }
                 }
             }
         } catch (Exception e) {
@@ -936,7 +1061,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
     /**
      * 根据身份证列表从 mqtt_device_position 表查询当前日期最后一条记录的 lng,lat 坐标
-     * 
+     *
      * @param idCardList 身份证号列表
      * @return Map<身份证号，Map<坐标信息>>
      * @author Shawn
@@ -984,7 +1109,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
             if (result.getCode() == R.SUCCESS && result.getData() != null) {
                 JSONObject data = result.getData();
                 JSONArray rows = data.getJSONArray("data");
-                
+
                 Map<String, Map<String, Object>> locationMap = new HashMap<>();
 
                 if (rows != null && rows.size() > 0) {
@@ -994,16 +1119,16 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                         if (row != null && row.size() >= 5) {
                             // id_card (索引 0)
                             String idCard = String.valueOf(row.get(0));
-                            
+
                             // lng (索引 1)
                             Object lngObj = row.get(1);
-                            
+
                             // lat (索引 2)
                             Object latObj = row.get(2);
-                            
+
                             // floor_id (索引 3)
                             Object floorIdObj = row.get(3);
-                            
+
                             // time (索引 4)
                             Object timeObj = row.get(4);
 
