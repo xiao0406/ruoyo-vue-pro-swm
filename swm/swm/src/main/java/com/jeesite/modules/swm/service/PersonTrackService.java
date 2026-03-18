@@ -30,6 +30,9 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
@@ -187,7 +190,6 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
 
             //查询人员是否完成安全教育视频情况，每个月看一次
-            long l5 = System.currentTimeMillis();
             Date date = new Date();
             DateTime startMonth = DateUtil.beginOfMonth(date);
             DateTime endMonth = DateUtil.endOfMonth(date);
@@ -759,13 +761,36 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                     result.put(identityCard, "无考勤记录");
                 } else {
                     String attendanceNormal = attendance.getAttendanceNormal();
-                    if ("1".equals(attendanceNormal)) {
-                        result.put(identityCard, "异常考勤");
-                    }else if ("2".equals(attendanceNormal)){
-                        result.put(identityCard, "休息日");
-                    } else if ("3".equals(attendanceNormal)){
-                        result.put(identityCard, "正常考勤");
+                    //07:00 - 18:00
+                    String workTimeRange = attendance.getWorkTimeRange();
+                    //07:09:54
+                    Date clockInTime = attendance.getClockInTime();
+                    //切割时间段，然后判断是否大于上班时间，大于说明迟早，小于是正常，为空则为未出勤
+                    if (clockInTime == null) {
+                        result.put(identityCard, "未出勤");
+                    } else {
+                        // 解析时间段
+                        String[] split = workTimeRange.split("-");
+                        String startTimeStr = split[0].trim(); // 07:00
+                        LocalTime workStartTime = LocalTime.parse(startTimeStr, DateTimeFormatter.ofPattern("HH:mm"));
+                        LocalTime clockInLocalTime = clockInTime.toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalTime();
+                        // 判断
+                        if (clockInLocalTime.isAfter(workStartTime)) {
+                            result.put(identityCard, "迟到");
+                        } else {
+                            result.put(identityCard, "正常考勤");
+                        }
                     }
+
+//                    if ("1".equals(attendanceNormal)) {
+//                        result.put(identityCard, "正常考勤");
+//                    }else if ("2".equals(attendanceNormal)){
+//                        result.put(identityCard, "休息日");
+//                    } else if ("3".equals(attendanceNormal)){
+//                        result.put(identityCard, "未出勤");
+//                    }
                 }
             }
         } catch (Exception e) {

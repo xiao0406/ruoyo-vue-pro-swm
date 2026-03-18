@@ -1608,9 +1608,13 @@ public class AttendanceTask {
                     try {
                         String deviceId = item.getDeviceId();
                         Date clockStartTime = item.getClockStartTime();
+                        String classes = item.getClasses();
                         if (clockStartTime != null){
                             //看看当前时间是否在应该打卡时间范围之内
                             String startTime = DateUtil.formatDateTime(clockStartTime);
+                            if("3".equals( classes)){
+                                startTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, -7));
+                            }
                             String endTime = DateUtil.formatDateTime(DateUtil.offsetHour(clockStartTime, 16));
                             String clockInTimeStr = getLast3MinutesBluetoothCount(deviceId, startTime, endTime,item.getIdentityCard(),corpCode);
                             if (StringUtils.isNotEmpty(clockInTimeStr)) {

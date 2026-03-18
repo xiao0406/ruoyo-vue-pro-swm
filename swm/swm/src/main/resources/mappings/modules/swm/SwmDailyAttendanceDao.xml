@@ -836,7 +836,9 @@
         a.employee_id AS "employeeId",
         a.identity_card AS "identityCard",
         a.effective_work_hours AS "effectiveWorkHours",
-        a.attendance_normal AS "attendanceNormal"
+        a.attendance_normal AS "attendanceNormal",
+        a.clock_in_date AS "clockInDate",
+        a.work_time_range AS "workTimeRange"
         FROM swm_daily_attendance a
         <where>
             <if test="employeeIds != null and employeeIds.size() > 0">
