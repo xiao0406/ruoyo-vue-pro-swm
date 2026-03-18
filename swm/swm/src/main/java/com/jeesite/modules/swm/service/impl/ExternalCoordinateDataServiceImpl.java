@@ -104,8 +104,8 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
                     idCardCondition.toString(), startTime, endTime);
 
             log.info("查询external_coordinate_data身份证坐标SQL: {}", sql);
-            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
 
+            R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
             // 添加调试日志，打印TDengine返回的原始列元数据和数据
             if (result.getCode() == R.SUCCESS && result.getData() != null) {
                 JSONArray columnMeta = result.getData().getJSONArray("column_meta");

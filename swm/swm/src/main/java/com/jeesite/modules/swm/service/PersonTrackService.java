@@ -2,10 +2,15 @@ package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.config.TenantContext;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.entity.SwmSafetyPersonTraining;
+import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.dao.PersonTrackDao;
 import com.jeesite.modules.swm.entity.PersonTrackInfo;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
@@ -15,6 +20,7 @@ import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
 import com.jeesite.modules.swm.service.SwmPersonCacheService;
 
 import com.jeesite.modules.utils.R;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +66,8 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
     private SwmSafetyPersonTrainingService swmSafetyPersonTrainingService;
     @Autowired
     private SwmHelmetDeviceService swmHelmetDeviceService;
+    @Autowired
+    private TDengineService tdengineService;
     /**
      * 从数据库查询人员数据并转换为位置信息
      * 
@@ -120,7 +128,6 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                     colorKeys.add(person.getProdLineId());
                 }
             }
-
             // 批量查询颜色信息 2025/06/24 Shawn 添加
             Map<String, String> colorMap = new HashMap<>();
             if (!colorKeys.isEmpty()) {
@@ -138,7 +145,6 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                     logger.error("查询颜色配置异常", e);
                 }
             }
-
             // 批量查询external_coordinate_data表中的坐标数据
             Map<String, Map<String, Object>> locationMap = new HashMap<>();
             if (!idCardList.isEmpty()) {
@@ -179,23 +185,17 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
             Map<String, String> workHoursMap = workHoursFuture.get();
             Map<String, String> attendanceStatusMap = attendanceFuture.get();
 
+
             //查询人员是否完成安全教育视频情况，每个月看一次
+            long l5 = System.currentTimeMillis();
             Date date = new Date();
             DateTime startMonth = DateUtil.beginOfMonth(date);
             DateTime endMonth = DateUtil.endOfMonth(date);
             Set<String> safetyStrList = swmSafetyPersonTrainingService.findListByIdCard(identityCards,startMonth,endMonth);
 
             //查询电量
-            SwmHelmetDevice swmHelmetDevice  = new SwmHelmetDevice();
-            swmHelmetDevice.setPage(new Page<>(1, 10000));
-            Page<SwmHelmetDevice> page = swmHelmetDeviceService.findPage(swmHelmetDevice);
-            List<SwmHelmetDevice> list = page.getList();
-            Map<String, Object> batteryMap = new HashMap<>();
-            for (SwmHelmetDevice device : list) {
-                if (device.getAssignedPerson() != null) {
-                    batteryMap.put(device.getAssignedPerson(), device.getBatteryLevel());
-                }
-            }
+//            identityCards
+            Map<String,Integer> batteryMap = this.getBatteryLevelsByIdCards(identityCards);
 
             for (PersonTrackInfo person : dbResults) {
                 String name = person.getName();
@@ -276,7 +276,6 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                     logger.info("身份证 {} ({}) 未找到坐标数据，跳过该人员", identityCard, name);
                 }
             }
-
         } catch (Exception e) {
             logger.error("查询数据库人员数据失败", e);
             // 如果数据库查询失败，返回空列表而不是测试数据
@@ -285,6 +284,62 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
 
         logger.info("最终返回 {} 个有效位置信息", positions.size());
         return positions;
+    }
+
+    /**
+     * 根据身份证号列表查询最新电池电量
+     * @param identityCards 身份证号列表（非空）
+     * @return key=身份证号，value=最新电池电量（null表示无数据）
+     */
+    private Map<String, Integer> getBatteryLevelsByIdCards(List<String> identityCards) {
+        Map<String, Integer> batteryMap = new HashMap<>();
+
+        // 1. 边界条件校验：空列表直接返回空Map
+        if (CollectionUtils.isEmpty(identityCards)) {
+            return Collections.emptyMap();
+        }
+
+        // 2. 获取租户对应的数据库名
+        String corpCode = TenantContext.get();
+        String dbname = CorpDbEnum.getDbNameByCorpCode(corpCode);
+
+        // 3. 构建IN查询条件（防SQL注入 + 空值过滤）
+        StringBuilder idCardCondition = new StringBuilder();
+        idCardCondition.append("id_card in (");
+        for (int i = 0; i < identityCards.size(); i++) {
+            idCardCondition.append("'").append(identityCards.get(i)).append("'");
+            if (i < identityCards.size() - 1) {
+                idCardCondition.append(",");
+            }
+        }
+        idCardCondition.append(")");
+
+        // 4. 构建TDengine查询SQL（优化语法 + 防注入）
+        String sql = String.format(
+                "SELECT LAST_ROW(id_card) AS id_card, LAST_ROW(bat_l) AS latest_battery " +
+                        "FROM %s.%s " +
+                        "WHERE %s " +
+                        "PARTITION BY id_card",
+                dbname,TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION, idCardCondition.toString()
+        );
+
+        R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+        if (result != null && result.getCode() == R.SUCCESS && result.getData() != null) {
+            JSONObject obj = result.getData();
+            JSONArray dataArray = obj.getJSONArray("data");
+
+            if (dataArray != null && dataArray.size() > 0) {
+                for (int i = 0; i < dataArray.size(); i++) {
+                    JSONArray row = dataArray.getJSONArray(i);
+                    String idCard = row.getStr(0);
+                    Integer latestBattery = row.getInt(1);
+                    batteryMap.put(idCard, latestBattery);
+                }
+            }
+        }
+        return batteryMap;
+
     }
 
     /**
@@ -424,7 +479,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
     private Map<String, Object> createPersonPositionWithColors(String id, String name, int x, int y, String workType,
             String organization, String workShop, String teamGroup,
             String workHours, String attendance, String identityCard, boolean hasRealLocation,
-            PersonTrackInfo person, Map<String, String> colorMap,Set<String> safetyStrList,Map<String, Object> batteryMap ) {
+            PersonTrackInfo person, Map<String, String> colorMap,Set<String> safetyStrList,Map<String,Integer> batteryMap) {
 
         // 创建基础的人员位置信息
         Map<String, Object> position = createPersonPosition(id, name, x, y, workType, organization, workShop, teamGroup,

@@ -119,13 +119,23 @@ public class SwmDashboardNewController extends BaseController {
     @ApiOperation("全班次折线图")
     public Map<String, Object> hourWorkingCount24() {
 
-        //流式生成小时列表（补全导入后即可正常使用）
-        List<String> hourList = IntStream.rangeClosed(0, 23)
+        List<String> hourList = new ArrayList<>();
+
+        // 第一部分：7点到23点
+        IntStream.rangeClosed(7, 23)
                 .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
-                .collect(Collectors.toList());
+                .forEach(hourList::add);
+
+        // 第二部分：0点到6点
+        IntStream.rangeClosed(0, 6)
+                .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
+                .forEach(hourList::add);
+
+        // 获取对应小时的工作数据
+        Map<String, Object> hourWorkingCount = getHourWorkingCount(hourList);
 
         // 返回结果
-        return getHourWorkingCount(hourList);
+        return hourWorkingCount;
     }
 
     /**
