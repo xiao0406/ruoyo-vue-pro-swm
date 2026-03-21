@@ -10,7 +10,7 @@ public enum CorpDbEnum {
     ZJGGGD("ZJGGGD", "plb"),
     ZJGGSC("ZJGGSC", "plb_ZJGGSC"),
     ZJZK("ZJZK", "plb_ZJZK"),
-    ZJZKGD("ZHY", "plb_ZHY");
+    ZHY("ZHY", "plb_ZHY");
 
     private final String corpCode;
     private final String dbName;
