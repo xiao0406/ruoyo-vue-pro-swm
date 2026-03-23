@@ -1012,10 +1012,12 @@ public class SwmDailyAttendanceController extends BaseController {
     public Page<Map<String, Object>> weeklyListData(SwmMonthlyAttendance swmMonthlyAttendance, HttpServletRequest request,
                                                      HttpServletResponse response) {
         //如果没有传入时间，则系统默认给本周
-        if (ObjectUtils.isEmpty(swmMonthlyAttendance.getStratDate()) || ObjectUtils.isEmpty(swmMonthlyAttendance.getEndDate())){
+        if (ObjectUtils.isEmpty(swmMonthlyAttendance.getStartDate()) || ObjectUtils.isEmpty(swmMonthlyAttendance.getEndDate())){
             Date date = new Date();
-            swmMonthlyAttendance.setStratDate(DateUtil.beginOfWeek(date));
+            swmMonthlyAttendance.setStartDate(DateUtil.beginOfWeek(date));
             swmMonthlyAttendance.setEndDate(DateUtil.endOfWeek(date));
+        }else {
+            swmMonthlyAttendance.setEndDate(DateUtil.endOfDay(swmMonthlyAttendance.getEndDate()));
         }
         swmMonthlyAttendance.setPage(new Page<>(request, response));
 
@@ -1047,9 +1049,9 @@ public class SwmDailyAttendanceController extends BaseController {
     public String exportWeeklyListData(SwmMonthlyAttendance swmMonthlyAttendance, HttpServletRequest request,
                                                     HttpServletResponse response) {
         //如果没有传入时间，则系统默认给本周
-        if (ObjectUtils.isEmpty(swmMonthlyAttendance.getStratDate()) || ObjectUtils.isEmpty(swmMonthlyAttendance.getEndDate())){
+        if (ObjectUtils.isEmpty(swmMonthlyAttendance.getStartDate()) || ObjectUtils.isEmpty(swmMonthlyAttendance.getEndDate())){
             Date date = new Date();
-            swmMonthlyAttendance.setStratDate(DateUtil.beginOfWeek(date));
+            swmMonthlyAttendance.setStartDate(DateUtil.beginOfWeek(date));
             swmMonthlyAttendance.setEndDate(DateUtil.endOfWeek(date));
         }
         swmMonthlyAttendance.setPage(new Page<>(1, 99999));
@@ -1058,7 +1060,7 @@ public class SwmDailyAttendanceController extends BaseController {
 
         List<WeeklyListDtoExprot> exportList = new ArrayList<>();
 
-        Date stratDate = swmMonthlyAttendance.getStratDate();
+        Date stratDate = swmMonthlyAttendance.getStartDate();
         Date endDate = swmMonthlyAttendance.getEndDate();
 
         for (SwmMonthlyAttendance record : originalPage.getList()) {

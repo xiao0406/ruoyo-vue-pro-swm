@@ -65,6 +65,13 @@ public class SwmSafetyPersonTraining extends DataEntity<SwmSafetyPersonTraining>
 	private String duration;
 
 	private String pushDateStr;
+
+
+
+	private String company; // 所属单位
+	private String department; // 所属车间
+	private String prodLine; // 产线
+	private String team; // 所属班组
 	
 	public SwmSafetyPersonTraining() {
 		this(null);

@@ -1,12 +1,14 @@
 package com.jeesite.modules.swm.entity;
 
 import com.jeesite.common.entity.DataEntity;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 import java.util.Date;
 
+@Data
 public class SwmMonthlyAttendance extends DataEntity<SwmMonthlyAttendance> {
 
     private String monthly;
@@ -24,7 +26,7 @@ public class SwmMonthlyAttendance extends DataEntity<SwmMonthlyAttendance> {
 
     private Date currentMonth; //月份
 
-    private Date stratDate; //开始时间
+    private Date startDate; //开始时间
     private Date endDate; //结束时间
 
     private String personType; //人员类型
@@ -139,13 +141,6 @@ public class SwmMonthlyAttendance extends DataEntity<SwmMonthlyAttendance> {
         this.monthly = monthly;
     }
 
-    public Date getStratDate() {
-        return stratDate;
-    }
-
-    public void setStratDate(Date stratDate) {
-        this.stratDate = stratDate;
-    }
 
     public Date getEndDate() {
         return endDate;

@@ -1551,7 +1551,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         List<SwmMonthlyAttendance> list = dao.findStatisticsByWeekWithPage(swmMonthlyAttendance);
 
         // 1. 获取时间范围参数（startDate/endDate）
-        Date startDate = swmMonthlyAttendance.getStratDate();
+        Date startDate = swmMonthlyAttendance.getStartDate();
         Date endDate = swmMonthlyAttendance.getEndDate();
         long totalDays = DateUtil.between(startDate, endDate, DateUnit.DAY) -1;
 

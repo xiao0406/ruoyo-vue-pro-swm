@@ -20,10 +20,18 @@
 		fm.job_type,
 		fm.type,
 		sp.name as personName,
+		jso.office_name AS "company",
+		pa.position_name AS "department",
+		pl.prod_line_name AS "prodLine",
+		wg.work_group_name AS "team",
 		a.*
 		FROM swm_safety_person_training a
 		JOIN swm_safety_file_manage fm ON a.safety_manage_id = fm.id
 		JOIN swm_person sp ON a.identity_card = sp.identity_card
+		LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
+		LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
+		LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
+		LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
 		<where>
 			${sqlMap.where.toSql()}
 			 <if test="personName != null and personName != ''">
@@ -34,6 +42,18 @@
 			</if>
 			<if test="title != null and title != ''">
 				AND fm.title LIKE concat('%',#{title},'%')
+			</if>
+			<if test="department != null and department != ''">
+				AND  pa.position_name = #{department}
+			</if>
+			<if test="prodLine != null and prodLine != ''">
+				AND pl.prod_line_name = #{prodLine}
+			</if>
+			<if test="team != null and team != ''">
+				AND wg.work_group_name = #{team}
+			</if>
+			<if test="company != null and company != ''">
+				AND jso.office_name LIKE CONCAT('%', #{company}, '%')
 			</if>
 		</where>
 		ORDER BY ${sqlMap.order.toSql()}

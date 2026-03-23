@@ -1134,7 +1134,7 @@
             LEFT JOIN  fms_work_group fwg on sp.team = fwg.id COLLATE utf8mb4_general_ci
         <where>
                 sp.personnel_status = '1' and sp.status = '0' and
-                sda.attendance_date between #{stratDate} and #{endDate}
+                sda.attendance_date between #{startDate} and #{endDate}
                 <if test="team != null and team != ''">
                     AND sp.team = #{team}
                 </if>
