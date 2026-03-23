@@ -28,6 +28,7 @@ import lombok.Data;
 		@Column(name="push_date", attrName="pushDate", label="推送日期", isUpdateForce=true),
 		@Column(name="push_status", attrName="pushStatus", label="推送状态，字典swm_push_status"),
 		@Column(name="file_url", attrName="fileUrl", label="文件url地址"),
+		@Column(name="select_all", attrName="selectAll", label="全选"),
 		@Column(includeEntity=DataEntity.class),
 		@Column(includeEntity=BaseEntity.class),
 	}, orderBy="a.update_date DESC"
@@ -61,6 +62,8 @@ public class SwmSafetyFileManage extends DataEntity<SwmSafetyFileManage> {
 	private Date startTime;
 	@ApiModelProperty(value = "结束时间")
 	private Date endTime;
+	@ApiModelProperty(value = "全选标记 ,1-全选")
+	private String selectAll;
 	
 	public SwmSafetyFileManage() {
 		this(null);

@@ -84,12 +84,15 @@ public class SafetyManageTask {
                 //视频培训记录（安全管理）信息
                 List<SwmSafetyPersonTraining> insertTrainingList = new ArrayList<>();
                 for (SwmSafetyFileManage fileManage : list) {
-                    String jobType = fileManage.getJobType();
-                    //切割工种：”，“
-                    String[] jobTypes = jobType.split(",");
+                    List<String> jobtypeList = null;
+                    if (!"1".equals(fileManage.getSelectAll())){
+                        String jobType = fileManage.getJobType();
+                        //切割工种：”，“
+                        String[] jobTypes = jobType.split(",");
 
-                    // 2.根据工种去人员表查出对应的人员
-                    List<String> jobtypeList = new ArrayList<>(Arrays.asList(jobTypes));
+                        // 2.根据工种去人员表查出对应的人员
+                        jobtypeList = new ArrayList<>(Arrays.asList(jobTypes));
+                    }
                     List<SwmPerson> jobPersons =  swmPersonService.findListByJobTypeList(jobtypeList);
 
                     SwmSafetyPersonTraining safetyPersonTraining = new SwmSafetyPersonTraining();
