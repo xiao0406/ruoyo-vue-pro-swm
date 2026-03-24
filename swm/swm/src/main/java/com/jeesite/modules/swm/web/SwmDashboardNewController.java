@@ -121,21 +121,85 @@ public class SwmDashboardNewController extends BaseController {
 
         List<String> hourList = new ArrayList<>();
 
-        // 第一部分：7点到23点
+        // 7点到23点
         IntStream.rangeClosed(7, 23)
                 .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
                 .forEach(hourList::add);
 
-        // 第二部分：0点到6点
+        // 0点到6点
         IntStream.rangeClosed(0, 6)
                 .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
                 .forEach(hourList::add);
 
-        // 获取对应小时的工作数据
-        Map<String, Object> hourWorkingCount = getHourWorkingCount(hourList);
+        // 原有数据
+        Map<String, Object> result = getHourWorkingCount(hourList);
 
-        // 返回结果
-        return hourWorkingCount;
+        // ================== 查询排班 ==================
+        SwmScheduleTime query = new SwmScheduleTime();
+
+        // 白班
+        query.setShiftType("1");
+        SwmScheduleTime day = timeService.findList(query).get(0);
+
+        // 夜班
+        query.setShiftType("3");
+        SwmScheduleTime night = timeService.findList(query).get(0);
+
+        // 转时间
+        LocalTime dayStart = parseTime(day.getStartTime());
+        LocalTime dayEnd = parseTime(day.getEndTime());
+
+        LocalTime nightStart = parseTime(night.getStartTime());
+        LocalTime nightEnd = parseTime(night.getEndTime()).plusHours(3);
+
+        // ================== 构建type ==================
+        List<String> typeList = new ArrayList<>();
+
+        for (String hourStr : hourList) {
+
+            // 直接用当前时间（代表区间起点）
+            LocalTime current = LocalTime.parse(hourStr, DateTimeFormatter.ofPattern("HH:mm"));
+
+            //夜班优先（避免重叠问题）
+            if (inRange(current, nightStart, nightEnd)) {
+                typeList.add("夜班");
+            } else if (inRange(current, dayStart, dayEnd)) {
+                typeList.add("白班");
+            } else {
+                typeList.add("未知");
+            }
+        }
+
+        result.put("type", typeList);
+
+        return result;
+    }
+
+    private boolean inRange(LocalTime current, LocalTime start, LocalTime end) {
+
+        // 不跨天
+        if (start.isBefore(end)) {
+            return (current.equals(start) || current.isAfter(start))
+                    && current.isBefore(end);
+        }
+        // 跨天
+        else {
+            return (current.equals(start) || current.isAfter(start))
+                    || current.isBefore(end);
+        }
+    }
+    private LocalTime parseTime(String timeStr) {
+
+        if (timeStr == null) {
+            return null;
+        }
+
+        // 统一补齐（关键）
+        if (timeStr.length() == 5) {
+            timeStr = timeStr + ":00";
+        }
+
+        return LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm:ss"));
     }
 
     /**
