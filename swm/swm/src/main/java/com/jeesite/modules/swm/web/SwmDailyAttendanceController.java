@@ -964,6 +964,10 @@ public class SwmDailyAttendanceController extends BaseController {
             // 转换为导出实体
             List<SwmMonthlyAttendanceExportEntity> exportList = swmDailyAttendanceService.monthlyConvertToExportList(list);
 
+            for (SwmMonthlyAttendanceExportEntity entity : exportList) {
+                entity.setMonthly(swmMonthlyAttendance.getStartDate() + "至" + swmMonthlyAttendance.getEndDate());
+            }
+
             // 生成文件名
             String fileName = "月考勤记录_" + DateUtils.formatDate(swmMonthlyAttendance.getCurrentMonth(), "yyyyMM") + "_"
                     + DateUtils.getDate("yyyyMMddHHmmss") + ".xlsx";

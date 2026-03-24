@@ -919,7 +919,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
         swmMonthlyAttendance.setStartDate(DateUtil.beginOfDay(swmMonthlyAttendance.getStartDate()));
         swmMonthlyAttendance.setEndDate(DateUtil.endOfDay(swmMonthlyAttendance.getEndDate()));
-        return dao.findStatisticsByMonth(month);
+        return dao.findStatisticsByMonth(month,swmMonthlyAttendance.getStartDate(),swmMonthlyAttendance.getEndDate());
     }
 
     /**

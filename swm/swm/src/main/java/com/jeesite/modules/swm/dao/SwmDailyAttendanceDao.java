@@ -134,7 +134,8 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
      * @param month       月份(格式: yyyy-MM)
      * @return 月考勤记录列表
      */
-    List<SwmMonthlyAttendance> findStatisticsByMonth(@Param("month") String month);
+    List<SwmMonthlyAttendance> findStatisticsByMonth(@Param("month") String month,
+                                                     @Param("startDate") Date startDate,@Param("endDate")Date endDate);
 
     /**
      * 查询指定月份的月考勤记录 --分页查询
