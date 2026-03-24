@@ -916,6 +916,9 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         String month = sdf.format(swmMonthlyAttendance.getCurrentMonth());
 
         // 不设置分页，查询所有数据
+
+        swmMonthlyAttendance.setStartDate(DateUtil.beginOfDay(swmMonthlyAttendance.getStartDate()));
+        swmMonthlyAttendance.setEndDate(DateUtil.endOfDay(swmMonthlyAttendance.getEndDate()));
         return dao.findStatisticsByMonth(month);
     }
 
