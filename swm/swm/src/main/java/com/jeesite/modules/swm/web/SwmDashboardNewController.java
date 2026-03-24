@@ -192,7 +192,7 @@ public class SwmDashboardNewController extends BaseController {
         //18:00
         int startHour = Integer.parseInt(schedule.getStartTime().split(":")[0].trim());
         //03:40  夜班默认加1天
-        int endHour = Integer.parseInt(schedule.getEndTime().split(":")[0].trim()) +1;
+        int endHour = Integer.parseInt(schedule.getEndTime().split(":")[0].trim()) +3;
 
         // 4. 流式生成小时列表（补全导入后即可正常使用）
         List<String> hourList = IntStream.rangeClosed(0, endHour)
