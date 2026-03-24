@@ -608,70 +608,54 @@
     <!-- 按月查询月考勤记录分页处理 -->
     <select id="findStatisticsByMonthWithPage" resultMap="swmMonthlyAttendanceResult">
         SELECT
-        sda.employee_id as employee_id,
-        sda.identity_card as identity_card,
-        DATE_FORMAT(sda.attendance_date,'%Y-%m') as monthly,
-        sda.employee_name as employee_name,
-        sp.phone_number as phone_number,
-        fwg.work_group_name as team,
-        sp.job_type as job_type,
-        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
-        CONCAT(ROUND(
-        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
-        2),'%') as attendance_rate,
-        SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as valid_attendance_total,
-        SUM(sda.actual_hours) as actual_hours_total,
-        SUM(sda.idle_hours) as idle_hours_total
-        FROM swm_daily_attendance sda
-        LEFT JOIN swm_person sp
-        ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
-        LEFT JOIN  fms_work_group fwg on sp.team = fwg.id COLLATE utf8mb4_general_ci
-        <where>
-             sp.personnel_status = '1' and sp.status = '0' and
-            DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
-            <if test="team != null and team != ''">
-                AND sp.team = #{team}
-            </if>
-            <if test="employeeName != null and employeeName != ''">
-                AND sp.name LIKE concat('%', #{employeeName}, '%')
-            </if>
-        </where>
-        GROUP BY sda.employee_name
-        LIMIT #{pageNum},#{pageSize}
+            sda.employee_id AS employee_id,
+            sda.identity_card AS identity_card,
+            DATE_FORMAT(sda.attendance_date, '%Y-%m') AS monthly,
+            sda.employee_name AS employee_name,
+            sp.phone_number AS phone_number,
+            fwg.work_group_name AS team,
+            sp.job_type AS job_type,
+            SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) AS attendance_date_total,
+            CONCAT(ROUND(SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) * 100
+                                / (DATEDIFF(#{endDate}, #{startDate}) + 1), 2),'%') AS attendance_rate,
+            SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) AS valid_attendance_total,
+            SUM(sda.actual_hours) AS actual_hours_total,
+            SUM(sda.idle_hours) AS idle_hours_total
+        FROM
+            swm_daily_attendance sda
+                LEFT JOIN swm_person sp
+                          ON sp.identity_card = sda.identity_card AND sp.NAME = sda.employee_name
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+           sp.personnel_status = '1'
+          AND sp.STATUS = '0'
+          AND sda.attendance_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY
+            sda.employee_id, sda.employee_name
+        LIMIT #{pageNum}, #{pageSize}
     </select>
 
     <!-- 按月查询月考勤记录总条数 -->
     <select id="findStatisticsTotalByMonth" resultType="java.lang.Long">
         SELECT COUNT(*)
-        FROM(
-        SELECT sda.employee_id,
-        sda.identity_card,
-        DATE_FORMAT(sda.attendance_date,'%Y-%m') as current_month,
-        sda.employee_name,
-        sp.phone_number,
-        sp.team,
-        sp.job_type,
-        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendance_date_total,
-        CONCAT(ROUND(
-        SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END)*100/(CASE WHEN MONTH(sda.attendance_date) =2 THEN 28 WHEN MONTH(sda.attendance_date) IN (4,6,9,11) THEN 30 ELSE 31 END),
-        2),'%') as attendance_rate,
-        SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as valid_attendance_total,
-        SUM(sda.actual_hours) as actual_hours_total,
-        SUM(sda.idle_hours) as idle_hours_total
+        FROM (
+        SELECT DISTINCT sda.employee_id
         FROM swm_daily_attendance sda
         LEFT JOIN swm_person sp
-        ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
-        <where>
-             sp.personnel_status = '1' and sp.status = '0'  and
-            DATE_FORMAT(sda.attendance_date, '%Y-%m') = #{month}
-            <if test="team != null and team != ''">
-                AND sp.team = #{team}
-            </if>
-            <if test="employeeName != null and employeeName != ''">
-                AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
-            </if>
-        </where>
-        GROUP BY sda.employee_name ) monthly_attendance
+        ON sp.identity_card = sda.identity_card AND sp.name = sda.employee_name
+        LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+         sp.personnel_status = '1'
+        AND sp.status = '0'
+        AND sda.attendance_date BETWEEN #{startDate} AND #{endDate}
+        <if test="team != null and team != ''">
+            AND sp.team = #{team}
+        </if>
+        <if test="employeeName != null and employeeName != ''">
+            AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
+        </if>
+        GROUP BY sda.employee_id
+        ) AS t
     </select>
 
     <!-- 指定日期的出勤工种分布 -->

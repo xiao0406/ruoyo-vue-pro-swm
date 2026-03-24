@@ -146,7 +146,8 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
      * @return
      */
     List<SwmMonthlyAttendance> findStatisticsByMonthWithPage(@Param("team") String team,@Param("employeeName") String employeeName,
-                                                             @Param("month") String month,@Param("pageNum") int pageNum,@Param("pageSize") int pageSize);
+                                                             @Param("month") String month,@Param("pageNum") int pageNum,@Param("pageSize") int pageSize,
+                                                             @Param("startDate") Date startDate,@Param("endDate")Date endDate);
 
     /**
      * 查询指定月份的月考勤记录总数
@@ -156,7 +157,8 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
      * @return
      */
     Long findStatisticsTotalByMonth(@Param("team") String team,@Param("employeeName") String employeeName,
-                                                             @Param("month") String month);
+                                                             @Param("month") String month,
+                                    @Param("startDate") Date startDate,@Param("endDate")Date endDate);
 
     List<SwmDashboardNewController.JobTypeCount> statisticsPersonJobType(@Param("date") String date);
 

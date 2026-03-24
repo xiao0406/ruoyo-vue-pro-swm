@@ -956,11 +956,14 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM");
             month = sdf.format(swmMonthlyAttendance.getCurrentMonth());
         }
+        swmMonthlyAttendance.setStartDate(DateUtil.beginOfDay(swmMonthlyAttendance.getStartDate()));
+        swmMonthlyAttendance.setEndDate(DateUtil.endOfDay(swmMonthlyAttendance.getEndDate()));
+
         //分页查询处理
         List<SwmMonthlyAttendance> list = dao.findStatisticsByMonthWithPage(swmMonthlyAttendance.getTeam(), swmMonthlyAttendance.getEmployeeName(),
-                month, swmMonthlyAttendance.getPageNo() -1, swmMonthlyAttendance.getPageSize());
+                month, swmMonthlyAttendance.getPageNo() -1, swmMonthlyAttendance.getPageSize(), swmMonthlyAttendance.getStartDate(), swmMonthlyAttendance.getEndDate());
         //查询对应的总数据量
-        Long statisticsCount = dao.findStatisticsTotalByMonth(swmMonthlyAttendance.getTeam(), swmMonthlyAttendance.getEmployeeName(), month);
+        Long statisticsCount = dao.findStatisticsTotalByMonth(swmMonthlyAttendance.getTeam(), swmMonthlyAttendance.getEmployeeName(), month,swmMonthlyAttendance.getStartDate(), swmMonthlyAttendance.getEndDate());
         //组装返回结果
         Page<SwmMonthlyAttendance> result = new Page<>();
         result.setCount(statisticsCount);
