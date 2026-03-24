@@ -949,9 +949,9 @@ public class SwmDailyAttendanceController extends BaseController {
                              HttpServletResponse response) throws IOException {
 
         // 验证日期参数，确保只导出一天数据
-        if (swmMonthlyAttendance.getCurrentMonth() == null) {
-            return renderResult(Global.FALSE, text("请选择考勤月份！"));
-        }
+//        if (swmMonthlyAttendance.getCurrentMonth() == null) {
+//            return renderResult(Global.FALSE, text("请选择考勤月份！"));
+//        }
 
         try {
             // 获取所有符合条件的数据（不分页）
