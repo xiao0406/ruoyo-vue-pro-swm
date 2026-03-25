@@ -634,6 +634,12 @@
            sp.personnel_status = '1'
           AND sp.STATUS = '0'
           AND sda.attendance_date BETWEEN #{startDate} AND #{endDate}
+        <if test="team != null and team != ''">
+            AND sp.team = #{team}
+        </if>
+        <if test="employeeName != null and employeeName != ''">
+            AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
+        </if>
         GROUP BY
             sda.employee_id, sda.employee_name
         LIMIT #{pageNum}, #{pageSize}
