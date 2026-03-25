@@ -67,13 +67,30 @@
 		fm.cover_url,
 		fm.file_url,
 		fm.duration,
-		sp.name as personName,
+		sp.name AS personName,
 		a.*
 		FROM swm_safety_person_training a
-		JOIN swm_safety_file_manage fm ON a.safety_manage_id = fm.id
-		JOIN swm_person sp ON a.identity_card = sp.identity_card
+		INNER JOIN swm_safety_file_manage fm
+		ON a.safety_manage_id = fm.id
+		INNER JOIN swm_person sp
+		ON a.identity_card = sp.identity_card
 		<where>
-			${sqlMap.where.toSql()}
+			<if test="completeStatus != null and completeStatus != ''">
+				AND a.complete_status = #{completeStatus}
+			</if>
+			<if test="phoneNumber != null and phoneNumber != ''">
+				<choose>
+					<when test="phone != null and phone != ''">
+						AND (a.phone_number = #{phoneNumber} OR a.phone_number = #{phone})
+					</when>
+					<otherwise>
+						AND a.phone_number = #{phoneNumber}
+					</otherwise>
+				</choose>
+			</if>
+			<if test="id != null and id != ''">
+				AND a.id = #{id}
+			</if>
 		</where>
 		ORDER BY ${sqlMap.order.toSql()}
 	</select>

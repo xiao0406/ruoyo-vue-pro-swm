@@ -66,6 +66,9 @@ public class SwmSafetyPersonTraining extends DataEntity<SwmSafetyPersonTraining>
 
 	private String pushDateStr;
 
+	@ApiModelProperty(value = "手机号码")
+	private String phone;
+
 
 
 	private String company; // 所属单位
