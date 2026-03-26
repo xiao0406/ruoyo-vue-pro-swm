@@ -137,5 +137,13 @@ public class SwmSafetyPersonTraining extends DataEntity<SwmSafetyPersonTraining>
 	public void setProgress(String progress) {
 		this.progress = progress;
 	}
-	
+
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
 }
