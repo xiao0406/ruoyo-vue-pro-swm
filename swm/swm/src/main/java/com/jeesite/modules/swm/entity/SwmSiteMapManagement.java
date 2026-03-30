@@ -1,13 +1,13 @@
 package com.jeesite.modules.swm.entity;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
-
 import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 /**
  * 场地底图管理表实体类
@@ -26,6 +26,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
         @Column(name = "drawing_pixel_y", attrName = "drawingPixelY", label = "图纸Y像素坐标"),
         @Column(name = "site_coordinate_x_m", attrName = "siteCoordinateXM", label = "场地X坐标(米)"),
         @Column(name = "site_coordinate_y_m", attrName = "siteCoordinateYM", label = "场地Y坐标(米)"),
+        @Column(name = "is3d", attrName = "is3d", label = "是否是3D"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
@@ -42,7 +43,21 @@ public class SwmSiteMapManagement extends DataEntity<SwmSiteMapManagement> {
     private Integer drawingPixelY;  // 图纸Y像素坐标
     private java.math.BigDecimal siteCoordinateXM;  // 场地X坐标(米)
     private java.math.BigDecimal siteCoordinateYM;  // 场地Y坐标(米)
-    
+
+    private Integer is3d;  // 是否是3D
+
+
+    public Integer getIs3d() {
+        return is3d;
+    }
+
+    public void setIs3d(Integer is3d) {
+        this.is3d = is3d;
+    }
+
+
+
+
     public SwmSiteMapManagement() {
         this(null);
     }

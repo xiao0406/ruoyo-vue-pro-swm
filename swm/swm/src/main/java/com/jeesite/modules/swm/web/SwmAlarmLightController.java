@@ -4,15 +4,14 @@
  */
 package com.jeesite.modules.swm.web;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.shiro.authz.annotation.RequiresPermissions;
+import com.jeesite.common.config.Global;
+import com.jeesite.common.entity.Page;
+import com.jeesite.common.lang.StringUtils;
+import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.swm.entity.SwmAlarmLight;
+import com.jeesite.modules.swm.entity.SwmAlarmLightConfig;
+import com.jeesite.modules.swm.service.SwmAlarmLightConfigService;
+import com.jeesite.modules.swm.service.SwmAlarmLightService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,14 +21,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.jeesite.common.config.Global;
-import com.jeesite.common.entity.Page;
-import com.jeesite.common.lang.StringUtils;
-import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.swm.entity.SwmAlarmLight;
-import com.jeesite.modules.swm.entity.SwmAlarmLightConfig;
-import com.jeesite.modules.swm.service.SwmAlarmLightService;
-import com.jeesite.modules.swm.service.SwmAlarmLightConfigService;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 报警灯设备Controller

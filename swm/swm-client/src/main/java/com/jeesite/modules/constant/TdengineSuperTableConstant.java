@@ -17,5 +17,8 @@ public class TdengineSuperTableConstant {
      */
     public static final String EXTERNAL_COORDINATE_DATA = "external_coordinate_data";
 
-
+    /**
+     * MQTT 设备位置数据超级表名称
+     */
+    public static final String MQTT_DEVICE_POSITION = "mqtt_device_position";
 }

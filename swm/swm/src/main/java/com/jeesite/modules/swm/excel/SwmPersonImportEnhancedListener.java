@@ -48,6 +48,10 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
     private int helmetRebindCount = 0;
     private int helmetBindFailCount = 0;
 
+    // ========== 新增：收集导入成功的人员数据（用于发送MQ） ==========
+    private List<SwmPerson> successImportedPersons = new ArrayList<>();
+    private List<SwmPersonExcelEnhancedModel> successImportedExcelModels = new ArrayList<>();
+
     private List<Integer> helmetBindSuccessRows = new ArrayList<>();
     private List<Integer> helmetRebindRows = new ArrayList<>();
     private List<Integer> helmetBindFailRows = new ArrayList<>();
@@ -62,6 +66,15 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         this.orgValidationService = SpringUtils.getBean(OrgValidationService.class);
         this.swmHelmetDeviceService = SpringUtils.getBean(SwmHelmetDeviceService.class);
         this.swmSafetyHelmetOrderService = SpringUtils.getBean(SwmSafetyHelmetOrderService.class);
+    }
+
+    // ========== 新增：获取导入成功的人员数据 ==========
+    public List<SwmPerson> getSuccessImportedPersons() {
+        return new ArrayList<>(successImportedPersons);
+    }
+
+    public List<SwmPersonExcelEnhancedModel> getSuccessImportedExcelModels() {
+        return new ArrayList<>(successImportedExcelModels);
     }
 
     @Override
@@ -471,6 +484,9 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
 
                 swmPersonService.save(context.getPerson());
                 successCount++;
+
+                // ========== 核心修改：收集成功导入的人员数据 ==========
+                successImportedPersons.add(context.getPerson());
 
                 processHelmetBinding(context, rowIndex);
             } catch (Exception e) {

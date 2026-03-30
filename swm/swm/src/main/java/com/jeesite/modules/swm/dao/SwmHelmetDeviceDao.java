@@ -9,7 +9,10 @@ import com.jeesite.common.mybatis.annotation.MyBatisDao;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
 import com.jeesite.common.entity.Page;
 
 /**
@@ -87,4 +90,6 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
     List<SwmHelmetDevice> findDeviceCorpMapping(SwmHelmetDevice device);
 
     List<SwmHelmetDevice> findListInit(SwmHelmetDevice queryCondition);
+
+    List<SwmHelmetDevice> findHelmetDeviceListByIds(List<String> deviceIds);
 }

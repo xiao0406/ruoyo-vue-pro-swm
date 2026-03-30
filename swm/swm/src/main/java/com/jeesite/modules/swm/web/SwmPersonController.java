@@ -17,25 +17,18 @@ import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.constant.SwmRedisConstant;
-import com.jeesite.modules.swm.entity.SwmPerson;
-import com.jeesite.modules.swm.entity.SwmPersonDeparture;
-import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.constant.TdengineSuperTableConstant;
+import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
+import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.excel.*;
-import com.jeesite.modules.swm.service.OrgValidationService;
-import com.jeesite.modules.swm.service.SwmPersonDepartureService;
-import com.jeesite.modules.swm.service.SwmPersonService;
-import com.jeesite.modules.swm.service.SwmSafetyEducationService;
-import com.jeesite.modules.swm.entity.SwmSafetyEducation;
-import com.jeesite.modules.swm.entity.SwmSafetyHelmetOrder;
-import com.jeesite.modules.swm.service.SwmSafetyHelmetOrderService;
-import com.jeesite.modules.swm.service.SwmPersonCacheService;
-import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
-import com.jeesite.modules.swm.service.SwmHelmetCacheService;
-import com.jeesite.modules.swm.service.TDengineService;
+import com.jeesite.modules.swm.service.*;
+import com.jeesite.modules.swm.util.MqSendUtil;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.ExcelExportUtil;
+import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.utils.R;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
@@ -43,6 +36,7 @@ import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -51,16 +45,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -104,6 +92,11 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private ApplicationContext applicationContext;
+
+    @Autowired
+    private MqSendUtil mqSendUtil;
+
+
 
     // 延迟获取SwmPersonCacheService，避免循环依赖
     private SwmPersonCacheService getPersonCacheService() {
@@ -263,6 +256,10 @@ public class SwmPersonController extends BaseController {
     @PostMapping(value = "save")
     @ResponseBody
     public String save(@Validated SwmPerson swmPerson) {
+        // ========== 步骤1：识别操作类型 ==========
+        String operateType = identifyOperateType(swmPerson);
+        logger.info("识别到操作类型：{}，人员ID：{}，安全帽ID：{}",
+                operateType, swmPerson.getId(), swmPerson.getSafetyHelmetId());
         // 检查身份证号码是否已存在（新增时或修改身份证时）
         if (StringUtils.isNotBlank(swmPerson.getIdentityCard())) {
             SwmPerson existingPerson = swmPersonService.getByIdentityCard(swmPerson.getIdentityCard());
@@ -278,8 +275,78 @@ public class SwmPersonController extends BaseController {
         }
 
         swmPersonService.save(swmPerson);
+
+        // ========== 发送MQ消息 ==========
+        SwmPerson fullPerson = swmPersonService.get(swmPerson.getId()); //查询完整的字段
+        mqSendUtil.sendPersonSingleChangeMsg(operateType, fullPerson);
         return renderResult(Global.TRUE, text("保存人员登记成功！"));
     }
+
+
+    /**
+     * 重构：精准识别操作类型（解决绑定/编辑混淆问题）
+     * 规则：
+     * 1. 新增人员：无ID（isNewRecord=true）
+     * 2. 绑定安全帽：有ID + 安全帽ID发生变更（新增/修改）
+     * 3. 编辑人员：有ID + 核心字段变更 + 安全帽ID未变更
+     */
+    private String identifyOperateType(SwmPerson swmPerson) {
+        // ========== 0. 最顶层防护：swmPerson为null的极端场景 ==========
+        if (swmPerson == null) {
+            logger.error("swmPerson对象为null，无法识别操作类型，默认返回新增");
+            return SyncDataOperateTypeEnum.PERSON_ADD.getCode();
+        }
+
+        // ========== 1. 处理personId为空的场景（新增核心判定） ==========
+        String personId = swmPerson.getId(); // 此时swmPerson非null，getId()不会报错
+        boolean isPersonIdEmpty = StringUtils.isBlank(personId);
+
+        // 场景1：新增人员 → isNewRecord=true 或 personId为空
+        if (swmPerson.getIsNewRecord() || isPersonIdEmpty) {
+            logger.info("人员ID为空/新增标识为true，判定为新增人员：personId={}", personId);
+            return SyncDataOperateTypeEnum.PERSON_ADD.getCode();
+        }
+
+        // ========== 2. 后续逻辑不变（已确保无NPE） ==========
+        SwmPerson oldPerson = swmPersonService.get(personId);
+        if (oldPerson == null) {
+            logger.warn("人员ID存在但数据库无记录，兜底判定为新增人员：personId={}", personId);
+            return SyncDataOperateTypeEnum.PERSON_ADD.getCode();
+        }
+
+        String oldHelmetId = oldPerson.getSafetyHelmetId();
+        String newHelmetId = swmPerson.getSafetyHelmetId();
+        boolean isOldHelmetEmpty = StringUtils.isBlank(oldHelmetId);
+        boolean isNewHelmetEmpty = StringUtils.isBlank(newHelmetId);
+
+        boolean isHelmetBind = false;
+        if (isOldHelmetEmpty && !isNewHelmetEmpty) {
+            isHelmetBind = true;
+        } else if (!isOldHelmetEmpty && !isNewHelmetEmpty && !oldHelmetId.equals(newHelmetId)) {
+            isHelmetBind = true;
+        }
+
+        if (isHelmetBind) {
+            logger.info("人员{}安全帽ID变更，判定为绑定安全帽：old={}, new={}", personId, oldHelmetId, newHelmetId);
+            return SyncDataOperateTypeEnum.PERSON_BIND_HELMET.getCode();
+        }
+
+        boolean isCoreFieldChanged = !StringUtils.equals(oldPerson.getName(), swmPerson.getName())
+                || !StringUtils.equals(oldPerson.getGender(), swmPerson.getGender())
+                || !StringUtils.equals(oldPerson.getPhoneNumber(), swmPerson.getPhoneNumber())
+                || !StringUtils.equals(oldPerson.getIdentityCard(), swmPerson.getIdentityCard())
+                || !StringUtils.equals(oldPerson.getPersonnelStatus(), swmPerson.getPersonnelStatus());
+
+        if (isCoreFieldChanged) {
+            logger.info("人员{}核心字段变更，判定为编辑人员", personId);
+            return SyncDataOperateTypeEnum.PERSON_EDIT.getCode();
+        }
+
+        logger.warn("人员{}无任何字段（含安全帽）变更，兜底判定为编辑人员", personId);
+        return SyncDataOperateTypeEnum.PERSON_EDIT.getCode();
+    }
+
+
 
 
     /**
@@ -312,12 +379,17 @@ public class SwmPersonController extends BaseController {
     @ResponseBody
     public String deleteAll(String ids) {
         String[] idArray = ids.split(",");
+        List<String> idList = Arrays.stream(idArray)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
         for (String id : idArray) {
             SwmPerson swmPerson = swmPersonService.get(id);
             if (swmPerson != null) {
                 swmPersonService.delete(swmPerson);
             }
         }
+        // ========== 发送MQ消息 ==========
+        mqSendUtil.sendBatchDeleteMqMessage(SyncDataOperateTypeEnum.PERSON_BATCH_DELETE.getCode(), idList);
         return renderResult(Global.TRUE, text("删除人员登记成功！"));
     }
 
@@ -572,6 +644,29 @@ public class SwmPersonController extends BaseController {
                 // 获取结果
                 SwmPersonImportEnhancedListener.ImportResult importResult = listener.getImportResult();
 
+                // ========== 构建MQ消息数据 ==========
+                List<SwmPerson> fullPersons = listener.getSuccessImportedPersons().stream()
+                        // 过滤ID非空的人员（核心校验）
+                        .filter(personForMq -> StringUtils.isNotBlank(personForMq.getId()))
+                        // 提取人员ID
+                        .map(SwmPerson::getId)
+                        // 先收集为Set去重，再批量查库（一步到位）
+                        .collect(Collectors.collectingAndThen(
+                                Collectors.toSet(), // 去重：避免重复ID查库
+                                ids -> ids.isEmpty()
+                                        ? new ArrayList<>() // 无有效ID时返回空列表
+                                        : swmPersonService.findListByIds(ids) // 有ID则批量查完整记录
+                        ));
+
+
+                // ========== 发送批量导入MQ消息 ==========
+                if (!fullPersons.isEmpty()) {
+                    // 生成唯一的批量导入ID（用于MQ消息标识）
+                    mqSendUtil.sendPersonBatchChangeMsg(SyncDataOperateTypeEnum.PERSON_IMPORT.getCode(), fullPersons);
+                } else {
+                    logger.warn("============批量导入Excel无成功数据，不发送MQ============");
+                }
+
                 // 判断导入是否成功：只有没有错误时才算成功
                 boolean isSuccess = importResult.getErrorCount() == 0;
 
@@ -757,6 +852,10 @@ public class SwmPersonController extends BaseController {
             }
 
             logger.info("成功创建离职记录，ID：{}, 姓名：{}", departure.getId(), departure.getName());
+
+            // ========== 发送MQ消息 ==========
+            SwmPerson fullPerson = swmPersonService.get(personId);
+            mqSendUtil.sendPersonSingleChangeMsg(SyncDataOperateTypeEnum.PERSON_DEPARTURE.getCode(), fullPerson);
             return renderResult(Global.TRUE, text("人员离职处理成功"));
         } catch (Exception e) {
             logger.error("处理人员离职异常", e);
@@ -930,12 +1029,9 @@ public class SwmPersonController extends BaseController {
             person.setSafetyHelmetId(helmetId);
             swmPersonService.save(person);
 
-            // 更新安全帽的绑定信息
-            helmet.setAssignedPerson(person.getName());
-            helmet.setAssignedWorkshop(person.getDepartment());
-            helmet.setAssignedProcess(person.getWorkProcess());
-            helmet.setAssignedTeam(person.getTeam());
-            swmHelmetDeviceService.save(helmet);
+            // ========== 发送MQ消息 ==========
+            SwmPerson fullPerson = swmPersonService.get(person.getId()); //查询完整的字段
+            mqSendUtil.sendPersonSingleChangeMsg(SyncDataOperateTypeEnum.PERSON_BIND_HELMET.getCode(), fullPerson);
 
             return renderResult(Global.TRUE, text("安全帽绑定成功"));
         } catch (Exception e) {
@@ -2045,6 +2141,9 @@ public class SwmPersonController extends BaseController {
             int totalCount = idArray.length;
             List<String> failedNames = new ArrayList<>();
 
+            // 存储需要发送MQ的人员数据
+//            Set<String> ids = new HashSet<>();
+
             for (String personId : idArray) {
                 try {
                     SwmPerson person = swmPersonService.get(personId);
@@ -2054,6 +2153,7 @@ public class SwmPersonController extends BaseController {
                             person.setSafetyEducation(SwmPerson.SafetyEducationEnum.COMPLETED);
                             swmPersonService.save(person);
                             successCount++;
+//                            ids.add(personId);
                             logger.info("更新人员 [{}] 的安全教育状态为已完成", person.getName());
                         } else {
                             logger.info("人员 [{}] 的安全教育状态已为已完成，跳过更新", person.getName());
@@ -2069,6 +2169,13 @@ public class SwmPersonController extends BaseController {
                     failedNames.add("ID:" + personId);
                 }
             }
+
+//            List<SwmPerson> fullPersons = swmPersonService.findListByIds(ids);
+//
+//            // ========== 发送MQ批量消息 ==========
+//            if (!fullPersons.isEmpty()) {
+//                mqSendUtil.sendPersonBatchChangeMsg(SyncDataOperateTypeEnum.PERSON_COMPLETE_EDUCATION.getCode(), fullPersons);
+//            }
 
             result.put("result", "success");
             result.put("message", String.format("批量完成安全教育成功，共处理 %d 条记录，成功 %d 条", totalCount, successCount));
