@@ -119,60 +119,58 @@ public class SwmDashboardNewController extends BaseController {
     @ApiOperation("全班次折线图")
     public Map<String, Object> hourWorkingCount24() {
 
+        // ================== 查询排班 ==================
+        SwmScheduleTime query = new SwmScheduleTime();
+        // 白班
+        query.setShiftType("1");
+        SwmScheduleTime day = timeService.findList(query).get(0);
+        String startTime = day.getStartTime(); // "07:30"
+        String endTime = day.getEndTime(); // "18:00"
+        int dayStartHour = getStartHour(startTime);   // 7
+        int dayEndHour = getEndHour(endTime);         // 18
+
+        // 夜班
+        query.setShiftType("3");
+        SwmScheduleTime night = timeService.findList(query).get(0);
+        String nightStartTime = night.getStartTime(); // "18:00"
+        String nightEndTime = night.getEndTime(); // "03:40"
+        int nightStartHour = getStartHour(nightStartTime); // 18
+        int nightEndHour = getEndHour(nightEndTime);       // 4
+
         List<String> hourList = new ArrayList<>();
 
         // 7点到23点
-        IntStream.rangeClosed(7, 23)
+        IntStream.rangeClosed(dayStartHour, 23)
                 .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
                 .forEach(hourList::add);
 
         // 0点到6点
-        IntStream.rangeClosed(0, 6)
+        IntStream.rangeClosed(0, dayStartHour -1)
                 .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
                 .forEach(hourList::add);
 
         // 原有数据
         Map<String, Object> result = getHourWorkingCount(hourList);
 
-        // ================== 查询排班 ==================
-        SwmScheduleTime query = new SwmScheduleTime();
-
-        // 白班
-        query.setShiftType("1");
-        SwmScheduleTime day = timeService.findList(query).get(0);
-
-        // 夜班
-        query.setShiftType("3");
-        SwmScheduleTime night = timeService.findList(query).get(0);
-
-        // 转时间
-        LocalTime dayStart = parseTime(day.getStartTime());
-        LocalTime dayEnd = parseTime(day.getEndTime());
-
-        LocalTime nightStart = parseTime(night.getStartTime());
-        LocalTime nightEnd = parseTime(night.getEndTime()).plusHours(3);
-
-        // ================== 构建type ==================
-        List<String> typeList = new ArrayList<>();
-
-        for (String hourStr : hourList) {
-
-            // 直接用当前时间（代表区间起点）
-            LocalTime current = LocalTime.parse(hourStr, DateTimeFormatter.ofPattern("HH:mm"));
-
-            //夜班优先（避免重叠问题）
-            if (inRange(current, nightStart, nightEnd)) {
-                typeList.add("夜班");
-            } else if (inRange(current, dayStart, dayEnd)) {
-                typeList.add("白班");
-            } else {
-                typeList.add("未知");
-            }
-        }
-
-        result.put("type", typeList);
+        result.put("day", day);
+        result.put("night", night);
 
         return result;
+    }
+
+    private int getStartHour(String timeStr) {
+        LocalTime time = parseTime(timeStr);
+        return time.getHour(); // 直接取小时（向下取整）
+    }
+
+    private int getEndHour(String timeStr) {
+        LocalTime time = parseTime(timeStr);
+
+        // 如果有分钟 → 进位
+        if (time.getMinute() > 0 || time.getSecond() > 0) {
+            return (time.getHour() + 1) % 24;
+        }
+        return time.getHour();
     }
 
     private boolean inRange(LocalTime current, LocalTime start, LocalTime end) {

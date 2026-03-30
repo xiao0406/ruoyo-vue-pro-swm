@@ -10,30 +10,7 @@
     <!-- 根据信标编号查询基站 -->
     <select id="getByBeaconId" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT 
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.beacon_color,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.real_x,
-            a.real_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.beacon_id = #{beaconId}
         LIMIT 1
@@ -42,30 +19,7 @@
     <!-- 根据信标编号列表批量查询基站 -->
     <select id="findByBeaconIds" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT 
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.beacon_color,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.real_x,
-            a.real_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.beacon_id IN 
         <foreach collection="beaconIds" item="beaconId" open="(" separator="," close=")">
@@ -87,27 +41,7 @@
     <!-- 查询指定位置的基站列表 -->
     <select id="findByLocation" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT 
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.location LIKE CONCAT('%', #{location}, '%')
         ORDER BY a.update_date DESC
@@ -116,27 +50,7 @@
     <!-- 查询在线状态的基站列表 -->
     <select id="findOnlineBeacons" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT 
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.beacon_status = '1' <!-- BeaconStatusEnum.ONLINE -->
         AND a.status = '0' <!-- 正常状态 -->
@@ -146,27 +60,7 @@
     <!-- 根据GPS坐标范围查询基站列表 -->
     <select id="findByGpsRange" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT 
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.status = '0' <!-- 正常状态 -->
         <if test="minLongitude != null">
@@ -187,27 +81,7 @@
     <!-- 根据图纸像素坐标范围查询基站列表 -->
     <select id="findByPixelRange" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT 
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.status = '0' <!-- 正常状态 -->
         <if test="minX != null">
@@ -228,30 +102,7 @@
     <!-- 根据区域查询基站列表 -->
     <select id="findByArea" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT 
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.beacon_color,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.real_x,
-            a.real_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.area = #{area}
         AND a.status = '0' <!-- 正常状态 -->
@@ -271,30 +122,7 @@
     <!-- 根据精确的像素坐标查找信标 -->
     <select id="findByPixelCoordinates" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT 
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.beacon_color,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.real_x,
-            a.real_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.pixel_x = #{pixelX}
         AND a.pixel_y = #{pixelY}
@@ -335,30 +163,7 @@
     <!-- 查询没有区域ID的信标列表 -->
     <select id="findBeaconsWithoutArea" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.beacon_color,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.real_x,
-            a.real_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE (a.area IS NULL OR a.area = '' OR TRIM(a.area) = '')
         AND a.status = '0'
@@ -368,30 +173,7 @@
     <!-- 查询危险源类型的信标列表 -->
     <select id="findDangerousSourceBeacons" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.beacon_color,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.real_x,
-            a.real_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.status = '0' 
         AND a.beacon_type = '3'  <!-- 危险源类型 -->
@@ -401,30 +183,7 @@
     <!-- 查询可用的危险源类型信标列表（排除已被使用的） -->
     <select id="findAvailableDangerousSourceBeacons" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
         SELECT
-            a.id,
-            a.beacon_id,
-            a.device_name,
-            a.beacon_type,
-            a.beacon_color,
-            a.control_type,
-            a.location,
-            a.area,
-            a.map_coord,
-            a.pixel_x,
-            a.pixel_y,
-            a.real_x,
-            a.real_y,
-            a.gps_coord,
-            a.gps_longitude,
-            a.gps_latitude,
-            a.beacon_status,
-            a.deploy_status,
-            a.stream_url,
-            a.create_by,
-            a.create_date,
-            a.update_by,
-            a.update_date,
-            a.remarks
+            *
         FROM swm_beacon_station a
         WHERE a.status = '0' 
         AND a.beacon_type = '3'  <!-- 危险源类型 -->

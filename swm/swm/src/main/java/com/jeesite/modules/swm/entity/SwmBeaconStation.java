@@ -12,6 +12,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.utils.excel.annotation.ExcelField;
 import com.jeesite.common.utils.excel.annotation.ExcelFields;
 import com.jeesite.modules.sys.utils.DictUtils;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -41,9 +42,11 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "beacon_status", attrName = "beaconStatus", label = "信标状态"),
         @Column(name = "deploy_status", attrName = "deployStatus", label = "部署状态"),
         @Column(name = "stream_url", attrName = "streamUrl", label = "推流地址"),
+        @Column(name = "floor", attrName = "floor", label = "楼层"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     private static final long serialVersionUID = 1L;
@@ -121,6 +124,7 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     private String beaconStatus; // 信标状态
     private String deployStatus; // 部署状态
     private String streamUrl; // 推流地址
+    private String floor;
 
     public SwmBeaconStation() {
         super();
