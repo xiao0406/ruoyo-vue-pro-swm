@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.jeesite.common.config.Global;
@@ -33,6 +35,108 @@ public class SwmSafetyPersonTrainingController extends BaseController {
 
 	@Resource
 	private SwmSafetyPersonTrainingService swmSafetyPersonTrainingService;
+
+//	@RequestMapping(value = "test")
+//	@ResponseBody
+//	@ApiOperation(value = "查询分页列表数据", notes = "查询分页列表数据")
+//	public List<String> test(@RequestBody JSONObject params) { // 1. 接收正确的入参类型
+//		// 一、预先定义好的 MAC 地址列表
+//		List<JSONObject> macList = new ArrayList<>();
+//
+//		JSONObject obj1 = new JSONObject();
+//		obj1.put("mac", "80ECCCD09FFF");
+//		obj1.put("MAJOR", 10008);
+//		obj1.put("MINOR", 10133);
+//		macList.add(obj1);
+//
+//		JSONObject obj2 = new JSONObject();
+//		obj2.put("mac", "80ECCCD23F3F");
+//		obj2.put("MAJOR", 10018);
+//		obj2.put("MINOR", 6932);
+//		macList.add(obj2);
+//
+//		JSONObject obj3 = new JSONObject();
+//		obj3.put("mac", "80ECCCD23EA0"); // 注意：原数据 O 改成 0（MAC 规范）
+//		obj3.put("MAJOR", 10018);
+//		obj3.put("MINOR", 7020);
+//		macList.add(obj3);
+//
+//		JSONObject obj4 = new JSONObject();
+//		obj4.put("mac", "80ECCCD21284");
+//		obj4.put("MAJOR", 10018);
+//		obj4.put("MINOR", 7113);
+//		macList.add(obj4);
+//
+//		JSONObject obj5 = new JSONObject();
+//		obj5.put("mac", "80ECCCD23F45");
+//		obj5.put("MAJOR", 10018);
+//		obj5.put("MINOR", 6967);
+//		macList.add(obj5);
+//
+//		JSONObject obj6 = new JSONObject();
+//		obj6.put("mac", "80ECCCD20B57");
+//		obj6.put("MAJOR", 10018);
+//		obj6.put("MINOR", 7082);
+//		macList.add(obj6);
+//
+//		JSONObject obj7 = new JSONObject();
+//		obj7.put("mac", "80ECCCD23F3B");
+//		obj7.put("MAJOR", 10018);
+//		obj7.put("MINOR", 6918);
+//		macList.add(obj7);
+//
+//		JSONObject obj8 = new JSONObject();
+//		obj8.put("mac", "80ECCCD23F2F");
+//		obj8.put("MAJOR", 10018);
+//		obj8.put("MINOR", 6921);
+//		macList.add(obj8);
+//
+//		JSONObject obj9 = new JSONObject();
+//		obj9.put("mac", "80ECCCD23F7C");
+//		obj9.put("MAJOR", 10018);
+//		obj9.put("MINOR", 7023);
+//		macList.add(obj9);
+//
+//		JSONObject obj10 = new JSONObject();
+//		obj10.put("mac", "80ECCCD23F78");
+//		obj10.put("MAJOR", 10018);
+//		obj10.put("MINOR", 7037);
+//		macList.add(obj10);
+//
+//		JSONObject obj11 = new JSONObject();
+//		obj11.put("mac", "80ECCCD24006");
+//		obj11.put("MAJOR", 10018);
+//		obj11.put("MINOR", 7094);
+//		macList.add(obj11);
+//
+//		// 二、解析入参，获取 data 数组
+//		List<JSONObject> dataList = params.getJSONArray("data").toList(JSONObject.class);
+//
+//		// 三、存储匹配到的 MAC 地址
+//		List<String> resultMacList = new ArrayList<>();
+//
+//		// 四、循环匹配：根据 major + minor 找到对应 mac
+//		for (JSONObject data : dataList) {
+//			Integer major = data.getInt("major");
+//			Integer minor = data.getInt("minor");
+//
+//			// 遍历本地 macList 匹配
+//			for (JSONObject macObj : macList) {
+//				Integer mMajor = macObj.getInt("MAJOR");
+//				Integer mMinor = macObj.getInt("MINOR");
+//
+//				// major 和 minor 同时相等 → 匹配成功
+//				if (major.equals(mMajor) && minor.equals(mMinor)) {
+//					String mac = macObj.getStr("mac");
+//					resultMacList.add(mac);
+//					break;
+//				}
+//			}
+//		}
+//
+//		// 返回匹配到的 MAC 列表
+//		return resultMacList;
+//	}
 	
 	/**
 	 * 获取数据

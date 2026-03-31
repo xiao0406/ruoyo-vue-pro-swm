@@ -78,6 +78,9 @@
 			<if test="completeStatus != null and completeStatus != ''">
 				AND a.complete_status = #{completeStatus}
 			</if>
+			<if test="identityCard != null and identityCard != ''">
+				AND a.identity_card = #{identityCard}
+			</if>
 			<if test="phoneNumber != null and phoneNumber != ''">
 				<choose>
 					<when test="phone != null and phone != ''">
