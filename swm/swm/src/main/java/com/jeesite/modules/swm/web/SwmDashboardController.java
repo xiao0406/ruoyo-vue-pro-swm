@@ -42,6 +42,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -1143,7 +1144,7 @@ public class SwmDashboardController extends BaseController {
                 () -> getTeamRanking(monthlyAttendance, personMap, true, 10),swmExecutor);
 
         CompletableFuture<List<Map<String, Object>>> todayJobDistribution = supplyAsync(
-                () -> getJobDistributionNew(monthlyAttendance, personMap, true, 10),swmExecutor);
+                () -> getJobDistributionNew(monthlyAttendance, personMap, true, 10,queryParam.getShiftType()),swmExecutor);
 
         CompletableFuture<List<Map<String, Object>>> monthlyTeamRanking = supplyAsync(
                 () -> getTeamRanking(monthlyAttendance, personMap, false, 10),swmExecutor);
@@ -1507,13 +1508,17 @@ public class SwmDashboardController extends BaseController {
     }
 
     private List<Map<String, Object>> getJobDistributionNew(List<SwmDailyAttendance> attendances,
-                                                         Map<String, SwmPerson> personMap, boolean isToday, int limit) {
+                                                         Map<String, SwmPerson> personMap, boolean isToday, int limit,
+                                                            String shiftType) {
         // 按工种分组统计
         String todayStr = DateUtil.format(new Date(), "yyyy-MM-dd");
         // 筛选今日数据
-        List<SwmDailyAttendance> todayAttendances = attendances.parallelStream()
-                .filter(a -> todayStr.equals(DateUtil.format(a.getAttendanceDate(), "yyyy-MM-dd")))
-                .collect(Collectors.toList());
+//        List<SwmDailyAttendance> todayAttendances = attendances.parallelStream()
+//                .filter(a -> todayStr.equals(DateUtil.format(a.getAttendanceDate(), "yyyy-MM-dd")))
+//                .collect(Collectors.toList());
+
+        //根据传过来的时间，获取班次数据
+        List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.getShiftType(shiftType,attendances);
 
         // 对todayAttendances按personType进行分组
         Map<String, List<SwmDailyAttendance>> groupedByPersonType = todayAttendances.stream()

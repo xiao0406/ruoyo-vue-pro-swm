@@ -91,7 +91,7 @@ public class SwmDashboardNewController extends BaseController {
     @GetMapping("/personnel")
     @ResponseBody
     @ApiOperation("人员分布看板数据")
-    public Map<String, Object> todayData() {
+    public Map<String, Object> todayData(@RequestParam String shiftType) {
         Map<String, Object> result = new HashMap<>();
         // 查询所有在职人员
         List<SwmPerson> swmPersonList = swmPersonService.findActivePersons();
@@ -101,8 +101,32 @@ public class SwmDashboardNewController extends BaseController {
         List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.findByDate(date);
         // 组装结果
         try {
-            Map<String, Object> todayAttendanceCount = getPersonCount(todayAttendances, swmPersonList);
-            result.put("todayAttendance", todayAttendanceCount);
+            Map<String, Object> count = getPersonCount(todayAttendances, swmPersonList);
+            //根据传过来的时间，获取班次数据
+            List<SwmDailyAttendance> attndances = swmDailyAttendanceService.getShiftType(shiftType,todayAttendances);
+            long todayAttendanceCount = 0;
+            long todayAttendanceWorkerCount = 0;
+            long todayAttendanceManagerCount = 0;
+
+            for (SwmDailyAttendance attndance : attndances) {
+                String type  = attndance.getPersonType();
+                // 今日出勤工人数
+                if (type.equals(SwmPerson.PersonTypeEnum.WORKER) || type.equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)){
+                    todayAttendanceWorkerCount++;
+                }
+                // 今日出勤管理员数
+                if (type.equals(SwmPerson.PersonTypeEnum.MANAGER) || type.equals(SwmPerson.PersonTypeEnum.TEAMLEADER)){
+                    todayAttendanceManagerCount++;
+                }
+                todayAttendanceCount ++;
+            }
+
+            count.put("todayAttendanceCount", todayAttendanceCount);
+            count.put("todayAttendanceWorkerCount", todayAttendanceWorkerCount);
+            count.put("todayAttendanceManagerCount", todayAttendanceManagerCount);
+
+
+            result.put("todayAttendance", count);
         } catch (Exception e) {
             logger.error("获取统计结果时出错", e);
             throw new RuntimeException("获取统计结果时出错", e);

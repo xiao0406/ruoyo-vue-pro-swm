@@ -35,6 +35,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -65,6 +70,9 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     @Autowired
     private GlobalCalculateAdapter globalCalculateAdapter;
+
+    @Autowired
+    private SwmScheduleTimeService timeService;
 
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
@@ -1636,5 +1644,114 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         if (minutes > 0) sb.append(minutes).append("分");
         sb.append(seconds).append("秒");
         return sb.toString();
+    }
+
+
+    /**
+     * 获取班次数据
+     * @param shiftType
+     * @return
+     */
+    public List<SwmDailyAttendance> getShiftType(String shiftType, List<SwmDailyAttendance> attendances){
+
+        // ================== 查询排班 ==================
+        SwmScheduleTime query = new SwmScheduleTime();
+        query.setShiftType("1");
+        SwmScheduleTime day = timeService.findList(query).get(0);
+
+        query.setShiftType("3");
+        SwmScheduleTime night = timeService.findList(query).get(0);
+
+        // 当前时间
+        LocalDateTime now = LocalDateTime.now();
+
+        // 解析时间
+        LocalTime dayStart = parseTime(day.getStartTime());
+        LocalTime dayEnd = parseTime(day.getEndTime());
+
+        LocalTime nightStart = parseTime(night.getStartTime());
+        LocalTime nightEnd = parseTime(night.getEndTime());
+
+        // ================== 判断当前班次 ==================
+        if (StringUtils.isEmpty(shiftType)){
+            shiftType = inRange(now.toLocalTime(), dayStart, dayEnd) ? "1" : "3";
+        }
+
+        LocalDate today = LocalDate.now();
+
+        // ================== 白班 ==================
+        if ("1".equals(shiftType)) {
+
+            LocalDateTime startDateTime = LocalDateTime.of(today, dayStart).minusMinutes(30);
+            LocalDateTime endDateTime = LocalDateTime.of(today, dayEnd);
+
+            List<SwmDailyAttendance> result = new ArrayList<>();
+
+            for (SwmDailyAttendance a : attendances) {
+                // 过滤空值
+                if (a.getClockInDate() == null) {
+                    continue;
+                }
+                LocalDateTime clockIn = toLocalDateTime(a.getClockInDate());
+                // 时间范围判断（包含边界）
+                if (!clockIn.isBefore(startDateTime) && !clockIn.isAfter(endDateTime)) {
+                    result.add(a);
+                }
+            }
+            return result;
+        }
+
+        // ================== 夜班（拆分两段） ==================
+        LocalDateTime part1Start = LocalDateTime.of(today, LocalTime.MIN);
+        LocalDateTime part1End = LocalDateTime.of(today, nightEnd);
+
+        LocalDateTime part2Start = LocalDateTime.of(today, nightStart);
+        LocalDateTime part2End = LocalDateTime.of(today, LocalTime.of(23,59,59));
+
+        return attendances.stream()
+                .filter(a -> a.getClockInDate() != null)
+                .filter(a -> {
+                    LocalDateTime clockIn = toLocalDateTime(a.getClockInDate());
+
+                    boolean inPart1 = !clockIn.isBefore(part1Start)
+                            && !clockIn.isAfter(part1End);   //  包含03:40
+
+                    boolean inPart2 = !clockIn.isBefore(part2Start)
+                            && !clockIn.isAfter(part2End);
+
+                    return inPart1 || inPart2;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private LocalDateTime toLocalDateTime(Date date){
+        return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+    }
+
+    private boolean inRange(LocalTime current, LocalTime start, LocalTime end) {
+
+        // 不跨天
+        if (start.isBefore(end)) {
+            return (current.equals(start) || current.isAfter(start))
+                    && current.isBefore(end);
+        }
+        // 跨天
+        else {
+            return (current.equals(start) || current.isAfter(start))
+                    || current.isBefore(end);
+        }
+    }
+
+    private LocalTime parseTime(String timeStr) {
+
+        if (timeStr == null) {
+            return null;
+        }
+
+        if (timeStr.length() == 5) {
+            timeStr = timeStr + ":00";
+        }
+
+        return LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm:ss"));
     }
 }

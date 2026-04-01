@@ -34,4 +34,9 @@ public class PersonnelOrganizationQueryParam {
      */
     private String jobType;
 
+    /**
+     * 1-白班，3-夜班
+     */
+    private String shiftType;
+
 }
