@@ -278,6 +278,11 @@ public class SwmDashboardNewController extends BaseController {
         return result;
     }
 
+    /**
+     * 01:00	当天 00:00:00 ~ 01:00:00
+     * @param todayHour
+     * @return
+     */
     private Map<String, Object> getHourWorkingCount(List<String> todayHour) {
         Map<String, Object> result = new HashMap<>();
 
