@@ -81,4 +81,6 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
     int batchUpdateClasses(@Param("dto") SwmPersonScheduleDto dto);
 
     List<String> findIdCardsByIds(@Param("ids") List<String> ids);
+
+    List<SwmPersonScheduleExport> findPersonIdsByNames(@Param("personNames") List<String> personNames);
 }

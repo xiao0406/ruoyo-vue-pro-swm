@@ -1091,11 +1091,9 @@
         FROM
             swm_daily_attendance
         WHERE
-            attendance_date = #{nowDate}
-          and classes = #{classes}
-          and `status` = '0'
-        GROUP BY
-            classes
+           classes = #{classes}
+        order by attendance_date desc
+        limit 1
     </select>
     <select id="findDateByIdCards" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
         SELECT
@@ -1103,11 +1101,10 @@
         FROM
             swm_daily_attendance
         WHERE
-            identity_card IN
-            <foreach collection="idCard"  item="item" open="(" separator="," close=")">
-                #{item}
-            </foreach>
-          and `status` = '0'
+        identity_card IN
+        <foreach collection="idCard" item="card" open="(" separator="," close=")">
+            #{card}
+        </foreach>
           and attendance_date = #{nowDate}
     </select>
     <select id="findStatisticsByWeekWithPage" resultType="com.jeesite.modules.swm.entity.SwmMonthlyAttendance">

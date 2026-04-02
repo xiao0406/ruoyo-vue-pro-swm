@@ -1374,7 +1374,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         List<SwmDailyAttendance> updateList = new ArrayList<>();
 
         //查出传入的身份证的所有今天的日考勤数据，然后统一修改数据
-        List<SwmDailyAttendance> list = this.dao.findDateByIdCards(idCards, nowDate);
+         List<SwmDailyAttendance> list = this.dao.findDateByIdCards(idCards, nowDate);
         if (CollectionUtils.isEmpty(list)) {
             return;
         }

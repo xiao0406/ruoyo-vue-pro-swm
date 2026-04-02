@@ -230,6 +230,17 @@
             </if>
         </where>
     </select>
+    <select id="findPersonIdsByNames" resultType="com.jeesite.modules.entity.SwmPersonScheduleExport">
+        select name as personName, identity_card as idCard
+        from swm_person
+        where
+        status = '0' and personnel_status = '1'
+        and
+            name IN
+        <foreach collection="personNames" item="personName" open="(" separator="," close=")">
+            #{personName}
+        </foreach>
+    </select>
 
 
     <update id="updateBatch">

@@ -11,6 +11,7 @@ import com.jeesite.modules.swm.dao.SwmPersonScheduleDao;
 import com.jeesite.modules.swm.entity.SwmPersonSchedule;
 import com.jeesite.modules.swm.entity.SwmPersonScheduleLog;
 import com.jeesite.modules.swm.entity.dto.SwmPersonScheduleDto;
+import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.DictUtils;
@@ -27,6 +28,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 人员排班Service
@@ -281,7 +284,7 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
         ExcelImport excelImport = null;
         Integer count = 0;
         try {
-            excelImport = new ExcelImport(file, 1, 0);
+            excelImport = new ExcelImport(file, 2, 0);
             List<SwmPersonScheduleExport> list = excelImport.getDataList(SwmPersonScheduleExport.class);
             //白班身份证集合
             List<String> dayShiftIdCards = new ArrayList<>();
@@ -289,10 +292,24 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
             List<String> nightShiftIdCards = new ArrayList<>();
 
             if (CollectionUtil.isNotEmpty(list)){
+                List<String> personNames = new ArrayList<>();
+                for (SwmPersonScheduleExport export : list) {
+                    if (StringUtils.isEmpty(export.getIdCard())){
+                        personNames.add(export.getPersonName());
+                    }
+                }
+                List<SwmPersonScheduleExport> personIds = this.dao.findPersonIdsByNames(personNames);
+                Map<String, String> personIdcardMap = personIds.stream()
+                        .collect(Collectors.toMap(
+                                SwmPersonScheduleExport::getPersonName,
+                                SwmPersonScheduleExport::getIdCard,
+                                (existing, replacement) -> existing)); // 如果有重复键，保留已存在的
+
+
                 for (SwmPersonScheduleExport export : list) {
 //                    export.setMonth( month);
-                    if (StringUtils.isBlank(export.getIdCard())){
-                        new RuntimeException("导入数据错误：身份证号不能为空");
+                    if (StringUtils.isEmpty(export.getIdCard())){
+                        export.setIdCard(personIdcardMap.get(export.getPersonName()));
                     }
                     if ("1".equals(export.getClasses())){
                         dayShiftIdCards.add(export.getIdCard());
