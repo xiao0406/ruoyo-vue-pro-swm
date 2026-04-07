@@ -60,6 +60,7 @@ public class SwmSiteMapManagementController extends BaseController {
 
     /**
      * 查询列表数据
+     * @author Shawn @date 2026-04-07 新增 hasChildren 字段填充
      */
     @RequestMapping(value = "listData")
     @ResponseBody
@@ -71,6 +72,8 @@ public class SwmSiteMapManagementController extends BaseController {
         // 设置为不使用全局状态过滤
         swmSiteMapManagement.getSqlMap().getWhere().disableAutoAddStatusWhere();
         Page<SwmSiteMapManagement> page = swmSiteMapManagementService.findPage(swmSiteMapManagement);
+        // 为每条记录填充 hasChildren，告诉前端该节点下面是否还有子节点
+        swmSiteMapManagementService.fillHasChildren(page.getList());
         return page;
     }
 
@@ -81,6 +84,47 @@ public class SwmSiteMapManagementController extends BaseController {
     public String form(SwmSiteMapManagement swmSiteMapManagement, Model model) {
         model.addAttribute("swmSiteMapManagement", swmSiteMapManagement);
         return "modules/swm/swmSiteMapManagementForm";
+    }
+
+    /**
+     * 查询子节点列表（懒加载）
+     * 前端点击一个节点时调用，返回该节点下的直接子节点
+     * 首次进页面传 parentId=0 查出所有厂区
+     * @param parentId 父节点ID
+     * @return 子节点列表，每个节点带 hasChildren 标记
+     * @author Shawn @date 2026-04-02
+     */
+    @RequestMapping(value = "children", method = RequestMethod.GET)
+    @ResponseBody
+    public List<SwmSiteMapManagement> children(
+            @RequestParam(value = "parentId", defaultValue = "0") String parentId) {
+        // 查询该父节点下的直接子节点，Service层会自动填充hasChildren
+        return swmSiteMapManagementService.findChildren(parentId);
+    }
+
+    /**
+     * 获取节点详情
+     * 前端点击树节点时，在右侧展示完整信息
+     * @param id 节点ID
+     * @return 节点完整数据
+     * @author Shawn @date 2026-04-02
+     */
+    @RequestMapping(value = "detail", method = RequestMethod.GET)
+    @ResponseBody
+    public Map<String, Object> detail(@RequestParam String id) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 根据ID查询完整数据
+        SwmSiteMapManagement map = swmSiteMapManagementService.get(id);
+        if (map == null) {
+            result.put("success", false);
+            result.put("message", "未找到该节点数据");
+            return result;
+        }
+
+        result.put("success", true);
+        result.put("data", map);
+        return result;
     }
 
     /**
@@ -95,12 +139,18 @@ public class SwmSiteMapManagementController extends BaseController {
 
     /**
      * 删除场地底图管理
+     * 如果该节点下还有子节点，会拒绝删除
      */
     @DeleteMapping(value = "delete")
     @ResponseBody
     public String delete(SwmSiteMapManagement swmSiteMapManagement) {
-        swmSiteMapManagementService.delete(swmSiteMapManagement);
-        return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
+        try {
+            swmSiteMapManagementService.delete(swmSiteMapManagement);
+            return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
+        } catch (RuntimeException e) {
+            // 捕获子节点校验异常，返回友好提示
+            return renderResult(Global.FALSE, text(e.getMessage()));
+        }
     }
 
     /**
@@ -124,9 +174,14 @@ public class SwmSiteMapManagementController extends BaseController {
             return renderResult(Global.FALSE, text("删除失败：ID不能为空！"));
         }
 
-        SwmSiteMapManagement swmSiteMapManagement = new SwmSiteMapManagement(id);
-        swmSiteMapManagementService.delete(swmSiteMapManagement);
-        return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
+        try {
+            SwmSiteMapManagement swmSiteMapManagement = new SwmSiteMapManagement(id);
+            swmSiteMapManagementService.delete(swmSiteMapManagement);
+            return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
+        } catch (RuntimeException e) {
+            // 捕获子节点校验异常，返回友好提示
+            return renderResult(Global.FALSE, text(e.getMessage()));
+        }
     }
 
     /**
