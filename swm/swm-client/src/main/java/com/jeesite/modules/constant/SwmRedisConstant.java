@@ -45,6 +45,15 @@ public class SwmRedisConstant {
         //电量redi
         public static final String BATTERY_WARN_KEY_PREFIX = IOT_PREFIX + "battery:warn:";
 
+        /**
+         * 科利特所有设备编码
+         */
+        public static final String KLT_DEVICE_ID_ALL =  SWM_PREFIX + "KLT:DEVICE_ID_ALL";
+
+        /**
+         * 中泰所有设备编码
+         */
+        public static final String ZT_DEVICE_ID_ALL = SWM_PREFIX + "ZT:DEVICE_ID_ALL";
 
 
     }

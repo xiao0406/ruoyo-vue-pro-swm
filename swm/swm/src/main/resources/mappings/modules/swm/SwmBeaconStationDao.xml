@@ -154,6 +154,12 @@
                 <if test="item.area != null">
                     area = #{item.area},
                 </if>
+                <if test="item.major != null">
+                    major = #{item.major},
+                </if>
+                <if test="item.minor != null">
+                    minor = #{item.minor},
+                </if>
                 update_date = NOW()
             </set>
             WHERE beacon_id = #{item.beaconId}

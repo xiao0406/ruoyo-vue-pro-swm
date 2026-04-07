@@ -436,4 +436,12 @@ public class SwmBeaconStationController extends BaseController {
         Integer count = swmBeaconStationService.importData(file);
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
+
+    @ApiOperation("信标管理excel导入")
+    @RequestMapping("/importData1")
+    @ResponseBody
+    public String importData1(MultipartFile file) {
+        Integer count = swmBeaconStationService.importData(file);
+        return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
+    }
 }

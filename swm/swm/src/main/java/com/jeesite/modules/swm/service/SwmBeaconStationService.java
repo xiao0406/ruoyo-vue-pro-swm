@@ -506,66 +506,23 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             List<SwmBeaconStation> stationList = this.dao.findList(swmBeaconStation1);
             Map<String, String> stationMap = stationList.stream().collect(Collectors.toMap(SwmBeaconStation::getBeaconId, SwmBeaconStation::getId));
 
-
             if (CollectionUtil.isNotEmpty(list)){
-                //获取所有区域
-                List<String> areaNameList = list.stream().map(SwmBeaconStationExport::getArea).collect(Collectors.toList());
-                SwmArea area = new SwmArea();
-                area.getSqlMap().getWhere().and("area_name", QueryType.IN, areaNameList);
-                area.setStatus(SwmArea.STATUS_NORMAL);
-                List<SwmArea> swmAreaList = swmAreaService.findList(area);
-                Map<String, String> areaMap = swmAreaList.stream().collect(Collectors.toMap(SwmArea::getAreaName, SwmArea::getId));
-
                 for (SwmBeaconStationExport production : list) {
                     //存在相同信标则跳过
                     if (StringUtil.isNotEmpty(stationMap.get(production.getBeaconId()))){
-                        continue;
+                        SwmBeaconStation swmBeaconStation = new SwmBeaconStation();
+                        swmBeaconStation.setBeaconId(production.getBeaconId());
+                        swmBeaconStation.setMajor(production.getMajor());
+                        swmBeaconStation.setMinor(production.getMinor());
+                        swmBeaconStation.setId(stationMap.get(production.getBeaconId()));
+                        swmBeaconStationList.add(swmBeaconStation);
                     }
-                    if (StringUtil.isBlank(production.getBeaconId())){
-                        throw new RuntimeException("信标：" + production.getBeaconId() + "的信标不能为空" );
-                    }
-//                    if (StringUtil.isBlank(production.getArea())){
-//                        throw new RuntimeException("信标：" + production.getBeaconId() + "的区域内容为空");
-//                    }
-
-                    SwmBeaconStation swmBeaconStation = new SwmBeaconStation();
-
-                    if (StringUtil.isNotEmpty(areaMap.get(production.getArea()))){
-                        swmBeaconStation.setArea(areaMap.get(production.getArea()));
-                    }
-                    swmBeaconStation.setBeaconId(production.getBeaconId());
-                    swmBeaconStation.setDeviceName(production.getDeviceName());
-                    swmBeaconStation.setPixelX(production.getPixelX());
-                    swmBeaconStation.setPixelY(production.getPixelY());
-                    swmBeaconStation.setLocation(production.getLocation());
-                    swmBeaconStation.setBeaconType(production.getBeaconType());
-                    swmBeaconStation.setBeaconStatus(production.getBeaconStatus());
-                    swmBeaconStationList.add(swmBeaconStation);
                 }
                 List<List<SwmBeaconStation>> lists = BatchOperationsUtil.batchCutting(swmBeaconStationList, 100);
                 for (List<SwmBeaconStation> list1 : lists) {
-                    this.dao.insertBatch(list1);
+                    this.dao.updateBatch(list1);
                 }
                 count = list.size();
-//
-//                // ========== 构建MQ消息数据 ==========
-//                List<SwmBeaconStation> fullBeacons = swmBeaconStationList.stream()
-//                        .map(SwmBeaconStation::getBeaconId)
-//                        .filter(StringUtils::isNotBlank)
-//                        .collect(Collectors.collectingAndThen(
-//                                Collectors.toList(), // 去重：避免重复ID查库
-//                                deviceIds -> deviceIds.isEmpty()
-//                                        ? new ArrayList<>() // 无有效ID时返回空列表
-//                                        : this.dao.findByBeaconIds(deviceIds) // 有ID则批量查完整记录
-//                        ));
-//
-//
-//                // ========== 发送批量导入MQ消息 ==========
-//                if (!fullBeacons.isEmpty()) {
-//                    mqSendUtil.sendBeaconBatchChangeMsg(SyncDataOperateTypeEnum.BEACON_IMPORT.getCode(), fullBeacons);
-//                } else {
-//                    logger.warn("============批量导入Excel无成功数据，不发送MQ============");
-//                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

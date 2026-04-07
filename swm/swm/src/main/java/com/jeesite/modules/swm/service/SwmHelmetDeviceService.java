@@ -19,6 +19,7 @@ import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.entity.SwmHelmetDeviceExport;
 import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
+import com.jeesite.modules.swm.cache.DeviceSourchCache;
 import com.jeesite.modules.swm.dao.SwmHelmetDeviceDao;
 import com.jeesite.modules.swm.dao.SwmSafetyHelmetOrderDao;
 import com.jeesite.modules.swm.entity.*;
@@ -32,6 +33,7 @@ import com.xxl.job.core.context.XxlJobHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
@@ -47,8 +49,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.text.SimpleDateFormat;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,6 +81,10 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
     @Autowired
     private SwmHelmetCacheService helmetCacheService;
+
+    @Autowired
+    @Lazy
+    private DeviceSourchCache deviceSourchCache;
 
     @Value("${tdengine.dbname}")
     private String dbname;
@@ -136,7 +140,6 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             //为每个租户都生成排班计划
             for (User user : corpList) {
                 try {
-                    String corpCode1 = CorpUtils.getCurrentCorpCode();
                     String corpCode = user.getCorpCode();
                     String corpName = user.getCorpName();
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);
@@ -609,6 +612,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             helmetCache.put(device.getDeviceId(), device);
             // 更新分配关系缓存
             helmetCacheService.updateDevicePersonMapping(device.getDeviceId(), device.getAssignedPerson());
+            //更新设备来源缓存
+            deviceSourchCache.appendDeviceId(device.getDeviceSource(),device.getDeviceId());
             logger.debug("已更新设备缓存: {}", device.getDeviceId());
         }
 
@@ -642,6 +647,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             helmetCache.put(device.getDeviceId(), device);
             // 更新分配关系缓存
             helmetCacheService.updateDevicePersonMapping(device.getDeviceId(), device.getAssignedPerson());
+            //更新设备来源缓存
+            deviceSourchCache.appendDeviceId(device.getDeviceSource(),device.getDeviceId());
             logger.debug("已更新设备缓存: {}", device.getDeviceId());
         }
     }
@@ -704,6 +711,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             helmetCache.remove(device.getDeviceId());
             // 清除Redis缓存
             helmetCacheService.clearDeviceCache(device.getDeviceId());
+            //更新设备来源缓存
+            deviceSourchCache.removeDeviceId(device.getDeviceSource(),device.getDeviceId());
             logger.debug("已从缓存中移除安全帽: {}", device.getDeviceId());
         }
 
@@ -834,5 +843,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             throw new RuntimeException(e);
         }
         return count;
+    }
+
+    public List<String> findDeviceIdsByDeviceSource(SwmHelmetDevice device) {
+        return this.dao.findDeviceIdsByDeviceSource(device);
     }
 }

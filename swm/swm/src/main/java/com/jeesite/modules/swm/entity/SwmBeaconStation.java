@@ -43,6 +43,8 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "deploy_status", attrName = "deployStatus", label = "部署状态"),
         @Column(name = "stream_url", attrName = "streamUrl", label = "推流地址"),
         @Column(name = "floor", attrName = "floor", label = "楼层"),
+        @Column(name = "major", attrName = "major", label = "major"),
+        @Column(name = "minor", attrName = "minor", label = "minor"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
@@ -125,6 +127,8 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     private String deployStatus; // 部署状态
     private String streamUrl; // 推流地址
     private String floor;
+    private String major;
+    private String minor;
 
     public SwmBeaconStation() {
         super();

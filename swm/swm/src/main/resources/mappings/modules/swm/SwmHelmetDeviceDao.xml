@@ -284,5 +284,15 @@
         </foreach>
         AND a.status = '0'
     </select>
+    <select id="findDeviceIdsByDeviceSource" resultType="java.lang.String">
+        SELECT
+        a.device_id
+        FROM
+        swm_helmet_device a
+        WHERE
+        a.device_source = #{deviceSource}
+        AND a.status = '0'
+        AND #{random} = #{random}
+    </select>
 
 </mapper> 
