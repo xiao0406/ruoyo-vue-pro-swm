@@ -1,6 +1,9 @@
 package com.jeesite.modules.swm.service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,6 +61,33 @@ public class SwmSiteMapManagementService extends CrudService<SwmSiteMapManagemen
     }
 
     /**
+     * 获取完整地图树选项。
+     * 现在接口返回“厂区 -> 建筑 -> 楼层”完整结构，前端拿一次就能把所有地图节点用起来。
+     * 这里不额外按 status=0 过滤，和所属区域下拉保持一致。
+     *
+     * @return 地图树选项列表
+     * @author Shawn @date 2026-04-07
+     */
+    public List<Map<String, Object>> getBuildingFloorOptions() {
+        List<Map<String, Object>> options = new ArrayList<>();
+
+        // 和所属区域下拉一样，这里不额外加 status=0，直接返回所有厂区下可选建筑/楼层。
+        List<SwmSiteMapManagement> factories = findFactoryMaps();
+        if (factories == null || factories.isEmpty()) {
+            logger.info("获取建筑楼层选项时未找到厂区节点");
+            return options;
+        }
+
+        // 逐个厂区展开完整树，顶层就是地图节点，下面再挂建筑和楼层。
+        for (SwmSiteMapManagement factory : factories) {
+            options.add(buildFactoryOption(factory));
+        }
+
+        logger.info("获取完整地图树选项成功, factoryCount={}", options.size());
+        return options;
+    }
+
+    /**
      * 查询指定父节点下的直接子节点列表
      * 同时为每个节点设置 hasChildren 标记，告诉前端是否可以继续展开
      * @param parentId 父节点ID，首次进页面传 "0" 查所有厂区
@@ -92,6 +122,96 @@ public class SwmSiteMapManagementService extends CrudService<SwmSiteMapManagemen
             int count = dao.countChildren(node.getId());
             node.setHasChildren(count > 0);
         }
+    }
+
+    /**
+     * 查询所有厂区节点。
+     */
+    private List<SwmSiteMapManagement> findFactoryMaps() {
+        // 和所属区域下拉一样，关闭自动状态过滤，避免因为状态值把下拉选项过滤掉。
+        SwmSiteMapManagement query = new SwmSiteMapManagement();
+        query.setStatus(null);
+        query.getSqlMap().getWhere().disableAutoAddStatusWhere();
+        query.setMapType("factory");
+        return findList(query);
+    }
+
+    /**
+     * 组装厂区节点。
+     */
+    private Map<String, Object> buildFactoryOption(SwmSiteMapManagement factory) {
+        // 顶层节点就是地图本身，前端可以直接拿来渲染一级下拉或树。
+        Map<String, Object> factoryOption = buildMapOption(factory);
+        factoryOption.put("child", buildBuildingOptions(factory));
+        return factoryOption;
+    }
+
+    /**
+     * 组装某个厂区下的建筑列表。
+     */
+    private List<Map<String, Object>> buildBuildingOptions(SwmSiteMapManagement factory) {
+        List<Map<String, Object>> buildingOptions = new ArrayList<>();
+        List<SwmSiteMapManagement> buildings = findChildren(factory.getId());
+        if (buildings == null || buildings.isEmpty()) {
+            return buildingOptions;
+        }
+
+        // 这里只保留建筑节点，防止历史脏数据把别的类型混进来。
+        for (SwmSiteMapManagement building : buildings) {
+            if (!"building".equals(building.getMapType())) {
+                continue;
+            }
+
+            Map<String, Object> buildingOption = buildMapOption(building);
+            buildingOption.put("factoryId", factory.getId());
+            buildingOption.put("factoryName", factory.getMapName());
+            buildingOption.put("child", buildFloorOptions(factory, building));
+            buildingOptions.add(buildingOption);
+        }
+        return buildingOptions;
+    }
+
+    /**
+     * 组装某栋建筑下的楼层列表。
+     */
+    private List<Map<String, Object>> buildFloorOptions(SwmSiteMapManagement factory,
+            SwmSiteMapManagement building) {
+        List<Map<String, Object>> floorOptions = new ArrayList<>();
+        List<SwmSiteMapManagement> floors = findChildren(building.getId());
+        if (floors == null || floors.isEmpty()) {
+            return floorOptions;
+        }
+
+        // 楼层只允许挂在建筑下面，这里直接按直属子节点筛出 floor。
+        for (SwmSiteMapManagement floor : floors) {
+            if (!"floor".equals(floor.getMapType())) {
+                continue;
+            }
+
+            Map<String, Object> floorOption = buildMapOption(floor);
+            floorOption.put("factoryId", factory.getId());
+            floorOption.put("factoryName", factory.getMapName());
+            floorOption.put("buildingId", building.getId());
+            floorOption.put("buildingName", building.getMapName());
+            floorOptions.add(floorOption);
+        }
+        return floorOptions;
+    }
+
+    /**
+     * 组装前端下拉选项。
+     */
+    private Map<String, Object> buildMapOption(SwmSiteMapManagement map) {
+        // 统一补 value/label，前端 select 直接可用，少做一次字段转换。
+        Map<String, Object> option = new HashMap<>();
+        option.put("id", map.getId());
+        option.put("value", map.getId());
+        option.put("label", map.getMapName());
+        option.put("mapName", map.getMapName());
+        option.put("mapType", map.getMapType());
+        option.put("parentId", map.getParentId());
+        option.put("hasChildren", map.getHasChildren());
+        return option;
     }
     
     /**

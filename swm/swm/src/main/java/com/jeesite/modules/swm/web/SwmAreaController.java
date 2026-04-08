@@ -574,9 +574,10 @@ public class SwmAreaController extends BaseController {
     public Map<String, Object> getAreaOptions() {
         Map<String, Object> result = new HashMap<>();
         try {
-            // 获取所有启用的区域
+            // 获取所有区域，包含逻辑删除的数据，供信标列表和表单回显历史区域名称
             SwmArea queryArea = new SwmArea();
-            queryArea.setStatus("0"); // 正常状态
+            queryArea.setStatus(null);
+            queryArea.getSqlMap().getWhere().disableAutoAddStatusWhere();
             List<SwmArea> areaList = swmAreaService.findList(queryArea);
 
             // 转换为选项格式

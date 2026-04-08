@@ -6,6 +6,115 @@
         注意：基本的CRUD操作已由实体类注解自动处理
         此文件中只保留特殊查询方法
     -->
+
+    <sql id="swmBeaconStationQueryColumns">
+        a.id AS "id",
+        a.beacon_id AS "beaconId",
+        a.device_name AS "deviceName",
+        a.beacon_type AS "beaconType",
+        a.beacon_color AS "beaconColor",
+        a.control_type AS "controlType",
+        a.location AS "location",
+        a.area AS "area",
+        a.map_coord AS "mapCoord",
+        a.pixel_x AS "pixelX",
+        a.pixel_y AS "pixelY",
+        a.real_x AS "realX",
+        a.real_y AS "realY",
+        a.gps_coord AS "gpsCoord",
+        a.gps_longitude AS "gpsLongitude",
+        a.gps_latitude AS "gpsLatitude",
+        a.beacon_status AS "beaconStatus",
+        a.deploy_status AS "deployStatus",
+        a.stream_url AS "streamUrl",
+        a.floor_id AS "floorId",
+        a.building_id AS "buildingId",
+        building_node.map_name AS "building",
+        floor_node.map_name AS "floor",
+        a.create_by AS "createBy",
+        a.create_date AS "createDate",
+        a.update_by AS "updateBy",
+        a.update_date AS "updateDate",
+        a.remarks AS "remarks",
+        a.status AS "status",
+        a.corp_code AS "corpCode",
+        a.corp_name AS "corpName"
+    </sql>
+
+    <!-- 获取单条信标，并补齐建筑/楼层名称 -->
+    <select id="get" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+        SELECT
+            <include refid="swmBeaconStationQueryColumns"/>
+        FROM swm_beacon_station a
+        LEFT JOIN swm_site_map_management building_node
+            ON building_node.id = a.building_id
+            <if test="corpCode != null and corpCode != ''">
+                AND building_node.corp_code = #{corpCode}
+            </if>
+        LEFT JOIN swm_site_map_management floor_node
+            ON floor_node.id = a.floor_id
+            <if test="corpCode != null and corpCode != ''">
+                AND floor_node.corp_code = #{corpCode}
+            </if>
+        WHERE a.id = #{id}
+        <if test="corpCode != null and corpCode != ''">
+            AND a.corp_code = #{corpCode}
+        </if>
+    </select>
+
+    <!-- 查询信标列表，并按建筑名称、楼层ID过滤 -->
+    <select id="findList" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+        SELECT
+            <include refid="swmBeaconStationQueryColumns"/>
+        FROM swm_beacon_station a
+        LEFT JOIN swm_site_map_management building_node
+            ON building_node.id = a.building_id
+            <if test="corpCode != null and corpCode != ''">
+                AND building_node.corp_code = #{corpCode}
+            </if>
+        LEFT JOIN swm_site_map_management floor_node
+            ON floor_node.id = a.floor_id
+            <if test="corpCode != null and corpCode != ''">
+                AND floor_node.corp_code = #{corpCode}
+            </if>
+        <where>
+            a.status = '0'
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
+            <if test="beaconId != null and beaconId != ''">
+                AND a.beacon_id LIKE CONCAT('%', #{beaconId}, '%')
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                AND a.device_name LIKE CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test="beaconType != null and beaconType != ''">
+                AND a.beacon_type = #{beaconType}
+            </if>
+            <if test="location != null and location != ''">
+                AND a.location LIKE CONCAT('%', #{location}, '%')
+            </if>
+            <if test="area != null and area != ''">
+                AND a.area LIKE CONCAT('%', #{area}, '%')
+            </if>
+            <if test="beaconStatus != null and beaconStatus != ''">
+                AND a.beacon_status = #{beaconStatus}
+            </if>
+            <if test="deployStatus != null and deployStatus != ''">
+                AND a.deploy_status = #{deployStatus}
+            </if>
+            <if test="buildingId != null and buildingId != ''">
+                AND a.building_id = #{buildingId}
+            </if>
+            <if test="building != null and building != ''">
+                AND building_node.map_name LIKE CONCAT('%', #{building}, '%')
+            </if>
+            <if test="floorId != null and floorId != ''">
+                AND a.floor_id = #{floorId}
+            </if>
+        </where>
+        ORDER BY ${sqlMap.order.toSql()}
+    </select>
     
     <!-- 根据信标编号查询基站 -->
     <select id="getByBeaconId" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
@@ -117,6 +226,68 @@
         AND a.area != ''
         AND a.status = '0' <!-- 正常状态 -->
         ORDER BY a.area ASC
+    </select>
+
+    <!-- 获取当前信标列表实际使用到的区域ID -->
+    <select id="findAreaOptionsFromBeacon" resultType="java.lang.String">
+        <!-- 这里复用列表的数据范围条件，保证和当前信标列表口径一致。 -->
+        SELECT DISTINCT TRIM(a.area)
+        FROM swm_beacon_station a
+        <where>
+            a.status = '0'
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
+            AND a.area IS NOT NULL
+            AND TRIM(a.area) != ''
+        </where>
+        ORDER BY TRIM(a.area) ASC
+    </select>
+
+    <!-- 根据区域ID列表批量查询区域名称 -->
+    <select id="findAreaNameMappings" resultType="java.util.HashMap">
+        SELECT
+            a.id AS "value",
+            a.area_name AS "label"
+        FROM swm_area a
+        WHERE a.id IN
+        <foreach collection="areaIds" item="areaId" open="(" separator="," close=")">
+            #{areaId}
+        </foreach>
+        <if test="corpCode != null and corpCode != ''">
+            AND a.corp_code = #{corpCode}
+        </if>
+    </select>
+
+    <!-- 获取当前信标列表实际使用到的楼层ID -->
+    <select id="findFloorOptionsFromBeacon" resultType="java.lang.String">
+        SELECT DISTINCT TRIM(a.floor_id)
+        FROM swm_beacon_station a
+        <where>
+            a.status = '0'
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
+            AND a.floor_id IS NOT NULL
+            AND TRIM(a.floor_id) != ''
+        </where>
+        ORDER BY TRIM(a.floor_id) ASC
+    </select>
+
+    <!-- 根据楼层ID列表批量查询楼层名称 -->
+    <select id="findFloorNameMappings" resultType="java.util.HashMap">
+        SELECT
+            a.id AS "value",
+            a.map_name AS "label"
+        FROM swm_site_map_management a
+        WHERE a.map_type = 'floor'
+        AND a.id IN
+        <foreach collection="floorIds" item="floorId" open="(" separator="," close=")">
+            #{floorId}
+        </foreach>
+        <if test="corpCode != null and corpCode != ''">
+            AND a.corp_code = #{corpCode}
+        </if>
     </select>
     
     <!-- 根据精确的像素坐标查找信标 -->

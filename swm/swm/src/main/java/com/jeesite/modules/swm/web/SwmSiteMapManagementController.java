@@ -328,6 +328,32 @@ public class SwmSiteMapManagementController extends BaseController {
     }
 
     /**
+     * 获取建筑和楼层选项列表（用于信标所属建筑/楼层下拉）
+     *
+     * @author Shawn @date 2026-04-07
+     */
+    @RequestMapping(value = "getBuildingFloorOptions", method = RequestMethod.GET)
+    @ResponseBody
+    public Map<String, Object> getBuildingFloorOptions() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 直接返回前端可用的 options 结构，保持和所属区域下拉接口风格一致。
+            List<Map<String, Object>> options = swmSiteMapManagementService.getBuildingFloorOptions();
+            result.put("success", true);
+            result.put("options", options);
+            result.put("total", options.size());
+            result.put("message", "获取建筑楼层选项成功");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("options", new ArrayList<>());
+            result.put("message", "获取建筑楼层选项失败: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
      * 
      * 
      * @author Shawn

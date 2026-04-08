@@ -1,6 +1,6 @@
 /**
  * @author Shawn
- * @date 2025-05-14
+ * @date 2026-04-08
  */
 package com.jeesite.modules.swm.web;
 
@@ -118,6 +118,82 @@ public class SwmBeaconStationController extends BaseController {
     }
 
     /**
+     * 获取信标所属区域下拉选项
+     *
+     * 大白话说，就是只返回当前信标列表里真正出现过的区域，
+     * 再把这些区域ID翻译成区域名称，翻译不了就直接显示ID。
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @return 所属区域下拉选项
+     */
+    @GetMapping(value = "areaOptionsFromBeacon")
+    @ResponseBody
+    @ApiOperation(value = "获取信标所属区域下拉选项")
+    public Map<String, Object> areaOptionsFromBeacon() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            logger.info("开始获取信标所属区域下拉选项");
+
+            // 返回结构保持和旧区域下拉接口一致，前端后续切换更省事。
+            List<Map<String, Object>> options = swmBeaconStationService.getAreaOptionsFromBeacon();
+            result.put("success", true);
+            result.put("options", options);
+            result.put("total", options.size());
+            result.put("message", "获取信标所属区域选项成功");
+
+            logger.info("获取信标所属区域下拉选项成功，total={}", options.size());
+            return result;
+        } catch (Exception e) {
+            logger.error("获取信标所属区域下拉选项失败", e);
+
+            result.put("success", false);
+            result.put("options", new ArrayList<>());
+            result.put("total", 0);
+            result.put("message", "获取信标所属区域选项失败: " + e.getMessage());
+            return result;
+        }
+    }
+
+    /**
+     * 获取信标所属楼层下拉选项
+     *
+     * 大白话说，就是只返回当前信标列表里真正出现过的楼层，
+     * 再把这些楼层ID翻译成楼层名称，翻译不了就直接显示ID。
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @return 所属楼层下拉选项
+     */
+    @GetMapping(value = "floorOptionsFromBeacon")
+    @ResponseBody
+    @ApiOperation(value = "获取信标所属楼层下拉选项")
+    public Map<String, Object> floorOptionsFromBeacon() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            logger.info("开始获取信标所属楼层下拉选项");
+
+            // 返回结构保持和区域接口一致，前端后续切换更省事。
+            List<Map<String, Object>> options = swmBeaconStationService.getFloorOptionsFromBeacon();
+            result.put("success", true);
+            result.put("options", options);
+            result.put("total", options.size());
+            result.put("message", "获取信标所属楼层选项成功");
+
+            logger.info("获取信标所属楼层下拉选项成功，total={}", options.size());
+            return result;
+        } catch (Exception e) {
+            logger.error("获取信标所属楼层下拉选项失败", e);
+
+            result.put("success", false);
+            result.put("options", new ArrayList<>());
+            result.put("total", 0);
+            result.put("message", "获取信标所属楼层选项失败: " + e.getMessage());
+            return result;
+        }
+    }
+
+    /**
      * 获取危险源类型的信标基站列表(用于下拉框选择)
      * 
      * @author Shawn
@@ -176,6 +252,10 @@ public class SwmBeaconStationController extends BaseController {
             data.put("deployStatus", swmBeaconStation.getDeployStatus());
             data.put("deployStatusText", swmBeaconStation.getDeployStatusText());
             data.put("streamUrl", swmBeaconStation.getStreamUrl());
+            data.put("buildingId", swmBeaconStation.getBuildingId());
+            data.put("building", swmBeaconStation.getBuilding());
+            data.put("floorId", swmBeaconStation.getFloorId());
+            data.put("floor", swmBeaconStation.getFloor());
             data.put("remarks", swmBeaconStation.getRemarks());
 
             result.putAll(data);

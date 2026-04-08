@@ -1,6 +1,6 @@
 /**
  * @author Shawn
- * @date 2025-05-14
+ * @date 2026-04-08
  */
 package com.jeesite.modules.swm.dao;
 
@@ -10,6 +10,7 @@ import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 信标基站管理DAO接口
@@ -80,6 +81,48 @@ public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
          * 获取所有区域列表
          */
         List<String> findAllAreas();
+
+        /**
+         * 获取当前信标列表实际使用到的区域ID列表
+         *
+         * @author Shawn
+         * @date 2026-04-08
+         * @param swmBeaconStation 信标查询对象
+         * @return 去重后的区域ID列表
+         */
+        List<String> findAreaOptionsFromBeacon(SwmBeaconStation swmBeaconStation);
+
+        /**
+         * 根据区域ID列表查询区域名称映射
+         *
+         * @author Shawn
+         * @date 2026-04-08
+         * @param areaIds 区域ID列表
+         * @return 区域ID和区域名称的映射列表
+         */
+        List<Map<String, Object>> findAreaNameMappings(@Param("areaIds") List<String> areaIds,
+                        @Param("corpCode") String corpCode);
+
+        /**
+         * 获取当前信标列表实际使用到的楼层ID列表
+         *
+         * @author Shawn
+         * @date 2026-04-08
+         * @param swmBeaconStation 信标查询对象
+         * @return 去重后的楼层ID列表
+         */
+        List<String> findFloorOptionsFromBeacon(SwmBeaconStation swmBeaconStation);
+
+        /**
+         * 根据楼层ID列表查询楼层名称映射
+         *
+         * @author Shawn
+         * @date 2026-04-08
+         * @param floorIds 楼层ID列表
+         * @return 楼层ID和楼层名称的映射列表
+         */
+        List<Map<String, Object>> findFloorNameMappings(@Param("floorIds") List<String> floorIds,
+                        @Param("corpCode") String corpCode);
 
         /**
          * 根据精确的像素坐标查找信标
