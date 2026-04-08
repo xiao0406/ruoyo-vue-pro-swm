@@ -10,8 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.swm.dao.SwmSiteMapManagementDao;
 import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 场地底图管理表Service
@@ -22,6 +25,8 @@ import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 @Service
 @Transactional(readOnly = true)
 public class SwmSiteMapManagementService extends CrudService<SwmSiteMapManagementDao, SwmSiteMapManagement> {
+
+    private static final Logger logger = LoggerFactory.getLogger(SwmSiteMapManagementService.class);
     
     /**
      * 获取单条数据
@@ -53,11 +58,13 @@ public class SwmSiteMapManagementService extends CrudService<SwmSiteMapManagemen
     }
     
     /**
-     * 查询启用状态的地图
+     * 查询启用状态的地图（多租户隔离）
      * @return 启用状态的地图
+     * @author Shawn @date 2026-04-08 修复多租户隔离
      */
     public SwmSiteMapManagement findActiveMap() {
-        return dao.findActiveMap();
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        return dao.findActiveMap(corpCode);
     }
 
     /**
@@ -88,38 +95,42 @@ public class SwmSiteMapManagementService extends CrudService<SwmSiteMapManagemen
     }
 
     /**
-     * 查询指定父节点下的直接子节点列表
+     * 查询指定父节点下的直接子节点列表（多租户隔离）
      * 同时为每个节点设置 hasChildren 标记，告诉前端是否可以继续展开
      * @param parentId 父节点ID，首次进页面传 "0" 查所有厂区
      * @return 子节点列表
      * @author Shawn @date 2026-04-02
+     * @author Shawn @date 2026-04-08 修复多租户隔离
      */
     public List<SwmSiteMapManagement> findChildren(String parentId) {
+        String corpCode = CorpUtils.getCurrentCorpCode();
         // 查出直接子节点
-        List<SwmSiteMapManagement> children = dao.findChildren(parentId);
+        List<SwmSiteMapManagement> children = dao.findChildren(parentId, corpCode);
 
         // 填充每个子节点的 hasChildren 标记
-        fillHasChildren(children);
+        fillHasChildren(children, corpCode);
 
-        logger.info("查询父节点[{}]下的子节点，共{}条", parentId, children.size());
+        logger.info("查询父节点[{}]下的子节点，共{}条, corpCode={}", parentId, children.size(), corpCode);
         return children;
     }
 
     /**
-     * 批量填充 hasChildren 标记。
+     * 批量填充 hasChildren 标记（多租户隔离）。
      * 遍历列表，对每条记录查一次子节点数量并设置标记，
      * listData 分页接口和 children 懒加载接口都复用这里。
      *
      * @param list 需要填充的节点列表
+     * @param corpCode 租户编码
      * @author Shawn @date 2026-04-07
+     * @author Shawn @date 2026-04-08 修复多租户隔离
      */
-    public void fillHasChildren(List<SwmSiteMapManagement> list) {
+    public void fillHasChildren(List<SwmSiteMapManagement> list, String corpCode) {
         if (list == null || list.isEmpty()) {
             return;
         }
         // 逐个查子节点数量，count>0 则代表还有下级
         for (SwmSiteMapManagement node : list) {
-            int count = dao.countChildren(node.getId());
+            int count = dao.countChildren(node.getId(), corpCode);
             node.setHasChildren(count > 0);
         }
     }
@@ -374,12 +385,14 @@ public class SwmSiteMapManagementService extends CrudService<SwmSiteMapManagemen
      * 删除前校验：如果有子节点，抛异常拒绝删除
      * @param swmSiteMapManagement 实体对象
      * @author Shawn @date 2026-04-02 增加子节点校验
+     * @author Shawn @date 2026-04-08 修复多租户隔离
      */
     @Override
     @Transactional(readOnly = false)
     public void delete(SwmSiteMapManagement swmSiteMapManagement) {
         // 校验是否有子节点，有的话不允许删除
-        int childCount = dao.countChildren(swmSiteMapManagement.getId());
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        int childCount = dao.countChildren(swmSiteMapManagement.getId(), corpCode);
         if (childCount > 0) {
             throw new RuntimeException("该节点下还有" + childCount + "个子节点，请先删除子节点");
         }

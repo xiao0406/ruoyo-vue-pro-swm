@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.service.SwmSiteMapManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +62,7 @@ public class SwmSiteMapManagementController extends BaseController {
     /**
      * 查询列表数据
      * @author Shawn @date 2026-04-07 新增 hasChildren 字段填充
+     * @author Shawn @date 2026-04-08 修复多租户隔离
      */
     @RequestMapping(value = "listData")
     @ResponseBody
@@ -73,7 +75,8 @@ public class SwmSiteMapManagementController extends BaseController {
         swmSiteMapManagement.getSqlMap().getWhere().disableAutoAddStatusWhere();
         Page<SwmSiteMapManagement> page = swmSiteMapManagementService.findPage(swmSiteMapManagement);
         // 为每条记录填充 hasChildren，告诉前端该节点下面是否还有子节点
-        swmSiteMapManagementService.fillHasChildren(page.getList());
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        swmSiteMapManagementService.fillHasChildren(page.getList(), corpCode);
         return page;
     }
 
@@ -93,12 +96,14 @@ public class SwmSiteMapManagementController extends BaseController {
      * @param parentId 父节点ID
      * @return 子节点列表，每个节点带 hasChildren 标记
      * @author Shawn @date 2026-04-02
+     * @author Shawn @date 2026-04-08 修复多租户隔离
      */
     @RequestMapping(value = "children", method = RequestMethod.GET)
     @ResponseBody
     public List<SwmSiteMapManagement> children(
             @RequestParam(value = "parentId", defaultValue = "0") String parentId) {
         // 查询该父节点下的直接子节点，Service层会自动填充hasChildren
+        // corpCode 由 Service 层内部获取
         return swmSiteMapManagementService.findChildren(parentId);
     }
 

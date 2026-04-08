@@ -56,15 +56,15 @@
 		LIMIT 1
 	</select>
 
-	<!-- 查询指定父节点下的直接子节点列表 @author Shawn @date 2026-04-02 -->
+	<!-- 查询指定父节点下的直接子节点列表（多租户隔离） @author Shawn @date 2026-04-02 @author Shawn @date 2026-04-08 -->
 	<select id="findChildren" resultType="SwmSiteMapManagement">
-		SELECT 
-			a.`id` AS "id", 
-			a.`map_name` AS "mapName", 
-			a.`project_id` AS "projectId", 
-			a.`map_size` AS "mapSize", 
-			a.`scale` AS "scale", 
-			a.`file_path` AS "filePath", 
+		SELECT
+			a.`id` AS "id",
+			a.`map_name` AS "mapName",
+			a.`project_id` AS "projectId",
+			a.`map_size` AS "mapSize",
+			a.`scale` AS "scale",
+			a.`file_path` AS "filePath",
 			a.`drawing_pixel_x` AS "drawingPixelX",
 			a.`drawing_pixel_y` AS "drawingPixelY",
 			a.`site_coordinate_x_m` AS "siteCoordinateXM",
@@ -74,22 +74,28 @@
 			a.`origin_pixel_x` AS "originPixelX",
 			a.`origin_pixel_y` AS "originPixelY",
 			a.`sort_order` AS "sortOrder",
-			a.`status` AS "status", 
-			a.`create_by` AS "createBy", 
-			a.`create_date` AS "createDate", 
-			a.`update_by` AS "updateBy", 
-			a.`update_date` AS "updateDate", 
+			a.`status` AS "status",
+			a.`create_by` AS "createBy",
+			a.`create_date` AS "createDate",
+			a.`update_by` AS "updateBy",
+			a.`update_date` AS "updateDate",
 			a.`remarks` AS "remarks"
-		FROM `swm_site_map_management` a 
+		FROM `swm_site_map_management` a
 		WHERE a.`parent_id` = #{parentId}
+		<if test="corpCode != null and corpCode != ''">
+			AND a.`corp_code` = #{corpCode}
+		</if>
 		ORDER BY a.`sort_order` ASC, a.`create_date` ASC
 	</select>
 
-	<!-- 统计指定父节点下的子节点数量 @author Shawn @date 2026-04-02 -->
+	<!-- 统计指定父节点下的子节点数量（多租户隔离） @author Shawn @date 2026-04-02 @author Shawn @date 2026-04-08 -->
 	<select id="countChildren" resultType="int">
 		SELECT COUNT(1)
 		FROM `swm_site_map_management`
 		WHERE `parent_id` = #{parentId}
+		<if test="corpCode != null and corpCode != ''">
+			AND `corp_code` = #{corpCode}
+		</if>
 	</select>
 
 </mapper> 
