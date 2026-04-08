@@ -129,6 +129,10 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     private String floor;
     private String major;
     private String minor;
+    /**
+     * 随机值，目的取消一级缓存
+     */
+    private Integer random;
 
     public SwmBeaconStation() {
         super();

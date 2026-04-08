@@ -55,6 +55,11 @@ public class SwmRedisConstant {
          */
         public static final String ZT_DEVICE_ID_ALL = SWM_PREFIX + "ZT:DEVICE_ID_ALL";
 
+        /**
+         * 信标的mac地址和major和minor的缓存映射
+         */
+        public static final String MAJOR_MINOR_TO_MAC = SWM_PREFIX + "MAJOR_MINOR_TO_MAC";
+
 
     }
 

@@ -529,4 +529,8 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         }
         return count;
     }
+
+    public List<SwmBeaconStation> findMacList(SwmBeaconStation station) {
+        return this.dao.findMacList(station);
+    }
 }

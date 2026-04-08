@@ -208,5 +208,12 @@
         )
         ORDER BY a.update_date DESC
     </select>
+    <select id="findMacList" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+        SELECT
+            beacon_id ,major, minor
+        FROM swm_beacon_station a
+        WHERE a.status = '0'
+          AND #{random} = #{random}
+    </select>
 
 </mapper>

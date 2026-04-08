@@ -127,4 +127,6 @@ public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
         List<SwmBeaconStation> findAvailableDangerousSourceBeacons(@Param("excludeHazardSourceId") String excludeHazardSourceId);
 
         void updateBatch(List<SwmBeaconStation> list);
+
+        List<SwmBeaconStation> findMacList(SwmBeaconStation station);
 }
