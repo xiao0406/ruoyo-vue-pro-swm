@@ -91,7 +91,7 @@ public class SwmDashboardNewController extends BaseController {
     @GetMapping("/personnel")
     @ResponseBody
     @ApiOperation("人员分布看板数据")
-    public Map<String, Object> todayData(@RequestParam String shiftType) {
+    public Map<String, Object> todayData(@RequestParam(required = false) String shiftType) {
         Map<String, Object> result = new HashMap<>();
         // 查询所有在职人员
         List<SwmPerson> swmPersonList = swmPersonService.findActivePersons();
