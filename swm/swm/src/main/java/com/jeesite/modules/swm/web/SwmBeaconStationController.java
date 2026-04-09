@@ -516,4 +516,26 @@ public class SwmBeaconStationController extends BaseController {
         Integer count = swmBeaconStationService.importData(file);
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
+
+    /**
+     * 导出算法格式数据
+     *
+     * 按楼层ID分组返回信标数据，MAC地址格式转换为小写+冒号分隔，
+     * 只查常规信标（beaconType=1），按租户过滤。
+     *
+     * @author Shawn
+     * @date 2026-04-09
+     */
+    @GetMapping("/exportAlgorithmFormat")
+    @ResponseBody
+    @ApiOperation(value = "导出算法格式数据")
+    public String exportAlgorithmFormat() {
+        try {
+            Map<String, Map<String, Object>> data = swmBeaconStationService.exportAlgorithmFormat();
+            return renderResult(Global.TRUE, text("导出成功"), data);
+        } catch (Exception e) {
+            logger.error("导出算法格式数据失败", e);
+            return renderResult(Global.FALSE, text("导出失败：" + e.getMessage()));
+        }
+    }
 }

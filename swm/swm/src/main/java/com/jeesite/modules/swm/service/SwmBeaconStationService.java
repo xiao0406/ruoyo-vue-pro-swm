@@ -17,6 +17,7 @@ import com.jeesite.modules.swm.dao.SwmBeaconStationDao;
 import com.jeesite.modules.swm.entity.SwmArea;
 import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.util.MqSendUtil;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.entity.SwmBeaconStationExport;
@@ -50,6 +51,10 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     @Autowired
     @Lazy
     private SwmAreaService swmAreaService;
+
+    @Autowired
+    @Lazy
+    private SwmSiteMapManagementService swmSiteMapManagementService;
 
     @Autowired
     private MqSendUtil mqSendUtil;
@@ -763,6 +768,129 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             }
         }
         return resultList;
+    }
+
+    /**
+     * 导出算法格式数据
+     *
+     * 大白话：按楼层ID分组返回信标数据，MAC地址格式转换为小写+冒号分隔，
+     * 只查常规信标（beaconType=1），按租户过滤。
+     * 无 floorId 的信标归入当前租户下启用的顶级地图记录 id 作为默认楼层分组。
+     *
+     * @author Shawn
+     * @date 2026-04-09
+     * @return 按楼层分组的信标算法数据
+     */
+    public Map<String, Map<String, Object>> exportAlgorithmFormat() {
+        logger.info("开始导出信标算法格式数据");
+
+        // 1. 获取默认楼层ID：当前租户下 status='0' 的第一条顶级地图记录 id
+        String defaultFloorId = null;
+        try {
+            SwmSiteMapManagement activeMap = swmSiteMapManagementService.findActiveMap();
+            if (activeMap != null && StringUtils.isNotBlank(activeMap.getId())) {
+                defaultFloorId = activeMap.getId();
+                logger.info("获取到默认楼层ID: {}", defaultFloorId);
+            }
+        } catch (Exception e) {
+            logger.warn("查询默认楼层失败，继续导出有 floorId 的信标", e);
+        }
+
+        // 2. 创建查询条件，只查常规信标
+        SwmBeaconStation query = new SwmBeaconStation();
+        fillCurrentCorpCode(query);
+        query.setBeaconType(SwmBeaconStation.BeaconTypeEnum.CONVENTION);
+
+        // 3. 查询所有常规信标（不分页）
+        List<SwmBeaconStation> beaconList = findList(query);
+        if (CollectionUtil.isEmpty(beaconList)) {
+            logger.info("当前无可导出的常规信标数据");
+            return new HashMap<>();
+        }
+
+        // 4. 按楼层ID分组构建返回结构
+        Map<String, Map<String, Object>> result = new HashMap<>();
+        int totalBeaconCount = 0;
+        int noFloorIdCount = 0;
+        for (SwmBeaconStation beacon : beaconList) {
+            // 跳过无MAC地址的信标
+            String beaconId = beacon.getBeaconId();
+            if (StringUtils.isBlank(beaconId)) {
+                continue;
+            }
+
+            // 确定分组楼层ID：无 floorId 时使用 defaultFloorId，若 defaultFloorId 也不存在则跳过
+            String floorId = beacon.getFloorId();
+            if (StringUtils.isBlank(floorId)) {
+                if (StringUtils.isBlank(defaultFloorId)) {
+                    noFloorIdCount++;
+                    continue;
+                }
+                floorId = defaultFloorId;
+            }
+
+            // MAC地址格式转换：80ECCCD23F2F -> 80:ec:cc:d2:3f:2f
+            String formattedMac = formatMacAddress(beaconId);
+
+            // 按楼层ID分组
+            Map<String, Object> floorData = result.computeIfAbsent(floorId, k -> new HashMap<>());
+
+            // 构建内层数据结构
+            Map<String, Object> beaconData = new HashMap<>();
+            // 无 floorId 的信标 location 设为"全景地图信标"
+            if (StringUtils.isBlank(beacon.getFloorId())) {
+                beaconData.put("location", "全景地图信标");
+            } else {
+                beaconData.put("location", beacon.getLocation() != null ? beacon.getLocation() : "");
+            }
+            beaconData.put("x", beacon.getPixelX() != null ? beacon.getPixelX() : 0);
+            beaconData.put("y", beacon.getPixelY() != null ? beacon.getPixelY() : 0);
+            beaconData.put("floorId", floorId);
+
+            floorData.put(formattedMac, beaconData);
+            totalBeaconCount++;
+        }
+
+        logger.info("导出信标算法格式数据成功，共 {} 个楼层，{} 条信标，无 floorId 且无默认分组跳过 {} 条",
+                result.size(), totalBeaconCount, noFloorIdCount);
+        return result;
+    }
+
+    /**
+     * MAC地址格式转换
+     *
+     * 数据库存储格式：80ECCCD23F2F（12位大写无冒号）
+     * 算法要求格式：80:ec:cc:d2:3f:2f（小写带冒号）
+     *
+     * @author Shawn
+     * @date 2026-04-09
+     * @param mac 原始MAC地址
+     * @return 格式化后的MAC地址
+     */
+    private String formatMacAddress(String mac) {
+        if (StringUtils.isBlank(mac)) {
+            return "";
+        }
+
+        // 去除可能的冒号和空格，统一处理
+        String cleanMac = mac.replace(":", "").replace("-", "").trim().toLowerCase();
+
+        // 长度校验，标准MAC地址为12位
+        if (cleanMac.length() != 12) {
+            logger.warn("MAC地址格式异常，长度不是12位: {}", mac);
+            return mac.toLowerCase();
+        }
+
+        // 每2位插入冒号
+        StringBuilder formatted = new StringBuilder();
+        for (int i = 0; i < cleanMac.length(); i += 2) {
+            if (i > 0) {
+                formatted.append(":");
+            }
+            formatted.append(cleanMac.substring(i, i + 2));
+        }
+
+        return formatted.toString();
     }
 
     @Transactional(readOnly = false)
