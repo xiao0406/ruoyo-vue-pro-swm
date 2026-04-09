@@ -5,8 +5,7 @@ import com.alibaba.cloud.commons.lang.StringUtils;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.constant.SwmRedisConstant;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
-import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.SwmBeaconStationService;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.service.UserService;
@@ -16,6 +15,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,6 +34,7 @@ public class SwmBeaconStationCache implements ApplicationListener<ApplicationRea
     @Autowired
     private UserService userService;
     @Autowired
+    @Lazy
     private SwmBeaconStationService stationService;
 
     @Override
@@ -48,6 +49,7 @@ public class SwmBeaconStationCache implements ApplicationListener<ApplicationRea
 
         //清理缓存
         redisService.del(SwmRedisConstant.RedisGlobalKey.MAJOR_MINOR_TO_MAC);
+        redisService.del(SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY);
 
         List<User> corpList = userService.findCorpList(new User());
         if (CollectionUtils.isEmpty(corpList)) {
@@ -79,10 +81,14 @@ public class SwmBeaconStationCache implements ApplicationListener<ApplicationRea
                 //MAJOR和MINOR作为唯一值，value作为mac地址
                 for (SwmBeaconStation beaconStation : stationList) {
                     String redisKey = beaconStation.getMajor() + "_" + beaconStation.getMinor();
-                    if (StringUtils.isNotBlank(redisKey)){
+                    if (StringUtils.isNotBlank(beaconStation.getMajor())){
                         redisService.hset(SwmRedisConstant.RedisGlobalKey.MAJOR_MINOR_TO_MAC, redisKey, beaconStation.getBeaconId());
                         log.info("写入缓存 key={},value={}", redisKey,beaconStation.getBeaconId());
                     }
+
+                    //添加信标详细信息
+                    String macInfoKey = corpCode + SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY;
+                    redisService.hset(macInfoKey, beaconStation.getBeaconId(), beaconStation);
                 }
             } catch (Exception e) {
                 log.error("租户处理失败: {}", corpCode, e);
@@ -93,5 +99,20 @@ public class SwmBeaconStationCache implements ApplicationListener<ApplicationRea
         }
 
         log.info("设备缓存初始化完成");
+    }
+
+    /**
+     * 新增方法
+     */
+    public void insertBeacon(SwmBeaconStation station) {
+        redisService.hset(SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY, station.getBeaconId(),station);
+    }
+
+    /**
+     * 删除方法
+     */
+    public void deleteBeacon(SwmBeaconStation station) {
+        redisService.hdel(SwmRedisConstant.RedisGlobalKey.MAJOR_MINOR_TO_MAC, station.getMajor() + "_" + station.getMinor());
+        redisService.hdel(SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY, station.getBeaconId());
     }
 }

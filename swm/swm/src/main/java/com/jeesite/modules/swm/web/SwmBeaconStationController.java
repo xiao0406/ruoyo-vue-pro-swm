@@ -8,13 +8,15 @@ import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.swm.cache.SwmBeaconStationCache;
+import com.jeesite.modules.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.SwmBeaconStationService;
 import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import com.jeesite.modules.entity.SwmBeaconStationExport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +47,9 @@ public class SwmBeaconStationController extends BaseController {
 
     @Autowired
     private SwmBeaconStationService swmBeaconStationService;
+    @Autowired
+    @Lazy
+    private SwmBeaconStationCache beaconStationCache;
 
     /**
      * 获取数据
@@ -198,6 +203,10 @@ public class SwmBeaconStationController extends BaseController {
             }
 
             swmBeaconStationService.save(swmBeaconStation);
+
+            //新增缓存
+            beaconStationCache.insertBeacon(swmBeaconStation);
+
             return renderResult(Global.TRUE, text("保存信标基站成功！"));
         } catch (RuntimeException e) {
             // 处理业务异常，如重复MAC地址等
@@ -220,6 +229,8 @@ public class SwmBeaconStationController extends BaseController {
     @ApiOperation(value = "删除信标基站")
     public String delete(SwmBeaconStation swmBeaconStation) {
         swmBeaconStationService.delete(swmBeaconStation);
+        //新增缓存
+        beaconStationCache.deleteBeacon(swmBeaconStation);
         return renderResult(Global.TRUE, text("删除信标基站成功！"));
     }
 
@@ -434,6 +445,8 @@ public class SwmBeaconStationController extends BaseController {
     @ResponseBody
     public String importData(MultipartFile file) {
         Integer count = swmBeaconStationService.importData(file);
+        //刷新缓存
+        beaconStationCache.initAreaCache();
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
 
@@ -442,6 +455,8 @@ public class SwmBeaconStationController extends BaseController {
     @ResponseBody
     public String importData1(MultipartFile file) {
         Integer count = swmBeaconStationService.importData(file);
+        //刷新缓存
+        beaconStationCache.initAreaCache();
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
 }

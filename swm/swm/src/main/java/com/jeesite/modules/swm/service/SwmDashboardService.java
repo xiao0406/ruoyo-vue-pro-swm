@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.entity.SwmWarningManagement;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.entity.SwmBeaconStation;
 import com.jeesite.modules.utils.R;
 import java.util.*;
 import java.util.stream.Collectors;

@@ -4,7 +4,7 @@ package com.jeesite.modules.swm.cache;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.constant.SwmRedisConstant;
-import com.jeesite.modules.swm.entity.SwmArea;
+import com.jeesite.modules.entity.SwmArea;
 import com.jeesite.modules.swm.service.SwmAreaService;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.service.UserService;
@@ -79,6 +79,15 @@ public class SwmAreaCache implements ApplicationListener<ApplicationReadyEvent> 
                 redisService.del(corpCode+ SwmRedisConstant.RedisSwmKey.AREA_CACHE);
                 List<String> ids = list.stream().map(SwmArea::getId).collect(Collectors.toList());
                 redisService.set(corpCode+ SwmRedisConstant.RedisSwmKey.AREA_CACHE, ids);
+
+                //设置缓存
+                String areaCacheKey = corpCode+ SwmRedisConstant.RedisSwmKey.AREA_ID_CACHE_KEY;
+                redisService.del(areaCacheKey);
+                for (SwmArea area : list) {
+                    redisService.hset(areaCacheKey, area.getId(), area);
+                }
+
+
             } catch (Exception e) {
                 log.error("初始化工作缓存失败", e);
             }finally {
@@ -89,17 +98,84 @@ public class SwmAreaCache implements ApplicationListener<ApplicationReadyEvent> 
     }
 
     /**
-     * 插入缓存数据
-     * @param
+     * 插入区域缓存（优化健壮版）
      */
+    public void insertAreaCache(SwmArea swmArea) {
+        if (swmArea == null || swmArea.getId() == null || swmArea.getAreaName() == null) {
+            log.warn("[区域缓存] 参数为空，不执行缓存");
+            return;
+        }
 
-    public void insertAreaCache(String areaName){
-            String currentCorpCode = CorpUtils.getCurrentCorpCode();
-            Object object = redisService.get(currentCorpCode+SwmRedisConstant.RedisSwmKey.AREA_CACHE);
-            if (object != null) {
-                List<String> list = (List<String>) object;
-                list.add(areaName);
-                redisService.set(currentCorpCode+SwmRedisConstant.RedisSwmKey.AREA_CACHE, list);
+        String currentCorpCode = CorpUtils.getCurrentCorpCode();
+        String areaCacheKey = currentCorpCode + SwmRedisConstant.RedisSwmKey.AREA_CACHE;
+        String areaIdCacheKey = currentCorpCode + SwmRedisConstant.RedisSwmKey.AREA_ID_CACHE_KEY;
+
+        try {
+            // ====================== 1. 维护区域名称列表缓存 ======================
+            //生产区域才添加
+            if (SwmArea.STATUS_NORMAL.equals(swmArea.getAreaType())){
+                List<String> areaNameList;
+                Object cacheObj = redisService.get(areaCacheKey);
+
+                // 缓存存在 → 强转使用；不存在 → 新建集合
+                if (cacheObj instanceof List<?>) {
+                    areaNameList = (List<String>) cacheObj;
+                } else {
+                    areaNameList = new ArrayList<>();
+                }
+
+                // 避免重复添加
+                if (!areaNameList.contains(swmArea.getAreaName())) {
+                    areaNameList.add(swmArea.getAreaName());
+                    // 重新覆盖缓存
+                    redisService.set(areaCacheKey, areaNameList);
+                }
             }
+
+            // ====================== 2. 维护区域ID哈希缓存 ======================
+            redisService.hset(areaIdCacheKey, swmArea.getId(), swmArea);
+
+            log.info("[区域缓存] 插入成功，区域ID：{}，区域名称：{}",
+                    swmArea.getId(), swmArea.getAreaName());
+
+        } catch (Exception e) {
+            log.error("[区域缓存] 插入缓存异常，区域ID：{}，异常：", swmArea.getId(), e);
+        }
+    }
+
+    /**
+     * 删除区域缓存数据
+     */
+    public void delete(SwmArea swmArea) {
+        // 空值安全校验
+        if (swmArea == null || swmArea.getId() == null || swmArea.getAreaName() == null) {
+            log.warn("[删除区域缓存] 参数为空，跳过执行");
+            return;
+        }
+
+        String areaName = swmArea.getAreaName();
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        String areaCacheKey = corpCode + SwmRedisConstant.RedisSwmKey.AREA_CACHE;
+        String areaIdCacheKey = corpCode + SwmRedisConstant.RedisSwmKey.AREA_ID_CACHE_KEY;
+
+        try {
+            // 1. 删除区域名称列表中的名称
+            Object cacheObj = redisService.get(areaCacheKey);
+            if (cacheObj instanceof List<?>) {
+                List<String> areaNameList = (List<String>) cacheObj;
+                // 移除并判断是否需要更新回Redis
+                if (areaNameList.remove(areaName)) {
+                    redisService.set(areaCacheKey, areaNameList);
+                }
+            }
+
+            // 2. 删除哈希结构里的区域对象
+            redisService.hdel(areaIdCacheKey, swmArea.getId());
+
+            log.info("[删除区域缓存] 执行成功，区域ID：{}，区域名：{}", swmArea.getId(), areaName);
+
+        } catch (Exception e) {
+            log.error("[删除区域缓存] 执行异常，区域ID：{}", swmArea.getId(), e);
+        }
     }
 }

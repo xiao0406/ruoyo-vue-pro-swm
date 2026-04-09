@@ -2,8 +2,9 @@
  * @author Shawn
  * @date 2025-05-14
  */
-package com.jeesite.modules.swm.entity;
+package com.jeesite.modules.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
@@ -49,6 +50,7 @@ import javax.validation.constraints.NotBlank;
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
 
     private static final long serialVersionUID = 1L;

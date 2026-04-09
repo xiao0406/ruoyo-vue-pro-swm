@@ -5,7 +5,6 @@
 package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.collection.CollectionUtil;
-import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.google.common.collect.Lists;
 import com.jeesite.common.entity.Page;
@@ -14,22 +13,17 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.entity.AiDto;
-import com.jeesite.modules.entity.SwmPersonExport;
 import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.fms.entity.FmsPositionArchive;
 import com.jeesite.modules.fms.entity.FmsProdLine;
 import com.jeesite.modules.fms.entity.FmsWorkGroup;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
-import com.jeesite.modules.swm.entity.SwmArea;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.entity.SwmPerson;
-import com.jeesite.modules.entity.AiDto;
 import com.jeesite.modules.swm.excel.SwmPersonSwitcWorkshopImport;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.sys.utils.CorpUtils;
-import com.jeesite.modules.utils.BatchOperationsUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,13 +33,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.*;
 
 /**
  * 人员登记表service

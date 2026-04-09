@@ -12,7 +12,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.jeesite.modules.swm.cache.SwmVoiceTemplateCache;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -44,6 +46,9 @@ public class SwmVoiceTemplateController extends BaseController {
     
     @Autowired
     private SwmPersonService swmPersonService;
+    @Autowired
+    @Lazy
+    private SwmVoiceTemplateCache swmVoiceTemplateCache;
 
     /**
      * 获取数据
@@ -227,6 +232,9 @@ public class SwmVoiceTemplateController extends BaseController {
     public String delete(SwmVoiceTemplate swmVoiceTemplate) {
         System.out.println("11111"+swmVoiceTemplate.getId());
         swmVoiceTemplateService.deletePhysical(swmVoiceTemplate);
+
+        //清理缓存
+        swmVoiceTemplateCache.delete(swmVoiceTemplate);
         return renderResult(Global.TRUE, text("删除语音模板成功！"));
     }
     
@@ -292,6 +300,14 @@ public class SwmVoiceTemplateController extends BaseController {
             
             // 直接使用SQL更新状态
             swmVoiceTemplateService.updateStatus(id, status);
+
+            // 清理缓存
+            if ("1".equals(status)){
+                swmVoiceTemplateCache.delete(template);
+            }else {
+                swmVoiceTemplateCache.initAreaCache();
+            }
+
             
             return renderResult(Global.TRUE, text((status.equals("0") ? "启用" : "禁用") + "模板成功！"));
         } catch (Exception e) {

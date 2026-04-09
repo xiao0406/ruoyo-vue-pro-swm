@@ -12,7 +12,10 @@ import java.util.stream.Collectors;
 
 import com.alibaba.fastjson.JSON;
 
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.cache.SwmAreaCache;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,8 +29,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.swm.entity.SwmArea;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.entity.SwmArea;
+import com.jeesite.modules.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.SwmAreaService;
 import com.jeesite.modules.swm.service.SwmBeaconStationService;
 
@@ -53,6 +56,8 @@ public class SwmAreaController extends BaseController {
 
     @Autowired
     private SwmAreaCache swmAreaCache;
+    @Autowired
+    private RedisService redisService;
 
     /**
      * 获取数据
@@ -70,6 +75,25 @@ public class SwmAreaController extends BaseController {
     public String list(SwmArea swmArea, Model model) {
         model.addAttribute("swmArea", swmArea);
         return "modules/swm/swmAreaList";
+    }
+
+    @RequestMapping(value = "test")
+    @ResponseBody
+    @ApiOperation("查询列表数据")
+    public String  test() {
+
+        //区域id -> 区域信息, hash结构，key为区域ID，value为区域详情
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        String areaIdCacheKey = corpCode+ SwmRedisConstant.RedisSwmKey.AREA_ID_CACHE_KEY;
+        SwmArea hget = (SwmArea) redisService.hget(areaIdCacheKey, "2033431438004977664");
+
+        //信标mac地址到信标信息的映射
+        String beaconCacheKey = corpCode+ SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY;
+        SwmBeaconStation hget1 = (SwmBeaconStation) redisService.hget(beaconCacheKey, "mac142956jy21");
+
+
+
+        return "success";
     }
 
     /**
@@ -158,9 +182,7 @@ public class SwmAreaController extends BaseController {
     public String save(@Validated SwmArea swmArea) {
         swmAreaService.save(swmArea);
         //生产区域信标,插入redis中
-        if (SwmArea.STATUS_NORMAL.equals(swmArea.getAreaType())){
-            swmAreaCache.insertAreaCache(swmArea.getAreaName());
-        }
+        swmAreaCache.insertAreaCache(swmArea);
         return renderResult(Global.TRUE, text("保存区域成功！"));
     }
 
@@ -172,6 +194,9 @@ public class SwmAreaController extends BaseController {
     @ApiOperation("删除区域")
     public String delete(SwmArea swmArea) {
         swmAreaService.delete(swmArea);
+
+        //删除缓存
+        swmAreaCache.delete(swmArea);
         return renderResult(Global.TRUE, text("删除区域成功！"));
     }
 

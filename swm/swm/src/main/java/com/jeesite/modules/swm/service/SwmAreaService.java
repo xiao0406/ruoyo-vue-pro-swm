@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.sys.utils.UserUtils;
-import com.jeesite.modules.swm.entity.SwmArea;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.entity.SwmArea;
+import com.jeesite.modules.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.dao.SwmAreaDao;
 
 import java.util.List;

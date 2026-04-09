@@ -8,7 +8,7 @@
     -->
     
     <!-- 根据信标编号查询基站 -->
-    <select id="getByBeaconId" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="getByBeaconId" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT 
             *
         FROM swm_beacon_station a
@@ -17,7 +17,7 @@
     </select>
     
     <!-- 根据信标编号列表批量查询基站 -->
-    <select id="findByBeaconIds" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findByBeaconIds" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT 
             *
         FROM swm_beacon_station a
@@ -39,7 +39,7 @@
     </select>
     
     <!-- 查询指定位置的基站列表 -->
-    <select id="findByLocation" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findByLocation" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT 
             *
         FROM swm_beacon_station a
@@ -48,7 +48,7 @@
     </select>
     
     <!-- 查询在线状态的基站列表 -->
-    <select id="findOnlineBeacons" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findOnlineBeacons" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT 
             *
         FROM swm_beacon_station a
@@ -58,7 +58,7 @@
     </select>
     
     <!-- 根据GPS坐标范围查询基站列表 -->
-    <select id="findByGpsRange" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findByGpsRange" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT 
             *
         FROM swm_beacon_station a
@@ -79,7 +79,7 @@
     </select>
     
     <!-- 根据图纸像素坐标范围查询基站列表 -->
-    <select id="findByPixelRange" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findByPixelRange" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT 
             *
         FROM swm_beacon_station a
@@ -100,7 +100,7 @@
     </select>
     
     <!-- 根据区域查询基站列表 -->
-    <select id="findByArea" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findByArea" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT 
             *
         FROM swm_beacon_station a
@@ -120,7 +120,7 @@
     </select>
     
     <!-- 根据精确的像素坐标查找信标 -->
-    <select id="findByPixelCoordinates" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findByPixelCoordinates" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT 
             *
         FROM swm_beacon_station a
@@ -167,7 +167,7 @@
     </update>
 
     <!-- 查询没有区域ID的信标列表 -->
-    <select id="findBeaconsWithoutArea" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findBeaconsWithoutArea" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT
             *
         FROM swm_beacon_station a
@@ -177,7 +177,7 @@
     </select>
 
     <!-- 查询危险源类型的信标列表 -->
-    <select id="findDangerousSourceBeacons" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findDangerousSourceBeacons" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT
             *
         FROM swm_beacon_station a
@@ -187,7 +187,7 @@
     </select>
 
     <!-- 查询可用的危险源类型信标列表（排除已被使用的） -->
-    <select id="findAvailableDangerousSourceBeacons" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findAvailableDangerousSourceBeacons" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT
             *
         FROM swm_beacon_station a
@@ -208,9 +208,9 @@
         )
         ORDER BY a.update_date DESC
     </select>
-    <select id="findMacList" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findMacList" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT
-            beacon_id ,major, minor
+            *
         FROM swm_beacon_station a
         WHERE a.status = '0'
           AND #{random} = #{random}

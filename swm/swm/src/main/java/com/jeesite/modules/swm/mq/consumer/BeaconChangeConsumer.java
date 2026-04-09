@@ -1,12 +1,11 @@
 package com.jeesite.modules.swm.mq.consumer;
 
-import cn.hutool.http.HttpUtil;
 import com.alibaba.cloud.commons.lang.StringUtils;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.jeesite.modules.config.RabbitMqConfig;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.util.MqSendUtil;
 import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
@@ -17,10 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
 public class BeaconChangeConsumer {

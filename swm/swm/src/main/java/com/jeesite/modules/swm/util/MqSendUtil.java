@@ -6,7 +6,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.jeesite.common.lang.ObjectUtils;
 import com.jeesite.modules.config.RabbitMqConfig;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import lombok.Data;
@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

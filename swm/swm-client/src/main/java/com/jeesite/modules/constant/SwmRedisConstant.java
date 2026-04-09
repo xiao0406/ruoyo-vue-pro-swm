@@ -42,23 +42,33 @@ public class SwmRedisConstant {
          */
         public static final String IDENTITY_CARD_MAP_KEY = "SWM:IDENTITY_CARD_MAP";
 
-        //电量redi
+        //电量redis报警
         public static final String BATTERY_WARN_KEY_PREFIX = IOT_PREFIX + "battery:warn:";
 
         /**
-         * 科利特所有设备编码
+         * 科利特所有设备编码，set结构
          */
         public static final String KLT_DEVICE_ID_ALL =  SWM_PREFIX + "KLT:DEVICE_ID_ALL";
 
         /**
-         * 中泰所有设备编码
+         * 中泰所有设备编码，set结构
          */
         public static final String ZT_DEVICE_ID_ALL = SWM_PREFIX + "ZT:DEVICE_ID_ALL";
 
         /**
-         * 信标的mac地址和major和minor的缓存映射
+         * 中泰帽子-信标的mac地址和major和minor的缓存映射，hash结构，key为major和minor的组合，value为mac地址
          */
-        public static final String MAJOR_MINOR_TO_MAC = SWM_PREFIX + "MAJOR_MINOR_TO_MAC";
+        public static final String MAJOR_MINOR_TO_MAC = SWM_PREFIX + "ZT:MAJOR_MINOR_TO_MAC";
+
+        /**
+         * 中泰帽子-设备电量，hash结构，key为设备ID，value为电量
+         */
+        public static final String ZT_DEVICE_BATTERY = SWM_PREFIX + "ZT:DEVICE_BATTERY";
+
+        /**
+         * 中泰帽子-设备蓝牙数据，hash结构，key为设备ID，value为蓝牙数据，有效期60秒
+         */
+        public static final String ZT_DEVICE_BLE_DATA = SWM_PREFIX + "ZT:DEVICE_BLE_DATA";
 
 
     }
@@ -79,7 +89,6 @@ public class SwmRedisConstant {
          */
         public static final String IS_PROD_Voice_ALARM = SEPAR + SWM_PREFIX + "is_prod_voice_alarm";
 
-
         /**
          * 哪些信标标识为不用报警
          */
@@ -87,7 +96,26 @@ public class SwmRedisConstant {
         //增加生产区域语音报警间隔
         public static final String PRODUCTION_Voice_ALARM_INTERVAL = SEPAR + SWM_PREFIX + "PRODUCTION_Voice_ALARM_INTERVAL";
 
+        /**
+         * 语音模板缓存, hash结构，key为模板ID，value为模板名称
+         */
+        public static final String VOICE_TEMPLATE_CACHE = SEPAR + SWM_PREFIX + "VOICE_TEMPLATE_CACHE";
 
+        /**
+         * 报警配置缓存, hash结构，key为报警配置key，value为是否报警
+         */
+        public static final String ALARM_CONFIG = SEPAR + SWM_PREFIX + "ALARM_CONFIG";
+
+
+        /**
+         * 区域id -> 区域信息, hash结构，key为区域ID，value为区域详情
+         */
+        public static final String AREA_ID_CACHE_KEY = SEPAR + SWM_PREFIX + "area:id_to_info";
+
+        /**
+         * 信标mac地址到信标信息的映射
+         */
+        public static final String BEACON_MAC_CACHE_KEY = SEPAR + SWM_PREFIX + "beacon:mac_to_info";
     }
 
 
