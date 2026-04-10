@@ -29,3 +29,7 @@ ALTER TABLE `swm_beacon_station`
 -- 4. 原 floor 字段注释更新为"楼层名称"
 ALTER TABLE `swm_beacon_station`
   MODIFY COLUMN `floor` varchar(20) DEFAULT NULL COMMENT '楼层名称';
+
+-- TDengine的表
+ALTER STABLE external_coordinate_data DROP COLUMN map_id;
+ALTER STABLE external_coordinate_data ADD COLUMN map_id NCHAR(50);
