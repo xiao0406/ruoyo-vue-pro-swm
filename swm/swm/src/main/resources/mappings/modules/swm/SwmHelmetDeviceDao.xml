@@ -260,6 +260,7 @@
         FROM
             swm_helmet_device a
         where `status` = '0'
+          AND corp_code = #{corpCode}
           AND #{random} = #{random}
     </select>
     <select id="findListInit" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">

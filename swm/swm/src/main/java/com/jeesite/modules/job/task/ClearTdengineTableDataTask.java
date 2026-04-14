@@ -69,7 +69,7 @@ public class ClearTdengineTableDataTask {
      */
     @XxlJob("clearRundeTable")
     @Transactional(rollbackFor = Exception.class)
-    public void clearRundeTable() {
+    public void clearRundeTable() throws InterruptedException {
 
         XxlJobHelper.log("TDengine定时清理开始 =============================");
 
@@ -86,28 +86,39 @@ public class ClearTdengineTableDataTask {
         for (User user : corpList) {
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
+            XxlJobHelper.log("当前租户{}", corpCode);
+            try {
+                // 设置当前线程租户
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
 
-            // 设置当前线程租户
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
-            TenantContext.set(corpCode);
+                SwmHelmetDevice device = new SwmHelmetDevice();
+                device.setRandom(new Random().nextInt(1_000_000));  // 防止一级缓存
+                device.setCorpCode(corpCode);
+                List<SwmHelmetDevice> deviceList = deviceService.findDeviceCorpMapping(device);
+                for (SwmHelmetDevice helmetDevice : deviceList) {
+                    String deviceId = helmetDevice.getDeviceId();
+                    String idcard = helmetDevice.getAssignedPerson();
 
-            SwmHelmetDevice device = new SwmHelmetDevice();
-            device.setRandom(new Random().nextInt(1_000_000));  // 防止一级缓存
 
-            List<SwmHelmetDevice> deviceList = deviceService.findDeviceCorpMapping(device);
-            for (SwmHelmetDevice helmetDevice : deviceList) {
-                String deviceId = helmetDevice.getDeviceId();
-                String idcard = helmetDevice.getAssignedPerson();
+                    String dbName = CorpDbEnum.getDbNameByCorpCode(corpCode);
+                    XxlJobHelper.log("清理helmet_runde_ca_report_location表数据 deviceId: {}, idcard: {}，租户{},库名{}", deviceId, idcard,corpCode,dbName);
 
-                String dbName = CorpDbEnum.getDbNameByCorpCode(corpCode);
-
-                String deleteSql = "DELETE FROM " + dbName + "." +  TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION +
-                         "_" +deviceId + "_"+ idcard +
-                        " WHERE time < '" + cutoffStr + "'";
-                tDengineService.executeTDengineSQLByXXJOB(deleteSql, corpCode);
-                XxlJobHelper.log("清理helmet_runde_ca_report_location表数据 SQL: {}", deleteSql);
+                    String deleteSql = "DELETE FROM " + dbName + "." +  TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION +
+                            "_" +deviceId + "_"+ idcard +
+                            " WHERE time < '" + cutoffStr + "'";
+                    tDengineService.executeTDengineSQLByXXJOB(deleteSql, corpCode);
+                    XxlJobHelper.log("清理helmet_runde_ca_report_location表数据 SQL: {}", deleteSql);
+                    //睡0.3s
+                    Thread.sleep(300);
+                    XxlJobHelper.log("清理helmet_runde_ca_report_location表数据 SQL: {}", deleteSql);
+                }
+            }catch (Exception e){
+                XxlJobHelper.log("清理helmet_runde_ca_report_location表数据异常: {}", e.getMessage());
+            }finally {
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
-
         }
 
         XxlJobHelper.log("TDengine定时清理结束 =============================");

@@ -2,6 +2,7 @@ package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.*;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.entity.Page;
@@ -1442,6 +1443,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
      * @return
      */
     public SwmAttendanceDto findAttendanceRange(SwmAttendanceDto vo) {
+
         String identityCard = vo.getIdentityCard();
         String deviceId = vo.getDeviceId();
         Date startDate = vo.getAttendanceDate();
@@ -1451,26 +1453,33 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         String corpCode = TenantContext.get();
         String dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
 
-        // 查询 TDengine
+        //  强制排序（关键）
         String sql = "select time,area_name,area_type from "
-                + dbNameNew + "." + TdengineSuperTableConstant.AREA_FENCE_DATA +"_" + deviceId + "_" + identityCard
+                + dbNameNew + "." + TdengineSuperTableConstant.AREA_FENCE_DATA + "_" + deviceId + "_" + identityCard
                 + " where time >= '" + DateUtil.format(startDate, DatePattern.NORM_DATE_PATTERN)
-                + "'and time <= '" + DateUtil.format(endDate, DatePattern.NORM_DATE_PATTERN)
-                + "' limit 1000000";
+                + "' and time <= '" + DateUtil.format(endDate, DatePattern.NORM_DATE_PATTERN)
+                + "' order by time asc limit 1000000";
 
         List<JSONObject> list = new ArrayList<>();
+
         R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
-        if (result.getCode() == R.SUCCESS && result.getData() != null){
+        if (result.getCode() == R.SUCCESS && result.getData() != null) {
             JSONObject data = result.getData();
             JSONArray rows = data.getJSONArray("data");
-            if (rows != null){
+
+            if (rows != null) {
                 for (int i = 0; i < rows.size(); i++) {
                     JSONArray row = rows.getJSONArray(i);
-                    JSONObject jsonObject = new JSONObject();
-                    jsonObject.set("time", row.getDate(0));
-                    jsonObject.set("area_name", row.getStr(1));
-                    jsonObject.set("area_type", row.get(2)); // 原样取值，不转换
-                    list.add(jsonObject);
+
+                    JSONObject obj = new JSONObject();
+                    obj.set("time", row.getDate(0));
+                    obj.set("area_name", row.getStr(1));
+                    obj.set("area_type", row.get(2));
+
+                    //  防止脏数据
+                    if (obj.getDate("time") != null) {
+                        list.add(obj);
+                    }
                 }
             }
         }
@@ -1479,70 +1488,82 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             return null;
         }
 
-        // ================== 轨迹分段统计 ==================
+        // ================== 分段 ==================
         List<SwmAttendanceDto> workList = new ArrayList<>();
         List<SwmAttendanceDto> restList = new ArrayList<>();
 
-        JSONObject firstObj = list.get(0);
-        Date enterTime = firstObj.getDate("time");
-        String enterAreaName = firstObj.getStr("area_name");
-        Object segmentAreaTypeRaw = firstObj.get("area_type");
-        AreaType segmentAreaType = convertAreaType(segmentAreaTypeRaw);
+        JSONObject first = list.get(0);
+
+        Date enterTime = first.getDate("time");
+        String enterAreaName = first.getStr("area_name");
+        AreaType segmentType = convertAreaType(first.get("area_type"));
 
         Date prevTime = enterTime;
 
         for (int i = 1; i < list.size(); i++) {
-            JSONObject current = list.get(i);
-            Date currentTime = current.getDate("time");
-            String currentAreaName = current.getStr("area_name");
-            Object currentAreaTypeRaw = current.get("area_type");
-            AreaType currentAreaType = convertAreaType(currentAreaTypeRaw);
 
-            // 跳过无法识别或空值
-            if (currentAreaType == null || segmentAreaType == null) {
-                prevTime = currentTime;
+            JSONObject cur = list.get(i);
+
+            Date curTime = cur.getDate("time");
+            String curAreaName = cur.getStr("area_name");
+            AreaType curType = convertAreaType(cur.get("area_type"));
+
+            if (curTime == null) continue;
+
+            long diff = curTime.getTime() - prevTime.getTime();
+
+            // ================== 1数据异常断段 ==================
+            if (curType == null || segmentType == null) {
+
+                addSegment(workList, restList, segmentType,
+                        buildSegment(enterTime, enterAreaName, prevTime, enterAreaName));
+
+                // 重置
+                enterTime = curTime;
+                enterAreaName = curAreaName;
+                segmentType = curType;
+                prevTime = curTime;
                 continue;
             }
 
-            long diff = currentTime.getTime() - prevTime.getTime();
+            // ================== 2️ 区域变化断段（type + name） ==================
+            boolean areaChanged =
+                    curType != segmentType
+                            || !StrUtil.equals(curAreaName, enterAreaName);
 
-            // ================== 区域变化断段 ==================
-            if (currentAreaType != segmentAreaType) {
-                SwmAttendanceDto segment = buildSegment(enterTime, enterAreaName, prevTime, enterAreaName);
-                if (segmentAreaType == AreaType.WORK) workList.add(segment);
-                else restList.add(segment);
+            if (areaChanged) {
 
-                // 开启新段
-                enterTime = currentTime;
-                enterAreaName = currentAreaName;
-                segmentAreaType = currentAreaType;
-                prevTime = currentTime;
+                addSegment(workList, restList, segmentType,
+                        buildSegment(enterTime, enterAreaName, prevTime, enterAreaName));
+
+                enterTime = curTime;
+                enterAreaName = curAreaName;
+                segmentType = curType;
+                prevTime = curTime;
                 continue;
             }
 
-            // ================== 时间连续性断段（10分钟） ==================
-            if (diff > 10 * 60 * 1000) {
-                SwmAttendanceDto segment = buildSegment(enterTime, enterAreaName, prevTime, enterAreaName);
-                if (segmentAreaType == AreaType.WORK) workList.add(segment);
-                else restList.add(segment);
+            // ================== 3⃣ 时间断段（≥10分钟） ==================
+            if (diff >= 10 * 60 * 1000) {
 
-                // 重启新段
-                enterTime = currentTime;
-                enterAreaName = currentAreaName;
-                segmentAreaType = currentAreaType;
+                addSegment(workList, restList, segmentType,
+                        buildSegment(enterTime, enterAreaName, prevTime, enterAreaName));
+
+                enterTime = curTime;
+                enterAreaName = curAreaName;
+                segmentType = curType;
             }
 
-            prevTime = currentTime;
+            prevTime = curTime;
         }
 
-        // ================== 结算最后一段 ==================
-        if (segmentAreaType != null) {
-            SwmAttendanceDto lastSegment = buildSegment(enterTime, enterAreaName, prevTime, enterAreaName);
-            if (segmentAreaType == AreaType.WORK) workList.add(lastSegment);
-            else restList.add(lastSegment);
+        // ================== 收尾 ==================
+        if (segmentType != null) {
+            addSegment(workList, restList, segmentType,
+                    buildSegment(enterTime, enterAreaName, prevTime, enterAreaName));
         }
 
-        // ================== 组装返回 ==================
+        // ================== 结果 ==================
         SwmAttendanceDto resultDto = new SwmAttendanceDto();
         resultDto.setAttendanceDate(startDate);
         resultDto.setIdentityCard(identityCard);
@@ -1550,13 +1571,24 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         resultDto.setWorkList(workList);
         resultDto.setRestList(restList);
 
-        // 计算总时长
         long workSeconds = workList.stream().mapToLong(dto -> parseDurationToSeconds(dto.getDurationOf())).sum();
         long restSeconds = restList.stream().mapToLong(dto -> parseDurationToSeconds(dto.getDurationOf())).sum();
+
         resultDto.setWorkOf(formatDuration(workSeconds));
         resultDto.setRestOf(formatDuration(restSeconds));
 
         return resultDto;
+    }
+
+    private void addSegment(List<SwmAttendanceDto> workList, List<SwmAttendanceDto> restList, AreaType type, SwmAttendanceDto segment) {
+
+        if (segment == null || type == null) return;
+
+        if (type == AreaType.WORK) {
+            workList.add(segment);
+        } else {
+            restList.add(segment);
+        }
     }
 
     public Page<SwmMonthlyAttendance> findWeeklyByPage(SwmMonthlyAttendance swmMonthlyAttendance) {
