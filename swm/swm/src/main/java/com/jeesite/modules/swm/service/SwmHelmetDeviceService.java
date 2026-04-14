@@ -811,6 +811,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                     device.setDeviceId(swmHelmetDeviceExport.getDeviceId());
                     device.setMacAddress(swmHelmetDeviceExport.getMacAddress());
                     device.setHelmetType(swmHelmetDeviceExport.getHelmetType());
+                    device.setDeviceSource(swmHelmetDeviceExport.getDeviceSource());
                     deviceList.add(device);
                 }
 
