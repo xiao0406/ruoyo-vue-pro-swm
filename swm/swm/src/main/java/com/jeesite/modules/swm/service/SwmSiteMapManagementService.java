@@ -430,6 +430,19 @@ public class SwmSiteMapManagementService extends CrudService<SwmSiteMapManagemen
     }
     
     /**
+     * 根据多个 ID 批量查询底图记录，不加 status 条件
+     * @param ids ID 列表
+     * @return 底图记录列表
+     * @author Shawn @date 2026-04-10
+     */
+    public List<SwmSiteMapManagement> findByIds(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return dao.findByIds(ids);
+    }
+
+    /**
      * 禁用所有其他底图（不论项目）
      * @param currentMapId 当前底图ID（不会被禁用）
      */

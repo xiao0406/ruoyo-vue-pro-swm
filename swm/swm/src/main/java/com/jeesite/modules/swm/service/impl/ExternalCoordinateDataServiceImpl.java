@@ -94,9 +94,12 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
             // 使用LAST_ROW函数配合PARTITION BY进行批量查询external_coordinate_data表
             // 添加别名强制指定列名格式，兼容不同环境的TDengine返回格式
             // 添加过滤条件排除original_x或original_y小于等于0的数据
+            // 添加 type 和 map_id 字段
             String sql = String.format(
                     "select LAST_ROW(id_card) as id_card, LAST_ROW(x) as x, " +
-                            "LAST_ROW(y) as y, LAST_ROW(time) as time from %s.%s " +
+                            "LAST_ROW(y) as y, LAST_ROW(time) as time, " +
+                            "LAST_ROW(type) as type, LAST_ROW(map_id) as map_id " +
+                            "from %s.%s " +
                             "where %s and time >= '%s' and time <= '%s' " +
                             "and original_x > 0 and original_y > 0 " +
                             "partition by id_card",
@@ -127,9 +130,11 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
                     Object xObj = row.get("x");
                     Object yObj = row.get("y");
                     Object timeObj = row.get("time");
+                    Object typeObj = row.get("type");
+                    Object mapIdObj = row.get("map_id");
 
-                    log.debug("external_coordinate_data原始数据 - idCard: {}, x: {}, y: {}, time: {}",
-                            idCard, xObj, yObj, timeObj);
+                    log.debug("external_coordinate_data原始数据 - idCard: {}, x: {}, y: {}, time: {}, type: {}, map_id: {}",
+                            idCard, xObj, yObj, timeObj, typeObj, mapIdObj);
 
                     if (idCard != null && !idCard.trim().isEmpty()) {
                         Map<String, Object> locationInfo = new HashMap<>();
@@ -137,10 +142,12 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
                         locationInfo.put("y", yObj);
                         locationInfo.put("time", timeObj);
                         locationInfo.put("id_card", idCard);
+                        locationInfo.put("type", typeObj);
+                        locationInfo.put("map_id", mapIdObj);
 
                         locationMap.put(idCard, locationInfo);
-                        log.info("从external_coordinate_data找到身份证 {} 的坐标: x={}, y={}, time={}",
-                                idCard, xObj, yObj, timeObj);
+                        log.info("从external_coordinate_data找到身份证 {} 的坐标: x={}, y={}, time={}, type={}, map_id={}",
+                                idCard, xObj, yObj, timeObj, typeObj, mapIdObj);
                     }
                 }
 
@@ -215,8 +222,9 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
 
             // 查询当天该身份证的所有坐标数据，按时间排序
             // 添加过滤条件排除original_x或original_y小于等于0的数据
+            // 添加 type 和 map_id 字段
             String sql = String.format(
-                    "select id_card, x, y, time from %s.%s " +
+                    "select id_card, x, y, time, type, map_id from %s.%s " +
                             "where id_card='%s' and time >= '%s' and time <= '%s' " +
                             "and original_x > 0 and original_y > 0 " +
                             "order by time asc",
@@ -235,6 +243,8 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
                     Object xObj = row.get("x");
                     Object yObj = row.get("y");
                     Object timeObj = row.get("time");
+                    Object typeObj = row.get("type");
+                    Object mapIdObj = row.get("map_id");
 
                     if (resultIdCard != null && !resultIdCard.trim().isEmpty() && xObj != null && yObj != null) {
                         Map<String, Object> point = new HashMap<>();
@@ -242,6 +252,8 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
                         point.put("y", yObj);
                         point.put("time", timeObj);
                         point.put("id_card", resultIdCard);
+                        point.put("type", typeObj);
+                        point.put("map_id", mapIdObj);
 
                         trajectoryPoints.add(point);
                     }
@@ -286,8 +298,9 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
 
             // 查询该身份证在指定时间范围内的所有坐标数据，按时间排序
             // 添加过滤条件排除original_x或original_y小于等于0的数据
+            // 添加 type 和 map_id 字段
             String sql = String.format(
-                    "select id_card, x, y, time from %s.%s " +
+                    "select id_card, x, y, time, type, map_id from %s.%s " +
                             "where id_card='%s' %s " +
                             "and original_x > 0 and original_y > 0 " +
                             "order by time asc",
@@ -306,6 +319,8 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
                     Object xObj = row.get("x");
                     Object yObj = row.get("y");
                     Object timeObj = row.get("time");
+                    Object typeObj = row.get("type");
+                    Object mapIdObj = row.get("map_id");
 
                     if (resultIdCard != null && !resultIdCard.trim().isEmpty() && xObj != null && yObj != null) {
                         Map<String, Object> point = new HashMap<>();
@@ -313,6 +328,8 @@ public class ExternalCoordinateDataServiceImpl implements ExternalCoordinateData
                         point.put("y", yObj);
                         point.put("time", timeObj);
                         point.put("id_card", resultIdCard);
+                        point.put("type", typeObj);
+                        point.put("map_id", mapIdObj);
 
                         trajectoryPoints.add(point);
                     }

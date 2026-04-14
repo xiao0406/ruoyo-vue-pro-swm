@@ -57,4 +57,12 @@ public interface SwmSiteMapManagementDao extends CrudDao<SwmSiteMapManagement> {
      * @author Shawn @date 2026-04-08 修复多租户隔离
      */
     int countChildren(@Param("parentId") String parentId, @Param("corpCode") String corpCode);
+
+    /**
+     * 根据多个 ID 批量查询底图记录，不加 status 条件
+     * @param ids ID 列表
+     * @return 底图记录列表
+     * @author Shawn @date 2026-04-10
+     */
+    List<SwmSiteMapManagement> findByIds(@Param("ids") List<String> ids);
 }
