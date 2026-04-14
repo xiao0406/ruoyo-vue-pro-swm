@@ -256,10 +256,11 @@
     </select>
     <select id="findDeviceCorpMapping" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
         SELECT
-            device_id, corp_code
+            device_id, corp_code,assigned_person
         FROM
             swm_helmet_device a
         where `status` = '0'
+          AND corp_code = #{corpCode}
           AND #{random} = #{random}
     </select>
     <select id="findListInit" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">

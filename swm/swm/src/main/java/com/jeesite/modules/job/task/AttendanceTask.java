@@ -104,11 +104,13 @@ public class AttendanceTask {
 
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
-            //设置当前线程的租户信息
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
-            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
 
             try {
+                //设置当前线程的租户信息
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
                 XxlJobHelper.log("开始执行怠工时长计算任务...");
 
                 // 获取传入的日期参数，如果没有传入则使用当天
@@ -340,12 +342,14 @@ public class AttendanceTask {
 
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
-            //设置当前线程的租户信息
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
-            TenantContext.set(corpCode);
-            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
 
             try {
+                //设置当前线程的租户信息
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
+                XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
                 // 1. 获取当月日期范围
                 Date startDate = DateUtil.beginOfMonth(DateUtil.date());
                 Date endDate = DateUtil.date(); // 统计到当天
@@ -1453,12 +1457,14 @@ public class AttendanceTask {
 
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
-            //设置当前线程的租户信息
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
-            TenantContext.set(corpCode);
-            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
 
             try {
+                //设置当前线程的租户信息
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
+                XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
                 XxlJobHelper.log("开始执行自定义时间范围考勤计算任务...");
 
                 // 保存任务参数
@@ -1535,11 +1541,11 @@ public class AttendanceTask {
         for (User corp : corpList) {
             String corpCode = corp.getCorpCode();
             String corpName = corp.getCorpName();
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
-            TenantContext.set(corpCode);
-            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
-            try {
 
+            try {
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
+                XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
                 // 保存任务参数
                 String jobParam = XxlJobHelper.getJobParam();
                 jobLog.setJobParam(jobParam);
@@ -2335,12 +2341,14 @@ public class AttendanceTask {
 
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
-            //设置当前线程的租户信息
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
-            TenantContext.set(corpCode);
-            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
 
             try {
+                //设置当前线程的租户信息
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
+                XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
                 // 1. 解析参数
                 AttendanceGenerationParams params = parseAttendanceGenerationParams();
 
