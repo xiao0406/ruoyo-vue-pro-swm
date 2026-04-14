@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.jeesite.modules.swm.entity.SwmHazardSource;
+import com.jeesite.modules.entity.SwmHazardSource;
 import com.jeesite.modules.swm.service.SwmHazardSourceService;
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
 
 /**
  * 巡检计划Controller

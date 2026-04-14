@@ -97,6 +97,12 @@ public class SwmRedisConstant {
         public static final String PRODUCTION_Voice_ALARM_INTERVAL = SEPAR + SWM_PREFIX + "PRODUCTION_Voice_ALARM_INTERVAL";
 
         /**
+         * 危险源反向缓存，用mac地址作为key，value为危险源信息，用于iot服务的危险源报警
+         */
+        public static final String MAC_TO_HAZARD_INFO = SEPAR + SWM_PREFIX + "mac_to_hazard_info";
+
+
+        /**
          * 语音模板缓存, hash结构，key为模板ID，value为模板名称
          */
         public static final String VOICE_TEMPLATE_CACHE = SEPAR + SWM_PREFIX + "VOICE_TEMPLATE_CACHE";

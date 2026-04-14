@@ -72,6 +72,9 @@ public class SwmVoiceTemplateCache implements ApplicationListener<ApplicationRea
                     continue;
                 }
                 for (SwmVoiceTemplate voiceTemplate : list) {
+                    if (voiceTemplate.getTemplateName() == null){
+                        continue;
+                    }
                     redisService.hset(corpCode +  SwmRedisConstant.RedisSwmKey.VOICE_TEMPLATE_CACHE, voiceTemplate.getTemplateId(), voiceTemplate.getTemplateName());
                 }
 
