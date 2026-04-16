@@ -55,21 +55,6 @@ public class SwmRedisConstant {
          */
         public static final String ZT_DEVICE_ID_ALL = SWM_PREFIX + "ZT:DEVICE_ID_ALL";
 
-        /**
-         * 中泰帽子-信标的mac地址和major和minor的缓存映射，hash结构，key为major和minor的组合，value为mac地址
-         */
-        public static final String MAJOR_MINOR_TO_MAC = SWM_PREFIX + "ZT:MAJOR_MINOR_TO_MAC";
-
-        /**
-         * 中泰帽子-设备电量，hash结构，key为设备ID，value为电量
-         */
-        public static final String ZT_DEVICE_BATTERY = SWM_PREFIX + "ZT:DEVICE_BATTERY";
-
-        /**
-         * 中泰帽子-设备蓝牙数据，hash结构，key为设备ID，value为蓝牙数据，有效期60秒
-         */
-        public static final String ZT_DEVICE_BLE_DATA = SWM_PREFIX + "ZT:DEVICE_BLE_DATA";
-
 
     }
 
@@ -121,7 +106,28 @@ public class SwmRedisConstant {
         /**
          * 信标mac地址到信标信息的映射
          */
-        public static final String BEACON_MAC_CACHE_KEY = SEPAR + SWM_PREFIX + "beacon:mac_to_info";
+        public static final String BEACON_MAC_CACHE_KEY = SEPAR + SWM_PREFIX + "ZT:beacon:mac_to_info";
+
+        /**
+         * 中泰帽子-信标的mac地址和major和minor的缓存映射，hash结构，key为major和minor的组合，value为mac地址
+         */
+        public static final String MAJOR_MINOR_TO_MAC = SEPAR +SWM_PREFIX + "ZT:MAJOR_MINOR_TO_MAC";
+
+        /**
+         * 中泰帽子-设备电量，hash结构，key为设备ID，value为电量
+         */
+        public static final String ZT_DEVICE_BATTERY =SEPAR + SWM_PREFIX + "ZT:DEVICE_BATTERY";
+
+        /**
+         * 中泰帽子-设备蓝牙数据，hash结构，key为设备ID，value为蓝牙数据，有效期60秒
+         */
+        public static final String ZT_DEVICE_BLE_DATA = SEPAR +SWM_PREFIX + "ZT:DEVICE_BLE_DATA";
+
+        /**
+         * 中泰帽子-设备详细信息,key为设备ID，value为设备详细信息（TcpMessageData），主要用于设备静默状态，设备不上报
+         * 数据，那么就需要用这个来定时上报数据
+         */
+        public static final String ZT_DEVICE_MESSAGE_DATA= SEPAR +SWM_PREFIX + "ZT:DEVICE_MESSAGE_DATA";
     }
 
 

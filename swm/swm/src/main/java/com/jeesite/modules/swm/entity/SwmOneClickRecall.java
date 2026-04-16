@@ -11,6 +11,7 @@ import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.sys.utils.DictUtils;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -42,6 +43,7 @@ import java.util.Map;
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.recall_time DESC")
+@Data
 public class SwmOneClickRecall extends DataEntity<SwmOneClickRecall> {
 
     private static final long serialVersionUID = 1L;
@@ -121,6 +123,11 @@ public class SwmOneClickRecall extends DataEntity<SwmOneClickRecall> {
     private Date recallTime;         // 召回时间
     private String recallResult;     // 召回结果
     private String deviceList;
+
+    //科利特设备列表
+    private String kltDeviceList;
+    //中泰设备列表
+    private String zTDeviceList;
     
     public SwmOneClickRecall() {
         this(null);

@@ -72,7 +72,7 @@ public class SwmVoiceTemplateCache implements ApplicationListener<ApplicationRea
                     continue;
                 }
                 for (SwmVoiceTemplate voiceTemplate : list) {
-                    if (voiceTemplate.getTemplateName() == null){
+                    if (voiceTemplate.getTemplateId() == null){
                         continue;
                     }
                     redisService.hset(corpCode +  SwmRedisConstant.RedisSwmKey.VOICE_TEMPLATE_CACHE, voiceTemplate.getTemplateId(), voiceTemplate.getTemplateName());
@@ -94,6 +94,9 @@ public class SwmVoiceTemplateCache implements ApplicationListener<ApplicationRea
      * 删除方法调用逻辑
      */
     public void delete(SwmVoiceTemplate voiceTemplate) {
+        if (voiceTemplate.getTemplateId() == null){
+            return;
+        }
         redisService.hdel(voiceTemplate.getCorpCode() +  SwmRedisConstant.RedisSwmKey.VOICE_TEMPLATE_CACHE, voiceTemplate.getTemplateId());
     }
 }

@@ -47,9 +47,6 @@ public class SwmBeaconStationCache implements ApplicationListener<ApplicationRea
 
         log.info("开始初始化设备缓存（全局）...");
 
-        //清理缓存
-        redisService.del(SwmRedisConstant.RedisGlobalKey.MAJOR_MINOR_TO_MAC);
-        redisService.del(SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY);
 
         List<User> corpList = userService.findCorpList(new User());
         if (CollectionUtils.isEmpty(corpList)) {
@@ -64,6 +61,10 @@ public class SwmBeaconStationCache implements ApplicationListener<ApplicationRea
 
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
             TenantContext.set(corpCode);
+
+            //清理缓存
+            redisService.del(corpCode + SwmRedisConstant.RedisSwmKey.MAJOR_MINOR_TO_MAC);
+            redisService.del(corpCode + SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY);
 
             log.info("处理租户：{}", corpCode);
 
@@ -82,7 +83,7 @@ public class SwmBeaconStationCache implements ApplicationListener<ApplicationRea
                 for (SwmBeaconStation beaconStation : stationList) {
                     String redisKey = beaconStation.getMajor() + "_" + beaconStation.getMinor();
                     if (StringUtils.isNotBlank(beaconStation.getMajor())){
-                        redisService.hset(SwmRedisConstant.RedisGlobalKey.MAJOR_MINOR_TO_MAC, redisKey, beaconStation.getBeaconId());
+                        redisService.hset(corpCode +SwmRedisConstant.RedisSwmKey.MAJOR_MINOR_TO_MAC, redisKey, beaconStation.getBeaconId());
                         log.info("写入缓存 key={},value={}", redisKey,beaconStation.getBeaconId());
                     }
 
@@ -105,14 +106,16 @@ public class SwmBeaconStationCache implements ApplicationListener<ApplicationRea
      * 新增方法
      */
     public void insertBeacon(SwmBeaconStation station) {
-        redisService.hset(SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY, station.getBeaconId(),station);
+        String corpCode = TenantContext.get();
+        redisService.hset(corpCode + SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY, station.getBeaconId(),station);
     }
 
     /**
      * 删除方法
      */
     public void deleteBeacon(SwmBeaconStation station) {
-        redisService.hdel(SwmRedisConstant.RedisGlobalKey.MAJOR_MINOR_TO_MAC, station.getMajor() + "_" + station.getMinor());
-        redisService.hdel(SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY, station.getBeaconId());
+        String corpCode = TenantContext.get();
+        redisService.hdel(corpCode +SwmRedisConstant.RedisSwmKey.MAJOR_MINOR_TO_MAC, station.getMajor() + "_" + station.getMinor());
+        redisService.hdel(corpCode +SwmRedisConstant.RedisSwmKey.BEACON_MAC_CACHE_KEY, station.getBeaconId());
     }
 }
