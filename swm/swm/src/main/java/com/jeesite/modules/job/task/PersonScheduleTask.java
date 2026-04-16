@@ -56,16 +56,16 @@ public class PersonScheduleTask {
         }
         //为每个租户都生成排班计划
         for (User user : corpList) {
-
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
-            //设置当前线程的租户信息
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
-            TenantContext.set(corpCode);
-            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
-
 
             try {
+
+                //设置当前线程的租户信息
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
+                XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
                 List<SwmPersonSchedule> insertList = new java.util.ArrayList<>();
 
                 //1.查询人员信息

@@ -58,12 +58,13 @@ public class InspectionPlanTask {
 
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
-            //设置当前线程的租户信息
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
-            TenantContext.set(corpCode);
-            XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
+
 
             try {
+                //设置当前线程的租户信息
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
+                XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
                 Date startTime = new Date();
                 XxlJobHelper.log("========== 开始执行巡检任务生成定时任务 ==========");
