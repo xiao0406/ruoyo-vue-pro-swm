@@ -2042,7 +2042,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             if (alarmDeviceId != null && !alarmDeviceId.isEmpty()){
                 for (DictData dictData : alarmDeviceId) {
                     String dictLabel = dictData.getDictLabel();
-                    idCardList.remove(dictLabel);
+                    idCardList.add(dictLabel);
                 }
             }
 
