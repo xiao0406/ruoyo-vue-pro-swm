@@ -2055,7 +2055,7 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     .collect(Collectors.joining(","));
 
             String sql = String.format(
-                    "SELECT * FROM %s.swm_warning_management_today WHERE type IN (%s) " +
+                    "SELECT id, id_card, type, warning_content, warning_time,person_name,trigger_reason,warning_type FROM %s.swm_warning_management_today WHERE type IN (%s) " +
                             "AND warning_time >= %d AND warning_time < %d " +
                             "AND warning_content NOT IN ('考勤打卡', '进入大门') " +
                             "AND front_alarm = '1' ",
