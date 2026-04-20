@@ -1737,7 +1737,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         LocalDateTime part1Start = LocalDateTime.of(today, LocalTime.MIN);
         LocalDateTime part1End = LocalDateTime.of(today, nightEnd);
 
-        LocalDateTime part2Start = LocalDateTime.of(today, nightStart);
+        LocalDateTime part2Start = LocalDateTime.of(today, nightStart).minusMinutes(30);
         LocalDateTime part2End = LocalDateTime.of(today, LocalTime.of(23,59,59));
 
         return attendances.stream()
