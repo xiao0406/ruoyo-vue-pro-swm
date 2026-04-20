@@ -1689,9 +1689,13 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         // ================== 查询排班 ==================
         SwmScheduleTime query = new SwmScheduleTime();
         query.setShiftType("1");
-        SwmScheduleTime day = timeService.findList(query).get(0);
+        List<SwmScheduleTime> dayList =timeService.findList(query);
+        if (dayList == null){
+            return null;
+        }
 
-        query.setShiftType("3");
+        SwmScheduleTime day = dayList.get(0);
+                query.setShiftType("3");
         SwmScheduleTime night = timeService.findList(query).get(0);
 
         // 当前时间
