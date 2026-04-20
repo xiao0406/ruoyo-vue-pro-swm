@@ -525,7 +525,7 @@
     </select>
     <select id="getWarnIdCardByFiveMinute" resultType="java.lang.String">
         SELECT
-            id_card
+            device_id
         FROM
             swm_warning_management
         WHERE
