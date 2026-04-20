@@ -2037,6 +2037,15 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             DateTime dateTime = DateUtil.offsetMinute(new Date(), -5);
             List<String> idCardList = this.dao.getWarnIdCardByFiveMinute(dateTime);
 
+            //TODO 这里有个白名单，只供研究院二楼演示使用,目的是取消上面5分钟限制
+            List<DictData> alarmDeviceId = DictUtils.getDictList("swm_sos_alarm_deviceId");
+            if (alarmDeviceId != null && !alarmDeviceId.isEmpty()){
+                for (DictData dictData : alarmDeviceId) {
+                    String dictValue = dictData.getDictValue();
+                    idCardList.remove(dictValue);
+                }
+            }
+
             // 2. 构建查询过去24小时数据的SQL
             // 获取当前时间往前24小时的时间范围（long时间戳本身就是UTC时间）
             Calendar cal = Calendar.getInstance();
