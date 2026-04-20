@@ -2038,13 +2038,16 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             List<String> idCardList = this.dao.getWarnIdCardByFiveMinute(dateTime);
 
             //TODO 这里有个白名单，只供研究院二楼演示使用,目的是取消上面5分钟限制
+            List<String> whiteList = new ArrayList<>();
             List<DictData> alarmDeviceId = DictUtils.getDictList("swm_sos_alarm_deviceId");
-            if (alarmDeviceId != null && !alarmDeviceId.isEmpty()){
+            if (alarmDeviceId != null) {
                 for (DictData dictData : alarmDeviceId) {
-                    String dictLabel = dictData.getDictLabel();
-                    idCardList.add(dictLabel);
+                    whiteList.add(dictData.getDictLabel());
                 }
             }
+            Set<String> finalExcludeSet = new HashSet<>();
+            finalExcludeSet.addAll(idCardList);
+            finalExcludeSet.addAll(whiteList);
 
             // 2. 构建查询过去24小时数据的SQL
             // 获取当前时间往前24小时的时间范围（long时间戳本身就是UTC时间）
@@ -2070,8 +2073,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                             "AND front_alarm = '1' ",
                     dbname, inCondition, todayStartTime, todayEndTime);
 
-            if (idCardList != null && !idCardList.isEmpty()){
-                String idcard = idCardList.stream()
+            if (finalExcludeSet != null && !finalExcludeSet.isEmpty()){
+                String idcard = finalExcludeSet.stream()
                         .map(key -> "'" + key + "'")
                         .collect(Collectors.joining(","));
                 sql += "AND id_card not in (" + idcard + ")";
