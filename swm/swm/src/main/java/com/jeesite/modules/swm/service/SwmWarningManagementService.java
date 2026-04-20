@@ -2041,8 +2041,8 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
             List<DictData> alarmDeviceId = DictUtils.getDictList("swm_sos_alarm_deviceId");
             if (alarmDeviceId != null && !alarmDeviceId.isEmpty()){
                 for (DictData dictData : alarmDeviceId) {
-                    String dictValue = dictData.getDictValue();
-                    idCardList.remove(dictValue);
+                    String dictLabel = dictData.getDictLabel();
+                    idCardList.remove(dictLabel);
                 }
             }
 
