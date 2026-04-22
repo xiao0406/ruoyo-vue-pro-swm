@@ -1449,13 +1449,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         Date startDate = vo.getAttendanceDate();
         Date endDate = DateUtil.offsetDay(startDate, 1);
 
-        // 获取库名
-        String corpCode = TenantContext.get();
-        String dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
 
         //  强制排序（关键）
         String sql = "select time,area_name,area_type from "
-                + dbNameNew + "." + TdengineSuperTableConstant.AREA_FENCE_DATA + "_" + deviceId + "_" + identityCard
+                +  "plb." + TdengineSuperTableConstant.AREA_FENCE_DATA + "_" + deviceId + "_" + identityCard
                 + " where time >= '" + DateUtil.format(startDate, DatePattern.NORM_DATE_PATTERN)
                 + "' and time <= '" + DateUtil.format(endDate, DatePattern.NORM_DATE_PATTERN)
                 + "' order by time asc limit 1000000";
