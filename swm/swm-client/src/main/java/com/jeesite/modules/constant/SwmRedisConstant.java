@@ -164,7 +164,7 @@ public class SwmRedisConstant {
         /**
          * 单个设备 TTL key 前缀
          */
-        public static final String DEVICE_TTL_KEY_PREFIX = SEPAR+IOT_PREFIX + "device:ttl:";
+        public static final String DEVICE_TTL_KEY_PREFIX = SEPAR+IOT_PREFIX + "devices:ttl:";
     }
 
 
