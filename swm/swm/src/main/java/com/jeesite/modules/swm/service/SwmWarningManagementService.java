@@ -2035,7 +2035,19 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
 
             //查询近5分钟所有人的确认，确认了则五分钟就不进行弹框
             DateTime dateTime = DateUtil.offsetMinute(new Date(), -5);
-            List<String> idCardList = this.dao.getWarnIdCardByFiveMinute(dateTime);
+            List<String> diviceIdList = this.dao.getWarnIdCardByFiveMinute(dateTime);
+
+            //TODO 这里有个白名单，只供研究院二楼演示使用,目的是取消上面5分钟限制
+            List<String> whiteList = new ArrayList<>();
+            List<DictData> alarmDeviceId = DictUtils.getDictList("swm_sos_alarm_deviceId");
+            if (alarmDeviceId != null) {
+                for (DictData dictData : alarmDeviceId) {
+                    whiteList.add(dictData.getDictLabel());
+                }
+            }
+            Set<String> finalExcludeSet = new HashSet<>();
+            finalExcludeSet.addAll(diviceIdList);
+            finalExcludeSet.addAll(whiteList);
 
             // 2. 构建查询过去24小时数据的SQL
             // 获取当前时间往前24小时的时间范围（long时间戳本身就是UTC时间）
@@ -2055,17 +2067,17 @@ public class SwmWarningManagementService extends CrudService<SwmWarningManagemen
                     .collect(Collectors.joining(","));
 
             String sql = String.format(
-                    "SELECT * FROM %s.swm_warning_management_today WHERE type IN (%s) " +
+                    "SELECT id, id_card, type, warning_content, warning_time,person_name,trigger_reason,warning_type FROM %s.swm_warning_management_today WHERE type IN (%s) " +
                             "AND warning_time >= %d AND warning_time < %d " +
                             "AND warning_content NOT IN ('考勤打卡', '进入大门') " +
                             "AND front_alarm = '1' ",
                     dbname, inCondition, todayStartTime, todayEndTime);
 
-            if (idCardList != null && !idCardList.isEmpty()){
-                String idcard = idCardList.stream()
+            if (finalExcludeSet != null && !finalExcludeSet.isEmpty()){
+                String deviceId = finalExcludeSet.stream()
                         .map(key -> "'" + key + "'")
                         .collect(Collectors.joining(","));
-                sql += "AND id_card not in (" + idcard + ")";
+                sql += "AND device_id not in (" + deviceId + ")";
             }
 
             sql +="ORDER BY warning_time DESC";

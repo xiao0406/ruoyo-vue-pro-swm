@@ -151,25 +151,32 @@ public class ClearTdengineTableDataTask {
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
 
-            // 设置当前线程租户
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
-            TenantContext.set(corpCode);
+            try {
+                // 设置当前线程租户
+                CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
 
-            SwmHelmetDevice device = new SwmHelmetDevice();
-            device.setRandom(new Random().nextInt(1_000_000));  // 防止一级缓存
+                SwmHelmetDevice device = new SwmHelmetDevice();
+                device.setRandom(new Random().nextInt(1_000_000));  // 防止一级缓存
+                device.setCorpCode(corpCode);
+                List<SwmHelmetDevice> deviceList = deviceService.findDeviceCorpMapping(device);
+                for (SwmHelmetDevice helmetDevice : deviceList) {
+                    String deviceId = helmetDevice.getDeviceId();
+                    String idcard = helmetDevice.getAssignedPerson();
 
-            List<SwmHelmetDevice> deviceList = deviceService.findDeviceCorpMapping(device);
-            for (SwmHelmetDevice helmetDevice : deviceList) {
-                String deviceId = helmetDevice.getDeviceId();
-                String idcard = helmetDevice.getAssignedPerson();
+                    String dbName = CorpDbEnum.getDbNameByCorpCode(corpCode);
 
-                String dbName = CorpDbEnum.getDbNameByCorpCode(corpCode);
-
-                String deleteSql = "DELETE FROM " + dbName + "." +  TdengineSuperTableConstant.EXTERNAL_COORDINATE_DATA +
-                        "_" +deviceId + "_"+ idcard +
-                        " WHERE time < '" + cutoffStr + "'";
-                tDengineService.executeTDengineSQLByXXJOB(deleteSql, corpCode);
-                XxlJobHelper.log("清理external_coordinate_data表数据 SQL: {}", deleteSql);
+                    String deleteSql = "DELETE FROM " + dbName + "." +  TdengineSuperTableConstant.EXTERNAL_COORDINATE_DATA +
+                            "_" +deviceId + "_"+ idcard +
+                            " WHERE time < '" + cutoffStr + "'";
+                    tDengineService.executeTDengineSQLByXXJOB(deleteSql, corpCode);
+                    XxlJobHelper.log("清理external_coordinate_data表数据 SQL: {}", deleteSql);
+                }
+            }catch (Exception e){
+                XxlJobHelper.log("清理external_coordinate_data表数据异常: {}", e.getMessage());
+            }finally {
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
 
         }

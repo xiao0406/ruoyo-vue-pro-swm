@@ -1689,10 +1689,18 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         // ================== 查询排班 ==================
         SwmScheduleTime query = new SwmScheduleTime();
         query.setShiftType("1");
-        SwmScheduleTime day = timeService.findList(query).get(0);
+        List<SwmScheduleTime> dayList =timeService.findList(query);
+        if (CollectionUtils.isEmpty(dayList)){
+            return null;
+        }
 
+        SwmScheduleTime day = dayList.get(0);
         query.setShiftType("3");
-        SwmScheduleTime night = timeService.findList(query).get(0);
+        List<SwmScheduleTime> nightList = timeService.findList(query);
+        if (CollectionUtils.isEmpty(nightList)){
+            return null;
+        }
+        SwmScheduleTime night = nightList.get(0);
 
         // 当前时间
         LocalDateTime now = LocalDateTime.now();
@@ -1737,7 +1745,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         LocalDateTime part1Start = LocalDateTime.of(today, LocalTime.MIN);
         LocalDateTime part1End = LocalDateTime.of(today, nightEnd);
 
-        LocalDateTime part2Start = LocalDateTime.of(today, nightStart);
+        LocalDateTime part2Start = LocalDateTime.of(today, nightStart).minusMinutes(30);
         LocalDateTime part2End = LocalDateTime.of(today, LocalTime.of(23,59,59));
 
         return attendances.stream()
