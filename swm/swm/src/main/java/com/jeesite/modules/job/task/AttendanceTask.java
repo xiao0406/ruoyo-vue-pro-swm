@@ -1442,9 +1442,26 @@ public class AttendanceTask {
     public void calculateAttendanceByTimeRange() {
         SwmJobLog jobLog = new SwmJobLog();
         jobLog.setJobName("calculateAttendanceByTimeRange");
-        jobLog.setStartTime(new Date());
+        Date date = new Date();
+        jobLog.setStartTime(date);
         jobLog.setExecuteStatus("1"); // 默认失败
 
+        //解析参数
+        String jobParam = XxlJobHelper.getJobParam();
+        Map<String, String> paramMap = parseJobParams(jobParam);
+        if (paramMap != null){
+            String dateStr = paramMap.get("date");
+            if (StringUtils.isNotBlank(dateStr)) {
+                try {
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    Date parse = dateFormat.parse(dateStr);
+                    date = parse;
+                    XxlJobHelper.log("使用指定日期: {}", dateStr);
+                }catch (Exception e) {
+                    XxlJobHelper.log("传参解析错误{}", e);
+                }
+            }
+        }
 
         //获取系统所有租户信息
         List<User> corpList = userService.findCorpList(new User());
@@ -1468,14 +1485,13 @@ public class AttendanceTask {
                 XxlJobHelper.log("开始执行自定义时间范围考勤计算任务...");
 
                 // 保存任务参数
-                String jobParam = XxlJobHelper.getJobParam();
                 jobLog.setJobParam(jobParam);
                 swmJobLogService.save(jobLog);
                 jobLog.setIsNewRecord(false);
 
                 // 1. 解析参数
                 SwmDailyAttendance params = new SwmDailyAttendance();
-                params.setAttendanceDate(new Date());
+                params.setAttendanceDate(date);
                 // 2. 查询待处理记录
                 params.setRandom(new Random().nextInt(1_000_000));
                 List<SwmDailyAttendance> records = swmDailyAttendanceService.findList(params);
