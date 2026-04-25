@@ -63,7 +63,7 @@
 		SELECT 
 		    dict_value AS id,
 		    dict_label AS title
-		FROM js_sys_dict_data 
+		FROM swm_dict_data
 		WHERE dict_type = 'person_type_enum' 
 		  AND status = '0'
 	</select>

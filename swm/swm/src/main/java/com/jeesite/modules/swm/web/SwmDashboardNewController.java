@@ -107,6 +107,9 @@ public class SwmDashboardNewController extends BaseController {
             long todayAttendanceCount = 0;
             long todayAttendanceWorkerCount = 0;
             long todayAttendanceManagerCount = 0;
+            if (CollectionUtils.isEmpty(attndances)){
+                return result;
+            }
 
             for (SwmDailyAttendance attndance : attndances) {
                 String type  = attndance.getPersonType();
@@ -147,7 +150,11 @@ public class SwmDashboardNewController extends BaseController {
         SwmScheduleTime query = new SwmScheduleTime();
         // 白班
         query.setShiftType("1");
-        SwmScheduleTime day = timeService.findList(query).get(0);
+        List<SwmScheduleTime> list = timeService.findList(query);
+        if (CollectionUtils.isEmpty(list)){
+            return null;
+        }
+        SwmScheduleTime day = list.get(0);
         String startTime = day.getStartTime(); // "07:30"
         String endTime = day.getEndTime(); // "18:00"
         int dayStartHour = getStartHour(startTime);   // 7
@@ -155,7 +162,11 @@ public class SwmDashboardNewController extends BaseController {
 
         // 夜班
         query.setShiftType("3");
-        SwmScheduleTime night = timeService.findList(query).get(0);
+        List<SwmScheduleTime> list1 = timeService.findList(query);
+        if (CollectionUtils.isEmpty(list1)){
+            return null;
+        }
+        SwmScheduleTime night = list1.get(0);
         String nightStartTime = night.getStartTime(); // "18:00"
         String nightEndTime = night.getEndTime(); // "03:40"
         int nightStartHour = getStartHour(nightStartTime); // 18
@@ -517,7 +528,9 @@ public class SwmDashboardNewController extends BaseController {
                     && (!a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER))).count();
 
             long totalCount = swmPersonList.stream().filter(a -> !a.getPersonType().equals(SwmPerson.PersonTypeEnum.MANAGER)).count();
-            BigDecimal divide = BigDecimal.valueOf(attCount).divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP);
+
+//            BigDecimal divide = BigDecimal.valueOf(attCount).divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP);
+            BigDecimal divide = totalCount == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(attCount).divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP);
             result.put("todayAttendanceRate", divide.multiply(BigDecimal.valueOf(100)).toString());
         }
         return result;

@@ -78,10 +78,10 @@ public class SwmPerson extends DataEntity<SwmPerson> {
         /**
          * 获取人员状态显示文本
          */
-        public static String getText(String value) {
-            String label = DictUtils.getDictLabel("person_type_enum", value, "");
-            return label;
-        }
+//        public static String getText(String value) {
+//            String label = DictUtils.getDictLabel("person_type_enum", value, "");
+//            return label;
+//        }
     }
 
     /**

@@ -14,7 +14,7 @@ public class SwmPersonDtoExport {
             @ExcelField(title="性别", attrName = "gender",align = ExcelField.Align.CENTER, sort = 30),
             @ExcelField(title="手机号码", attrName = "phoneNumber",align = ExcelField.Align.CENTER, sort = 40),
             @ExcelField(title="是否厂内员工", attrName = "isExternalPersonnel",align = ExcelField.Align.CENTER,dictType = "external_personnel_enum", sort = 50),
-            @ExcelField(title="人员类型", attrName = "personType",align = ExcelField.Align.CENTER,dictType = "person_type_enum", sort = 60),
+            @ExcelField(title="人员类型", attrName = "personType",align = ExcelField.Align.CENTER, sort = 60),
             @ExcelField(title="所属单位", attrName = "company",align = ExcelField.Align.CENTER, sort = 70),
             @ExcelField(title="所属车间", attrName = "department",align = ExcelField.Align.CENTER, sort = 80),
             @ExcelField(title="所属产线", attrName = "prodLine",align = ExcelField.Align.CENTER, sort = 90),

@@ -1,8 +1,10 @@
 package com.jeesite.modules.swm.service;
 
+import com.alibaba.cloud.commons.lang.StringUtils;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
+import com.jeesite.modules.swm.entity.SwmDictData;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.service.UserService;
@@ -17,6 +19,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 人员Redis缓存服务
@@ -36,6 +39,8 @@ public class SwmPersonCacheService implements ApplicationListener<ApplicationRea
     private SwmPersonDao swmPersonDao;
     @Autowired
     private UserService userService;
+    @Autowired
+    private SwmDictDataService swmDictDataService;
 
 
     @Override
@@ -88,6 +93,13 @@ public class SwmPersonCacheService implements ApplicationListener<ApplicationRea
                 // 使用自定义SQL查询获取包含各表ID的完整人员信息
                 List<Map<String, Object>> activePersonsWithIds = swmPersonDao.findActivePersonsWithIds(random,null);
 
+                SwmDictData dictData = new SwmDictData();
+                dictData.setDictType("person_type_enum");
+                List<SwmDictData> personTypeList = swmDictDataService.findList(dictData);
+                Map<String, String> personTypeMap = personTypeList.stream().collect(Collectors.toMap(SwmDictData::getDictValue, SwmDictData::getDictLabel));
+
+
+
                 if (activePersonsWithIds == null || activePersonsWithIds.isEmpty()) {
                     log.warn("未查询到在职人员数据");
                     continue;
@@ -99,6 +111,13 @@ public class SwmPersonCacheService implements ApplicationListener<ApplicationRea
                 for (Map<String, Object> personData : activePersonsWithIds) {
                     String personId = (String) personData.get("id");
                     String identityCard = (String) personData.get("identityCard");
+                    if (personData.get("personType") != null) {
+                        String personType = personData.get("personType").toString();
+                        String s = personTypeMap.get(personType);
+                        String dictLabel = StringUtils.isNotEmpty(s) ? s : "未知类型";
+//                        String dictLabel = DictUtils.getDictLabel("person_type_enum", personType, "未知类型");
+                        personData.put("personType", dictLabel);
+                    }
 
                     // 构建缓存的人员信息（包含各表ID）
                     Map<String, Object> personInfo = buildPersonCacheInfoWithIds(personData);
@@ -194,6 +213,7 @@ public class SwmPersonCacheService implements ApplicationListener<ApplicationRea
     private Map<String, Object> buildPersonCacheInfoWithIds(Map<String, Object> personData) {
         Map<String, Object> personInfo = new HashMap<>();
 
+
         // 基本字段
         personInfo.put("id", personData.get("id")); // 人员ID
         personInfo.put("name", personData.get("name")); // 姓名
@@ -205,8 +225,8 @@ public class SwmPersonCacheService implements ApplicationListener<ApplicationRea
         personInfo.put("identityCard", personData.get("identityCard")); // 身份证号码
         if (personData.get("personType") != null) {
             String personType = personData.get("personType").toString();
-            String dictLabel = DictUtils.getDictLabel("person_type_enum", personType, "未知类型");
-            personInfo.put("personType", dictLabel);
+//            String dictLabel = DictUtils.getDictLabel("person_type_enum", personType, "未知类型");
+            personInfo.put("personType", personType);
         }
 
 

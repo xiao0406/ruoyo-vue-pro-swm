@@ -37,7 +37,7 @@ public class SwmDailyAttendanceExportEntity {
     @ExcelFields({
             @ExcelField(title = "员工ID", attrName = "employeeId", align = ExcelField.Align.CENTER, sort = 10),
             @ExcelField(title = "员工姓名", attrName = "employeeName", align = ExcelField.Align.CENTER, sort = 20),
-            @ExcelField(title = "人员类型", attrName = "personType", align = ExcelField.Align.CENTER, sort = 30, dictType = "person_type_enum"),
+            @ExcelField(title = "人员类型", attrName = "personType", align = ExcelField.Align.CENTER, sort = 30),
             @ExcelField(title = "考勤日期", attrName = "attendanceDate", align = ExcelField.Align.CENTER, sort = 40, dataFormat = "yyyy-MM-dd"),
             @ExcelField(title = "应考勤时间范围", attrName = "workTimeRange", align = ExcelField.Align.CENTER, sort = 50),
             @ExcelField(title = "上班打卡时间", attrName = "clockInTime", align = ExcelField.Align.CENTER, sort = 60, dataFormat = "HH:mm:ss"),
