@@ -95,6 +95,8 @@ public class SwmPersonController extends BaseController {
 
     @Autowired
     private MqSendUtil mqSendUtil;
+    @Autowired
+    private SwmDictDataService swmDictDataService;
 
 
 
@@ -2290,6 +2292,14 @@ public class SwmPersonController extends BaseController {
     public String export(SwmPerson swmPerson, HttpServletRequest request, HttpServletResponse response) {
 
         Page<SwmPerson> page = swmPersonService.findPage(new Page<>(1, 99999), swmPerson);
+        SwmDictData dictData = new SwmDictData();
+        dictData.setDictType("person_type_enum");
+        List<SwmDictData> personTypeList = swmDictDataService.findList(dictData);
+        if (personTypeList == null || personTypeList.isEmpty()){
+            return renderResult(Global.FALSE, text("请先添加人员类型字典"));
+        }
+        Map<String, String> personTypeMap = personTypeList.stream().collect(Collectors.toMap(SwmDictData::getDictValue, SwmDictData::getDictLabel));
+
 
         String name;
         List<SwmPerson> list = page.getList();
@@ -2297,6 +2307,7 @@ public class SwmPersonController extends BaseController {
         for (SwmPerson person : list) {
             SwmPersonDtoExport export = new SwmPersonDtoExport();
             BeanUtils.copyProperties(person, export);
+            export.setPersonType(personTypeMap.get(person.getPersonType()));
             exportList.add(export);
         }
 

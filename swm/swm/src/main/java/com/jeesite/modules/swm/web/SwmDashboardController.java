@@ -20,6 +20,7 @@ import com.jeesite.modules.sys.utils.DictUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.shiro.session.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -86,6 +87,8 @@ public class SwmDashboardController extends BaseController {
     @Qualifier("swmExecutor")
     @Autowired
     private ThreadPoolTaskExecutor swmExecutor;
+    @Autowired
+    private SwmDictDataService swmDictDataService;
 
     /**
      * 获取启用状态的地图路径
@@ -1519,6 +1522,22 @@ public class SwmDashboardController extends BaseController {
 
         //根据传过来的时间，获取班次数据
         List<SwmDailyAttendance> todayAttendances = swmDailyAttendanceService.getShiftType(shiftType,attendances);
+        if (CollectionUtils.isEmpty(todayAttendances)){
+            return null;
+        }
+
+        SwmDictData swmDictData = new SwmDictData();
+        swmDictData.setDictType("person_type_enum");
+        List<SwmDictData> personTypeEnum = swmDictDataService.findList(swmDictData);
+        if (CollectionUtils.isEmpty(personTypeEnum)){
+            return null;
+        }
+        Map<String, SwmDictData> personTypeMap = personTypeEnum.stream()
+                .collect(Collectors.toMap(
+                        SwmDictData::getDictValue,
+                        e -> e,
+                        (a, b) -> b
+                ));
 
         // 对todayAttendances按personType进行分组
         Map<String, List<SwmDailyAttendance>> groupedByPersonType = todayAttendances.stream()
@@ -1527,14 +1546,18 @@ public class SwmDashboardController extends BaseController {
         List<Map<String, Object>> resultList = new ArrayList<>();
         for (Map.Entry<String, List<SwmDailyAttendance>> entry : groupedByPersonType.entrySet()) {
             Map<String, Object> result = new HashMap<>();
-            List<DictData> personTypeEnum = DictUtils.getDictList("person_type_enum");
-            for (DictData dictData : personTypeEnum) {
+
+
+//            List<DictData> personTypeEnum = DictUtils.getDictList("person_type_enum");
+
+            for (SwmDictData dictData : personTypeEnum) {
                 result.put("name", dictData.getDictLabel());
                 result.put("presentCount", 0L);
             }
             
             String key = entry.getKey();
-            DictData dictData = DictUtils.getDictData("person_type_enum", key);
+//            DictData dictData = DictUtils.getDictData("person_type_enum", key);
+            SwmDictData dictData = personTypeMap.get(key);
             Long number = 0L;
             List<SwmDailyAttendance> value = entry.getValue();
             // 统计打卡人数

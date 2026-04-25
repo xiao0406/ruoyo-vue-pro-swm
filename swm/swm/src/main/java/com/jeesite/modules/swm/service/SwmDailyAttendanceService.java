@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
@@ -74,6 +75,9 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     @Autowired
     private SwmScheduleTimeService timeService;
+
+    @Autowired
+    private SwmDictDataService swmDictDataService;
 
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
@@ -878,13 +882,20 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     public List<SwmDailyAttendanceExportEntity> convertToExportList(List<SwmDailyAttendance> attendanceList) {
         List<SwmDailyAttendanceExportEntity> exportList = new ArrayList<>();
 
+        //人员类型，之前是字典，现在换了张表，通过查表获取
+        SwmDictData dictData = new SwmDictData();
+        dictData.setDictType("person_type_enum");
+        List<SwmDictData> personTypeList = swmDictDataService.findList(dictData);
+        Map<String, String> personTypeMap = personTypeList.stream().collect(Collectors.toMap(SwmDictData::getDictValue, SwmDictData::getDictLabel));
+
         for (SwmDailyAttendance attendance : attendanceList) {
             SwmDailyAttendanceExportEntity exportEntity = new SwmDailyAttendanceExportEntity();
 
             // 复制基本字段
             exportEntity.setEmployeeId(attendance.getEmployeeId());
             exportEntity.setEmployeeName(attendance.getEmployeeName());
-            exportEntity.setPersonType(attendance.getPersonType());
+            String personType = personTypeMap.get(attendance.getPersonType());
+            exportEntity.setPersonType(personType);
             exportEntity.setAttendanceDate(attendance.getAttendanceDate());
             exportEntity.setWorkTimeRange(attendance.getWorkTimeRange());
             exportEntity.setClockInTime(attendance.getClockInTime());

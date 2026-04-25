@@ -92,7 +92,7 @@
     <!-- 根据人员类型名称获取编码 -->
     <select id="getPersonTypeCodeByName" resultType="String">
         SELECT dict_value 
-        FROM js_sys_dict_data 
+        FROM swm_dict_data
         WHERE dict_type = 'person_type_enum' 
         AND dict_label = #{personTypeName}
         AND status = '0'

@@ -77,7 +77,7 @@ public class AttendanceTask {
     private ThreadPoolTaskExecutor swmExecutor;
     
     // 定义常量
-    private static final long CONTINUITY_THRESHOLD_MS = 10 * 60 * 1000; // 10分钟连续性阈值
+    private static final long CONTINUITY_THRESHOLD_MS = 1 * 60 * 1000; // 10分钟连续性阈值
     private static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /**
