@@ -42,7 +42,7 @@
     </sql>
 
     <!-- 获取单条信标，并补齐建筑/楼层名称 -->
-    <select id="get" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="get" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT
             <include refid="swmBeaconStationQueryColumns"/>
         FROM swm_beacon_station a
@@ -63,7 +63,7 @@
     </select>
 
     <!-- 查询信标列表，并按建筑名称、楼层ID过滤 -->
-    <select id="findList" resultType="com.jeesite.modules.swm.entity.SwmBeaconStation">
+    <select id="findList" resultType="com.jeesite.modules.entity.SwmBeaconStation">
         SELECT
             <include refid="swmBeaconStationQueryColumns"/>
         FROM swm_beacon_station a
