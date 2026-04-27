@@ -253,6 +253,9 @@ public class SwmDictDataController extends BaseController {
 	public DictData form(SwmDictData dictData, Model model) {
 //		dictData = createNextNode(dictData);
 		SwmDictData swmDictData = swmDictDataService.get(dictData);
+		if (swmDictData == null) {
+			return new DictData();
+		}
 		DictData dictData1 = new DictData();
 		BeanUtils.copyProperties(swmDictData, dictData1);
 		return dictData1;

@@ -1566,7 +1566,13 @@ public class SwmDashboardController extends BaseController {
                     number++;
                 }
             }
-            result.put("name", dictData.getDictLabel());
+            String name;
+            if (dictData == null) {
+                name = "未知工种";
+            } else {
+                name = StringUtils.isBlank(dictData.getDictLabel()) ? "未知工种" : dictData.getDictLabel();
+            }
+            result.put("name", name);
             result.put("presentCount", number);
             // 创建子列表，包含具体工种信息
             List<Map<String, Object>> childResultList = new ArrayList<>();

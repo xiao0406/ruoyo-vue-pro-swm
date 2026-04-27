@@ -145,6 +145,9 @@ public class SwmDictTypeController extends BaseController {
             swmDictType.setIsSys("1");
         }
         SwmDictType swmDictType1 = swmDictTypeService.get(swmDictType);
+        if (swmDictType1 == null) {
+           return new DictType();
+        }
         DictType dictType = new DictType();
         BeanUtils.copyProperties(swmDictType1, dictType);
         return dictType;
