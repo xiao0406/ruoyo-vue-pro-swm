@@ -1,6 +1,6 @@
 /**
  * @author Shawn
- * @date 2025-05-14
+ * @date 2026-04-08
  */
 package com.jeesite.modules.swm.service;
 
@@ -11,9 +11,18 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.swm.dao.SwmBeaconStationDao;
 import com.jeesite.modules.entity.SwmBeaconStation;
+import com.jeesite.modules.swm.entity.SwmArea;
+import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.util.MqSendUtil;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.entity.SwmBeaconStationExport;
+import com.jeesite.modules.sys.utils.CorpUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +49,10 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     private SwmAreaService swmAreaService;
 
     @Autowired
+    @Lazy
+    private SwmSiteMapManagementService swmSiteMapManagementService;
+
+    @Autowired
     private MqSendUtil mqSendUtil;
 
     /**
@@ -50,6 +63,7 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
      */
     @Override
     public SwmBeaconStation get(SwmBeaconStation swmBeaconStation) {
+        fillCurrentCorpCode(swmBeaconStation);
         return super.get(swmBeaconStation);
     }
 
@@ -61,7 +75,20 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
      */
     @Override
     public Page<SwmBeaconStation> findPage(SwmBeaconStation swmBeaconStation) {
+        fillCurrentCorpCode(swmBeaconStation);
         return super.findPage(swmBeaconStation);
+    }
+
+    /**
+     * 查询列表数据
+     *
+     * @param swmBeaconStation 查询条件
+     * @return 列表数据
+     */
+    @Override
+    public List<SwmBeaconStation> findList(SwmBeaconStation swmBeaconStation) {
+        fillCurrentCorpCode(swmBeaconStation);
+        return super.findList(swmBeaconStation);
     }
 
     /**
@@ -340,6 +367,264 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     }
 
     /**
+     * 获取信标所属区域下拉选项
+     *
+     * 大白话说，就是先从当前信标列表里把真正用到的区域ID找出来，
+     * 再去区域表翻译成人能看懂的名字，翻译不到就直接回退显示ID。
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @return 下拉选项列表
+     */
+    public List<Map<String, Object>> getAreaOptionsFromBeacon() {
+        try {
+            logger.info("开始获取信标所属区域下拉选项");
+
+            // 先按当前信标列表口径拿出去重后的区域ID，保持和现有列表范围一致。
+            SwmBeaconStation query = new SwmBeaconStation();
+            fillCurrentCorpCode(query);
+            List<String> areaIds = filterValidAreaIds(dao.findAreaOptionsFromBeacon(query));
+            if (CollectionUtil.isEmpty(areaIds)) {
+                logger.info("当前信标列表没有可用的所属区域，下拉选项返回空列表");
+                return new ArrayList<>();
+            }
+
+            // 再批量翻译区域名称，避免一个ID查一次数据库。
+            Map<String, String> areaNameMap = buildAreaNameMap(areaIds, query.getCorpCode());
+            List<Map<String, Object>> options = buildAreaOptions(areaIds, areaNameMap);
+
+            logger.info("获取信标所属区域下拉选项成功，areaCount={}", options.size());
+            return options;
+        } catch (Exception e) {
+            logger.error("获取信标所属区域下拉选项失败", e);
+            throw new RuntimeException("获取信标所属区域下拉选项失败", e);
+        }
+    }
+
+    /**
+     * 获取信标所属楼层下拉选项
+     *
+     * 大白话说，就是先从当前信标列表里把真正用到的楼层ID找出来，
+     * 再去底图表翻译成人能看懂的楼层名，翻译不到就直接回退显示ID。
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @return 下拉选项列表
+     */
+    public List<Map<String, Object>> getFloorOptionsFromBeacon() {
+        try {
+            logger.info("开始获取信标所属楼层下拉选项");
+
+            // 先按当前信标列表口径拿出去重后的楼层ID，保持和现有列表范围一致。
+            SwmBeaconStation query = new SwmBeaconStation();
+            fillCurrentCorpCode(query);
+            List<String> floorIds = filterValidAreaIds(dao.findFloorOptionsFromBeacon(query));
+            if (CollectionUtil.isEmpty(floorIds)) {
+                logger.info("当前信标列表没有可用的所属楼层，下拉选项返回空列表");
+                return new ArrayList<>();
+            }
+
+            // 再批量翻译楼层名称，避免一个ID查一次数据库。
+            Map<String, String> floorNameMap = buildFloorNameMap(floorIds, query.getCorpCode());
+            List<Map<String, Object>> options = buildFloorOptions(floorIds, floorNameMap);
+
+            logger.info("获取信标所属楼层下拉选项成功，floorCount={}", options.size());
+            return options;
+        } catch (Exception e) {
+            logger.error("获取信标所属楼层下拉选项失败", e);
+            throw new RuntimeException("获取信标所属楼层下拉选项失败", e);
+        }
+    }
+
+    /**
+     * 过滤空值、空串和只有空格的区域ID
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @param areaIds 原始区域ID列表
+     * @return 清洗后的区域ID列表
+     */
+    private List<String> filterValidAreaIds(List<String> areaIds) {
+        if (CollectionUtil.isEmpty(areaIds)) {
+            return new ArrayList<>();
+        }
+
+        List<String> validAreaIds = new ArrayList<>();
+
+        // 这里统一做一次trim，避免数据库里有前后空格导致翻译失败。
+        for (String areaId : areaIds) {
+            if (StringUtils.isBlank(areaId)) {
+                continue;
+            }
+
+            validAreaIds.add(areaId.trim());
+        }
+        return validAreaIds;
+    }
+
+    /**
+     * 批量构建区域ID到区域名称的映射
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @param areaIds 区域ID列表
+     * @return 区域名称映射
+     */
+    private Map<String, String> buildAreaNameMap(List<String> areaIds, String corpCode) {
+        Map<String, String> areaNameMap = new HashMap<>();
+        if (CollectionUtil.isEmpty(areaIds)) {
+            return areaNameMap;
+        }
+
+        // 这里不额外限制区域状态，尽量把历史区域名称也翻译出来。
+        List<Map<String, Object>> areaMappings = dao.findAreaNameMappings(areaIds, corpCode);
+        if (CollectionUtil.isEmpty(areaMappings)) {
+            return areaNameMap;
+        }
+
+        for (Map<String, Object> areaMapping : areaMappings) {
+            if (areaMapping == null || areaMapping.isEmpty()) {
+                continue;
+            }
+
+            String areaId = toTrimmedString(areaMapping.get("value"));
+            String areaName = toTrimmedString(areaMapping.get("label"));
+            if (StringUtils.isAnyBlank(areaId, areaName)) {
+                continue;
+            }
+
+            areaNameMap.put(areaId, areaName);
+        }
+        return areaNameMap;
+    }
+
+    /**
+     * 批量构建楼层ID到楼层名称的映射
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @param floorIds 楼层ID列表
+     * @return 楼层名称映射
+     */
+    private Map<String, String> buildFloorNameMap(List<String> floorIds, String corpCode) {
+        Map<String, String> floorNameMap = new HashMap<>();
+        if (CollectionUtil.isEmpty(floorIds)) {
+            return floorNameMap;
+        }
+
+        // 楼层名统一从底图表翻译，只认 floor 节点，避免把建筑节点名称带进来。
+        List<Map<String, Object>> floorMappings = dao.findFloorNameMappings(floorIds, corpCode);
+        if (CollectionUtil.isEmpty(floorMappings)) {
+            return floorNameMap;
+        }
+
+        for (Map<String, Object> floorMapping : floorMappings) {
+            if (floorMapping == null || floorMapping.isEmpty()) {
+                continue;
+            }
+
+            String floorId = toTrimmedString(floorMapping.get("value"));
+            String floorName = toTrimmedString(floorMapping.get("label"));
+            if (StringUtils.isAnyBlank(floorId, floorName)) {
+                continue;
+            }
+
+            floorNameMap.put(floorId, floorName);
+        }
+        return floorNameMap;
+    }
+
+    /**
+     * 把区域ID列表组装成前端可直接使用的下拉结构
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @param areaIds 区域ID列表
+     * @param areaNameMap 区域名称映射
+     * @return 下拉选项列表
+     */
+    private List<Map<String, Object>> buildAreaOptions(List<String> areaIds, Map<String, String> areaNameMap) {
+        List<Map<String, Object>> options = new ArrayList<>();
+        if (CollectionUtil.isEmpty(areaIds)) {
+            return options;
+        }
+
+        for (String areaId : areaIds) {
+            String displayName = areaNameMap.get(areaId);
+            if (StringUtils.isBlank(displayName)) {
+                displayName = areaId;
+            }
+
+            Map<String, Object> option = new HashMap<>();
+            option.put("value", areaId);
+            option.put("label", displayName);
+            option.put("areaName", displayName);
+            options.add(option);
+        }
+        return options;
+    }
+
+    /**
+     * 把楼层ID列表组装成前端可直接使用的下拉结构
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @param floorIds 楼层ID列表
+     * @param floorNameMap 楼层名称映射
+     * @return 下拉选项列表
+     */
+    private List<Map<String, Object>> buildFloorOptions(List<String> floorIds, Map<String, String> floorNameMap) {
+        List<Map<String, Object>> options = new ArrayList<>();
+        if (CollectionUtil.isEmpty(floorIds)) {
+            return options;
+        }
+
+        for (String floorId : floorIds) {
+            String displayName = floorNameMap.get(floorId);
+            if (StringUtils.isBlank(displayName)) {
+                displayName = floorId;
+            }
+
+            Map<String, Object> option = new HashMap<>();
+            option.put("value", floorId);
+            option.put("label", displayName);
+            option.put("floorName", displayName);
+            options.add(option);
+        }
+        return options;
+    }
+
+    /**
+     * 把对象安全转成去空格后的字符串
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @param value 原始值
+     * @return 去空格后的字符串
+     */
+    private String toTrimmedString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        return value.toString().trim();
+    }
+
+    /**
+     * 给查询对象补上当前租户，避免手写SQL漏掉多租户条件。
+     *
+     * @param swmBeaconStation 信标查询对象
+     */
+    private void fillCurrentCorpCode(SwmBeaconStation swmBeaconStation) {
+        if (swmBeaconStation == null) {
+            return;
+        }
+        if (StringUtils.isNotBlank(swmBeaconStation.getCorpCode())) {
+            return;
+        }
+        swmBeaconStation.setCorpCode(CorpUtils.getCurrentCorpCode());
+    }
+
+    /**
      * 根据精确的像素坐标查找信标
      * 
      * @author Shawn
@@ -481,6 +766,129 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         return resultList;
     }
 
+    /**
+     * 导出算法格式数据
+     *
+     * 大白话：按楼层ID分组返回信标数据，MAC地址格式转换为小写+冒号分隔，
+     * 只查常规信标（beaconType=1），按租户过滤。
+     * 无 floorId 的信标归入当前租户下启用的顶级地图记录 id 作为默认楼层分组。
+     *
+     * @author Shawn
+     * @date 2026-04-09
+     * @return 按楼层分组的信标算法数据
+     */
+    public Map<String, Map<String, Object>> exportAlgorithmFormat() {
+        logger.info("开始导出信标算法格式数据");
+
+        // 1. 获取默认楼层ID：当前租户下 status='0' 的第一条顶级地图记录 id
+        String defaultFloorId = null;
+        try {
+            SwmSiteMapManagement activeMap = swmSiteMapManagementService.findActiveMap();
+            if (activeMap != null && StringUtils.isNotBlank(activeMap.getId())) {
+                defaultFloorId = activeMap.getId();
+                logger.info("获取到默认楼层ID: {}", defaultFloorId);
+            }
+        } catch (Exception e) {
+            logger.warn("查询默认楼层失败，继续导出有 floorId 的信标", e);
+        }
+
+        // 2. 创建查询条件，只查常规信标
+        SwmBeaconStation query = new SwmBeaconStation();
+        fillCurrentCorpCode(query);
+        query.setBeaconType(SwmBeaconStation.BeaconTypeEnum.CONVENTION);
+
+        // 3. 查询所有常规信标（不分页）
+        List<SwmBeaconStation> beaconList = findList(query);
+        if (CollectionUtil.isEmpty(beaconList)) {
+            logger.info("当前无可导出的常规信标数据");
+            return new HashMap<>();
+        }
+
+        // 4. 按楼层ID分组构建返回结构
+        Map<String, Map<String, Object>> result = new HashMap<>();
+        int totalBeaconCount = 0;
+        int noFloorIdCount = 0;
+        for (SwmBeaconStation beacon : beaconList) {
+            // 跳过无MAC地址的信标
+            String beaconId = beacon.getBeaconId();
+            if (StringUtils.isBlank(beaconId)) {
+                continue;
+            }
+
+            // 确定分组楼层ID：无 floorId 时使用 defaultFloorId，若 defaultFloorId 也不存在则跳过
+            String floorId = beacon.getFloorId();
+            if (StringUtils.isBlank(floorId)) {
+                if (StringUtils.isBlank(defaultFloorId)) {
+                    noFloorIdCount++;
+                    continue;
+                }
+                floorId = defaultFloorId;
+            }
+
+            // MAC地址格式转换：80ECCCD23F2F -> 80:ec:cc:d2:3f:2f
+            String formattedMac = formatMacAddress(beaconId);
+
+            // 按楼层ID分组
+            Map<String, Object> floorData = result.computeIfAbsent(floorId, k -> new HashMap<>());
+
+            // 构建内层数据结构
+            Map<String, Object> beaconData = new HashMap<>();
+            // 无 floorId 的信标 location 设为"全景地图信标"
+            if (StringUtils.isBlank(beacon.getFloorId())) {
+                beaconData.put("location", "全景地图信标");
+            } else {
+                beaconData.put("location", beacon.getLocation() != null ? beacon.getLocation() : "");
+            }
+            beaconData.put("x", beacon.getPixelX() != null ? beacon.getPixelX() : 0);
+            beaconData.put("y", beacon.getPixelY() != null ? beacon.getPixelY() : 0);
+            beaconData.put("floorId", floorId);
+
+            floorData.put(formattedMac, beaconData);
+            totalBeaconCount++;
+        }
+
+        logger.info("导出信标算法格式数据成功，共 {} 个楼层，{} 条信标，无 floorId 且无默认分组跳过 {} 条",
+                result.size(), totalBeaconCount, noFloorIdCount);
+        return result;
+    }
+
+    /**
+     * MAC地址格式转换
+     *
+     * 数据库存储格式：80ECCCD23F2F（12位大写无冒号）
+     * 算法要求格式：80:ec:cc:d2:3f:2f（小写带冒号）
+     *
+     * @author Shawn
+     * @date 2026-04-09
+     * @param mac 原始MAC地址
+     * @return 格式化后的MAC地址
+     */
+    private String formatMacAddress(String mac) {
+        if (StringUtils.isBlank(mac)) {
+            return "";
+        }
+
+        // 去除可能的冒号和空格，统一处理
+        String cleanMac = mac.replace(":", "").replace("-", "").trim().toLowerCase();
+
+        // 长度校验，标准MAC地址为12位
+        if (cleanMac.length() != 12) {
+            logger.warn("MAC地址格式异常，长度不是12位: {}", mac);
+            return mac.toLowerCase();
+        }
+
+        // 每2位插入冒号
+        StringBuilder formatted = new StringBuilder();
+        for (int i = 0; i < cleanMac.length(); i += 2) {
+            if (i > 0) {
+                formatted.append(":");
+            }
+            formatted.append(cleanMac.substring(i, i + 2));
+        }
+
+        return formatted.toString();
+    }
+
     @Transactional(readOnly = false)
     public Integer importData(MultipartFile file) {
         ExcelImport excelImport = null;
@@ -491,6 +899,7 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             List<SwmBeaconStationExport> list = excelImport.getDataList(SwmBeaconStationExport.class);
 
             SwmBeaconStation swmBeaconStation1 = new SwmBeaconStation();
+            fillCurrentCorpCode(swmBeaconStation1);
             //查询所有的信标信息
             List<SwmBeaconStation> stationList = this.dao.findList(swmBeaconStation1);
             Map<String, String> stationMap = stationList.stream().collect(Collectors.toMap(SwmBeaconStation::getBeaconId, SwmBeaconStation::getId));

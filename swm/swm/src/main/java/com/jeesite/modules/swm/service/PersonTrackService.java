@@ -225,12 +225,20 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                     Map<String, Object> locationInfo = locationMap.get(identityCard);
                     Object xObj = locationInfo.get("x");
                     Object yObj = locationInfo.get("y");
+                    Object typeObj = locationInfo.get("type");
+                    Object mapIdObj = locationInfo.get("map_id");
 
                     if (xObj != null && yObj != null) {
                         try {
                             // 将external_coordinate_data中的坐标转换为整数
                             int x = (int) Math.round(Double.parseDouble(xObj.toString()));
                             int y = (int) Math.round(Double.parseDouble(yObj.toString()));
+
+                            // 获取 type 和 mapId，计算 floorId（当type='floor'时，取mapId作为floorId）
+                            // 处理TDengine返回的字符串"null"情况 2026/04/10 Shawn
+                            String type = (typeObj != null && !"null".equals(typeObj.toString())) ? typeObj.toString() : null;
+                            String mapId = (mapIdObj != null && !"null".equals(mapIdObj.toString())) ? mapIdObj.toString() : null;
+                            String floorId = ("floor".equals(type)) ? mapId : null;
 
                             // 获取真实的考勤数据 2025/07/07 Shawn 修改
 //                            String workHours = getWorkHoursFromAttendance(identityCard);
@@ -260,11 +268,12 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
                                     true, // 标记为真实位置
                                     person, // 传入完整的person对象
                                     colorMap, // 传入颜色映射
-                                    safetyStrList,batteryMap);// 传入是否安全培训状态
+                                    safetyStrList,batteryMap, // 传入是否安全培训状态和电量
+                                    floorId); // 传入楼层ID（当type='floor'时，取mapId作为floorId）
 
 
                             positions.add(position);
-                            logger.info("添加身份证 {} ({}) 的真实坐标: x={}, y={}", identityCard, name, x, y);
+                            logger.info("添加身份证 {} ({}) 的真实坐标: x={}, y={}, floorId={}", identityCard, name, x, y, floorId);
                         } catch (NumberFormatException e) {
                             logger.warn("身份证 {} ({}) 的坐标数据格式错误，跳过该人员", identityCard, name);
                         }
@@ -631,7 +640,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         position.put("name", name);
         position.put("x", x);
         position.put("y", y);
-        position.put("floorId", floorId);
+        position.put("floorId", floorId != null ? floorId : "");
         position.put("workType", workType);
         position.put("organization", organization);
         position.put("workShop", workShop);
@@ -690,9 +699,10 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
      * @date 2025/06/24
      */
     private Map<String, Object> createPersonPositionWithColors(String id, String name, int x, int y, String workType,
-                                                               String organization, String workShop, String teamGroup,
-                                                               String workHours, String attendance, String identityCard, boolean hasRealLocation,
-                                                               PersonTrackInfo person, Map<String, String> colorMap,Set<String> safetyStrList,Map<String,Integer> batteryMap) {
+                                                              String organization, String workShop, String teamGroup,
+                                                              String workHours, String attendance, String identityCard, boolean hasRealLocation,
+                                                              PersonTrackInfo person, Map<String, String> colorMap,Set<String> safetyStrList,Map<String,Integer> batteryMap,
+                                                              String floorId) {
 
         // 创建基础的人员位置信息
         Map<String, Object> position = createPersonPosition(id, name, x, y, workType, organization, workShop, teamGroup,
@@ -731,6 +741,10 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         position.put("powerOnStatus","在线");
 
         position.put("battery", batteryMap.get(person.getIdentityCard()));
+
+        // 添加楼层ID（当type='floor'时，取mapId作为floorId）
+        position.put("floorId", floorId != null ? floorId : "");
+
         return position;
     }
 

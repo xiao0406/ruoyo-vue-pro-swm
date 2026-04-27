@@ -1,5 +1,8 @@
 package com.jeesite.modules.swm.entity;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+
 import com.jeesite.common.entity.BaseEntity;
 import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
@@ -26,7 +29,12 @@ import javax.validation.constraints.Size;
         @Column(name = "drawing_pixel_y", attrName = "drawingPixelY", label = "图纸Y像素坐标"),
         @Column(name = "site_coordinate_x_m", attrName = "siteCoordinateXM", label = "场地X坐标(米)"),
         @Column(name = "site_coordinate_y_m", attrName = "siteCoordinateYM", label = "场地Y坐标(米)"),
-        @Column(name = "is3d", attrName = "is3d", label = "是否是3D"),
+        @Column(name = "parent_id", attrName = "parentId", label = "父节点ID"),
+        @Column(name = "map_type", attrName = "mapType", label = "图纸类型"),
+        @Column(name = "origin_pixel_x", attrName = "originPixelX", label = "起始X像素偏移"),
+        @Column(name = "origin_pixel_y", attrName = "originPixelY", label = "起始Y像素偏移"),
+        @Column(name = "sort_order", attrName = "sortOrder", label = "排序值"),
+		@Column(name = "is3d", attrName = "is3d", label = "是否是3D"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
@@ -44,6 +52,16 @@ public class SwmSiteMapManagement extends DataEntity<SwmSiteMapManagement> {
     private java.math.BigDecimal siteCoordinateXM;  // 场地X坐标(米)
     private java.math.BigDecimal siteCoordinateYM;  // 场地Y坐标(米)
 
+    // ===== 树形结构新增字段 @author Shawn @date 2026-04-02 =====
+    private String parentId;        // 父节点ID，顶层填'0'
+    private String mapType;         // 图纸类型：factory=厂区，building=建筑，floor=楼层
+    private Integer originPixelX;   // 图纸起始X像素偏移量
+    private Integer originPixelY;   // 图纸起始Y像素偏移量
+    private Integer sortOrder;      // 排序值，越小越靠前
+
+    // 辅助字段，不存数据库，用于告诉前端是否有子节点
+    private transient Boolean hasChildren;
+    
     private Integer is3d;  // 是否是3D
 
 
@@ -54,10 +72,6 @@ public class SwmSiteMapManagement extends DataEntity<SwmSiteMapManagement> {
     public void setIs3d(Integer is3d) {
         this.is3d = is3d;
     }
-
-
-
-
     public SwmSiteMapManagement() {
         this(null);
     }
@@ -103,7 +117,7 @@ public class SwmSiteMapManagement extends DataEntity<SwmSiteMapManagement> {
         this.scale = scale;
     }
     
-    @NotBlank(message = "文件路径不能为空")
+    // 厂区/建筑节点可能没有图纸文件，不再强制非空
     public String getFilePath() {
         return filePath;
     }
@@ -143,4 +157,55 @@ public class SwmSiteMapManagement extends DataEntity<SwmSiteMapManagement> {
     public void setSiteCoordinateYM(java.math.BigDecimal siteCoordinateYM) {
         this.siteCoordinateYM = siteCoordinateYM;
     }
-} 
+
+    // ===== 树形结构新增字段 getter/setter @author Shawn @date 2026-04-02 =====
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+
+    @Size(min = 0, max = 20, message = "图纸类型长度不能超过 20 个字符")
+    public String getMapType() {
+        return mapType;
+    }
+
+    public void setMapType(String mapType) {
+        this.mapType = mapType;
+    }
+
+    public Integer getOriginPixelX() {
+        return originPixelX;
+    }
+
+    public void setOriginPixelX(Integer originPixelX) {
+        this.originPixelX = originPixelX;
+    }
+
+    public Integer getOriginPixelY() {
+        return originPixelY;
+    }
+
+    public void setOriginPixelY(Integer originPixelY) {
+        this.originPixelY = originPixelY;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    public Boolean getHasChildren() {
+        return hasChildren;
+    }
+
+    public void setHasChildren(Boolean hasChildren) {
+        this.hasChildren = hasChildren;
+    }
+}

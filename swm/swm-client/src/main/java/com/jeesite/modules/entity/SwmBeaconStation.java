@@ -43,9 +43,13 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "beacon_status", attrName = "beaconStatus", label = "信标状态"),
         @Column(name = "deploy_status", attrName = "deployStatus", label = "部署状态"),
         @Column(name = "stream_url", attrName = "streamUrl", label = "推流地址"),
-        @Column(name = "floor", attrName = "floor", label = "楼层"),
         @Column(name = "major", attrName = "major", label = "major"),
         @Column(name = "minor", attrName = "minor", label = "minor"),
+        @Column(name = "floor", attrName = "floor", label = "楼层名称"),
+        // 楼层/建筑关联字段 @author Shawn @date 2026-04-07
+        @Column(name = "floor_id",    attrName = "floorId",    label = "楼层ID"),
+        @Column(name = "building_id", attrName = "buildingId", label = "建筑ID"),
+        @Column(name = "building",    attrName = "building",   label = "建筑名称"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
@@ -128,13 +132,17 @@ public class SwmBeaconStation extends DataEntity<SwmBeaconStation> {
     private String beaconStatus; // 信标状态
     private String deployStatus; // 部署状态
     private String streamUrl; // 推流地址
-    private String floor;
     private String major;
     private String minor;
     /**
      * 随机值，目的取消一级缓存
      */
     private Integer random;
+    private String floor;      // 楼层名称
+    // 楼层/建筑关联字段，方案A：前端上传冗余存储 @author Shawn @date 2026-04-07
+    private String floorId;    // 楼层ID，关联 swm_site_map_management floor 节点
+    private String buildingId; // 建筑ID，关联 swm_site_map_management building 节点
+    private String building;   // 建筑名称（冗余存储）
 
     public SwmBeaconStation() {
         super();
