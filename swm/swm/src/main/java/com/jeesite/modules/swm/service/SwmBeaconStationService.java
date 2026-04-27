@@ -11,8 +11,6 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
 import com.jeesite.modules.swm.dao.SwmBeaconStationDao;
 import com.jeesite.modules.entity.SwmBeaconStation;
-import com.jeesite.modules.swm.entity.SwmArea;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.util.MqSendUtil;
