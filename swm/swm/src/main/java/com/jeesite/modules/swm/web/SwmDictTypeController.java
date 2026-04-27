@@ -4,8 +4,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.alibaba.cloud.commons.lang.StringUtils;
+import com.jeesite.modules.sys.entity.DictType;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import io.swagger.annotations.*;
@@ -138,12 +140,17 @@ public class SwmDictTypeController extends BaseController {
      */
     @RequestMapping(value = "form")
     @ApiOperation(value = "查看编辑表单", notes = "查看编辑表单")
-    public SwmDictType form(SwmDictType swmDictType, Model model) {
+    public DictType form(SwmDictType swmDictType, Model model) {
         if (StringUtils.isBlank(swmDictType.getIsSys())) {
             swmDictType.setIsSys("1");
         }
         SwmDictType swmDictType1 = swmDictTypeService.get(swmDictType);
-        return swmDictType1;
+        if (swmDictType1 == null) {
+           return new DictType();
+        }
+        DictType dictType = new DictType();
+        BeanUtils.copyProperties(swmDictType1, dictType);
+        return dictType;
     }
 
 
