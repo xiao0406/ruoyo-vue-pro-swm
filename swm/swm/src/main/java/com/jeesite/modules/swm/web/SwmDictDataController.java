@@ -5,7 +5,9 @@ import java.util.Map;
 
 import com.jeesite.modules.swm.entity.SwmDictType;
 import com.jeesite.modules.swm.service.SwmDictTypeService;
+import com.jeesite.modules.sys.entity.DictData;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import io.swagger.annotations.*;
@@ -248,9 +250,11 @@ public class SwmDictDataController extends BaseController {
 	 * form
 	 */
 	@RequestMapping("form")
-	public SwmDictData form(SwmDictData dictData, Model model) {
+	public DictData form(SwmDictData dictData, Model model) {
 //		dictData = createNextNode(dictData);
 		SwmDictData swmDictData = swmDictDataService.get(dictData);
-		return swmDictData;
+		DictData dictData1 = new DictData();
+		BeanUtils.copyProperties(swmDictData, dictData1);
+		return dictData1;
 	}
 }
