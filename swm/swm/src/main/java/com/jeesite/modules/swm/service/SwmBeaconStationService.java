@@ -949,7 +949,7 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
     public List<SwmBeaconStation> findMacList(SwmBeaconStation station) {
         return this.dao.findMacList(station);
     }
-
+    @Transactional(readOnly = false)
     public Integer importDataByMajor(MultipartFile file) {
         ExcelImport excelImport = null;
         List<SwmBeaconStation> swmBeaconStationList = new ArrayList<>();
@@ -958,23 +958,14 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             excelImport = new ExcelImport(file, 2, 0);
             List<SwmBeaconStationExport> list = excelImport.getDataList(SwmBeaconStationExport.class);
 
-            SwmBeaconStation swmBeaconStation1 = new SwmBeaconStation();
-            fillCurrentCorpCode(swmBeaconStation1);
-            //查询所有的信标信息
-            List<SwmBeaconStation> stationList = this.dao.findList(swmBeaconStation1);
-            Map<String, String> stationMap = stationList.stream().collect(Collectors.toMap(SwmBeaconStation::getBeaconId, SwmBeaconStation::getId));
-
-
-
             if (CollectionUtil.isNotEmpty(list)){
                 for (SwmBeaconStationExport production : list) {
                     //存在相同信标则跳过
-                    if (StringUtil.isNotEmpty(stationMap.get(production.getBeaconId()))){
+                    if (StringUtil.isNotEmpty(production.getBeaconId())){
                         SwmBeaconStation swmBeaconStation = new SwmBeaconStation();
                         swmBeaconStation.setBeaconId(production.getBeaconId());
                         swmBeaconStation.setMajor(production.getMajor());
                         swmBeaconStation.setMinor(production.getMinor());
-                        swmBeaconStation.setId(stationMap.get(production.getBeaconId()));
                         swmBeaconStationList.add(swmBeaconStation);
                     }
                 }
