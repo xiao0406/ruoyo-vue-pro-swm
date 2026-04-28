@@ -308,6 +308,8 @@ public class SwmSiteMapManagementController extends BaseController {
             mapData.put("mapSize", map.getMapSize());
             mapData.put("scale", map.getScale());
             mapData.put("is3d", map.getIs3d());
+            mapData.put("drawingPixelX", map.getDrawingPixelX());
+            mapData.put("drawingPixelY", map.getDrawingPixelY());
 
             // 解析filePath中的JSON字符串获取URL
             try {
