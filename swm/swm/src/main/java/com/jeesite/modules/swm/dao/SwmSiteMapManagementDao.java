@@ -65,4 +65,6 @@ public interface SwmSiteMapManagementDao extends CrudDao<SwmSiteMapManagement> {
      * @author Shawn @date 2026-04-10
      */
     List<SwmSiteMapManagement> findByIds(@Param("ids") List<String> ids);
+
+    List<SwmSiteMapManagement> findListByNames(@Param("strings") List<String> strings);
 }

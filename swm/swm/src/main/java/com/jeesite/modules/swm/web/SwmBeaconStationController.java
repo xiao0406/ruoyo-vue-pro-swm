@@ -530,11 +530,11 @@ public class SwmBeaconStationController extends BaseController {
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
 
-    @ApiOperation("信标管理excel导入")
-    @RequestMapping("/importData1")
+    @ApiOperation("信标管理excel导入-major和minor")
+    @RequestMapping("/importDataByMajor")
     @ResponseBody
-    public String importData1(MultipartFile file) {
-        Integer count = swmBeaconStationService.importData(file);
+    public String importDataByMajor(MultipartFile file) {
+        Integer count = swmBeaconStationService.importDataByMajor(file);
         //刷新缓存
         beaconStationCache.initAreaCache();
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));

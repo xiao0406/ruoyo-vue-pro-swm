@@ -461,4 +461,11 @@ public class SwmSiteMapManagementService extends CrudService<SwmSiteMapManagemen
             }
         }
     }
+
+    public List<SwmSiteMapManagement> findListByNames(List<String> strings) {
+        if (strings == null || strings.isEmpty()) {
+            return null;
+        }
+        return dao.findListByNames(strings);
+    }
 }

@@ -19,6 +19,8 @@ public class SwmBeaconStationExport {
             @ExcelField(title = "信标状态（在线、离线）", attrName = "beaconStatus", align = ExcelField.Align.CENTER, sort = 20,width = 256*30,dictType = "beacon_status_enum"),
             @ExcelField(title = "major", attrName = "major", align = ExcelField.Align.CENTER, sort = 20,width = 256*30),
             @ExcelField(title = "minor", attrName = "minor", align = ExcelField.Align.CENTER, sort = 20,width = 256*30),
+            @ExcelField(title = "所在建筑", attrName = "building", align = ExcelField.Align.CENTER, sort = 20,width = 256*30),
+            @ExcelField(title = "所在楼层", attrName = "floor", align = ExcelField.Align.CENTER, sort = 20,width = 256*30),
     })
 
     public SwmBeaconStationExport() {
@@ -35,6 +37,8 @@ public class SwmBeaconStationExport {
     private String beaconStatus; // 信标状态
     private String major;
     private String minor;
+    private String floor;      // 楼层名称
+    private String building;   // 建筑名称（冗余存储）
 
 
 }

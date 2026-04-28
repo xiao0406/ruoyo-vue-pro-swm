@@ -109,5 +109,15 @@
 			#{id}
 		</foreach>
 	</select>
+	<select id="findListByNames" resultType="com.jeesite.modules.swm.entity.SwmSiteMapManagement">
+		SELECT
+			a.`id` AS "id",
+			a.`map_name` AS "mapName"
+		FROM `swm_site_map_management` a
+		WHERE a.`map_name` IN
+		<foreach collection="strings" item="mapName" open="(" separator="," close=")">
+			#{mapName}
+		</foreach>
+	</select>
 
 </mapper>

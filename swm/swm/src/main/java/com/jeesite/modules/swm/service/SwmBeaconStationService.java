@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -902,6 +903,69 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             List<SwmBeaconStation> stationList = this.dao.findList(swmBeaconStation1);
             Map<String, String> stationMap = stationList.stream().collect(Collectors.toMap(SwmBeaconStation::getBeaconId, SwmBeaconStation::getId));
 
+            //查询建筑
+            List<String> buildings = list.stream().map(SwmBeaconStationExport::getBuilding).collect(Collectors.toList());
+            List<SwmSiteMapManagement> buildingList =  swmSiteMapManagementService.findListByNames(buildings);
+            Map<String, String> buildingMap = buildingList.stream().collect(Collectors.toMap(SwmSiteMapManagement::getMapName, SwmSiteMapManagement::getId));
+
+            //查询楼层
+            List<String> collect = list.stream().map(SwmBeaconStationExport::getFloor).collect(Collectors.toList());
+            List<SwmSiteMapManagement> floorList = swmSiteMapManagementService.findListByNames(collect);
+            Map<String, String> floorMap = floorList.stream().collect(Collectors.toMap(SwmSiteMapManagement::getMapName, SwmSiteMapManagement::getId));
+
+
+            if (CollectionUtil.isNotEmpty(list)){
+                for (SwmBeaconStationExport production : list) {
+                    //存在相同信标则跳过
+                    if (StringUtil.isNotEmpty(stationMap.get(production.getBeaconId()))){
+                        SwmBeaconStation swmBeaconStation = new SwmBeaconStation();
+                        BeanUtils.copyProperties(production, swmBeaconStation);
+                        //建筑
+                        String s = buildingMap.get(production.getBuilding());
+                        if (StringUtil.isNotEmpty(s)){
+                            swmBeaconStation.setBuildingId(s);
+                        }
+                        //楼层
+                        String s1 = floorMap.get(production.getFloor());
+                        if (StringUtil.isNotEmpty(s1)){
+                            swmBeaconStation.setFloorId(s1);
+                        }
+                        swmBeaconStationList.add(swmBeaconStation);
+                    }
+                }
+                List<List<SwmBeaconStation>> lists = BatchOperationsUtil.batchCutting(swmBeaconStationList, 100);
+                for (List<SwmBeaconStation> list1 : lists) {
+                    this.dao.insertBatch(list1);
+//                    this.dao.updateBatch(list1);
+                }
+                count = list.size();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return count;
+    }
+
+    public List<SwmBeaconStation> findMacList(SwmBeaconStation station) {
+        return this.dao.findMacList(station);
+    }
+
+    public Integer importDataByMajor(MultipartFile file) {
+        ExcelImport excelImport = null;
+        List<SwmBeaconStation> swmBeaconStationList = new ArrayList<>();
+        Integer count = 0;
+        try {
+            excelImport = new ExcelImport(file, 2, 0);
+            List<SwmBeaconStationExport> list = excelImport.getDataList(SwmBeaconStationExport.class);
+
+            SwmBeaconStation swmBeaconStation1 = new SwmBeaconStation();
+            fillCurrentCorpCode(swmBeaconStation1);
+            //查询所有的信标信息
+            List<SwmBeaconStation> stationList = this.dao.findList(swmBeaconStation1);
+            Map<String, String> stationMap = stationList.stream().collect(Collectors.toMap(SwmBeaconStation::getBeaconId, SwmBeaconStation::getId));
+
+
+
             if (CollectionUtil.isNotEmpty(list)){
                 for (SwmBeaconStationExport production : list) {
                     //存在相同信标则跳过
@@ -924,9 +988,5 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
             throw new RuntimeException(e);
         }
         return count;
-    }
-
-    public List<SwmBeaconStation> findMacList(SwmBeaconStation station) {
-        return this.dao.findMacList(station);
     }
 }
