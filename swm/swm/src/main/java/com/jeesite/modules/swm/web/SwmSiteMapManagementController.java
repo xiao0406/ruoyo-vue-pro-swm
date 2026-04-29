@@ -68,11 +68,16 @@ public class SwmSiteMapManagementController extends BaseController {
     @ResponseBody
     public Page<SwmSiteMapManagement> listData(SwmSiteMapManagement swmSiteMapManagement, HttpServletRequest request,
             HttpServletResponse response) {
-        swmSiteMapManagement.setPage(new Page<>(request, response));
+        if (swmSiteMapManagement.getPageSize() == null){
+            swmSiteMapManagement.setPage(new Page<>(1, 100));
+        }else {
+            swmSiteMapManagement.setPage(new Page<>(request, response));
+        }
         // 完全移除状态过滤条件
         swmSiteMapManagement.setStatus(null);
         // 设置为不使用全局状态过滤
         swmSiteMapManagement.getSqlMap().getWhere().disableAutoAddStatusWhere();
+
         Page<SwmSiteMapManagement> page = swmSiteMapManagementService.findPage(swmSiteMapManagement);
         // 为每条记录填充 hasChildren，告诉前端该节点下面是否还有子节点
         String corpCode = CorpUtils.getCurrentCorpCode();
