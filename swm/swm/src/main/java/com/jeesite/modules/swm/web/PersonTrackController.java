@@ -1278,7 +1278,9 @@ public class PersonTrackController extends BaseController {
                 newItem.put("area_name", mapIdToName.containsKey(mapId) ? mapIdToName.get(mapId) : mapId);
                 mergedData.add(newItem);
             }
-            mergedData.sort((a, b) -> String.valueOf(a.get("time")).compareTo(String.valueOf(b.get("time"))));
+//            mergedData.sort((a, b) -> String.valueOf(a.get("time")).compareTo(String.valueOf(b.get("time"))));
+            // 时间 降序排列（最新的在前）
+            mergedData.sort((a, b) -> String.valueOf(b.get("time")).compareTo(String.valueOf(a.get("time"))));
 
             result.put("success", true);
             result.put("data", mergedData);

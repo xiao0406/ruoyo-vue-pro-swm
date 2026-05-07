@@ -1633,6 +1633,10 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         return page;
     }
 
+    public void saveBatch(List<SwmDailyAttendance> insertList) {
+        dao.insertBatch(insertList);
+    }
+
     /**
      * 转换 area_type 为统一枚举
      */

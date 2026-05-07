@@ -413,15 +413,15 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
         }
 
         // 如果已经是编码格式，直接返回
-        if (isCodeFormat(personTypeInput)) {
-            // 验证编码是否有效
-            if (SwmPerson.PersonTypeEnum.WORKER.equals(personTypeInput) || SwmPerson.PersonTypeEnum.MANAGER.equals(personTypeInput)
-        || SwmPerson.PersonTypeEnum.TEAMLEADER.equals(personTypeInput) || SwmPerson.PersonTypeEnum.SPECIALTRADES.equals(personTypeInput )) {
-                return new NameConversionResult(personTypeInput, personTypeInput, false);
-            } else {
-                return new NameConversionResult(personTypeInput, "无效的人员类型编码: " + personTypeInput);
-            }
-        }
+//        if (isCodeFormat(personTypeInput)) {
+//            // 验证编码是否有效
+//            if (SwmPerson.PersonTypeEnum.WORKER.equals(personTypeInput) || SwmPerson.PersonTypeEnum.MANAGER.equals(personTypeInput)
+//        || SwmPerson.PersonTypeEnum.TEAMLEADER.equals(personTypeInput) || SwmPerson.PersonTypeEnum.SPECIALTRADES.equals(personTypeInput )) {
+//                return new NameConversionResult(personTypeInput, personTypeInput, false);
+//            } else {
+//                return new NameConversionResult(personTypeInput, "无效的人员类型编码: " + personTypeInput);
+//            }
+//        }
 
         // 先尝试直接转换常见的输入格式
         String normalizedInput = normalizePersonTypeInput(personTypeInput);
@@ -736,20 +736,6 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
             }
         }
 
-        // 5. 转换工种名称为编码
-        if (StringUtils.isNotBlank(jobTypeName)) {
-            NameConversionResult jobTypeResult = convertJobTypeNameToCode(jobTypeName);
-            if (!jobTypeResult.isConverted() && StringUtils.isNotBlank(jobTypeResult.getErrorMessage())) {
-                result.setSuccess(false);
-                result.setErrorMessage("工种转换失败: " + jobTypeResult.getErrorMessage());
-                return result;
-            }
-            result.setJobTypeId(jobTypeResult.getConvertedValue());
-            if (jobTypeResult.isConverted()) {
-                result.addConversionMessage("工种名称 '" + jobTypeName + "' 转换为编码: " + jobTypeResult.getConvertedValue());
-            }
-        }
-
         // 6. 转换人员类型名称为编码
         if (StringUtils.isNotBlank(personTypeName)) {
             NameConversionResult personTypeResult = convertPersonTypeNameToCode(personTypeName);
@@ -764,6 +750,22 @@ public class OrgValidationService extends CrudService<SwmPersonDao, SwmPerson> {
                         "人员类型名称 '" + personTypeName + "' 转换为编码: " + personTypeResult.getConvertedValue());
             }
         }
+
+        // 5. 转换工种名称为编码
+//        if (StringUtils.isNotBlank(jobTypeName)) {
+//            NameConversionResult jobTypeResult = convertJobTypeNameToCode(jobTypeName);
+//            if (!jobTypeResult.isConverted() && StringUtils.isNotBlank(jobTypeResult.getErrorMessage())) {
+//                result.setSuccess(false);
+//                result.setErrorMessage("工种转换失败: " + jobTypeResult.getErrorMessage());
+//                return result;
+//            }
+//            result.setJobTypeId(jobTypeResult.getConvertedValue());
+//            if (jobTypeResult.isConverted()) {
+//                result.addConversionMessage("工种名称 '" + jobTypeName + "' 转换为编码: " + jobTypeResult.getConvertedValue());
+//            }
+//        }
+
+
 
         // 7. 转换部门名称为编码
         if (StringUtils.isNotBlank(dept)) {

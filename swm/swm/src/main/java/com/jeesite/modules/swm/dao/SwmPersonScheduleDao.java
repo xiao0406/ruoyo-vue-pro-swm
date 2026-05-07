@@ -83,4 +83,6 @@ public interface SwmPersonScheduleDao extends CrudDao<SwmPersonSchedule> {
     List<String> findIdCardsByIds(@Param("ids") List<String> ids);
 
     List<SwmPersonScheduleExport> findPersonIdsByNames(@Param("personNames") List<String> personNames);
+
+    List<SwmPersonSchedule> findListByCorpCode(SwmPersonSchedule swmPersonSchedule);
 }

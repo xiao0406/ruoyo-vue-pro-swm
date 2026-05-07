@@ -80,6 +80,229 @@ public class AttendanceTask {
     private static final long CONTINUITY_THRESHOLD_MS = 1 * 60 * 1000; // 10分钟连续性阈值
     private static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+
+    /**
+     * 定时生成两个月的日考勤数据-颠覆性产业园使用
+     */
+    @XxlJob("generateMonthlyDailyAttendance")
+    @Transactional(readOnly = false)
+    public void generateMonthlyDailyAttendance() {
+        SwmJobLog jobLog = new SwmJobLog();
+        String corpCode = "DFXCYY";
+        //获取参数
+        String jobParam = XxlJobHelper.getJobParam();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date startDate = null; // 传入的开始日期
+        Date nowDate = new Date(); // 当前日期
+
+        if (StringUtils.isNotBlank(jobParam)) {
+            try {
+                startDate = dateFormat.parse(jobParam);
+            } catch (Exception e) {
+                XxlJobHelper.log("日期参数格式错误，使用当天: {}", jobParam);
+            }
+        }
+
+        // 日期合法性判断：开始日期不能晚于今天
+        if (startDate.after(nowDate)) {
+            XxlJobHelper.log("开始日期不能晚于当前日期，startDate:{}", dateFormat.format(startDate));
+            return;
+        }
+
+        // 循环：从 startDate 循环到 nowDate 的每一天
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(startDate);
+
+        // 1.先从排班表查询所有人员
+        SwmPersonSchedule swmPersonSchedule = new SwmPersonSchedule();
+        swmPersonSchedule.setCorpCode(corpCode);
+        List<SwmPersonSchedule> schedules = swmPersonScheduleService.findListByCorpCode(swmPersonSchedule);
+
+        while (!calendar.getTime().after(nowDate)) {
+            Date currentDay = calendar.getTime(); // 当前循环到的那一天
+            String dayStr = dateFormat.format(currentDay);
+            XxlJobHelper.log("开始生成日期：{} 的考勤数据", dayStr);
+
+            // ================ 每一天的考勤生成逻辑 ↓ 放在这里 ================
+            generateOneDayAttendance(corpCode, currentDay, schedules);
+
+            // 日期 +1 天
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+    }
+
+
+    /**
+     * 生成某一天的考勤数据
+     */
+    private void generateOneDayAttendance(String corpCode, Date targetDate, List<SwmPersonSchedule> scheduleList) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdfTime = new SimpleDateFormat("HH:mm:ss");
+        SimpleDateFormat sdfDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        XxlJobHelper.log("生成考勤日期：{}", sdf.format(targetDate));
+
+        if (CollectionUtils.isEmpty(scheduleList)) {
+            XxlJobHelper.log("暂无排班数据，跳过");
+            return;
+        }
+
+        // 2. 查询当天是否已有考勤（有则跳过）
+        SwmDailyAttendance attendanceParam = new SwmDailyAttendance();
+        attendanceParam.setAttendanceDate(targetDate);
+        attendanceParam.setCorpCode(corpCode);
+        attendanceParam.setRandom(new Random().nextInt(1_000_000));
+        List<SwmDailyAttendance> existList = swmDailyAttendanceService.findList(attendanceParam);
+
+        // 已存在，跳过
+        if (CollectionUtils.isNotEmpty(existList)) {
+            XxlJobHelper.log("日期 {} 已有考勤数据，跳过", sdf.format(targetDate));
+            return;
+        }
+
+        // 3. 批量生成考勤
+        List<SwmDailyAttendance> insertList = new ArrayList<>();
+
+        for (SwmPersonSchedule schedule : scheduleList) {
+            SwmDailyAttendance att = new SwmDailyAttendance();
+            att.setEmployeeId(schedule.getEmployeeId());
+            att.setEmployeeName(schedule.getPersonName());
+            att.setIdentityCard(schedule.getIdCard());
+            att.setDeviceId(schedule.getDeviceId());
+            att.setPersonType(schedule.getPersonType());
+            att.setAttendanceDate(targetDate);
+            att.setCorpCode(corpCode);
+            att.setCorpName("颠覆性产业园");
+            att.setRestTime(new BigDecimal("0"));
+
+            // 1=早班，3=夜班
+            String classes = schedule.getClasses();
+            att.setClasses(classes);
+
+            try {
+                Date clockInTimeDate;   // 上班时间
+                Date clockOutTimeDate;  // 下班时间
+
+                String startClockInTimeStr = "05:00:00";
+                String endClockInTimeStr = "07:00:00";
+                String startClockOutTimeStr = "17:30:00";
+                String endClockOutTimeStr = "18:00:00";
+
+                if ("1".equals(classes)) {
+                    // ==================== 早班 ====================
+                    // 打卡开始时间 01:40:00
+                    att.setClockStartTime(sdfDateTime.parse(sdf.format(targetDate) + " 01:40:00"));
+                    // 打卡结束时间 次日13:40:00
+                    Date nextDay = DateUtils.addDays(targetDate, 1);
+                    att.setClockEndTime(sdfDateTime.parse(sdf.format(nextDay) + " 13:40:00"));
+
+                    // 上班：05:40 - 08:00
+                    clockInTimeDate = getRandomTime(targetDate, startClockInTimeStr, endClockInTimeStr);
+                    // 下班：17:30 - 18:30
+                    clockOutTimeDate = getRandomTime(targetDate, startClockOutTimeStr, endClockOutTimeStr);
+
+                } else if ("3".equals(classes)) {
+                    // ==================== 夜班 ====================
+                    att.setClockStartTime(sdfDateTime.parse(sdf.format(targetDate) + " 13:40:00"));
+                    Date nextDay = DateUtils.addDays(targetDate, 1);
+                    att.setClockEndTime(sdfDateTime.parse(sdf.format(nextDay) + " 13:40:00"));
+
+                    // 上班：07:00 - 08:00
+                    clockInTimeDate = getRandomTime(targetDate, startClockOutTimeStr, endClockOutTimeStr);
+                    // 下班：17:30 - 18:30
+                    clockOutTimeDate = getRandomTime(targetDate, "22:00:00", "22:30:00");
+
+                } else {
+                    // 未知班次跳过
+                    continue;
+                }
+
+                // 打卡时间（Date类型）
+                att.setClockInTime(clockInTimeDate);
+                att.setClockOutTime(clockOutTimeDate);
+                att.setClockInDate(clockInTimeDate);
+                att.setClockOutDate(clockOutTimeDate);
+
+                // 应出勤工时
+                BigDecimal scheduledHours = new BigDecimal("10.50");
+                att.setScheduledHours(scheduledHours);
+
+// ==================== 工时计算（按你最新规则） ====================
+                // 1. 总时长（下班 - 上班）
+                BigDecimal totalHours = calculateHours(clockInTimeDate, clockOutTimeDate);
+
+                // 2. 怠工时长：0 ~ 0.5 小时随机（半小时以内）
+                Random random = new Random();
+                double result = BigDecimal.ZERO.doubleValue() + (new BigDecimal("0.50").doubleValue() - BigDecimal.ZERO.doubleValue()) * random.nextDouble();
+                BigDecimal idleHours = new BigDecimal(result).setScale(2, RoundingMode.HALF_UP);
+
+                // 3. 固定减去 1 小时,是中午休息
+                BigDecimal subtractHour = new BigDecimal("1.00");
+
+                // 4. 实际考勤时长 = 总时长 - 怠工时长 - 1小时
+                BigDecimal actualHours = totalHours.subtract(idleHours).subtract(subtractHour);
+                // 防止出现负数（保底 0）
+                if (actualHours.compareTo(BigDecimal.ZERO) < 0) {
+                    actualHours = BigDecimal.ZERO;
+                }
+
+                att.setIdleHours(idleHours);        // 怠工时长
+                att.setActualHours(actualHours);    // 实际考勤时长
+
+                // 日效率
+                BigDecimal dailyEfficiency = calculateDailyEfficiency(actualHours, scheduledHours);
+                att.setDailyEfficiency(dailyEfficiency);
+
+                // 日达成率
+                BigDecimal dailyAchievementRate = calculateDailyAchievementRate(actualHours, scheduledHours);
+                att.setDailyAchievementRate(dailyAchievementRate);
+
+                // 固定值
+                att.setAttendanceNormal("1");
+                att.setCurrentPosition("3");
+                att.setEffectiveWorkHours(att.getActualHours());
+                att.setWorkTimeRange("05:40-17:30");
+
+                insertList.add(att);
+
+            } catch (Exception e) {
+                XxlJobHelper.log("生成考勤异常，人员：{}，日期：{}，错误：{}",
+                        schedule.getPersonName(), sdf.format(targetDate), e.getMessage());
+            }
+        }
+
+        // 批量插入
+        if (CollectionUtils.isNotEmpty(insertList)) {
+            List<List<SwmDailyAttendance>> lists = BatchOperationsUtil.batchCutting(insertList, 50);
+            for (List<SwmDailyAttendance> insertData : lists) {
+                swmDailyAttendanceService.saveBatch(insertData);
+            }
+//            swmDailyAttendanceService.saveBatch(insertList);
+            XxlJobHelper.log("日期 {} 生成考勤 {} 条", sdf.format(targetDate), insertList.size());
+        }
+    }
+
+    // ==================== 工具方法 ====================
+    private Date getRandomTime(Date baseDate, String startTime, String endTime) throws Exception {
+        // 每次都 new ，杜绝线程安全问题！
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdfDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        String base = sdf.format(baseDate);
+        Date start = sdfDateTime.parse(base + " " + startTime);
+        Date end = sdfDateTime.parse(base + " " + endTime);
+
+        long randomMs = start.getTime() + (long) (Math.random() * (end.getTime() - start.getTime()));
+        return new Date(randomMs);
+    }
+
+    private BigDecimal calculateHours(Date start, Date end) {
+        long ms = end.getTime() - start.getTime();
+        double hours = ms / (1000.0 * 60 * 60);
+        return new BigDecimal(hours).setScale(2, RoundingMode.HALF_UP);
+    }
+
+
     /**
      * 计算怠工时长定时任务，工作时长定时任务
      * 
@@ -2683,21 +2906,7 @@ public class AttendanceTask {
         XxlJobHelper.log("为员工[{}]{}创建考勤记录成功，person租户信息：{}，{}，attendance租户信息：{}，{}", person.getId(), person.getName(),person.getCorpCode(), person.getCorpName(),attendance.getCorpCode(), attendance.getCorpName());
     }
 
-//    /**
-//     * 构建新的考勤记录对象
-//     */
-//    private SwmDailyAttendance buildNewAttendance(SwmPerson person, Date targetDate) {
-//        SwmDailyAttendance attendance = new SwmDailyAttendance();
-//        attendance.setEmployeeId(person.getId());
-//        attendance.setEmployeeName(person.getName());
-//        attendance.setIdentityCard(person.getIdentityCard());
-//        attendance.setDeviceId(person.getSafetyHelmetId()); // 设置绑定设备号
-//        attendance.setPersonType(person.getPersonType());
-//        attendance.setAttendanceDate(targetDate);
-//        attendance.setCorpCode(person.getCorpCode());
-//        attendance.setCorpName(person.getCorpName());
-//        return attendance;
-//    }
+
 
 
     /**
@@ -2918,55 +3127,7 @@ public class AttendanceTask {
         return false;
     }
 
-    /**
-     * 设置排班信息
-     */
-//    private void setScheduleInfo(SwmDailyAttendance attendance, SwmPerson person, Date targetDate) {
-//        ScheduleInfo scheduleInfo = getScheduleTimeForPerson(person, targetDate);
-//
-////        if (scheduleInfo == null) {
-////            attendance.setWorkTimeRange(null);
-////            attendance.setClasses(null);
-////            attendance.setScheduledHours(BigDecimal.ZERO);
-////            XxlJobHelper.log("员工[{}]{}没有排班信息", person.getId(), person.getName());
-////            return;
-////        }
-//
-//        SwmScheduleTime scheduleTime = scheduleInfo.scheduleTime;
-//        String workTimeRange = scheduleTime.getStartTime() + "-" + scheduleTime.getEndTime();
-//
-//        // 设置班次信息
-//        attendance.setClasses(scheduleInfo.classes);
-//        attendance.setWorkTimeRange(workTimeRange);
-//
-//        // 计算应考勤时长（工作日和休息日都计算，减去休息时长）
-//        BigDecimal scheduledHours = calculateScheduledHoursFromWorkTimeRange(workTimeRange, scheduleTime.getRestTime());
-//        attendance.setScheduledHours(scheduledHours);
-//
-//        // 设置休息时长（工作日和休息日都设置）
-//        Double restTime = scheduleTime.getRestTime();
-//        if (restTime != null) {
-//            attendance.setRestTime(BigDecimal.valueOf(restTime).setScale(1, RoundingMode.HALF_UP));
-//        } else {
-//            attendance.setRestTime(BigDecimal.ZERO);
-//        }
-//
-//        // 计算打卡时间范围（工作日和休息日都计算）
-//        calculateAndSetClockTimeRange(attendance, targetDate, workTimeRange);
-//
-//        // 判断是否为休息日（仅影响考勤状态）
-//        if (isRestDay(scheduleTime, targetDate)) {
-//            attendance.setAttendanceNormal("2"); // 设置为休息日
-//            XxlJobHelper.log("员工[{}]{} {}是休息日，班次：{}，但按工作日逻辑计算时间字段",
-//                person.getId(), person.getName(),
-//                new SimpleDateFormat("yyyy-MM-dd").format(targetDate),
-//                scheduleInfo.classes);
-//        }
-//
-//        XxlJobHelper.log("员工[{}]{}有排班信息：班次：{}，时间：{}，应考勤时长：{} 小时，休息时长：{} 小时",
-//            person.getId(), person.getName(), scheduleInfo.classes, workTimeRange, scheduledHours,
-//            attendance.getRestTime());
-//    }
+
 
     private void setScheduleInfo(SwmDailyAttendance attendance, SwmPerson person, Date targetDate) {
         // ========== 1. 入参判空日志 ==========
@@ -3360,79 +3521,7 @@ public class AttendanceTask {
             return BigDecimal.ZERO;
         }
     }
-    
-//    /**
-//     * 确定查询时间范围
-//     * @param record 考勤记录
-//     * @return 时间范围数组 [开始时间, 结束时间]，如果无法确定返回null
-//     * @author Shawn
-//     * @date 2025-08-13
-//     */
-//    private String[] determineQueryTimeRange(SwmDailyAttendance record) {
-//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-//        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
-//        String attendanceDate = dateFormat.format(record.getAttendanceDate());
-//
-//        // 优先级1：使用实际打卡完整时间
-//        if (record.getClockInDate() != null && record.getClockOutDate() != null) {
-//            String startTime = DATETIME_FORMAT.format(record.getClockInDate());
-//            String endTime = DATETIME_FORMAT.format(record.getClockOutDate());
-//
-//            return new String[]{startTime, endTime};
-//        }
-//
-//        // 优先级2：只有上班打卡完整时间 + 应考勤时间的下班时间
-//        if (record.getClockInDate() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
-//            String[] times = record.getWorkTimeRange().split("-");
-//            if (times.length == 2) {
-//                String startTime = DATETIME_FORMAT.format(record.getClockInDate());
-//                String endTime = attendanceDate + " " + times[1].trim() + ":00";
-//
-//                // 处理跨天
-//                if (times[1].trim().compareTo(times[0].trim()) < 0) {
-//                    Calendar cal = Calendar.getInstance();
-//                    cal.setTime(record.getAttendanceDate());
-//                    cal.add(Calendar.DAY_OF_MONTH, 1);
-//                    endTime = dateFormat.format(cal.getTime()) + " " + times[1].trim() + ":00";
-//                }
-//
-//                return new String[]{startTime, endTime};
-//            }
-//        }
-//
-//        // 优先级3：只有下班打卡完整时间 + 应考勤时间的上班时间
-//        if (record.getClockOutDate() != null && StringUtils.isNotBlank(record.getWorkTimeRange())) {
-//            String[] times = record.getWorkTimeRange().split("-");
-//            if (times.length == 2) {
-//                String startTime = attendanceDate + " " + times[0].trim() + ":00";
-//                String endTime = DATETIME_FORMAT.format(record.getClockOutDate());
-//
-//                return new String[]{startTime, endTime};
-//            }
-//        }
-//
-//        // 优先级4：只有应考勤时间范围
-//        if (StringUtils.isNotBlank(record.getWorkTimeRange())) {
-//            String[] times = record.getWorkTimeRange().split("-");
-//            if (times.length == 2) {
-//                String startTime = attendanceDate + " " + times[0].trim() + ":00";
-//                String endTime = attendanceDate + " " + times[1].trim() + ":00";
-//
-//                // 处理跨天班次
-//                if (times[1].trim().compareTo(times[0].trim()) < 0) {
-//                    Calendar cal = Calendar.getInstance();
-//                    cal.setTime(record.getAttendanceDate());
-//                    cal.add(Calendar.DAY_OF_MONTH, 1);
-//                    endTime = dateFormat.format(cal.getTime()) + " " + times[1].trim() + ":00";
-//                }
-//
-//                return new String[]{startTime, endTime};
-//            }
-//        }
-//
-//        // 无法确定时间范围
-//        return null;
-//    }
+
 
     /**
      * 确定查询时间范围
