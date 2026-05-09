@@ -34,14 +34,6 @@ public class CorpContextInterceptor implements HandlerInterceptor {
         TenantContext.clear();
         CorpUtils.removeCurrentCorpCode(null);
 
-        // 2. Header 优先（接口级切换）
-        String headerCorpCode = request.getHeader(HEADER_CORP_CODE);
-        if (StringUtils.isNotBlank(headerCorpCode)) {
-            CorpUtils.setCurrentCorpCode(headerCorpCode, headerCorpCode);
-            log.debug("使用 Header 租户: {}", headerCorpCode);
-            return true;
-        }
-
         // 3. Session 租户（switch 接口写入的）
         Session session = UserUtils.getSession();
         if (session != null) {

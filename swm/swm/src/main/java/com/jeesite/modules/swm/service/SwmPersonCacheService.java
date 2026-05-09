@@ -2,6 +2,7 @@ package com.jeesite.modules.swm.service;
 
 import com.alibaba.cloud.commons.lang.StringUtils;
 import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.SwmDictData;
@@ -77,6 +78,7 @@ public class SwmPersonCacheService implements ApplicationListener<ApplicationRea
             String corpName = user.getCorpName();
             //设置当前线程的租户信息
             CorpUtils.setCurrentCorpCode(corpCode, corpName);
+            TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
             try {
@@ -170,6 +172,7 @@ public class SwmPersonCacheService implements ApplicationListener<ApplicationRea
                 log.error("初始化在职人员缓存失败", e);
             }finally {
                 CorpUtils.setCurrentCorpCode(null, null);
+                TenantContext.clear();
             }
         }
 

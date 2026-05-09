@@ -731,6 +731,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         position.put("powerOnStatus","在线");
 
         position.put("battery", batteryMap.get(person.getIdentityCard()));
+        position.put("personType", person.getPersonType());
         return position;
     }
 

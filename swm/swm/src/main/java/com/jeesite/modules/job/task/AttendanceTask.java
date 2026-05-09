@@ -109,6 +109,7 @@ public class AttendanceTask {
             try {
                 //设置当前线程的租户信息
                 CorpUtils.setCurrentCorpCode(corpCode, corpName);
+                TenantContext.set(corpCode);
                 XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
                 XxlJobHelper.log("开始执行怠工时长计算任务...");
@@ -319,6 +320,8 @@ public class AttendanceTask {
                 jobLog.setEndTime(new Date());
                 jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
                 swmJobLogService.save(jobLog);
+                CorpUtils.removeCurrentCorpCode(null);
+                TenantContext.clear();
             }
         }
     }
