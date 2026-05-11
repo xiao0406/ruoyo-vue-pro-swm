@@ -621,6 +621,7 @@
         </foreach>
     </update>
 
+
     <select id="findListByJobTypeList" resultType="com.jeesite.modules.swm.entity.SwmPerson">
         SELECT id,name,identity_card,phone_number
         FROM swm_person
@@ -776,4 +777,28 @@
         ORDER BY
         a.update_date DESC
     </select>
+
+
+    <update id="updateBatchUrgentPerson">
+        <foreach collection="updateList" item="item" separator=";">
+            update swm_person
+            <set>
+                <if test="item.urgentPerson != null and item.urgentPerson != ''">
+                    urgent_person = #{item.urgentPerson},
+                </if>
+                <if test="item.urgentPhoneNumber != null and item.urgentPhoneNumber != ''">
+                    urgent_phone_number = #{item.urgentPhoneNumber},
+                </if>
+                <if test="item.bloodType != null and item.bloodType != ''">
+                    blood_type = #{item.bloodType},
+                </if>
+                <if test="item.team != null and item.team != ''">
+                    team = #{item.team},
+                </if>
+                update_date = now()
+            </set>
+            where name = #{item.name}
+            and phone_number = #{item.phoneNumber}
+        </foreach>
+    </update>
 </mapper>

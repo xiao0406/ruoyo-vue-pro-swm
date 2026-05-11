@@ -573,6 +573,20 @@ public class PersonTrackController extends BaseController {
                     startTime,
                     endTime);
 
+            if (!trajectoryPoints.isEmpty()) {
+                // 遍历每个轨迹点
+                for (Map<String, Object> trajectoryPoint : trajectoryPoints) {
+                    // 获取当前点的 floorId
+                    Object floorIdValue = trajectoryPoint.get("floorId");
+
+                    // 判断 floorId 是否为空（null 或 空字符串）
+                    if (floorIdValue == null || StringUtils.isEmpty(floorIdValue.toString())) {
+                        // 为空就写入默认值
+                        trajectoryPoint.put("floorId", "2049030179251453952");
+                    }
+                }
+            }
+
             List<Map<String, Object>> timelineEvents = new ArrayList<>();
 
             Map<String, Object> data = new HashMap<>();
