@@ -549,13 +549,39 @@ public class SwmBeaconStationController extends BaseController {
      * @author Shawn
      * @date 2026-04-09
      */
+//    @GetMapping("/exportAlgorithmFormat")
+//    @ResponseBody
+//    @ApiOperation(value = "导出算法格式数据")
+//    public String exportAlgorithmFormat() {
+//        try {
+//            Map<String, Map<String, Object>> data = swmBeaconStationService.exportAlgorithmFormat();
+//            return renderResult(Global.TRUE, text("导出成功"), data);
+//        } catch (Exception e) {
+//            logger.error("导出算法格式数据失败", e);
+//            return renderResult(Global.FALSE, text("导出失败：" + e.getMessage()));
+//        }
+//    }
     @GetMapping("/exportAlgorithmFormat")
     @ResponseBody
     @ApiOperation(value = "导出算法格式数据")
-    public String exportAlgorithmFormat() {
+    public String exportAlgorithmFormat1() {
         try {
-            Map<String, Map<String, Object>> data = swmBeaconStationService.exportAlgorithmFormat();
-            return renderResult(Global.TRUE, text("导出成功"), data);
+            // 调用 service 获取数据 + defaultFloorId
+            Map<String, Object> resultMap = swmBeaconStationService.exportAlgorithmFormat();
+
+            // 拿到算法格式数据
+            Map<String, Map<String, Object>> data = (Map<String, Map<String, Object>>) resultMap.get("data");
+            // 拿到默认楼层ID
+            String defaultFloorId = (String) resultMap.get("defaultFloorId");
+
+            // 构建统一返回结果
+            Map<String, Object> result = new HashMap<>();
+            result.put("result", Global.TRUE);
+            result.put("message", text("导出成功"));
+            result.put("defaultFloorId", defaultFloorId); // 关键：加到最外层
+            result.putAll(data); // 把楼层信标数据放进去
+
+            return renderResult(Global.TRUE, text("导出成功"), result);
         } catch (Exception e) {
             logger.error("导出算法格式数据失败", e);
             return renderResult(Global.FALSE, text("导出失败：" + e.getMessage()));
