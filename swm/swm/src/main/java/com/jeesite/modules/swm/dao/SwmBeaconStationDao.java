@@ -10,6 +10,7 @@ import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 信标基站管理DAO接口
@@ -127,4 +128,6 @@ public interface SwmBeaconStationDao extends CrudDao<SwmBeaconStation> {
         List<SwmBeaconStation> findAvailableDangerousSourceBeacons(@Param("excludeHazardSourceId") String excludeHazardSourceId);
 
         void updateBatch(List<SwmBeaconStation> list);
+
+        List<Map<String, Object>> findBeaconLocationForMap();
 }

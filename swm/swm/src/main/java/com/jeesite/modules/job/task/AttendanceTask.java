@@ -1772,14 +1772,11 @@ public class AttendanceTask {
                             clockOutRecords.add(item);
                             XxlJobHelper.log("中午下班补卡人员：{}", item.getEmployeeName());
                         }
-                        continue;
+//                        continue;
                     }
 
                     // 最终下班卡：不受下午上班是否补卡影响，仍可补（但避免上午提前误补）
-                    boolean canCompensateFinalClockOut =
-                            item.getNoonEndDate() != null
-                                    || afterEndWindow == null
-                                    || nowTime.after(afterEndWindow);
+                    boolean canCompensateFinalClockOut = item.getNoonEndDate() != null || afterEndWindow == null || nowTime.after(afterEndWindow);
                     if (item.getClockOutDate() == null && canCompensateFinalClockOut) {
                         item.setClockOutDate(nowTime);
                         item.setClockOutTime(nowTime);

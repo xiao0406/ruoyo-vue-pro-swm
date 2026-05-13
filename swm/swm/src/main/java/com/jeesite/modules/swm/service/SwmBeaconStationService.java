@@ -572,4 +572,52 @@ public class SwmBeaconStationService extends CrudService<SwmBeaconStationDao, Sw
         }
         return count;
     }
+
+    /**
+     * 查询信标位置信息（用于前端地图显示）
+     *
+     * @return 信标位置信息Map，key为beacon_id，value包含location、x、y
+     */
+    public Map<String, Map<String, Object>> getBeaconLocationForMap() {
+        List<Map<String, Object>> beaconList = dao.findBeaconLocationForMap();
+        
+        Map<String, Map<String, Object>> result = new HashMap<>();
+        if (beaconList != null && !beaconList.isEmpty()) {
+            for (Map<String, Object> beacon : beaconList) {
+                String beaconId = (String) beacon.get("beacon_id");
+                if (beaconId != null && !beaconId.trim().isEmpty()) {
+                    // 将MAC地址格式化为 xx:xx:xx:xx:xx:xx 格式
+                    String formattedBeaconId = formatMacAddress(beaconId);
+                    Map<String, Object> locationInfo = new HashMap<>();
+                    locationInfo.put("location", beacon.get("location"));
+                    locationInfo.put("x", beacon.get("pixel_x"));
+                    locationInfo.put("y", beacon.get("pixel_y"));
+                    
+                    result.put(formattedBeaconId, locationInfo);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 格式化MAC地址为标准格式
+     * 
+     * @param macAddress MAC地址字符串
+     * @return 格式化后的MAC地址（如：80ECCCD20B57 -> 80:ec:cc:d2:0b:57）
+     */
+    private String formatMacAddress(String macAddress) {
+        if (macAddress == null || macAddress.length() != 12) {
+            return macAddress;
+        }
+        
+        StringBuilder formatted = new StringBuilder();
+        for (int i = 0; i < 12; i += 2) {
+            if (i > 0) {
+                formatted.append(":");
+            }
+            formatted.append(macAddress.substring(i, i + 2).toLowerCase());
+        }
+        return formatted.toString();
+    }
 }

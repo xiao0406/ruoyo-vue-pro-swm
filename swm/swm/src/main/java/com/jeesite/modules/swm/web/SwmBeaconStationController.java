@@ -436,4 +436,18 @@ public class SwmBeaconStationController extends BaseController {
         Integer count = swmBeaconStationService.importData(file);
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
+
+    /**
+     * 获取信标位置信息（用于前端地图显示）
+     * 
+     * @author System
+     * @date 2026-05-13
+     * @return 信标位置信息Map，格式为：{"80:ec:cc:d2:3c:28": {"location": "L4", "x": 2134.00, "y": 3127.00}}
+     */
+    @GetMapping(value = "getBeaconLocationForMap")
+    @ResponseBody
+    @ApiOperation(value = "获取信标位置信息用于前端地图显示")
+    public Map<String, Map<String, Object>> getBeaconLocationForMap() {
+        return swmBeaconStationService.getBeaconLocationForMap();
+    }
 }

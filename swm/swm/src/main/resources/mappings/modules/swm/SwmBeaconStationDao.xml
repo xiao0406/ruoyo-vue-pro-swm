@@ -202,5 +202,18 @@
         )
         ORDER BY a.update_date DESC
     </select>
+    <select id="findBeaconLocationForMap" resultType="java.util.Map">
+        SELECT
+            beacon_id,
+            location,
+            pixel_x,
+            pixel_y
+        FROM swm_beacon_station
+        WHERE beacon_type = '1'
+          AND `status` = 0
+          AND beacon_id IS NOT NULL
+          AND pixel_x IS NOT NULL
+          AND pixel_y IS NOT NULL
+    </select>
 
 </mapper>
