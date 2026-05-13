@@ -12,6 +12,7 @@ import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.dao.PersonTrackDao;
 import com.jeesite.modules.swm.entity.PersonTrackInfo;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
+import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -728,6 +729,11 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         if (safetyStrList.contains(person.getIdentityCard())){
             position.put("safety", "已受教育");
         }
+
+        //人员登记里的入场安全教育
+//        education_status_enum
+        String dictLabel = DictUtils.getDictLabel("education_status_enum", person.getSafetyEducation(), "");
+        position.put("safetyEducation", dictLabel);
         position.put("powerOnStatus","在线");
 
         position.put("battery", batteryMap.get(person.getIdentityCard()));

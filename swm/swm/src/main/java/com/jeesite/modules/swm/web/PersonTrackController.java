@@ -1091,13 +1091,14 @@ public class PersonTrackController extends BaseController {
                         }
                     }
 
-                    // 将结果转换为List，并按时间排序
+//                    // 将结果转换为List，并按时间排序
                     resultList = new ArrayList<>(areaFirstRecordMap.values());
-                    resultList.sort((a, b) -> {
-                        String timeA = (String) a.get("time");
-                        String timeB = (String) b.get("time");
-                        return timeA.compareTo(timeB);
-                    });
+//                    resultList.sort((a, b) -> {
+//                        String timeA = (String) a.get("time");
+//                        String timeB = (String) b.get("time");
+//                        return timeA.compareTo(timeB);
+//                    });
+                    resultList.sort(Comparator.comparing(o -> (String) o.get("time"), Comparator.reverseOrder()));
 
                     logger.info("处理后得到 {} 个区域的最早记录", resultList.size());
                 } else {

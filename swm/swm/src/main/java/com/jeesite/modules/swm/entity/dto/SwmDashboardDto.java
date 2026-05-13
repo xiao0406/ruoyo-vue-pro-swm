@@ -80,10 +80,17 @@ public class SwmDashboardDto {
         private Integer shouldAttendance;
         @ApiModelProperty(value = "实际出勤人数")
         private Integer actualAttendance;
-        @ApiModelProperty(value = "日出勤率")
+        @ApiModelProperty(value = "白班日出勤率")
         private BigDecimal dailyAttendanceRate;
+
+        @ApiModelProperty(value = "夜班日出勤率")
+        private BigDecimal nightDailyAttendanceRate;
+
         @ApiModelProperty(value = "月出勤率")
         private BigDecimal monthlyAttendanceRate;
+
+        @ApiModelProperty(value = "班次 1-白班，3-夜班")
+        private String classes;
 
         //打卡
         private Date clockInDate;

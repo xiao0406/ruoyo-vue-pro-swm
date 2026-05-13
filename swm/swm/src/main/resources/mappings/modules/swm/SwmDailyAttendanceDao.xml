@@ -14,6 +14,10 @@
         <result property="classes" column="classes"/>
         <result property="clockInTime" column="clock_in_time"/>
         <result property="clockInDate" column="clock_in_date"/>
+        <result property="noonEndTime" column="noon_end_time"/>
+        <result property="noonEndDate" column="noon_end_date"/>
+        <result property="afterStartTime" column="after_start_time"/>
+        <result property="afterStartDate" column="after_start_date"/>
         <result property="clockOutTime" column="clock_out_time"/>
         <result property="clockOutDate" column="clock_out_date"/>
         <result property="scheduledHours" column="scheduled_hours"/>
@@ -165,6 +169,10 @@
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
             a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
             a.clock_out_time AS "clockOutTime",
             a.clock_out_date AS "clockOutDate",
             a.scheduled_hours AS "scheduledHours",
@@ -200,6 +208,10 @@
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
             a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
             a.clock_out_time AS "clockOutTime",
             a.clock_out_date AS "clockOutDate",
             a.scheduled_hours AS "scheduledHours",
@@ -233,6 +245,10 @@
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
             a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
             a.clock_out_time AS "clockOutTime",
             a.clock_out_date AS "clockOutDate",
             a.scheduled_hours AS "scheduledHours",
@@ -301,6 +317,10 @@
         a.work_time_range AS workTimeRange,
         a.clock_in_time AS clockInTime,
         a.clock_in_date AS clockInDate,
+        a.noon_end_time AS noonEndTime,
+        a.noon_end_date AS noonEndDate,
+        a.after_start_time AS afterStartTime,
+        a.after_start_date AS afterStartDate,
         a.clock_out_time AS clockOutTime,
         a.clock_out_date AS clockOutDate,
         a.scheduled_hours AS scheduledHours,
@@ -340,6 +360,10 @@
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
             a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
             a.clock_out_time AS "clockOutTime",
             a.clock_out_date AS "clockOutDate",
             a.scheduled_hours AS "scheduledHours",
@@ -376,6 +400,10 @@
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
             a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
             a.clock_out_time AS "clockOutTime",
             a.clock_out_date AS "clockOutDate",
             a.scheduled_hours AS "scheduledHours",
@@ -411,6 +439,10 @@
         a.work_time_range,
         a.clock_in_time,
         a.clock_in_date,
+        a.noon_end_time,
+        a.noon_end_date,
+        a.after_start_time,
+        a.after_start_date,
         a.clock_out_time,
         a.clock_out_date,
         a.scheduled_hours,
@@ -454,6 +486,10 @@
             `work_time_range` = #{workTimeRange},
             `clock_in_time` = #{clockInTime},
             `clock_in_date` = #{clockInDate},
+            `noon_end_time` = #{noonEndTime},
+            `noon_end_date` = #{noonEndDate},
+            `after_start_time` = #{afterStartTime},
+            `after_start_date` = #{afterStartDate},
             `clock_out_time` = #{clockOutTime},
             `clock_out_date` = #{clockOutDate},
             `scheduled_hours` = #{scheduledHours},
@@ -484,6 +520,18 @@
                 </if>
                 <if test="item.clockOutDate != null">
                     clock_out_date = #{item.clockOutDate},
+                </if>
+                <if test="item.noonEndTime != null">
+                    noon_end_time = #{item.noonEndTime},
+                </if>
+                <if test="item.noonEndDate != null">
+                    noon_end_date = #{item.noonEndDate},
+                </if>
+                <if test="item.afterStartTime != null">
+                    after_start_time = #{item.afterStartTime},
+                </if>
+                <if test="item.afterStartDate != null">
+                    after_start_date = #{item.afterStartDate},
                 </if>
                 <if test="item.pendingClockOutCompensate != null">
                     pending_clock_out_compensate = #{item.pendingClockOutCompensate},
@@ -521,6 +569,10 @@
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
             a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
             a.clock_out_time AS "clockOutTime",
             a.clock_out_date AS "clockOutDate",
             a.scheduled_hours AS "scheduledHours",
@@ -556,6 +608,10 @@
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
             a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
             a.clock_out_time AS "clockOutTime",
             a.clock_out_date AS "clockOutDate",
             a.scheduled_hours AS "scheduledHours",
@@ -763,6 +819,10 @@
             a.work_time_range AS "workTimeRange",
             a.clock_in_time AS "clockInTime",
             a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
             a.clock_out_time AS "clockOutTime",
             a.clock_out_date AS "clockOutDate",
             a.scheduled_hours AS "scheduledHours",
@@ -1002,7 +1062,8 @@
             a.employee_id,
             a.clock_in_date,
             fwg.work_group_name  as teamName,
-            a.attendance_date
+            a.attendance_date,
+            a.classes
         FROM
             swm_daily_attendance a
                 INNER JOIN swm_person sp ON a.employee_id = sp.id
@@ -1018,7 +1079,8 @@
             a.employee_id,
             a.clock_in_date,
             fpa.position_name   as departmentName,
-            a.attendance_date
+            a.attendance_date,
+            a.classes
         FROM
             swm_daily_attendance a
                 INNER JOIN swm_person sp ON a.employee_id = sp.id

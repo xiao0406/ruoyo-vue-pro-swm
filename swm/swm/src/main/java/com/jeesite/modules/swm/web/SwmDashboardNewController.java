@@ -155,10 +155,10 @@ public class SwmDashboardNewController extends BaseController {
             return null;
         }
         SwmScheduleTime day = list.get(0);
-        String startTime = day.getStartTime(); // "07:30"
-        String endTime = day.getEndTime(); // "18:00"
-        int dayStartHour = getStartHour(startTime);   // 7
-        int dayEndHour = getEndHour(endTime);         // 18
+        LocalTime dayStartTime = parseTime(day.getStartTime());
+        if (dayStartTime == null) {
+            return Collections.emptyMap();
+        }
 
         // 夜班
         query.setShiftType("3");
@@ -167,30 +167,74 @@ public class SwmDashboardNewController extends BaseController {
             return null;
         }
         SwmScheduleTime night = list1.get(0);
-        String nightStartTime = night.getStartTime(); // "18:00"
-        String nightEndTime = night.getEndTime(); // "03:40"
-        int nightStartHour = getStartHour(nightStartTime); // 18
-        int nightEndHour = getEndHour(nightEndTime);       // 4
+        LocalTime nightEndTime = parseTime(night.getEndTime());
+        if (nightEndTime == null) {
+            return Collections.emptyMap();
+        }
 
-        List<String> hourList = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        // 起点：白班上班时间（向下取到半小时）
+        LocalDateTime startDateTime = LocalDateTime.of(today, floorToHalfHour(dayStartTime));
+        // 终点：夜班下班时间（次日，向上取到半小时）
+        LocalDateTime endDateTime = LocalDateTime.of(today.plusDays(1), ceilToHalfHour(nightEndTime));
 
-        // 7点到23点
-        IntStream.rangeClosed(dayStartHour, 23)
-                .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
-                .forEach(hourList::add);
-
-        // 0点到6点
-        IntStream.rangeClosed(0, dayStartHour -1)
-                .mapToObj(hour -> LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("HH:00")))
-                .forEach(hourList::add);
+        List<LocalDateTime> pointDateTimes = new ArrayList<>();
+        for (LocalDateTime cursor = startDateTime; cursor.isBefore(endDateTime); cursor = cursor.plusMinutes(30)) {
+            pointDateTimes.add(cursor);
+        }
 
         // 原有数据
-        Map<String, Object> result = getHourWorkingCount(hourList);
+        Map<String, Object> result = getHalfHourWorkingCount(pointDateTimes);
 
         result.put("day", day);
         result.put("night", night);
 
         return result;
+    }
+
+    /**
+     * 半小时粒度折线统计
+     * 示例：07:00 代表 07:00:00~07:30:00；07:30 代表 07:30:00~08:00:00
+     */
+    private Map<String, Object> getHalfHourWorkingCount(List<LocalDateTime> halfHourList) {
+        Map<String, Object> result = new HashMap<>();
+        List<Integer> countList = new ArrayList<>();
+        List<String> xAxis = new ArrayList<>();
+
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter axisFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        for (LocalDateTime slotStart : halfHourList) {
+            LocalDateTime slotEnd = slotStart.plusMinutes(30);
+
+            String startTime = slotStart.format(dateTimeFormatter);
+            String endTime = slotEnd.format(dateTimeFormatter);
+
+            log.info("getHalfHourWorkingCount startTime | {} endTime | {}", startTime, endTime);
+            Map<String, Integer> halfHourWorkingCount = getHourWorkingCountByTypeFromTDengine(startTime, endTime);
+            Integer workingPersonCount = halfHourWorkingCount.getOrDefault("worker", 0);
+            Integer workingManagerCount = halfHourWorkingCount.getOrDefault("manager", 0);
+            countList.add(workingPersonCount + workingManagerCount);
+            xAxis.add(slotStart.toLocalTime().format(axisFormatter));
+        }
+
+        result.put("y", countList);
+        result.put("x", xAxis);
+        return result;
+    }
+
+    private LocalTime floorToHalfHour(LocalTime time) {
+        return time.getMinute() < 30 ? LocalTime.of(time.getHour(), 0) : LocalTime.of(time.getHour(), 30);
+    }
+
+    private LocalTime ceilToHalfHour(LocalTime time) {
+        if (time.getMinute() == 0 || time.getMinute() == 30) {
+            return LocalTime.of(time.getHour(), time.getMinute());
+        }
+        if (time.getMinute() < 30) {
+            return LocalTime.of(time.getHour(), 30);
+        }
+        return LocalTime.of((time.getHour() + 1) % 24, 0);
     }
 
     private int getStartHour(String timeStr) {

@@ -32,6 +32,10 @@ import java.util.Date;
         @Column(name = "classes", attrName = "classes", label = "班次"),
         @Column(name = "clock_in_time", attrName = "clockInTime", label = "上班打卡时间"),
         @Column(name = "clock_in_date", attrName = "clockInDate", label = "上班打卡完整时间"),
+        @Column(name = "noon_end_time", attrName = "noonEndTime", label = "中午下班时间"),
+        @Column(name = "noon_end_date", attrName = "noonEndDate", label = "中午下班完整时间"),
+        @Column(name = "after_start_time", attrName = "afterStartTime", label = "下午上班时间"),
+        @Column(name = "after_start_date", attrName = "afterStartDate", label = "下午上班完整时间"),
         @Column(name = "clock_out_time", attrName = "clockOutTime", label = "下班打卡时间"),
         @Column(name = "clock_out_date", attrName = "clockOutDate", label = "下班打卡完整时间"),
         @Column(name = "clock_start_time", attrName = "clockStartTime", label = "打卡开始时间"),
@@ -64,6 +68,10 @@ public class SwmDailyAttendance extends DataEntity<SwmDailyAttendance> {
     private String classes; // 班次(早班/中班/晚班)
     private Date clockInTime; // 上班打卡时间
     private Date clockInDate; // 上班打卡完整时间
+    private Date noonEndTime; // 中午下班时间
+    private Date noonEndDate; // 中午下班完整时间
+    private Date afterStartTime; // 下午上班时间
+    private Date afterStartDate; // 下午上班完整时间
     private Date clockOutTime; // 下班打卡时间
     private Date clockOutDate; // 下班打卡完整时间
     private Date clockStartTime; // 打卡开始时间

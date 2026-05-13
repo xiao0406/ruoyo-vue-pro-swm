@@ -5,6 +5,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -20,12 +21,15 @@ import javax.validation.constraints.Pattern;
         @Column(name = "id", attrName = "id", label = "主键ID", isPK = true),
         @Column(name = "shift_type", attrName = "shiftType", label = "班次类型", queryType = QueryType.LIKE),
         @Column(name = "start_time", attrName = "startTime", label = "开始时间"),
+        @Column(name = "noon_end_time", attrName = "noonEndTime", label = "中午下班时间"),
+        @Column(name = "after_start_time", attrName = "afterStartTime", label = "下午上班时间"),
         @Column(name = "end_time", attrName = "endTime", label = "结束时间"),
         @Column(name = "rest_time", attrName = "restTime", label = "休息时长"),
         @Column(name = "rest_days", attrName = "restDays", label = "休息日"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmScheduleTime extends DataEntity<SwmScheduleTime> {
 
     private static final long serialVersionUID = 1L;
@@ -65,6 +69,9 @@ public class SwmScheduleTime extends DataEntity<SwmScheduleTime> {
     // 用于显示的文本属性，不对应数据库字段
     private String shiftTypeText; // 班次类型显示文本
     private String restDaysText; // 休息日显示文本
+    private String noonEndTime; //中午下班时间
+    private String afterStartTime; //下午上班时间
+
 
     public SwmScheduleTime() {
         this(null);

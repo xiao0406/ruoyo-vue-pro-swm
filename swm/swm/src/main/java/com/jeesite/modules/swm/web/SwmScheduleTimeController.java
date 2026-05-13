@@ -86,6 +86,8 @@ public class SwmScheduleTimeController extends BaseController {
             scheduleMap.put("restTime", schedule.getRestTime());
             scheduleMap.put("restDays", schedule.getRestDays());
             scheduleMap.put("isNewRecord", schedule.getIsNewRecord());
+            scheduleMap.put("noonEndTime", schedule.getNoonEndTime());
+            scheduleMap.put("afterStartTime", schedule.getAfterStartTime());
 
             // 添加枚举文本显示值
             scheduleMap.put("shiftTypeText", schedule.getShiftTypeText());

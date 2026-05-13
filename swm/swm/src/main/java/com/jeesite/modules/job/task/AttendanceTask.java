@@ -1564,7 +1564,7 @@ public class AttendanceTask {
                 // 1. 处理未打上班卡的数据  clockInTime=null
                 processclockInCard(requestDate,corpCode);
 
-                // 2. 处理未打下班卡的数据 clockOutTime=null
+                // 2. 处理未打下班卡的数据（按状态机推进：中午下班 -> 下午上班 -> 最终下班）
                 processclockOutCard(requestDate,corpCode);
 
                 jobLog.setExecuteStatus("0");
@@ -1699,6 +1699,15 @@ public class AttendanceTask {
         String startDay = DateUtil.formatDateTime(DateUtil.beginOfDay(now));
         String nowDay = DateUtil.formatDateTime(now);
 
+        Map<String, SwmScheduleTime> scheduleMap = new HashMap<>();
+        List<SwmScheduleTime> scheduleList = swmScheduleTimeService.findList(new SwmScheduleTime());
+        if (CollectionUtils.isNotEmpty(scheduleList)) {
+            for (SwmScheduleTime scheduleTime : scheduleList) {
+                if (scheduleTime != null && StringUtils.isNotBlank(scheduleTime.getShiftType())) {
+                    scheduleMap.put(scheduleTime.getShiftType(), scheduleTime);
+                }
+            }
+        }
 
         for (SwmDailyAttendance item : records) {
             try {
@@ -1718,38 +1727,66 @@ public class AttendanceTask {
 
                 // 3. 查询最近3分钟蓝牙信号
                 Integer count = getLast3MinutesBluetoothCountByClockOut(deviceId, item.getIdentityCard(),startTime, endTime,corpCode);
-                // ============= 【A. 有信号 → 重置补偿状态】 =============
+
+                boolean isDayShift = "1".equals(item.getClasses());
+                SwmScheduleTime scheduleTime = scheduleMap.get(item.getClasses());
+                Date nowTime = new Date();
+                Date noonStartWindow = null;
+                Date noonEndWindow = null;
+                Date afterStartWindow = null;
+                Date afterEndWindow = null;
+                if (isDayShift && scheduleTime != null && item.getAttendanceDate() != null) {
+                    noonStartWindow = buildWindowTime(item.getAttendanceDate(), scheduleTime.getNoonEndTime(), -30);
+                    noonEndWindow = buildWindowTime(item.getAttendanceDate(), scheduleTime.getNoonEndTime(), 30);
+                    afterStartWindow = buildWindowTime(item.getAttendanceDate(), scheduleTime.getAfterStartTime(), -30);
+                    afterEndWindow = buildWindowTime(item.getAttendanceDate(), scheduleTime.getAfterStartTime(), 30);
+                }
+
+                // ============= 【A. 有信号 → 在下午窗口内补下午上班卡】 =============
                 if (count != null && count > 0) {
-                    // 说明员工又出现了 → 补偿机制恢复可再次触发
+                    // 中午已下班且下午上班未打卡时，仅在 afterStartTime ±30 分钟窗口内补卡
+                    if (isDayShift
+                            && item.getNoonEndDate() != null
+                            && item.getAfterStartDate() == null
+                            && isInWindow(nowTime, afterStartWindow, afterEndWindow)) {
+                        item.setAfterStartDate(nowTime);
+                        item.setAfterStartTime(nowTime);
+                        clockOutRecords.add(item);
+                        XxlJobHelper.log("下午上班补卡人员：{}", item.getEmployeeName());
+                    }
                     item.setPendingClockOutCompensate(false);
-                    // 这里不做下班打卡动作，因为信标机制会更新
-                    clockOutRecords.add( item);
                     continue;
                 }
                 // ============= 【B. 无信号 → 判断是否要补卡】 =============
-                // 无信号超过3分钟，但之前已经补偿过但未恢复 → 不能再补
-                if (Boolean.TRUE.equals(item.isPendingClockOutCompensate())) {
-                    continue;
-                }
-
-                // 无信号，未补偿过 → 触发补卡
                 if (count != null && count == 0) {
-                    // 补偿下班卡
-                    ZoneId zoneId = ZoneId.systemDefault();
-                    // 当前时间
-                    LocalDateTime nowDateTime = LocalDateTime.now(zoneId);
-                    // 如果极端情况下出现 24:00:00（理论上不会，但兜底）
-                    if (nowDateTime.getHour() == 0 && nowDateTime.getMinute() == 0 && nowDateTime.getSecond() == 0) {
-                        // 统一压成 23:59:59（不跨天）
-                        nowDateTime = nowDateTime.minusSeconds(1);
+                    // 先尝试补中午下班：仅 noonEndTime ±30 分钟窗口内允许补
+                    if (isDayShift && item.getNoonEndDate() == null && isInWindow(nowTime, noonStartWindow, noonEndWindow)) {
+                        // 限制：如果 noonEndTime 前半小时就已离厂（窗口内从未出现信号），则不补中午下班卡
+                        String noonStartStr = DateUtil.formatDateTime(noonStartWindow);
+                        String noonRangeEndStr = DateUtil.formatDateTime(nowTime.before(noonEndWindow) ? nowTime : noonEndWindow);
+                        Integer noonWindowSignalCount = getLast3MinutesBluetoothCountByClockOut(
+                                deviceId, item.getIdentityCard(), noonStartStr, noonRangeEndStr, corpCode);
+                        if (noonWindowSignalCount != null && noonWindowSignalCount > 0) {
+                            item.setNoonEndDate(nowTime);
+                            item.setNoonEndTime(nowTime);
+                            clockOutRecords.add(item);
+                            XxlJobHelper.log("中午下班补卡人员：{}", item.getEmployeeName());
+                        }
+                        continue;
                     }
-                    Date clockOutDate = Date.from(nowDateTime.atZone(zoneId).toInstant());
-                    item.setClockOutDate(clockOutDate);
-                    item.setClockOutTime(clockOutDate);
-                    // 标记今天已补偿
-                    item.setPendingClockOutCompensate(true);
-                    clockOutRecords.add(item);
-                    XxlJobHelper.log("下班补卡人员：{}", item.getEmployeeName());
+
+                    // 最终下班卡：不受下午上班是否补卡影响，仍可补（但避免上午提前误补）
+                    boolean canCompensateFinalClockOut =
+                            item.getNoonEndDate() != null
+                                    || afterEndWindow == null
+                                    || nowTime.after(afterEndWindow);
+                    if (item.getClockOutDate() == null && canCompensateFinalClockOut) {
+                        item.setClockOutDate(nowTime);
+                        item.setClockOutTime(nowTime);
+                        item.setPendingClockOutCompensate(true);
+                        clockOutRecords.add(item);
+                        XxlJobHelper.log("下班补卡人员：{}", item.getEmployeeName());
+                    }
                 }
             } catch (Exception e) {
                 log.error("处理人员 {} 下班补卡失败", item.getEmployeeName(), e);
@@ -1759,6 +1796,26 @@ public class AttendanceTask {
         List<List<SwmDailyAttendance>> lists = BatchOperationsUtil.batchCutting(clockOutRecords, 50);
         for (List<SwmDailyAttendance> list : lists) {
             swmDailyAttendanceService.updateBatch(list);
+        }
+    }
+
+    private boolean isInWindow(Date now, Date start, Date end) {
+        return now != null && start != null && end != null
+                && !now.before(start) && !now.after(end);
+    }
+
+    private Date buildWindowTime(Date attendanceDate, String hhmmTime, int offsetMinutes) {
+        if (attendanceDate == null || StringUtils.isBlank(hhmmTime)) {
+            return null;
+        }
+        try {
+            String normalized = hhmmTime.length() >= 5 ? hhmmTime.substring(0, 5) : hhmmTime;
+            String dateTimeStr = DateUtil.formatDate(attendanceDate) + " " + normalized;
+            Date base = DateUtil.parse(dateTimeStr, "yyyy-MM-dd HH:mm").toJdkDate();
+            return DateUtil.offsetMinute(base, offsetMinutes);
+        } catch (Exception e) {
+            log.warn("构建窗口时间失败，attendanceDate={}, hhmmTime={}", attendanceDate, hhmmTime, e);
+            return null;
         }
     }
 

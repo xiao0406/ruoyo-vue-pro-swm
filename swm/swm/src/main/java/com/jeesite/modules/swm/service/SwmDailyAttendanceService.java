@@ -1165,28 +1165,55 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             String teamName = entry.getKey();
             List<SwmDashboardDto.TeamAttendanceAnalysis> records = entry.getValue();
 
-            /* -------------------- 当天应出勤人数 -------------------- */
+            /* -------------------- 白班：当天应出勤人数 -------------------- */
             int dayShouldAttendance = (int) records.stream()
                     .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> "1".equals(r.getClasses())) // 1-白班
                     .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
                     .filter(Objects::nonNull)
                     .distinct()
                     .count();
 
-            /* -------------------- 当天实际出勤人数 -------------------- */
+            /* -------------------- 白班：当天实际出勤人数 -------------------- */
             int dayActualAttendance = (int) records.stream()
                     .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> "1".equals(r.getClasses())) // 1-白班
                     .filter(r -> r.getClockInDate() != null)
                     .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
                     .filter(Objects::nonNull)
                     .distinct()
                     .count();
 
-            /* -------------------- 日出勤率 -------------------- */
+            /* -------------------- 白班日出勤率 -------------------- */
             BigDecimal dailyRate = dayShouldAttendance == 0
                     ? BigDecimal.ZERO
                     : BigDecimal.valueOf(dayActualAttendance)
                     .divide(BigDecimal.valueOf(dayShouldAttendance), 4, RoundingMode.HALF_UP);
+
+            /* -------------------- 夜班：当天应出勤人数 -------------------- */
+            int nightShouldAttendance = (int) records.stream()
+                    .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> "3".equals(r.getClasses())) // 3-夜班
+                    .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            /* -------------------- 夜班：当天实际出勤人数 -------------------- */
+            int nightActualAttendance = (int) records.stream()
+                    .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> "3".equals(r.getClasses())) // 3-夜班
+                    .filter(r -> r.getClockInDate() != null)
+                    .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            /* -------------------- 夜班日出勤率 -------------------- */
+            BigDecimal nightDailyRate = nightShouldAttendance == 0
+                    ? BigDecimal.ZERO
+                    : BigDecimal.valueOf(nightActualAttendance)
+                    .divide(BigDecimal.valueOf(nightShouldAttendance), 4, RoundingMode.HALF_UP);
 
             /* -------------------- 月出勤率（人 × 天） -------------------- */
             long monthShould = records.stream()
@@ -1211,12 +1238,13 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             dto.setShouldAttendance(dayShouldAttendance);
             dto.setActualAttendance(dayActualAttendance);
             dto.setDailyAttendanceRate(dailyRate.multiply(BigDecimal.valueOf(100)));
+            dto.setNightDailyAttendanceRate(nightDailyRate.multiply(BigDecimal.valueOf(100)));
             dto.setMonthlyAttendanceRate(monthlyRate.multiply(BigDecimal.valueOf(100)));
 
             result.add(dto);
         }
 
-        /* -------------------- 排序：日出勤率倒序 -------------------- */
+        /* -------------------- 排序：白班日出勤率倒序 -------------------- */
         result.sort(Comparator.comparing(
                 SwmDashboardDto.TeamAttendanceAnalysis::getDailyAttendanceRate
         ).reversed());
@@ -1259,28 +1287,55 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             String departmentName = entry.getKey();
             List<SwmDashboardDto.TeamAttendanceAnalysis> records = entry.getValue();
 
-            /* -------------------- 当天应出勤人数 -------------------- */
+            /* -------------------- 白班：当天应出勤人数 -------------------- */
             int dayShouldAttendance = (int) records.stream()
                     .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> "1".equals(r.getClasses())) // 1-白班
                     .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
                     .filter(Objects::nonNull)
                     .distinct()
                     .count();
 
-            /* -------------------- 当天实际出勤人数 -------------------- */
+            /* -------------------- 白班：当天实际出勤人数 -------------------- */
             int dayActualAttendance = (int) records.stream()
                     .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> "1".equals(r.getClasses())) // 1-白班
                     .filter(r -> r.getClockInDate() != null)
                     .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
                     .filter(Objects::nonNull)
                     .distinct()
                     .count();
 
-            /* -------------------- 日出勤率 -------------------- */
+            /* -------------------- 白班日出勤率 -------------------- */
             BigDecimal dailyRate = dayShouldAttendance == 0
                     ? BigDecimal.ZERO
                     : BigDecimal.valueOf(dayActualAttendance)
                     .divide(BigDecimal.valueOf(dayShouldAttendance), 4, RoundingMode.HALF_UP);
+
+            /* -------------------- 夜班：当天应出勤人数 -------------------- */
+            int nightShouldAttendance = (int) records.stream()
+                    .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> "3".equals(r.getClasses())) // 3-夜班
+                    .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            /* -------------------- 夜班：当天实际出勤人数 -------------------- */
+            int nightActualAttendance = (int) records.stream()
+                    .filter(r -> statDate.equals(r.getAttendanceDate()))
+                    .filter(r -> "3".equals(r.getClasses())) // 3-夜班
+                    .filter(r -> r.getClockInDate() != null)
+                    .map(SwmDashboardDto.TeamAttendanceAnalysis::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            /* -------------------- 夜班日出勤率 -------------------- */
+            BigDecimal nightDailyRate = nightShouldAttendance == 0
+                    ? BigDecimal.ZERO
+                    : BigDecimal.valueOf(nightActualAttendance)
+                    .divide(BigDecimal.valueOf(nightShouldAttendance), 4, RoundingMode.HALF_UP);
 
             /* -------------------- 月出勤率（人 × 天） -------------------- */
             long monthShould = records.stream()
@@ -1305,12 +1360,13 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             dto.setShouldAttendance(dayShouldAttendance);
             dto.setActualAttendance(dayActualAttendance);
             dto.setDailyAttendanceRate(dailyRate.multiply(BigDecimal.valueOf(100)));
+            dto.setNightDailyAttendanceRate(nightDailyRate.multiply(BigDecimal.valueOf(100)));
             dto.setMonthlyAttendanceRate(monthlyRate.multiply(BigDecimal.valueOf(100)));
 
             result.add(dto);
         }
 
-        /* -------------------- 排序：日出勤率倒序 -------------------- */
+        /* -------------------- 排序：白班日出勤率倒序 -------------------- */
         result.sort(Comparator.comparing(
                 SwmDashboardDto.TeamAttendanceAnalysis::getDailyAttendanceRate
         ).reversed());
