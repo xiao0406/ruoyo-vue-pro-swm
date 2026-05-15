@@ -136,7 +136,6 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             //为每个租户都生成排班计划
             for (User user : corpList) {
                 try {
-                    String corpCode1 = CorpUtils.getCurrentCorpCode();
                     String corpCode = user.getCorpCode();
                     String corpName = user.getCorpName();
                     CorpUtils.setCurrentCorpCode(corpCode, corpName);

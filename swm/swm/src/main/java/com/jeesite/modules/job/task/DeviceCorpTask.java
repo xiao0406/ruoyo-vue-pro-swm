@@ -78,30 +78,36 @@ public class DeviceCorpTask {
                 CorpUtils.removeCurrentCorpCode(null);
                 TenantContext.clear();
             }
-
-            // 构建一个临时 key
-            String tempKey = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP + "_TMP";
-
-            // 先写入临时 key
-            Map<String, String> map = new HashMap<>();
-            for (SwmHelmetDevice d : deviceListAll) {
-                map.put(d.getDeviceId(), d.getCorpCode());
-            }
-            redisTemplate.opsForHash().putAll(tempKey, map);
-
-            // 原子替换旧 key
-            redisTemplate.execute((RedisCallback<Object>) connection -> {
-                byte[] temp = tempKey.getBytes(StandardCharsets.UTF_8);
-                byte[] real = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP.getBytes(StandardCharsets.UTF_8);
-
-                connection.rename(temp, real); // 原子操作
-                return null;
-            });
-
-            XxlJobHelper.log("设备租户映射关系生成完成");
-            // 刷新缓存
-            deviceCorpMappingCache.refreshCache();
         }
+
+        // 所有租户处理完成后，再统一写入 Redis，避免每个租户循环中重复覆盖缓存
+        if (CollectionUtils.isEmpty(deviceListAll)) {
+            XxlJobHelper.log("所有租户均没有设备，设备租户映射关系不更新");
+            return;
+        }
+
+        // 构建一个临时 key
+        String tempKey = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP + "_TMP";
+
+        // 先写入临时 key
+        Map<String, String> map = new HashMap<>();
+        for (SwmHelmetDevice d : deviceListAll) {
+            map.put(d.getDeviceId(), d.getCorpCode());
+        }
+        redisTemplate.opsForHash().putAll(tempKey, map);
+
+        // 原子替换旧 key
+        redisTemplate.execute((RedisCallback<Object>) connection -> {
+            byte[] temp = tempKey.getBytes(StandardCharsets.UTF_8);
+            byte[] real = SwmRedisConstant.RedisGlobalKey.DEVICE_TO_CORP.getBytes(StandardCharsets.UTF_8);
+
+            connection.rename(temp, real); // 原子操作
+            return null;
+        });
+
+        XxlJobHelper.log("设备租户映射关系生成完成，设备数量：{}", deviceListAll.size());
+        // 刷新缓存
+        deviceCorpMappingCache.refreshCache();
     }
 
 }

@@ -38,6 +38,8 @@ public class ThreadPoolTaskExecutorConfig {
         executor.setThreadNamePrefix("qms-");
         // 设置拒绝策略。如果队列满了的拒绝策略。此处使用直接在当前线程调用的策略模式。
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        // 线程上下文复制，防止默认 @Async 使用 taskExecutor 时丢失租户
+        executor.setTaskDecorator(new CorpContextTaskDecorator());
         // 等待所有任务结束后再关闭线程池
         executor.setWaitForTasksToCompleteOnShutdown(true);
         //初始化 ThreadPoolTaskExecutor 对象
