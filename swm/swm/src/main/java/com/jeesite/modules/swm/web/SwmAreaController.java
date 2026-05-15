@@ -312,6 +312,10 @@ public class SwmAreaController extends BaseController {
             List<String> bids = (List<String>) params.get("bids");
             String beaconColor = (String) params.get("beaconColor");
             Boolean isEdit = (Boolean) params.get("isEdit");
+            // 获取是否大屏展示字段，默认为false（否）
+            Boolean isScreenShow = params.get("isScreenShow") != null 
+                ? Boolean.parseBoolean(params.get("isScreenShow").toString()) 
+                : false;
 
             SwmArea swmArea;
             if (isEdit != null && isEdit && id != null && !id.trim().isEmpty()) {
@@ -333,6 +337,7 @@ public class SwmAreaController extends BaseController {
             swmArea.setAreaColor(beaconColor); // 保存区域颜色
             swmArea.setVoicePrompt(voicePrompt);
             swmArea.setFilePath(filePath);
+            swmArea.setIsScreenShow(isScreenShow); // 设置是否大屏展示
 
             // 将 bids 转换为 JSON 字符串并设置到区域对象
             if (bids != null && !bids.isEmpty()) {

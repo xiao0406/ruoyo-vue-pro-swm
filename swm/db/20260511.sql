@@ -28,3 +28,8 @@ ALTER TABLE swm_daily_attendance
 ALTER TABLE swm_daily_attendance
     ADD COLUMN after_start_date datetime COMMENT '下午上班完整时间'
         AFTER after_start_time;
+
+# ========================= 2026/05/15 ==============================================
+ALTER TABLE swm_area
+    ADD COLUMN is_screen_show BOOLEAN NOT NULL DEFAULT false COMMENT '是否屏幕显示：0-否，1-是'
+        AFTER b_ids;

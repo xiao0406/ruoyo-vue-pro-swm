@@ -27,6 +27,7 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "voice_prompt", attrName = "voicePrompt", label = "语音提示"),
         @Column(name = "file_path", attrName = "filePath", label = "文件路径"),
         @Column(name = "b_ids", attrName = "bIds", label = "关联的信标ID列表"),
+        @Column(name = "is_screen_show", attrName = "isScreenShow", label = "是否大屏展示"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
@@ -42,6 +43,7 @@ public class SwmArea extends DataEntity<SwmArea> {
     private String voicePrompt; // 语音提示
     private String filePath; // 文件路径
     private String bIds; // 关联的信标ID列表，JSON格式
+    private Boolean isScreenShow; // 是否大屏展示：false-否，true-是
     private int  random;
 
     public SwmArea() {
@@ -112,5 +114,13 @@ public class SwmArea extends DataEntity<SwmArea> {
 
     public void setBIds(String bIds) {
         this.bIds = bIds;
+    }
+
+    public Boolean getIsScreenShow() {
+        return isScreenShow;
+    }
+
+    public void setIsScreenShow(Boolean isScreenShow) {
+        this.isScreenShow = isScreenShow;
     }
 }
