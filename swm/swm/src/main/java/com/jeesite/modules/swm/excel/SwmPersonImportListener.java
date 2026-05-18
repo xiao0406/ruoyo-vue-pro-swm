@@ -12,6 +12,7 @@ import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmSafetyHelmetOrderService;
+import com.jeesite.modules.swm.util.IdCardUtil;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.utils.UserUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -170,6 +171,7 @@ public class SwmPersonImportListener extends AnalysisEventListener<SwmPersonExce
         String identityCard = trimToNull(model.getIdentityCard());
         if (identityCard != null) {
             person.setIdentityCard(identityCard);
+            IdCardUtil.fillGenderAndAge(person);
         }
 
         String phoneNumber = trimToNull(model.getPhoneNumber());

@@ -22,6 +22,7 @@ import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.excel.*;
 import com.jeesite.modules.swm.service.*;
+import com.jeesite.modules.swm.util.IdCardUtil;
 import com.jeesite.modules.swm.util.MqSendUtil;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.ExcelExportUtil;
@@ -99,7 +100,6 @@ public class SwmPersonController extends BaseController {
     private SwmDictDataService swmDictDataService;
 
 
-
     // 延迟获取SwmPersonCacheService，避免循环依赖
     private SwmPersonCacheService getPersonCacheService() {
         try {
@@ -121,7 +121,7 @@ public class SwmPersonController extends BaseController {
     /**
      * 查询列表
      */
-    @RequestMapping(value = { "list", "" })
+    @RequestMapping(value = {"list", ""})
     public String list(SwmPerson swmPerson, Model model) {
         model.addAttribute("swmPerson", swmPerson);
         return "modules/swm/swmPersonList";
@@ -258,6 +258,11 @@ public class SwmPersonController extends BaseController {
     @PostMapping(value = "save")
     @ResponseBody
     public String save(@Validated SwmPerson swmPerson) {
+        // ========== 从身份证自动填充年龄和性别 ==========
+        if (StringUtils.isNotBlank(swmPerson.getIdentityCard())) {
+            IdCardUtil.fillGenderAndAge(swmPerson);
+        }
+
         // ========== 步骤1：识别操作类型 ==========
         String operateType = identifyOperateType(swmPerson);
         logger.info("识别到操作类型：{}，人员ID：{}，安全帽ID：{}",
@@ -349,15 +354,13 @@ public class SwmPersonController extends BaseController {
     }
 
 
-
-
     /**
      * 批量修改人员登记
      */
     @PostMapping(value = "updateBatch")
     @ResponseBody
     public String updateBatch(@Validated SwmPerson swmPerson) {
-        if (CollectionUtils.isNotEmpty(swmPerson.getIds())){
+        if (CollectionUtils.isNotEmpty(swmPerson.getIds())) {
             return renderResult(Global.FALSE, text("所传主键id不能为空"));
         }
         swmPersonService.updateBatch(swmPerson);
@@ -1278,7 +1281,7 @@ public class SwmPersonController extends BaseController {
 
     /**
      * 从缓存中获取当天有坐标数据的在职人员信息，附带身份证号
-     * 
+     *
      * @return 人员信息映射
      * @author Shawn
      * @date 2025-01-17
@@ -1555,7 +1558,7 @@ public class SwmPersonController extends BaseController {
 
     /**
      * 批量检查身份证号列表当天是否有坐标数据
-     * 
+     *
      * @param idCards 身份证号列表
      * @return 有坐标数据的身份证号集合
      */
@@ -1632,7 +1635,7 @@ public class SwmPersonController extends BaseController {
 
     /**
      * 批量获取身份证号对应的设备ID
-     * 
+     *
      * @param idCards 身份证号集合
      * @return 身份证号到设备ID的映射
      */
@@ -1659,7 +1662,7 @@ public class SwmPersonController extends BaseController {
 
     /**
      * 批量获取设备电量信息
-     * 
+     *
      * @param deviceIds 设备ID列表
      * @return 设备ID到电量的映射
      */
@@ -1673,7 +1676,7 @@ public class SwmPersonController extends BaseController {
             // 构建批量查询SQL
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("SELECT device_id, bat_l FROM ").append(tdengineDbName)
-                    .append("." + TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION+ " WHERE device_id IN (");
+                    .append("." + TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION + " WHERE device_id IN (");
 
             // 添加设备ID列表
             for (int i = 0; i < deviceIds.size(); i++) {
@@ -1722,7 +1725,7 @@ public class SwmPersonController extends BaseController {
 
     /**
      * 批量获取身份证号对应的位置信息
-     * 
+     *
      * @param idCards 身份证号集合
      * @return 身份证号到位置信息的映射
      */
@@ -1788,7 +1791,7 @@ public class SwmPersonController extends BaseController {
 
     /**
      * 批量获取身份证号对应的运动状态
-     * 
+     *
      * @param idCards 身份证号集合
      * @return 身份证号到运动状态的映射
      */
@@ -1858,7 +1861,7 @@ public class SwmPersonController extends BaseController {
     @GetMapping(value = "checkIdentityCard")
     @ResponseBody
     public Map<String, Object> checkIdentityCard(@RequestParam("identityCard") String identityCard,
-            @RequestParam(value = "excludeId", required = false) String excludeId) {
+                                                 @RequestParam(value = "excludeId", required = false) String excludeId) {
         Map<String, Object> result = new HashMap<>();
 
         try {
@@ -1908,7 +1911,7 @@ public class SwmPersonController extends BaseController {
 
     /**
      * 统计安全教育完成情况
-     * 
+     *
      * @return 安全教育统计信息
      * @author Shawn
      * @date 2025-01-18
@@ -1999,7 +2002,7 @@ public class SwmPersonController extends BaseController {
 
     /**
      * 根据部门条件查询在职人员
-     * 
+     *
      * @param departmentCondition 部门条件参数，可以是车间ID、班组ID、产线ID、组织编码或身份证号
      * @return 符合条件的在职人员列表
      * @author Shawn
@@ -2295,7 +2298,7 @@ public class SwmPersonController extends BaseController {
         SwmDictData dictData = new SwmDictData();
         dictData.setDictType("person_type_enum");
         List<SwmDictData> personTypeList = swmDictDataService.findList(dictData);
-        if (personTypeList == null || personTypeList.isEmpty()){
+        if (personTypeList == null || personTypeList.isEmpty()) {
             return renderResult(Global.FALSE, text("请先添加人员类型字典"));
         }
         Map<String, String> personTypeMap = personTypeList.stream().collect(Collectors.toMap(SwmDictData::getDictValue, SwmDictData::getDictLabel));
@@ -2320,5 +2323,4 @@ public class SwmPersonController extends BaseController {
         }
         return renderResult(Global.TRUE, text("成功！"), name);
     }
-
 }

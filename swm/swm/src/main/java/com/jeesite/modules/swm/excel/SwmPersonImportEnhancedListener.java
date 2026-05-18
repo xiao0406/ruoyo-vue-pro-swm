@@ -16,6 +16,7 @@ import com.jeesite.modules.swm.service.OrgValidationService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
 import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.service.SwmSafetyHelmetOrderService;
+import com.jeesite.modules.swm.util.IdCardUtil;
 import com.jeesite.modules.sys.entity.User;
 import com.jeesite.modules.sys.utils.UserUtils;
 import org.slf4j.Logger;
@@ -533,6 +534,7 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         String identityCard = trimToNull(excelModel.getIdentityCard());
         if (identityCard != null) {
             person.setIdentityCard(identityCard);
+            IdCardUtil.fillGenderAndAge(person);
         }
 
         person.setPhoneNumber(trimToNull(excelModel.getPhoneNumber()));
