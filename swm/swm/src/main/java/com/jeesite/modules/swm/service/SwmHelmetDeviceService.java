@@ -214,7 +214,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             List<String> deviceIdList = new ArrayList<>();
             //查询设备在线数量
             try {
-                String corpCode = CorpUtils.getCurrentCorpCode();
+                String corpCode = TenantContext.get();
                 Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
                 if (deviceIds != null) {
                     deviceIdList = deviceIds.stream()
@@ -357,7 +357,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         Page<SwmHelmetDevice> page = device.getPage();
 
         // 使用框架原生的COUNT机制，避免自定义COUNT查询被错误添加分页参数
-        long count = super.findCount(device);
+        long count = dao.selectCount(device);
         page.setCount(count);
 
         // 如果总数为0，则直接返回空列表

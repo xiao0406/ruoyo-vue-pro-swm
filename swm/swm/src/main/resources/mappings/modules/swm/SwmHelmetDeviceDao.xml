@@ -285,5 +285,50 @@
         </foreach>
         AND a.status = '0'
     </select>
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT
+        COUNT(DISTINCT a.id)
+        FROM swm_helmet_device a
+        LEFT JOIN swm_person sp ON a.assigned_person = sp.identity_card COLLATE utf8mb4_general_ci and sp.`status` = '0'
+        LEFT JOIN fms_position_archive fpa  ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
+        <where>
+            a.status = '0' ${sqlMap.dsf}
+            <if test="deviceId != null and deviceId != ''">
+                AND a.device_id LIKE CONCAT('%', #{deviceId}, '%')
+            </if>
+            <if test="helmetType != null and helmetType != ''">
+                AND a.helmet_type = #{helmetType}
+            </if>
+            <if test="assignedPerson != null and assignedPerson != ''">
+                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+            </if>
+            <if test="personName != null and personName != ''">
+                AND a.person_name LIKE CONCAT('%', #{personName}, '%')
+            </if>
+            <if test="imei != null and imei != ''">
+                AND a.imei LIKE CONCAT('%', #{imei}, '%')
+            </if>
+            <if test="deviceColor != null and deviceColor != ''">
+                AND a.device_color LIKE CONCAT('%', #{deviceColor}, '%')
+            </if>
+
+            <!-- 开机状态条件 -->
+            <if test="powerOnStatus != null and powerOnStatus != ''">
+                <if test="powerOnStatus == '0'.toString() ">
+                    AND a.device_id IN
+                    <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
+                        #{id}
+                    </foreach>
+                </if>
+                <if test="powerOnStatus == '1'.toString() ">
+                    AND a.device_id NOT IN
+                    <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
+                        #{id}
+                    </foreach>
+                </if>
+            </if>
+        </where>
+    </select>
 
 </mapper> 
