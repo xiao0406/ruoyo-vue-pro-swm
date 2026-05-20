@@ -58,7 +58,7 @@ public class SwmVoiceTemplateCache implements ApplicationListener<ApplicationRea
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
 
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
+//            CorpUtils.setCurrentCorpCode(corpCode, corpName);
             TenantContext.set(corpCode);
 
             log.info("处理租户：{}", corpCode);
@@ -81,7 +81,7 @@ public class SwmVoiceTemplateCache implements ApplicationListener<ApplicationRea
             } catch (Exception e) {
                 log.error("租户处理失败: {}", corpCode, e);
             } finally {
-                CorpUtils.removeCurrentCorpCode(null);
+//                CorpUtils.removeCurrentCorpCode(null);
                 TenantContext.clear();
             }
         }

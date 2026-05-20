@@ -64,7 +64,7 @@ public class SwmHazardSourceCache implements ApplicationListener<ApplicationRead
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
             //设置当前线程的租户信息
-            CorpUtils.setCurrentCorpCode(corpCode, corpName);
+//            CorpUtils.setCurrentCorpCode(corpCode, corpName);
             TenantContext.set(corpCode);
             XxlJobHelper.log("开始处理租户：{} ========================", corpCode);
 
@@ -139,7 +139,7 @@ public class SwmHazardSourceCache implements ApplicationListener<ApplicationRead
             } catch (Exception e) {
                 log.error("初始化在职人员缓存失败", e);
             }finally {
-                CorpUtils.removeCurrentCorpCode(null);
+//                CorpUtils.removeCurrentCorpCode(null);
                 TenantContext.clear();
             }
         }

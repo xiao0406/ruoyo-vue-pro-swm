@@ -114,8 +114,7 @@ public class SwmDashboardNewController extends BaseController {
             for (SwmDailyAttendance attndance : attndances) {
                 String type  = attndance.getPersonType();
                 // 今日出勤工人数
-                if (type.equals(SwmPerson.PersonTypeEnum.WORKER) || type.equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)
-                        || type.equals(SwmPerson.PersonTypeEnum.FOUR) || type.equals(SwmPerson.PersonTypeEnum.FIVE)){
+                if (type.equals(SwmPerson.PersonTypeEnum.WORKER) || type.equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)){
                     todayAttendanceWorkerCount++;
                 }
                 // 今日出勤管理员数
@@ -510,8 +509,7 @@ public class SwmDashboardNewController extends BaseController {
             // 今日出勤人数
             todayAttendanceCount++;
             // 今日出勤工人数
-           if (type.equals(SwmPerson.PersonTypeEnum.WORKER) || type.equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)
-           || type.equals(SwmPerson.PersonTypeEnum.FOUR) || type.equals(SwmPerson.PersonTypeEnum.FIVE)){
+           if (type.equals(SwmPerson.PersonTypeEnum.WORKER) || type.equals(SwmPerson.PersonTypeEnum.SPECIALTRADES)){
                 todayAttendanceWorkerCount++;
             }
            // 今日出勤管理员数
@@ -742,9 +740,7 @@ public class SwmDashboardNewController extends BaseController {
             for (SwmPerson person : persons) {
                 if (SwmPerson.PersonTypeEnum.WORKER.equals(person.getPersonType())
                 ||SwmPerson.PersonTypeEnum.TEAMLEADER.equals(person.getPersonType())
-                ||SwmPerson.PersonTypeEnum.SPECIALTRADES.equals(person.getPersonType())
-                        ||SwmPerson.PersonTypeEnum.FOUR.equals(person.getPersonType())
-                        ||SwmPerson.PersonTypeEnum.FIVE.equals(person.getPersonType())) {
+                ||SwmPerson.PersonTypeEnum.SPECIALTRADES.equals(person.getPersonType())) {
                     workerCount++; // 工人
                 } else if (SwmPerson.PersonTypeEnum.MANAGER.equals(person.getPersonType())) {
                     managerCount++; // 管理员
@@ -1134,7 +1130,7 @@ public class SwmDashboardNewController extends BaseController {
         person.setPage(new Page<>(request, response));
         person.setDate(DateUtils.formatDate(date));
         // 调用服务层方法进行数据库分页查询
-        person.setPersonTypeList(Arrays.asList(SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.SPECIALTRADES, SwmPerson.PersonTypeEnum.FOUR, SwmPerson.PersonTypeEnum.FIVE));
+        person.setPersonTypeList(Arrays.asList(SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.SPECIALTRADES));
         Page<Person> resultPage = swmDailyAttendanceService.attendanceList(person);
         return resultPage;
     }
@@ -1453,7 +1449,7 @@ public class SwmDashboardNewController extends BaseController {
     @ResponseBody
     @ApiOperation("工人今日在厂")
     public Page<SwmDashboardNewController.Person> todayAttendanceWorkerList(Person vo, HttpServletRequest request, HttpServletResponse response) {
-        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.SPECIALTRADES, SwmPerson.PersonTypeEnum.FOUR, SwmPerson.PersonTypeEnum.FIVE};
+        String[] managerIds = {SwmPerson.PersonTypeEnum.WORKER, SwmPerson.PersonTypeEnum.SPECIALTRADES};
         vo.setPersonTypeList(Arrays.asList(managerIds));
         String date = DateUtils.getDate();
         vo.setDate(date);

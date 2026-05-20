@@ -142,7 +142,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                 try {
                     String corpCode = user.getCorpCode();
                     String corpName = user.getCorpName();
-                    CorpUtils.setCurrentCorpCode(corpCode, corpName);
+//                    CorpUtils.setCurrentCorpCode(corpCode, corpName);
                     TenantContext.set(corpCode);
                     // 查询所有头盔设备数据（框架自动添加status='0'条件）
                     SwmHelmetDevice queryCondition = new SwmHelmetDevice();
@@ -153,7 +153,7 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                 } catch (Exception e) {
                     logger.error("初始化头盔设备Redis缓存失败", e);
                 }finally {
-                    CorpUtils.removeCurrentCorpCode(null);
+//                    CorpUtils.removeCurrentCorpCode(null);
                     TenantContext.clear();
                 }
             }
@@ -608,13 +608,14 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
         // 更新缓存
         if (device.getDeviceId() != null) {
+            SwmHelmetDevice device1 = this.get(device.getId());
             // 更新内存缓存
-            helmetCache.put(device.getDeviceId(), device);
+            helmetCache.put(device1.getDeviceId(), device1);
             // 更新分配关系缓存
-            helmetCacheService.updateDevicePersonMapping(device.getDeviceId(), device.getAssignedPerson());
+            helmetCacheService.updateDevicePersonMapping(device1.getDeviceId(), device1.getAssignedPerson());
             //更新设备来源缓存
-            deviceSourchCache.appendDeviceId(device.getDeviceSource(),device.getDeviceId());
-            logger.debug("已更新设备缓存: {}", device.getDeviceId());
+            deviceSourchCache.appendDeviceId(device1.getDeviceSource(),device1.getDeviceId());
+            logger.debug("已更新设备缓存: {}", device1.getDeviceId());
         }
 
         // 调用新的设备消息发送方法
@@ -643,13 +644,14 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
 
         // 更新缓存
         if (device.getDeviceId() != null) {
+            SwmHelmetDevice device1 = this.get(device.getId());
             // 更新内存缓存
-            helmetCache.put(device.getDeviceId(), device);
+            helmetCache.put(device1.getDeviceId(), device1);
             // 更新分配关系缓存
-            helmetCacheService.updateDevicePersonMapping(device.getDeviceId(), device.getAssignedPerson());
+            helmetCacheService.updateDevicePersonMapping(device1.getDeviceId(), device1.getAssignedPerson());
             //更新设备来源缓存
-            deviceSourchCache.appendDeviceId(device.getDeviceSource(),device.getDeviceId());
-            logger.debug("已更新设备缓存: {}", device.getDeviceId());
+            deviceSourchCache.appendDeviceId(device1.getDeviceSource(),device1.getDeviceId());
+            logger.debug("已更新设备缓存: {}", device1.getDeviceId());
         }
     }
 
