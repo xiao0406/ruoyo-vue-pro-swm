@@ -5,7 +5,7 @@ import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.constant.SwmRedisConstant;
-import com.jeesite.modules.swm.entity.SwmHazardSource;
+import com.jeesite.modules.entity.SwmHazardSource;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.service.SwmHazardSourceService;
 import com.jeesite.modules.swm.service.SwmHelmetDeviceService;
@@ -78,8 +78,12 @@ public class SwmHazardSourceCache implements ApplicationListener<ApplicationRead
                 List<SwmHazardSource> list = swmHazardSourceService.findList(swmHazardSource1);
                 if (list == null || list.isEmpty()) {
                     log.warn("未查询到危险源数据");
-                    return;
+                    continue;
                 }
+
+                //===================这里记录mac->危险源详情的信息
+                this.initHazardInfoCache(list,corpCode);
+
                 // 清除旧缓存
                 redisService.del(corpCode+SwmRedisConstant.RedisSwmKey.Hazard_ISALARM_BEACON);
 
@@ -176,5 +180,56 @@ public class SwmHazardSourceCache implements ApplicationListener<ApplicationRead
         redisService.hset(currentCorpCode+SwmRedisConstant.RedisSwmKey.Hazard_ISALARM_BEACON, hazardId, deviceIds);
     }
 
+    /**
+     * 删除专用
+     */
+    public void deleteHazardSourceCache(SwmHazardSource source, String corpCode) {
+        redisService.hdel(corpCode+SwmRedisConstant.RedisSwmKey.Hazard_ISALARM_BEACON, source.getId());
+
+    }
+
+
+
+    /**
+     * 危险源反向缓存，用mac地址作为key，value为危险源信息，用于iot服务的危险源报警
+     */
+    private void initHazardInfoCache(List<SwmHazardSource> list,String corpCode) {
+        String redisKey = corpCode+SwmRedisConstant.RedisSwmKey.MAC_TO_HAZARD_INFO;
+        //删除旧的缓存
+        redisService.del(redisKey);
+
+        //添加缓存
+        for (SwmHazardSource source : list) {
+            //80ECCCD241E7,80ECCCD241E5
+            String[] macs = source.getBeaconIdentifiers();
+            for (String mac : macs) {
+                redisService.hset(redisKey, mac, source);
+            }
+        }
+    }
+
+    /**
+     * 新增专用
+     */
+    public void insertHazardInfoCache(SwmHazardSource source, String corpCode) {
+        String redisKey = corpCode+SwmRedisConstant.RedisSwmKey.MAC_TO_HAZARD_INFO;
+        //分割为多个人员身份证
+        String[] macs = source.getBeaconIdentifiers();
+        for (String mac : macs) {
+            redisService.del(redisKey, mac);
+            redisService.hset(redisKey, mac, source);
+        }
+    }
+
+    /**
+     * 删除专用
+     */
+    public void deleteHazardInfoCache(SwmHazardSource source, String corpCode) {
+        String redisKey = corpCode+SwmRedisConstant.RedisSwmKey.MAC_TO_HAZARD_INFO;
+        String[] macs = source.getBeaconIdentifiers();
+        for (String mac : macs) {
+            redisService.del(redisKey, mac);
+        }
+    }
 
 }

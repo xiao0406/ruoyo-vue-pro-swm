@@ -7,7 +7,7 @@ package com.jeesite.modules.swm.dao;
 
 import com.jeesite.common.dao.CrudDao;
 import com.jeesite.common.mybatis.annotation.MyBatisDao;
-import com.jeesite.modules.swm.entity.SwmHazardSource;
+import com.jeesite.modules.entity.SwmHazardSource;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Date;

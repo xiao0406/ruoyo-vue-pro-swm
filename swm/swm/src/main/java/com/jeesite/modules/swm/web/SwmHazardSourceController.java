@@ -7,8 +7,10 @@ package com.jeesite.modules.swm.web;
 
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
-import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.config.TenantContext;
+import com.jeesite.modules.entity.SwmBeaconStation;
+import com.jeesite.modules.entity.SwmHazardSource;
 import com.jeesite.modules.swm.cache.SwmHazardSourceCache;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
@@ -16,7 +18,6 @@ import com.jeesite.modules.sys.entity.DictData;
 import com.jeesite.modules.sys.utils.DictUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -354,6 +355,8 @@ public class SwmHazardSourceController extends BaseController {
             hazardSourceCache.insertHazardSourceCache(swmHazardSource.getId(), filterIdentityCard);
         }
 
+        // 危险源反向缓存，用mac地址作为key，value为危险源信息，用于iot服务的危险源报警
+        hazardSourceCache.insertHazardInfoCache(swmHazardSource, TenantContext.get());
 
         // 如果设置为加入巡检且不是草稿状态
         if ("1".equals(swmHazardSource.getIsPatrolIncluded()) && !"1".equals(swmHazardSource.getIsDraft())) {
@@ -417,6 +420,11 @@ public class SwmHazardSourceController extends BaseController {
     @ApiOperation(value = "删除危险源")
     public String delete(SwmHazardSource swmHazardSource) {
         swmHazardSourceService.delete(swmHazardSource);
+
+        //删除缓存
+        hazardSourceCache.deleteHazardSourceCache(swmHazardSource, TenantContext.get());
+        // 危险源反向缓存，用mac地址作为key，value为危险源信息，用于iot服务的危险源报警
+        hazardSourceCache.deleteHazardInfoCache(swmHazardSource, TenantContext.get());
         return renderResult(Global.TRUE, text("删除危险源信息成功！"));
     }
 

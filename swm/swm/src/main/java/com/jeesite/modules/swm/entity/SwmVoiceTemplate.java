@@ -11,6 +11,7 @@ import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.sys.utils.DictUtils;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -29,9 +30,11 @@ import javax.validation.constraints.NotBlank;
         @Column(name = "language", attrName = "language", label = "语言"),
         @Column(name = "push_method", attrName = "pushMethod", label = "推送方式"),
         @Column(name = "push_frequency", attrName = "pushFrequency", label = "推送频次"),
+        @Column(name = "template_id", attrName = "templateId", label = "模板id"),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {
 
     private static final long serialVersionUID = 1L;
@@ -43,6 +46,12 @@ public class SwmVoiceTemplate extends DataEntity<SwmVoiceTemplate> {
     private String language; // 语言
     private String pushMethod; // 推送方式
     private String pushFrequency; // 推送频次
+    private String templateId;
+
+    /**
+     * 随机值，目的取消一级缓存
+     */
+    private Integer random;
 
     public SwmVoiceTemplate() {
         this(null);

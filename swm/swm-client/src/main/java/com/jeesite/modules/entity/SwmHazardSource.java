@@ -3,7 +3,7 @@
  * @author Shawn
  * @version 2025-05-21
  */
-package com.jeesite.modules.swm.entity;
+package com.jeesite.modules.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.jeesite.common.entity.BaseEntity;

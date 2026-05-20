@@ -3,7 +3,7 @@
 <mapper namespace="com.jeesite.modules.swm.dao.SwmHazardSourceDao">
 
     <!-- 获取单条数据 -->
-    <select id="get" resultType="com.jeesite.modules.swm.entity.SwmHazardSource">
+    <select id="get" resultType="com.jeesite.modules.entity.SwmHazardSource">
         SELECT
             a.*
         FROM swm_hazard_source a
@@ -11,7 +11,7 @@
     </select>
 
     <!-- 查询数据列表 -->
-    <select id="findList" resultType="com.jeesite.modules.swm.entity.SwmHazardSource">
+    <select id="findList" resultType="com.jeesite.modules.entity.SwmHazardSource">
         SELECT
             a.*
         FROM swm_hazard_source a

@@ -55,6 +55,9 @@ public class SwmPersonSchedule extends DataEntity<SwmPersonSchedule> {
      */
     private Integer random;
 
+    private String deviceId;
+    private String personType;
+
     public SwmPersonSchedule() {
         this(null);
     }

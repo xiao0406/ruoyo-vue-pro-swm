@@ -3,7 +3,7 @@
 <mapper namespace="com.jeesite.modules.swm.dao.SwmAreaDao">
     
     <!-- 查询数据 -->
-    <select id="findList" resultType="SwmArea">
+    <select id="findList" resultType="com.jeesite.modules.entity.SwmArea">
         SELECT ${sqlMap.column.toSql()}
         FROM ${sqlMap.table.toSql()}
         <where>

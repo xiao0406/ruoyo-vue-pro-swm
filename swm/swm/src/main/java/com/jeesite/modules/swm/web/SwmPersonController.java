@@ -2323,4 +2323,15 @@ public class SwmPersonController extends BaseController {
         }
         return renderResult(Global.TRUE, text("成功！"), name);
     }
+
+
+
+    @ApiOperation("人员台账excel导入（补录紧急联系人）")
+    @RequestMapping("/importData1")
+    @ResponseBody
+    public String importData1(MultipartFile file) {
+        Integer count = swmPersonService.importData1(file);
+        return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
+    }
+
 }

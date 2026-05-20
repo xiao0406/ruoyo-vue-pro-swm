@@ -335,4 +335,9 @@ public class SwmPersonScheduleService extends CrudService<SwmPersonScheduleDao, 
         }
         return count;
     }
+
+    public List<SwmPersonSchedule> findListByCorpCode(SwmPersonSchedule swmPersonSchedule) {
+        return this.dao.findListByCorpCode(swmPersonSchedule);
+
+    }
 }

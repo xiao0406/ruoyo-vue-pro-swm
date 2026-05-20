@@ -5,6 +5,7 @@ import com.jeesite.common.entity.DataEntity;
 import com.jeesite.common.mybatis.annotation.Column;
 import com.jeesite.common.mybatis.annotation.Table;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
 /**
@@ -24,6 +25,7 @@ import org.hibernate.validator.constraints.Length;
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
+@Data
 public class SwmAlarmConfig extends DataEntity<SwmAlarmConfig> {
 
     private static final long serialVersionUID = 1L;
@@ -35,6 +37,11 @@ public class SwmAlarmConfig extends DataEntity<SwmAlarmConfig> {
     private String dialogPosition; // 弹窗位置
     /**是否推送中建通（1是，0否）*/
     private Integer isSendZjt;
+
+    /**
+     * 随机值，目的取消一级缓存
+     */
+    private Integer random;
 
     public Integer getIsSendZjt() {
         return isSendZjt;

@@ -74,6 +74,10 @@ public class SwmPerson extends DataEntity<SwmPerson> {
         public static final String TEAMLEADER = "2";
         //特殊工种
         public static final String SPECIALTRADES = "3";
+        //二构
+        public static final String FOUR = "4";
+        //砌筑工
+        public static final String FIVE = "5";
 
         /**
          * 获取人员状态显示文本

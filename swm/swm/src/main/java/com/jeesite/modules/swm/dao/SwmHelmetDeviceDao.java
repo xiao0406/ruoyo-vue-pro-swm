@@ -93,5 +93,7 @@ public interface SwmHelmetDeviceDao extends CrudDao<SwmHelmetDevice> {
 
     List<SwmHelmetDevice> findHelmetDeviceListByIds(List<String> deviceIds);
 
+    List<String> findDeviceIdsByDeviceSource(SwmHelmetDevice device);
+
     long selectCount(SwmHelmetDevice device);
 }

@@ -5,31 +5,28 @@
 package com.jeesite.modules.swm.service;
 
 import cn.hutool.core.collection.CollectionUtil;
-import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.google.common.collect.Lists;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.common.utils.excel.ExcelImport;
+import com.jeesite.common.utils.excel.annotation.ExcelField;
+import com.jeesite.common.utils.excel.annotation.ExcelFields;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.entity.AiDto;
-import com.jeesite.modules.entity.SwmPersonExport;
 import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.fms.entity.FmsPositionArchive;
 import com.jeesite.modules.fms.entity.FmsProdLine;
 import com.jeesite.modules.fms.entity.FmsWorkGroup;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
-import com.jeesite.modules.swm.entity.SwmArea;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.entity.SwmPerson;
-import com.jeesite.modules.entity.AiDto;
 import com.jeesite.modules.swm.excel.SwmPersonSwitcWorkshopImport;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import com.jeesite.modules.utils.BatchOperationsUtil;
 import com.jeesite.modules.sys.utils.CorpUtils;
-import com.jeesite.modules.utils.BatchOperationsUtil;
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,13 +36,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.*;
 
 /**
  * 人员登记表service
@@ -618,5 +611,55 @@ public class SwmPersonService extends CrudService<SwmPersonDao, SwmPerson> {
                 logger.debug("更新人员缓存失败", e);
             }
         }
+    }
+    @Transactional(readOnly = false)
+    public Integer importData1(MultipartFile file) {
+        ExcelImport excelImport;
+        int count = 0;
+
+        try {
+            excelImport = new ExcelImport(file, 2, 0);
+            List<SwmPersonSwitcWorkshopImport1> list = excelImport.getDataList(SwmPersonSwitcWorkshopImport1.class);
+
+            if (CollectionUtil.isEmpty(list)) {
+                return 0;
+            }
+
+            List<List<SwmPersonSwitcWorkshopImport1>> lists = BatchOperationsUtil.batchCutting(list, 100);
+            for (List<SwmPersonSwitcWorkshopImport1> updateList : lists) {
+                this.dao.updateBatchUrgentPerson(updateList);
+            }
+
+            count = lists.size();
+
+        } catch (Exception e) {
+            throw new RuntimeException("导入失败：" + e.getMessage(), e);
+        }
+
+        return count;
+    }
+
+
+    @Data
+    public static  class SwmPersonSwitcWorkshopImport1 {
+
+        @ExcelFields({
+                @ExcelField(title = "姓名", attrName = "name", align = ExcelField.Align.CENTER, sort = 10),
+                @ExcelField(title = "手机号码", attrName = "phoneNumber", align = ExcelField.Align.CENTER, sort = 20),
+                @ExcelField(title = "紧急联系人", attrName = "urgentPerson", align = ExcelField.Align.CENTER, sort = 30),
+                @ExcelField(title = "紧急联系人电话", attrName = "urgentPhoneNumber", align = ExcelField.Align.CENTER, sort = 40),
+                @ExcelField(title = "血型", attrName = "bloodType", align = ExcelField.Align.CENTER, sort = 50),
+                @ExcelField(title = "所属班组", attrName = "team", align = ExcelField.Align.CENTER, sort = 60),
+        })
+
+        public SwmPersonSwitcWorkshopImport1() {
+        }
+
+        private String name; // 姓名
+        private String phoneNumber; // 手机号码
+        private String urgentPerson; // 紧急联系人
+        private String urgentPhoneNumber; // 紧急联系人电话
+        private String bloodType; // 血型
+        private String team; // 所属班组
     }
 }

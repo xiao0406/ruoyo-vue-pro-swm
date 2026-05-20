@@ -3,13 +3,16 @@ package com.jeesite.modules.swm.web;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.swm.cache.SwmAlarmConfigCache;
 import com.jeesite.modules.swm.entity.SwmAlarmConfig;
 import com.jeesite.modules.swm.service.SwmAlarmConfigService;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.annotation.Validated;
@@ -33,6 +36,9 @@ public class SwmAlarmConfigController extends BaseController {
 
     @Autowired
     private SwmAlarmConfigService swmAlarmConfigService;
+    @Autowired
+    @Lazy
+    private SwmAlarmConfigCache swmAlarmConfigCache;
 
     /**
      * 获取数据
@@ -79,6 +85,10 @@ public class SwmAlarmConfigController extends BaseController {
     public String save(@Validated SwmAlarmConfig swmAlarmConfig) {
         try {
             swmAlarmConfigService.save(swmAlarmConfig);
+
+            //更新缓存
+            swmAlarmConfig.setCorpCode(CorpUtils.getCurrentCorpCode());
+            swmAlarmConfigCache.update(swmAlarmConfig);
             return renderResult(Global.TRUE, text("保存报警配置成功！"));
         } catch (Exception e) {
             logger.error("保存报警配置失败", e);
@@ -94,6 +104,9 @@ public class SwmAlarmConfigController extends BaseController {
     @ApiOperation("删除数据")
     public String delete(SwmAlarmConfig swmAlarmConfig) {
         swmAlarmConfigService.delete(swmAlarmConfig);
+        //更新缓存
+        swmAlarmConfig.setCorpCode(CorpUtils.getCurrentCorpCode());
+        swmAlarmConfigCache.update(swmAlarmConfig);
         return renderResult(Global.TRUE, text("删除报警配置成功！"));
     }
 

@@ -5,6 +5,8 @@ import java.util.stream.Collectors;
 
 import com.alibaba.fastjson.JSON;
 import com.jeesite.common.constant.RabbitMQConstant;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.constant.SwmRedisConstant;
 import com.jeesite.modules.swm.mq.SwmQueueKey;
 import com.jeesite.modules.swm.mq.producer.RabbitMqSender;
 import com.jeesite.modules.swm.param.SwmOneClickRecallSaveParam;
@@ -17,6 +19,7 @@ import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmOneClickRecallDao;
 import com.jeesite.modules.swm.entity.SwmOneClickRecall;
 import com.jeesite.modules.swm.service.SwmOneClickRecallService;
+import com.alibaba.fastjson.TypeReference;
 
 /**
  * 一键召回记录表服务实现类
@@ -31,6 +34,8 @@ public class SwmOneClickRecallServiceImpl extends CrudService<SwmOneClickRecallD
     private SwmOneClickRecallDao swmOneClickRecallDao;
     @Autowired
     private RabbitMqSender rabbitMqSender;
+    @Autowired
+    private RedisService redisService;
 
     @Override
     public SwmOneClickRecall get(String id) {
@@ -72,6 +77,23 @@ public class SwmOneClickRecallServiceImpl extends CrudService<SwmOneClickRecallD
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("message", "一键召回指令下发成功");
+
+
+        List<Map<String, Object>> ztDeviceMapList = new ArrayList<>();
+        List<Map<String, Object>> kltDeviceMapList = new ArrayList<>();
+        // 缓存里拿到科利特和中泰的设备列表
+        Set<Object> ztDeviceSet = redisService.sGet(SwmRedisConstant.RedisGlobalKey.ZT_DEVICE_ID_ALL);
+        Set<Object> kltDeviceSet = redisService.sGet(SwmRedisConstant.RedisGlobalKey.KLT_DEVICE_ID_ALL);
+        List<String> ztDeviceList = new ArrayList<>();
+        if (ztDeviceSet != null) {
+            for (Object obj : ztDeviceSet) { ztDeviceList.add(String.valueOf(obj)); }
+        }
+        List<String> kltDeviceList = new ArrayList<>();
+        if (kltDeviceSet != null) {
+            for (Object obj : kltDeviceSet) { kltDeviceList.add(String.valueOf(obj)); }
+        }
+
+
         // 保存召回记录
         String evacuationPlan = param.getEvacuationPlan();
         SwmOneClickRecall swmOneClickRecall = new SwmOneClickRecall();
@@ -127,6 +149,27 @@ public class SwmOneClickRecallServiceImpl extends CrudService<SwmOneClickRecallD
         }
 
         super.save(swmOneClickRecall);
+
+        String deviceListStr = swmOneClickRecall.getDeviceList();
+        List<Map<String, Object>> allTargetPersonnel = JSON.parseObject(deviceListStr,
+                new TypeReference<List<Map<String, Object>>>() {});
+
+        //分别存入不同厂家的集合
+        for (Map<String, Object> deviceObject : allTargetPersonnel) {
+            String deviceId = deviceObject.get("deviceId").toString();
+            assert ztDeviceSet != null;
+            if (ztDeviceSet.contains(deviceId)){
+                ztDeviceMapList.add(deviceObject);
+            }else {
+                assert kltDeviceSet != null;
+                if (kltDeviceSet.contains(deviceId)){
+                    kltDeviceMapList.add(deviceObject);
+                }
+            }
+        }
+        swmOneClickRecall.setZTDeviceList(JSON.toJSONString(ztDeviceMapList));
+        swmOneClickRecall.setKltDeviceList(JSON.toJSONString(kltDeviceMapList));
+
 
         String pushMethods = swmOneClickRecall.getPushMethod();
         String[] methods = pushMethods.split(",");

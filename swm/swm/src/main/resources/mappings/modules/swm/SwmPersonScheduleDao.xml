@@ -269,4 +269,25 @@
         </foreach>
     </update>
 
+
+    <select id="findListByCorpCode" resultType="com.jeesite.modules.swm.entity.SwmPersonSchedule">
+        SELECT
+            a.id,
+            sp.name as personName,
+            a.id_card,
+            sp.id as employeeId,
+            sp.safety_helmet_id as deviceId,
+            sp.person_type,
+            a.classes
+        FROM
+            `swm_person_schedule` a
+                LEFT JOIN swm_person sp on a.id_card = sp.identity_card
+        <where>
+            a.status = '0' and sp.status = '0'
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
+        </where>
+    </select>
+
 </mapper>

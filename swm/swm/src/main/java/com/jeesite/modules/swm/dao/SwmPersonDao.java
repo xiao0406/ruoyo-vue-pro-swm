@@ -13,6 +13,7 @@ import com.jeesite.modules.fms.entity.FmsWorkGroup;
 import com.jeesite.modules.swm.entity.PersonnelOrganizationQueryParam;
 import com.jeesite.modules.swm.entity.SwmPerson;
 import com.jeesite.modules.entity.AiDto;
+import com.jeesite.modules.swm.service.SwmPersonService;
 import com.jeesite.modules.swm.web.SwmDashboardNewController;
 import org.apache.ibatis.annotations.Param;
 
@@ -148,4 +149,8 @@ public interface SwmPersonDao extends CrudDao<SwmPerson> {
     List<SwmPerson> findListWithoutCorpCode(SwmPerson person);
 
 
+    void updateBatchUrgentPerson(
+            @Param("updateList")
+            List<SwmPersonService.SwmPersonSwitcWorkshopImport1> updateList
+    );
 }

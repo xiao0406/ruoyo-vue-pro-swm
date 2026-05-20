@@ -59,6 +59,9 @@ import java.util.List;
         @Column(name = "sleep_wakeup_time", attrName = "sleepWakeupTime", label = "休眠唤醒时间(秒)"),
         @Column(name = "beacon_filter_name", attrName = "beaconFilterName", label = "接收信标(名称)"),
         @Column(name = "hat_off_alarm_interval", attrName = "hatOffAlarmInterval", label = "脱帽报警时间间隔"),
+        @Column(name = "device_source", attrName = "deviceSource", label = "设备来源（字典：swm_device_source  ，0-科利特，1-中泰）"),
+        @Column(name = "imei", attrName = "imei", label = "IMEI", queryType = QueryType.LIKE),
+        @Column(name = "device_color", attrName = "deviceColor", label = "帽子颜色", queryType = QueryType.LIKE),
         @Column(includeEntity = DataEntity.class),
         @Column(includeEntity= BaseEntity.class),
 }, orderBy = "a.update_date DESC")
@@ -186,6 +189,7 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     private Integer hazardRetriggerInterval; // 危险源重新触发间隔(秒)
     private Integer sleepWakeupTime; // 休眠唤醒时间(秒)
     private String beaconFilterName; // 接收信标(名称)
+    private String deviceSource; //设备来源（字典：swm_device_source  ，0-科利特，1-中泰）
 
     // 非数据库字段，用于查询条件
     private List<String> deviceIdList; // 设备ID列表，用于批量查询
@@ -195,6 +199,8 @@ public class SwmHelmetDevice extends DataEntity<SwmHelmetDevice> {
     //在线人数
     private List<String> deviceOnlist;
     private String hatOffAlarmInterval;
+    private String imei;
+    private String deviceColor;
 
 
     /**

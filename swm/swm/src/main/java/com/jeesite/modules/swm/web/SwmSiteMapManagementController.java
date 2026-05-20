@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.web.BaseController;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.swm.entity.SwmSiteMapManagement;
 import com.jeesite.modules.swm.service.SwmSiteMapManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,17 +61,27 @@ public class SwmSiteMapManagementController extends BaseController {
 
     /**
      * 查询列表数据
+     * @author Shawn @date 2026-04-07 新增 hasChildren 字段填充
+     * @author Shawn @date 2026-04-08 修复多租户隔离
      */
     @RequestMapping(value = "listData")
     @ResponseBody
     public Page<SwmSiteMapManagement> listData(SwmSiteMapManagement swmSiteMapManagement, HttpServletRequest request,
             HttpServletResponse response) {
-        swmSiteMapManagement.setPage(new Page<>(request, response));
+        if (swmSiteMapManagement.getPageSize() == null){
+            swmSiteMapManagement.setPage(new Page<>(1, 100));
+        }else {
+            swmSiteMapManagement.setPage(new Page<>(request, response));
+        }
         // 完全移除状态过滤条件
         swmSiteMapManagement.setStatus(null);
         // 设置为不使用全局状态过滤
         swmSiteMapManagement.getSqlMap().getWhere().disableAutoAddStatusWhere();
+
         Page<SwmSiteMapManagement> page = swmSiteMapManagementService.findPage(swmSiteMapManagement);
+        // 为每条记录填充 hasChildren，告诉前端该节点下面是否还有子节点
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        swmSiteMapManagementService.fillHasChildren(page.getList(), corpCode);
         return page;
     }
 
@@ -81,6 +92,49 @@ public class SwmSiteMapManagementController extends BaseController {
     public String form(SwmSiteMapManagement swmSiteMapManagement, Model model) {
         model.addAttribute("swmSiteMapManagement", swmSiteMapManagement);
         return "modules/swm/swmSiteMapManagementForm";
+    }
+
+    /**
+     * 查询子节点列表（懒加载）
+     * 前端点击一个节点时调用，返回该节点下的直接子节点
+     * 首次进页面传 parentId=0 查出所有厂区
+     * @param parentId 父节点ID
+     * @return 子节点列表，每个节点带 hasChildren 标记
+     * @author Shawn @date 2026-04-02
+     * @author Shawn @date 2026-04-08 修复多租户隔离
+     */
+    @RequestMapping(value = "children", method = RequestMethod.GET)
+    @ResponseBody
+    public List<SwmSiteMapManagement> children(
+            @RequestParam(value = "parentId", defaultValue = "0") String parentId) {
+        // 查询该父节点下的直接子节点，Service层会自动填充hasChildren
+        // corpCode 由 Service 层内部获取
+        return swmSiteMapManagementService.findChildren(parentId);
+    }
+
+    /**
+     * 获取节点详情
+     * 前端点击树节点时，在右侧展示完整信息
+     * @param id 节点ID
+     * @return 节点完整数据
+     * @author Shawn @date 2026-04-02
+     */
+    @RequestMapping(value = "detail", method = RequestMethod.GET)
+    @ResponseBody
+    public Map<String, Object> detail(@RequestParam String id) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 根据ID查询完整数据
+        SwmSiteMapManagement map = swmSiteMapManagementService.get(id);
+        if (map == null) {
+            result.put("success", false);
+            result.put("message", "未找到该节点数据");
+            return result;
+        }
+
+        result.put("success", true);
+        result.put("data", map);
+        return result;
     }
 
     /**
@@ -95,12 +149,18 @@ public class SwmSiteMapManagementController extends BaseController {
 
     /**
      * 删除场地底图管理
+     * 如果该节点下还有子节点，会拒绝删除
      */
     @DeleteMapping(value = "delete")
     @ResponseBody
     public String delete(SwmSiteMapManagement swmSiteMapManagement) {
-        swmSiteMapManagementService.delete(swmSiteMapManagement);
-        return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
+        try {
+            swmSiteMapManagementService.delete(swmSiteMapManagement);
+            return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
+        } catch (RuntimeException e) {
+            // 捕获子节点校验异常，返回友好提示
+            return renderResult(Global.FALSE, text(e.getMessage()));
+        }
     }
 
     /**
@@ -124,9 +184,14 @@ public class SwmSiteMapManagementController extends BaseController {
             return renderResult(Global.FALSE, text("删除失败：ID不能为空！"));
         }
 
-        SwmSiteMapManagement swmSiteMapManagement = new SwmSiteMapManagement(id);
-        swmSiteMapManagementService.delete(swmSiteMapManagement);
-        return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
+        try {
+            SwmSiteMapManagement swmSiteMapManagement = new SwmSiteMapManagement(id);
+            swmSiteMapManagementService.delete(swmSiteMapManagement);
+            return renderResult(Global.TRUE, text("删除场地底图管理成功！"));
+        } catch (RuntimeException e) {
+            // 捕获子节点校验异常，返回友好提示
+            return renderResult(Global.FALSE, text(e.getMessage()));
+        }
     }
 
     /**
@@ -248,6 +313,8 @@ public class SwmSiteMapManagementController extends BaseController {
             mapData.put("mapSize", map.getMapSize());
             mapData.put("scale", map.getScale());
             mapData.put("is3d", map.getIs3d());
+            mapData.put("drawingPixelX", map.getDrawingPixelX());
+            mapData.put("drawingPixelY", map.getDrawingPixelY());
 
             // 解析filePath中的JSON字符串获取URL
             try {
@@ -267,6 +334,32 @@ public class SwmSiteMapManagementController extends BaseController {
             result.put("success", false);
             result.put("data", null);
             result.put("message", "系统中没有启用的底图");
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取建筑和楼层选项列表（用于信标所属建筑/楼层下拉）
+     *
+     * @author Shawn @date 2026-04-07
+     */
+    @RequestMapping(value = "getBuildingFloorOptions", method = RequestMethod.GET)
+    @ResponseBody
+    public Map<String, Object> getBuildingFloorOptions() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 直接返回前端可用的 options 结构，保持和所属区域下拉接口风格一致。
+            List<Map<String, Object>> options = swmSiteMapManagementService.getBuildingFloorOptions();
+            result.put("success", true);
+            result.put("options", options);
+            result.put("total", options.size());
+            result.put("message", "获取建筑楼层选项成功");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("options", new ArrayList<>());
+            result.put("message", "获取建筑楼层选项失败: " + e.getMessage());
         }
 
         return result;

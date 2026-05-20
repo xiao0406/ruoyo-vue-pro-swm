@@ -4,6 +4,7 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.web.BaseController;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
+import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
@@ -48,6 +49,9 @@ public class PersonTrackController extends BaseController {
 
     @Autowired
     private SwmHelmetDeviceService swmHelmetDeviceService;
+
+    @Autowired
+    private SwmSiteMapManagementService swmSiteMapManagementService;
 
     @Autowired
     private TDengineService tdengineService;
@@ -569,6 +573,20 @@ public class PersonTrackController extends BaseController {
                     startTime,
                     endTime);
 
+            if (!trajectoryPoints.isEmpty()) {
+                // 遍历每个轨迹点
+                for (Map<String, Object> trajectoryPoint : trajectoryPoints) {
+                    // 获取当前点的 floorId
+                    Object floorIdValue = trajectoryPoint.get("floorId");
+
+                    // 判断 floorId 是否为空（null 或 空字符串）
+                    if (floorIdValue == null || StringUtils.isEmpty(floorIdValue.toString())) {
+                        // 为空就写入默认值
+                        trajectoryPoint.put("floorId", "2049030179251453952");
+                    }
+                }
+            }
+
             List<Map<String, Object>> timelineEvents = new ArrayList<>();
 
             Map<String, Object> data = new HashMap<>();
@@ -689,6 +707,15 @@ public class PersonTrackController extends BaseController {
                                             // 添加时间信息
                                             trajectoryPoint.put("time", timeObj);
                                             trajectoryPoint.put("hasRealLocation", true);
+
+                                            // 添加楼层ID（当type='floor'时，取map_id作为floorId）
+                                            // 处理TDengine返回的字符串"null"情况 2026/04/10 Shawn
+                                            Object typeObj = point.get("type");
+                                            Object mapIdObj = point.get("map_id");
+                                            String type = (typeObj != null && !"null".equals(typeObj.toString())) ? typeObj.toString() : null;
+                                            String mapId = (mapIdObj != null && !"null".equals(mapIdObj.toString())) ? mapIdObj.toString() : null;
+                                            String floorId = ("floor".equals(type)) ? mapId : null;
+                                            trajectoryPoint.put("floorId", floorId);
 
                                             trajectoryPoints.add(trajectoryPoint);
                                         } catch (NumberFormatException e) {
@@ -1242,10 +1269,38 @@ public class PersonTrackController extends BaseController {
                     parsedEndDate,
                     startTime, endTime);
 
+            // 3. 查询external_coordinate_data表，按 type='floor' 和 map_id 分组取每组最早记录
+            List<Map<String, Object>> floorData = queryFloorDataByIdCard(idCard, parsedStartDate,
+                    parsedEndDate, startTime, endTime);
+
+            // 4. 收集所有 mapId，查询 swm_site_map_management 得到 mapName
+            List<String> mapIds = new ArrayList<>();
+            for (Map<String, Object> item : floorData) {
+                String mapId = String.valueOf(item.get("map_id"));
+                if (StringUtils.isNotBlank(mapId) && !"null".equals(mapId)) {
+                    mapIds.add(mapId);
+                }
+            }
+            Map<String, String> mapIdToName = buildMapIdToNameMap(mapIds);
+
+            // 5. 合并 area_fence_data 和 floor_data，统一按时间升序排序
+            List<Map<String, Object>> mergedData = new ArrayList<>(areaFenceData);
+            for (Map<String, Object> item : floorData) {
+                Map<String, Object> newItem = new HashMap<>();
+                String mapId = String.valueOf(item.get("map_id"));
+                String time = String.valueOf(item.get("time"));
+                newItem.put("time", convertUtcToBeijingTime(time));
+                newItem.put("area_name", mapIdToName.containsKey(mapId) ? mapIdToName.get(mapId) : mapId);
+                mergedData.add(newItem);
+            }
+//            mergedData.sort((a, b) -> String.valueOf(a.get("time")).compareTo(String.valueOf(b.get("time"))));
+            // 时间 降序排列（最新的在前）
+            mergedData.sort((a, b) -> String.valueOf(b.get("time")).compareTo(String.valueOf(a.get("time"))));
+
             result.put("success", true);
-            result.put("data", areaFenceData);
+            result.put("data", mergedData);
             result.put("deviceId", deviceId);
-            result.put("total", areaFenceData.size());
+            result.put("total", mergedData.size());
             result.put("message", "查询区域围栏数据成功");
 
         } catch (Exception e) {
@@ -1306,6 +1361,118 @@ public class PersonTrackController extends BaseController {
             return utcTimeStr;
         }
     }
+
+    /**
+     * 查询 external_coordinate_data 表，按 type='floor' 和 map_id 分组，取每个分组的最新记录（按 time）
+     *
+     * @param idCard     身份证号
+     * @param startDate  开始日期 (格式：yyyy-MM-dd)
+     * @param endDate    结束日期 (格式：yyyy-MM-dd)
+     * @param startTime  开始时间（秒，可选）
+     * @param endTime    结束时间（秒，可选）
+     * @return 列表，每条含 time 和 map_id
+     * @author Shawn
+     * @date 2026/04/10
+     */
+    private List<Map<String, Object>> queryFloorDataByIdCard(String idCard, String startDate, String endDate,
+            Integer startTime, Integer endTime) {
+        List<Map<String, Object>> resultList = new ArrayList<>();
+        try {
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT FIRST(time), FIRST(map_id) FROM ")
+                    .append(dbname).append(".external_coordinate_data")
+                    .append(" WHERE id_card = '").append(idCard).append("'")
+                    .append(" AND type = 'floor' ");
+
+            // 构建时间条件
+            String timeCondition = buildTimeCondition(startDate, endDate, startTime, endTime);
+            if (timeCondition != null && !timeCondition.trim().isEmpty()) {
+                sqlBuilder.append("AND ").append(timeCondition).append(" ");
+            } else {
+                sqlBuilder.append("AND time >= TODAY() AND time < TODAY() + 1d ");
+            }
+
+            sqlBuilder.append("GROUP BY map_id ORDER BY FIRST(time) ASC");
+
+            String sql = sqlBuilder.toString();
+            logger.info("查询 external_coordinate_data 的 SQL: {}", sql);
+
+            R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
+            logger.info("TDengine 查询结果 - 状态码: {}, 消息: {}", queryResult.getCode(), queryResult.getMsg());
+
+            if (queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                JSONObject data = queryResult.getData();
+                JSONArray rows = data.getJSONArray("data");
+
+                if (rows != null && rows.size() > 0) {
+                    logger.info("查询到 {} 条 floor 数据", rows.size());
+                    for (int i = 0; i < rows.size(); i++) {
+                        JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() >= 2) {
+                            String time = String.valueOf(row.get(0));
+                            String mapId = String.valueOf(row.get(1));
+                            Map<String, Object> record = new HashMap<>();
+                            record.put("time", time);
+                            record.put("map_id", mapId);
+                            resultList.add(record);
+                        }
+                    }
+                } else {
+                    logger.info("未找到匹配的 floor 数据，身份证号: {}", idCard);
+                }
+            } else {
+                logger.error("查询 external_coordinate_data 失败: {}", queryResult.getMsg());
+            }
+        } catch (Exception e) {
+            logger.error("查询 external_coordinate_data 异常，身份证号: {}", idCard, e);
+        }
+        return resultList;
+    }
+
+    /**
+     * 根据 mapId 列表查询 swm_site_map_management 表，映射为 mapId -> mapName
+     * 不加 status 条件，即使物理删除也要能查到
+     *
+     * @param mapIds mapId 列表
+     * @return mapId 到 mapName 的映射
+     * @author Shawn
+     * @date 2026/04/10
+     */
+    private Map<String, String> buildMapIdToNameMap(List<String> mapIds) {
+        Map<String, String> map = new HashMap<>();
+        if (mapIds == null || mapIds.isEmpty()) {
+            return map;
+        }
+        try {
+            // 过滤掉空白 id
+            List<String> validIds = new ArrayList<>();
+            for (String id : mapIds) {
+                if (StringUtils.isNotBlank(id)) {
+                    validIds.add(id);
+                }
+            }
+            if (validIds.isEmpty()) {
+                return map;
+            }
+            // 批量查询，不走 status 过滤
+            List<SwmSiteMapManagement> records = swmSiteMapManagementService.findByIds(validIds);
+            if (records != null) {
+                for (SwmSiteMapManagement record : records) {
+                    map.put(record.getId(), record.getMapName());
+                }
+            }
+            // 未查到的一律用 mapId 本身作为名称
+            for (String id : validIds) {
+                if (!map.containsKey(id)) {
+                    map.put(id, id);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("查询 swm_site_map_management 失败", e);
+        }
+        return map;
+    }
+
 
 
     /**

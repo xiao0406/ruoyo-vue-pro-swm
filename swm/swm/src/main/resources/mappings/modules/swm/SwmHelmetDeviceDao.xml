@@ -44,7 +44,9 @@
             a.create_date,
             a.update_by,
             a.update_date,
-            a.remarks
+            a.remarks,
+            a.imei,
+            a.device_color
         FROM swm_helmet_device a
         WHERE a.status = '0'
         AND (a.assigned_person IS NULL OR a.assigned_person = '')
@@ -118,7 +120,9 @@
             a.create_date,
             a.update_by,
             a.update_date,
-            a.remarks
+            a.remarks,
+            a.imei,
+            a.device_color
         FROM swm_helmet_device a
         LEFT JOIN swm_person sp ON a.assigned_person = sp.identity_card COLLATE utf8mb4_general_ci and sp.`status` = '0'
         LEFT JOIN fms_position_archive fpa  ON sp.department = fpa.id COLLATE utf8mb4_general_ci
@@ -136,6 +140,12 @@
             </if>
             <if test="personName != null and personName != ''">
                 AND a.person_name LIKE CONCAT('%', #{personName}, '%')
+            </if>
+            <if test="imei != null and imei != ''">
+                AND a.imei LIKE CONCAT('%', #{imei}, '%')
+            </if>
+            <if test="deviceColor != null and deviceColor != ''">
+                AND a.device_color LIKE CONCAT('%', #{deviceColor}, '%')
             </if>
 
             <!-- 只有在 powerOnStatus 不为空时才加条件 -->
@@ -229,7 +239,9 @@
             a.create_date,
             a.update_by,
             a.update_date,
-            a.remarks
+            a.remarks,
+            a.imei,
+            a.device_color
         FROM swm_helmet_device a
         LEFT JOIN fms_worker w ON a.assigned_person = w.identity_code COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id COLLATE utf8mb4_general_ci
@@ -284,6 +296,16 @@
             #{id}
         </foreach>
         AND a.status = '0'
+    </select>
+    <select id="findDeviceIdsByDeviceSource" resultType="java.lang.String">
+        SELECT
+        a.device_id
+        FROM
+        swm_helmet_device a
+        WHERE
+        a.device_source = #{deviceSource}
+        AND a.status = '0'
+        AND #{random} = #{random}
     </select>
     <select id="selectCount" resultType="java.lang.Long">
         SELECT

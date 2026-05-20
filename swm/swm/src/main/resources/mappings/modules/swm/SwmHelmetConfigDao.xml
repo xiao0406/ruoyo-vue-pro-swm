@@ -74,11 +74,11 @@
 	<!-- description: 获取 swm_work_type 表中的工种数据，用于"按工种展示"的颜色配置 -->
 	<select id="getWorkTypeEnumData" resultType="java.util.Map">
 		SELECT 
-		    work_type_code AS id,
-		    work_type AS title
-		FROM swm_work_type 
+		    dict_label AS id,
+			dict_label AS title
+		FROM swm_dict_data
 		WHERE status = '0'
-		ORDER BY work_type_code
+		ORDER BY dict_label
 	</select>
     <select id="getByDeviceId" resultType="com.jeesite.modules.swm.entity.SwmHelmetDevice">
 		select * from swm_helmet_device_config where device_id = #{deviceId} and status = '0'

@@ -2,7 +2,7 @@ package com.jeesite.modules.job.task;
 
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.dao.SwmBeaconStationDao;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.util.MqSendUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;

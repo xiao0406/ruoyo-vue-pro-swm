@@ -1,6 +1,6 @@
 /**
  * @author Shawn
- * @date 2025-05-14
+ * @date 2026-04-08
  */
 package com.jeesite.modules.swm.web;
 
@@ -8,13 +8,15 @@ import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.utils.excel.ExcelExport;
 import com.jeesite.common.web.BaseController;
-import com.jeesite.modules.swm.entity.SwmBeaconStation;
+import com.jeesite.modules.swm.cache.SwmBeaconStationCache;
+import com.jeesite.modules.entity.SwmBeaconStation;
 import com.jeesite.modules.swm.service.SwmBeaconStationService;
 import com.jeesite.modules.sys.utils.ExcelExportUtil;
 import com.jeesite.modules.entity.SwmBeaconStationExport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +47,9 @@ public class SwmBeaconStationController extends BaseController {
 
     @Autowired
     private SwmBeaconStationService swmBeaconStationService;
+    @Autowired
+    @Lazy
+    private SwmBeaconStationCache beaconStationCache;
 
     /**
      * 获取数据
@@ -118,6 +123,82 @@ public class SwmBeaconStationController extends BaseController {
     }
 
     /**
+     * 获取信标所属区域下拉选项
+     *
+     * 大白话说，就是只返回当前信标列表里真正出现过的区域，
+     * 再把这些区域ID翻译成区域名称，翻译不了就直接显示ID。
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @return 所属区域下拉选项
+     */
+    @GetMapping(value = "areaOptionsFromBeacon")
+    @ResponseBody
+    @ApiOperation(value = "获取信标所属区域下拉选项")
+    public Map<String, Object> areaOptionsFromBeacon() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            logger.info("开始获取信标所属区域下拉选项");
+
+            // 返回结构保持和旧区域下拉接口一致，前端后续切换更省事。
+            List<Map<String, Object>> options = swmBeaconStationService.getAreaOptionsFromBeacon();
+            result.put("success", true);
+            result.put("options", options);
+            result.put("total", options.size());
+            result.put("message", "获取信标所属区域选项成功");
+
+            logger.info("获取信标所属区域下拉选项成功，total={}", options.size());
+            return result;
+        } catch (Exception e) {
+            logger.error("获取信标所属区域下拉选项失败", e);
+
+            result.put("success", false);
+            result.put("options", new ArrayList<>());
+            result.put("total", 0);
+            result.put("message", "获取信标所属区域选项失败: " + e.getMessage());
+            return result;
+        }
+    }
+
+    /**
+     * 获取信标所属楼层下拉选项
+     *
+     * 大白话说，就是只返回当前信标列表里真正出现过的楼层，
+     * 再把这些楼层ID翻译成楼层名称，翻译不了就直接显示ID。
+     *
+     * @author Shawn
+     * @date 2026-04-08
+     * @return 所属楼层下拉选项
+     */
+    @GetMapping(value = "floorOptionsFromBeacon")
+    @ResponseBody
+    @ApiOperation(value = "获取信标所属楼层下拉选项")
+    public Map<String, Object> floorOptionsFromBeacon() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            logger.info("开始获取信标所属楼层下拉选项");
+
+            // 返回结构保持和区域接口一致，前端后续切换更省事。
+            List<Map<String, Object>> options = swmBeaconStationService.getFloorOptionsFromBeacon();
+            result.put("success", true);
+            result.put("options", options);
+            result.put("total", options.size());
+            result.put("message", "获取信标所属楼层选项成功");
+
+            logger.info("获取信标所属楼层下拉选项成功，total={}", options.size());
+            return result;
+        } catch (Exception e) {
+            logger.error("获取信标所属楼层下拉选项失败", e);
+
+            result.put("success", false);
+            result.put("options", new ArrayList<>());
+            result.put("total", 0);
+            result.put("message", "获取信标所属楼层选项失败: " + e.getMessage());
+            return result;
+        }
+    }
+
+    /**
      * 获取危险源类型的信标基站列表(用于下拉框选择)
      * 
      * @author Shawn
@@ -176,6 +257,10 @@ public class SwmBeaconStationController extends BaseController {
             data.put("deployStatus", swmBeaconStation.getDeployStatus());
             data.put("deployStatusText", swmBeaconStation.getDeployStatusText());
             data.put("streamUrl", swmBeaconStation.getStreamUrl());
+            data.put("buildingId", swmBeaconStation.getBuildingId());
+            data.put("building", swmBeaconStation.getBuilding());
+            data.put("floorId", swmBeaconStation.getFloorId());
+            data.put("floor", swmBeaconStation.getFloor());
             data.put("remarks", swmBeaconStation.getRemarks());
 
             result.putAll(data);
@@ -198,6 +283,10 @@ public class SwmBeaconStationController extends BaseController {
             }
 
             swmBeaconStationService.save(swmBeaconStation);
+
+            //新增缓存
+            beaconStationCache.insertBeacon(swmBeaconStation);
+
             return renderResult(Global.TRUE, text("保存信标基站成功！"));
         } catch (RuntimeException e) {
             // 处理业务异常，如重复MAC地址等
@@ -220,6 +309,8 @@ public class SwmBeaconStationController extends BaseController {
     @ApiOperation(value = "删除信标基站")
     public String delete(SwmBeaconStation swmBeaconStation) {
         swmBeaconStationService.delete(swmBeaconStation);
+        //新增缓存
+        beaconStationCache.deleteBeacon(swmBeaconStation);
         return renderResult(Global.TRUE, text("删除信标基站成功！"));
     }
 
@@ -434,12 +525,72 @@ public class SwmBeaconStationController extends BaseController {
     @ResponseBody
     public String importData(MultipartFile file) {
         Integer count = swmBeaconStationService.importData(file);
+        //刷新缓存
+        beaconStationCache.initAreaCache();
+        return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
+    }
+
+    @ApiOperation("信标管理excel导入-major和minor")
+    @RequestMapping("/importDataByMajor")
+    @ResponseBody
+    public String importDataByMajor(MultipartFile file) {
+        Integer count = swmBeaconStationService.importDataByMajor(file);
+        //刷新缓存
+        beaconStationCache.initAreaCache();
         return renderResult(Global.TRUE, text("数据全部导入成功,共" + count + "条。"));
     }
 
     /**
+     * 导出算法格式数据
+     *
+     * 按楼层ID分组返回信标数据，MAC地址格式转换为小写+冒号分隔，
+     * 只查常规信标（beaconType=1），按租户过滤。
+     *
+     * @author Shawn
+     * @date 2026-04-09
+     */
+//    @GetMapping("/exportAlgorithmFormat")
+//    @ResponseBody
+//    @ApiOperation(value = "导出算法格式数据")
+//    public String exportAlgorithmFormat() {
+//        try {
+//            Map<String, Map<String, Object>> data = swmBeaconStationService.exportAlgorithmFormat();
+//            return renderResult(Global.TRUE, text("导出成功"), data);
+//        } catch (Exception e) {
+//            logger.error("导出算法格式数据失败", e);
+//            return renderResult(Global.FALSE, text("导出失败：" + e.getMessage()));
+//        }
+//    }
+    @GetMapping("/exportAlgorithmFormat")
+    @ResponseBody
+    @ApiOperation(value = "导出算法格式数据")
+    public String exportAlgorithmFormat1() {
+        try {
+            // 调用 service 获取数据 + defaultFloorId
+            Map<String, Object> resultMap = swmBeaconStationService.exportAlgorithmFormat();
+
+            // 拿到算法格式数据
+            Map<String, Map<String, Object>> data = (Map<String, Map<String, Object>>) resultMap.get("data");
+            // 拿到默认楼层ID
+            String defaultFloorId = (String) resultMap.get("defaultFloorId");
+
+            // 构建统一返回结果
+            Map<String, Object> result = new HashMap<>();
+            result.put("result", Global.TRUE);
+            result.put("message", text("导出成功"));
+            result.put("defaultFloorId", defaultFloorId); // 关键：加到最外层
+            result.putAll(data); // 把楼层信标数据放进去
+
+            return renderResult(Global.TRUE, text("导出成功"), result);
+        } catch (Exception e) {
+            logger.error("导出算法格式数据失败", e);
+            return renderResult(Global.FALSE, text("导出失败：" + e.getMessage()));
+        }
+    }
+
+    /**
      * 获取信标位置信息（用于前端地图显示）
-     * 
+     *
      * @author System
      * @date 2026-05-13
      * @return 信标位置信息Map，格式为：{"80:ec:cc:d2:3c:28": {"location": "L4", "x": 2134.00, "y": 3127.00}}

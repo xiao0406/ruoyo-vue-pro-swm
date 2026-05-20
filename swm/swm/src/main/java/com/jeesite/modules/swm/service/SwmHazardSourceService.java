@@ -9,7 +9,7 @@ package com.jeesite.modules.swm.service;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.swm.dao.SwmHazardSourceDao;
-import com.jeesite.modules.swm.entity.SwmHazardSource;
+import com.jeesite.modules.entity.SwmHazardSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

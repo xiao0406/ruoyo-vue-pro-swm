@@ -308,15 +308,15 @@ public class SwmPersonImportEnhancedListener extends AnalysisEventListener<SwmPe
         }
 
         // 人员类型验证
-        if (StringUtils.isNotBlank(data.getPersonType())) {
-            if (!SwmPerson.PersonTypeEnum.WORKER.equals(data.getPersonType()) &&
-                    !SwmPerson.PersonTypeEnum.MANAGER.equals(data.getPersonType())
-                    && !SwmPerson.PersonTypeEnum.TEAMLEADER.equals(data.getPersonType())
-                    && !SwmPerson.PersonTypeEnum.SPECIALTRADES.equals(data.getPersonType())) {
-                errors.add("第" + rowIndex + "行，字段[人员类型]：只能是0（工人）或1（管理者）");
-                valid = false;
-            }
-        }
+//        if (StringUtils.isNotBlank(data.getPersonType())) {
+//            if (!SwmPerson.PersonTypeEnum.WORKER.equals(data.getPersonType()) &&
+//                    !SwmPerson.PersonTypeEnum.MANAGER.equals(data.getPersonType())
+//                    && !SwmPerson.PersonTypeEnum.TEAMLEADER.equals(data.getPersonType())
+//                    && !SwmPerson.PersonTypeEnum.SPECIALTRADES.equals(data.getPersonType())) {
+//                errors.add("第" + rowIndex + "行，字段[人员类型]：只能是0（工人）或1（管理者）");
+//                valid = false;
+//            }
+//        }
 
         // 性别验证
         if (StringUtils.isNotBlank(data.getGender())) {

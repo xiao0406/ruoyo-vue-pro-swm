@@ -494,8 +494,8 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         }
 
         // 2. 获取租户对应的数据库名
-        String corpCode = TenantContext.get();
-        String dbname = CorpDbEnum.getDbNameByCorpCode(corpCode);
+//        String corpCode = TenantContext.get();
+//        String dbname = CorpDbEnum.getDbNameByCorpCode(corpCode);
 
         // 3. 构建IN查询条件（防SQL注入 + 空值过滤）
         StringBuilder idCardCondition = new StringBuilder();
@@ -632,7 +632,7 @@ public class PersonTrackService extends CrudService<PersonTrackDao, PersonTrackI
         position.put("name", name);
         position.put("x", x);
         position.put("y", y);
-        position.put("floorId", floorId);
+        position.put("floorId", floorId != null ? floorId : "");
         position.put("workType", workType);
         position.put("organization", organization);
         position.put("workShop", workShop);
