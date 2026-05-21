@@ -7,6 +7,11 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.jeesite.modules.sys.entity.User;
+import org.apache.shiro.session.mgt.SimpleSession;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import io.swagger.annotations.*;
@@ -14,8 +19,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
+import java.util.*;
 
 import com.jeesite.common.config.Global;
 import com.jeesite.common.entity.Page;
@@ -35,6 +41,9 @@ public class SwmSafetyPersonTrainingController extends BaseController {
 
 	@Resource
 	private SwmSafetyPersonTrainingService swmSafetyPersonTrainingService;
+
+	@Resource
+	private RedisConnectionFactory redisConnectionFactory;
 
 	
 	/**
@@ -174,6 +183,59 @@ public class SwmSafetyPersonTrainingController extends BaseController {
 			return false;
 		}
 		return true;
+	}
+
+
+
+	/**
+	 * 根据登录账号查询用户的 Session 信息
+	 * @param loginCode 登录账号 如 adminZJZK
+	 * @return 该用户的 session 信息
+	 */
+	@GetMapping("/find/{loginCode}")
+	@ResponseBody
+	public Map<String, Object> findUserSession(@PathVariable String loginCode) {
+		Map<String, Object> result = new HashMap<>();
+		result.put("loginCode", loginCode);
+		result.put("msg", "未找到");
+		result.put("found", false);
+
+		try (RedisConnection conn = redisConnectionFactory.getConnection()) {
+
+			// 用户缓存 KEY
+			byte[] userCacheKey = "jeesite:userCache".getBytes();
+
+			// ---------------- 关键修复 ----------------
+			// 正确格式：code_租户_账号   →  code_ZJZK_adminZJZK
+			String targetField =  loginCode;
+			// ------------------------------------------
+
+			byte[] userData = conn.hGet(userCacheKey, targetField.getBytes());
+			if (userData == null) {
+				result.put("msg", "用户缓存不存在：" + targetField);
+				return result;
+			}
+
+			// 反序列化 User
+			ByteArrayInputStream bis = new ByteArrayInputStream(userData);
+			ObjectInputStream ois = new ObjectInputStream(bis);
+			User user = (User) ois.readObject();
+
+			// 直接拿到租户信息
+			result.put("found", true);
+			result.put("userCode", user.getUserCode());
+			result.put("loginCode", user.getLoginCode());
+			result.put("corpCode", user.getCorpCode());    // 租户编号
+			result.put("corpName", user.getCorpName());    // 租户名称
+			result.put("msg", "找到用户信息");
+			return result;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			result.put("error", e.getMessage());
+		}
+
+		return result;
 	}
 	
 }
