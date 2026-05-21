@@ -361,7 +361,9 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         Page<SwmHelmetDevice> page = device.getPage();
 
         // 使用框架原生的COUNT机制，避免自定义COUNT查询被错误添加分页参数
-        long count = dao.selectCount(device);
+        SwmHelmetDevice device1 = new SwmHelmetDevice();
+        device1.setPage(null);
+        long count = dao.selectCount(device1);
         page.setCount(count);
 
         // 如果总数为0，则直接返回空列表
