@@ -1764,7 +1764,6 @@ public class AttendanceTask {
      * @date 2025-08-11
      */
     @XxlJob("replacementCard")
-    @Transactional(readOnly = false)
     public void replacementCard() {
         Date date = new Date();
         SwmJobLog jobLog = new SwmJobLog();
@@ -1810,6 +1809,7 @@ public class AttendanceTask {
 
             } catch (Exception e) {
                 jobLog.setExceptionInfo(e.getMessage());
+                XxlJobHelper.log("补打上下班卡任务执行异常", e);
             } finally {
                 jobLog.setEndTime(new Date());
                 jobLog.setDuration(jobLog.getEndTime().getTime() - jobLog.getStartTime().getTime());
@@ -1827,7 +1827,6 @@ public class AttendanceTask {
      *
      * @return 处理结果统计
      */
-    @Transactional(readOnly = false)
     public void processclockInCard(String requestDate,String corpCode ) {
         XxlJobHelper.log("开始执行上班卡补卡任务...................");
 
@@ -1906,7 +1905,6 @@ public class AttendanceTask {
     可再次触发下班打卡补偿机制）
     2.补偿打卡机制不影响信标打卡机制，信标打卡依旧可以持续更新下班打卡时间
      */
-    @Transactional(readOnly = false)
     public void processclockOutCard(String requestDate,String corpCode) {
 
         XxlJobHelper.log("开始执行下班卡补卡任务............................");

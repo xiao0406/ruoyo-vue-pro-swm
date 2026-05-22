@@ -183,6 +183,13 @@ public interface SwmDailyAttendanceDao extends CrudDao<SwmDailyAttendance> {
 
     void updateBatch(List<SwmDailyAttendance> records);
 
+    /**
+     * 单条更新考勤记录（仅更新非空字段），替代 updateBatch 的多语句 SQL 方式
+     * @param item 考勤记录
+     * @return 影响行数
+     */
+    int updateAttendanceRecord(@Param("item") SwmDailyAttendance item);
+
     List<SwmDailyAttendance> findAllList(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
     List<AiDto.WorkerFatigue> workerFatigue(AiDto.WorkerFatigue vo);

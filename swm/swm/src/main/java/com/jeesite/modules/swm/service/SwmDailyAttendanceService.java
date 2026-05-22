@@ -1070,8 +1070,11 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         return dao.findByEmployeeIdAndDateBatch(employeeIds, attendanceDate);
     }
 
+    @Transactional(readOnly = false)
     public void updateBatch(List<SwmDailyAttendance> records) {
-        dao.updateBatch(records);
+        for (SwmDailyAttendance record : records) {
+            dao.updateAttendanceRecord(record);
+        }
     }
 
     public List<SwmDailyAttendance> findAllList(String startDate, String endDate) {

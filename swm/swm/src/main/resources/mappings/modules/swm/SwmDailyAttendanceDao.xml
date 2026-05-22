@@ -557,6 +557,42 @@
         </foreach>
     </update>
 
+    <!-- 单条更新考勤记录（仅更新非空字段），替代 updateBatch 的多语句 SQL -->
+    <update id="updateAttendanceRecord">
+        UPDATE swm_daily_attendance
+        <set>
+            <if test="item.clockInDate != null">
+                clock_in_date = #{item.clockInDate},
+            </if>
+            <if test="item.clockInTime != null">
+                clock_in_time = #{item.clockInTime},
+            </if>
+            <if test="item.clockOutTime != null">
+                clock_out_time = #{item.clockOutTime},
+            </if>
+            <if test="item.clockOutDate != null">
+                clock_out_date = #{item.clockOutDate},
+            </if>
+            <if test="item.noonEndTime != null">
+                noon_end_time = #{item.noonEndTime},
+            </if>
+            <if test="item.noonEndDate != null">
+                noon_end_date = #{item.noonEndDate},
+            </if>
+            <if test="item.afterStartTime != null">
+                after_start_time = #{item.afterStartTime},
+            </if>
+            <if test="item.afterStartDate != null">
+                after_start_date = #{item.afterStartDate},
+            </if>
+            <if test="item.pendingClockOutCompensate != null">
+                pending_clock_out_compensate = #{item.pendingClockOutCompensate},
+            </if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{item.id}
+    </update>
+
     <!-- 根据身份证和日期查询考勤记录 -->
     <select id="findByIdentityCardAndDate" resultType="SwmDailyAttendance">
         SELECT
