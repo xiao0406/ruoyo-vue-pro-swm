@@ -296,10 +296,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                 // 获取当前页的数据
                 List<SwmHelmetDevice> list = allFilteredDevices.subList(start, end);
 
-                // 为每个设备设置最新电量
-                for (SwmHelmetDevice swmHelmetDevice : list) {
-                    updateDeviceBatteryLevel(swmHelmetDevice);
-                }
+                // 批量查询电量（消除N+1问题）
+                batchUpdateBatteryLevels(list);
 
                 page.setList(list);
                 return page;
@@ -323,10 +321,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
                 // 根据设备ID列表查询设备详情
                 List<SwmHelmetDevice> list = dao.findHelmetDeviceListByDeviceIds(queryDevice);
 
-                // 为每个设备设置最新电量
-                for (SwmHelmetDevice swmHelmetDevice : list) {
-                    updateDeviceBatteryLevel(swmHelmetDevice);
-                }
+                // 批量查询电量（消除N+1问题）
+                batchUpdateBatteryLevels(list);
 
                 page.setList(list);
                 return page;
@@ -375,10 +371,8 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
         // 查询数据列表，仍使用自定义查询以支持复杂的LEFT JOIN
         List<SwmHelmetDevice> list = dao.findHelmetDeviceListWithRelations(device);
 
-        // 为每个设备设置最新电量
-        for (SwmHelmetDevice swmHelmetDevice : list) {
-            updateDeviceBatteryLevel(swmHelmetDevice);
-        }
+        // 批量查询电量（消除N+1问题）
+        batchUpdateBatteryLevels(list);
 
         // 设置查询结果
         page.setList(list);
@@ -428,6 +422,82 @@ public class SwmHelmetDeviceService extends CrudService<SwmHelmetDeviceDao, SwmH
             // 如果查询时序数据库时发生异常，则电量保持为空 (null)，并标记为离线
             swmHelmetDevice.setMotionStatus("0");
             logger.error("查询设备 {} 的电量失败: {}", swmHelmetDevice.getDeviceId(), e.getMessage());
+        }
+    }
+
+    /**
+     * 批量更新设备电量信息（消除N+1查询问题）
+     * 一次TDengine查询获取所有设备的最新电量，避免逐个查询
+     */
+    private void batchUpdateBatteryLevels(List<SwmHelmetDevice> devices) {
+        if (devices == null || devices.isEmpty()) {
+            return;
+        }
+
+        // 收集所有设备ID
+        List<String> deviceIds = new ArrayList<>();
+        for (SwmHelmetDevice device : devices) {
+            if (device.getDeviceId() != null && !device.getDeviceId().trim().isEmpty()) {
+                deviceIds.add(device.getDeviceId());
+            }
+        }
+
+        if (deviceIds.isEmpty()) {
+            return;
+        }
+
+        // 构建批量查询SQL
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT device_id, bat_l FROM ").append(dbname)
+                .append(".").append(TdengineSuperTableConstant.HELMET_RUNDE_CA_REPORT_LOCATION)
+                .append(" WHERE device_id IN (");
+        for (int i = 0; i < deviceIds.size(); i++) {
+            if (i > 0) {
+                sqlBuilder.append(",");
+            }
+            sqlBuilder.append("'").append(deviceIds.get(i)).append("'");
+        }
+        sqlBuilder.append(") AND time <= NOW() AND time >= NOW() - 5m ORDER BY device_id, time DESC");
+
+        try {
+            R<cn.hutool.json.JSONObject> queryResult = tdengineService.executeTDengineSQL(sqlBuilder.toString());
+
+            // 解析结果，取每个设备的最新一条记录
+            Map<String, Integer> batteryMap = new HashMap<>();
+            if (queryResult != null && queryResult.getCode() == R.SUCCESS && queryResult.getData() != null) {
+                cn.hutool.json.JSONObject data = queryResult.getData();
+                cn.hutool.json.JSONArray rows = data.getJSONArray("data");
+                Set<String> processed = new HashSet<>();
+
+                if (rows != null) {
+                    for (int i = 0; i < rows.size(); i++) {
+                        cn.hutool.json.JSONArray row = rows.getJSONArray(i);
+                        if (row != null && row.size() > 1) {
+                            String deviceId = row.getStr(0);
+                            if (!processed.contains(deviceId)) {
+                                batteryMap.put(deviceId, row.getInt(1));
+                                processed.add(deviceId);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 回填电量和运动状态到每个设备
+            for (SwmHelmetDevice device : devices) {
+                if (device.getDeviceId() != null && batteryMap.containsKey(device.getDeviceId())) {
+                    device.setBatteryLevel(batteryMap.get(device.getDeviceId()));
+                    device.setMotionStatus("1");
+                } else {
+                    device.setBatteryLevel(null);
+                    device.setMotionStatus("0");
+                }
+            }
+        } catch (Exception e) {
+            logger.error("批量查询设备电量失败: {}", e.getMessage(), e);
+            for (SwmHelmetDevice device : devices) {
+                device.setMotionStatus("0");
+            }
         }
     }
 

@@ -309,11 +309,8 @@
     </select>
     <select id="selectCount" resultType="java.lang.Long">
         SELECT
-        COUNT(DISTINCT a.id)
+        COUNT(a.id)
         FROM swm_helmet_device a
-        LEFT JOIN swm_person sp ON a.assigned_person = sp.identity_card COLLATE utf8mb4_general_ci and sp.`status` = '0'
-        LEFT JOIN fms_position_archive fpa  ON sp.department = fpa.id COLLATE utf8mb4_general_ci
-        LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
         <where>
             a.status = '0' ${sqlMap.dsf}
             <if test="deviceId != null and deviceId != ''">
