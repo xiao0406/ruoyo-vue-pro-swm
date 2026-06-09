@@ -1183,6 +1183,51 @@
         ORDER BY
         a.clock_out_date
     </select>
+
+    <!-- 迟到人员（含车间信息） -->
+    <select id="beLatePersonWithDept"
+            resultType="com.jeesite.modules.swm.entity.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+            sp.NAME AS employeeName,
+            a.clock_in_date AS clockInDate,
+            IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
+            IFNULL(fpa.position_name, '未分配车间') AS departmentName
+        FROM
+            swm_daily_attendance a
+                INNER JOIN swm_person sp ON a.employee_id = sp.id
+                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.`status` = '0' AND sp.personnel_status = '1'
+            AND sp.person_type != '1'
+            AND a.attendance_date BETWEEN #{startDate} AND #{endDate}
+            AND a.clock_in_date IS NOT NULL
+            AND a.clock_in_date &gt; STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', 1), '%H:%i')
+        ORDER BY a.clock_in_date
+    </select>
+
+    <!-- 早退人员（含车间信息） -->
+    <select id="leaveEarlyPersonWithDept"
+            resultType="com.jeesite.modules.swm.entity.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+            sp.NAME AS employeeName,
+            a.clock_out_date AS clockOutDate,
+            IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
+            IFNULL(fpa.position_name, '未分配车间') AS departmentName
+        FROM
+            swm_daily_attendance a
+                INNER JOIN swm_person sp ON a.employee_id = sp.id
+                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.`status` = '0' AND sp.personnel_status = '1'
+            AND sp.person_type != '1'
+            AND a.attendance_date BETWEEN #{startDate} AND #{endDate}
+            AND a.clock_out_date IS NOT NULL
+            AND TIME(a.clock_out_date) &lt; STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', -1), '%H:%i')
+        ORDER BY a.clock_out_date
+    </select>
+
     <select id="findClasses" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
         SELECT
             *

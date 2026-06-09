@@ -110,6 +110,8 @@ public class SwmDashboardDto {
 
         @ApiModelProperty(value = "班组名称")
         private String teamName;
+        @ApiModelProperty(value = "车间名称")
+        private String departmentName;
         @ApiModelProperty(value = "人员名称")
         private String employeeName;
         @ApiModelProperty(value = "手机号")

@@ -249,4 +249,30 @@ public class AiDto implements Serializable{
         private BigDecimal handleRate;
     }
 
+    @Data
+    //考勤异常（迟到早退）
+    public static class AttendanceAnomaly implements Serializable {
+        private static final long serialVersionUID = 1L;
+        String startDate;
+        String endDate;
+
+        @ApiModelProperty("迟到人员列表")
+        private List<Personnel> latePersonnel;
+        @ApiModelProperty("早退人员列表")
+        private List<Personnel> earlyPersonnel;
+
+        @Data
+        public static class Personnel implements Serializable {
+            private static final long serialVersionUID = 1L;
+            @ApiModelProperty("人员姓名")
+            private String employeeName;
+            @ApiModelProperty("班组名称")
+            private String teamName;
+            @ApiModelProperty("车间名称")
+            private String departmentName;
+            @ApiModelProperty("打卡时间")
+            private String clockTime;
+        }
+    }
+
 }

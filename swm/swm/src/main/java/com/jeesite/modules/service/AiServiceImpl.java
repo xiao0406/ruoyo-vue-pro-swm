@@ -9,10 +9,12 @@ import cn.hutool.json.JSONObject;
 import com.alibaba.cloud.commons.lang.StringUtils;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.ObjectUtils;
+import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.entity.dto.SwmDashboardDto;
 import com.jeesite.modules.swm.service.*;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.constant.SwmRedisConstant;
@@ -62,6 +64,8 @@ public class AiServiceImpl {
     private RedisService redisService;
     @Autowired
     private SwmWarningManagementDao swmWarningManagementDao;
+    @Autowired
+    private SwmDailyAttendanceDao swmDailyAttendanceDao;
 
 
     /**
@@ -1080,6 +1084,56 @@ public class AiServiceImpl {
         }
 
         return resultList;
+    }
+
+    /**
+     * 考勤异常：迟到早退人员明细（含车间信息）
+     */
+    public AiDto.AttendanceAnomaly attendanceAnomaly(AiDto.AttendanceAnomaly vo) {
+
+        DateTime yesterday = DateUtil.yesterday();
+        if (ObjectUtils.isEmpty(vo.getStartDate())) {
+            vo.setStartDate(DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd"));
+        }
+        if (ObjectUtils.isEmpty(vo.getEndDate())) {
+            vo.setEndDate(DateUtil.format(DateUtil.endOfDay(yesterday), "yyyy-MM-dd"));
+        }
+
+        Date startDate = DateUtil.beginOfDay(DateUtil.parse(vo.getStartDate(), "yyyy-MM-dd"));
+        Date endDate = DateUtil.endOfDay(DateUtil.parse(vo.getEndDate(), "yyyy-MM-dd"));
+
+        SwmDashboardDto.NoAttendancePerson queryVo = new SwmDashboardDto.NoAttendancePerson();
+        queryVo.setStartDate(startDate);
+        queryVo.setEndDate(endDate);
+
+        // 查询迟到人员
+        List<SwmDashboardDto.NoAttendancePerson> lateList = swmDailyAttendanceDao.beLatePersonWithDept(queryVo);
+        List<AiDto.AttendanceAnomaly.Personnel> latePersonnel = new ArrayList<>();
+        for (SwmDashboardDto.NoAttendancePerson p : lateList) {
+            AiDto.AttendanceAnomaly.Personnel person = new AiDto.AttendanceAnomaly.Personnel();
+            person.setEmployeeName(p.getEmployeeName());
+            person.setTeamName(p.getTeamName());
+            person.setDepartmentName(p.getDepartmentName());
+            person.setClockTime(p.getClockInDate() != null ? DateUtil.format(p.getClockInDate(), "HH:mm:ss") : null);
+            latePersonnel.add(person);
+        }
+
+        // 查询早退人员
+        List<SwmDashboardDto.NoAttendancePerson> earlyList = swmDailyAttendanceDao.leaveEarlyPersonWithDept(queryVo);
+        List<AiDto.AttendanceAnomaly.Personnel> earlyPersonnel = new ArrayList<>();
+        for (SwmDashboardDto.NoAttendancePerson p : earlyList) {
+            AiDto.AttendanceAnomaly.Personnel person = new AiDto.AttendanceAnomaly.Personnel();
+            person.setEmployeeName(p.getEmployeeName());
+            person.setTeamName(p.getTeamName());
+            person.setDepartmentName(p.getDepartmentName());
+            person.setClockTime(p.getClockOutDate() != null ? DateUtil.format(p.getClockOutDate(), "HH:mm:ss") : null);
+            earlyPersonnel.add(person);
+        }
+
+        AiDto.AttendanceAnomaly result = new AiDto.AttendanceAnomaly();
+        result.setLatePersonnel(latePersonnel);
+        result.setEarlyPersonnel(earlyPersonnel);
+        return result;
     }
 
 }

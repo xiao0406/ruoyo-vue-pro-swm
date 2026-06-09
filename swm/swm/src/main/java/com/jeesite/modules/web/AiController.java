@@ -135,4 +135,11 @@ public class AiController {
     public List<AiDto.ClosedLoopTracking> closedLoopTracking(AiDto.ClosedLoopTracking vo) {
         return aiServiceImpl.closedLoopTracking(vo);
     }
+
+    @PostMapping("attendanceAnomaly")
+    @ResponseBody
+    @ApiOperation(value = "考勤异常-迟到早退人员")
+    public AiDto.AttendanceAnomaly attendanceAnomaly(AiDto.AttendanceAnomaly vo) {
+        return aiServiceImpl.attendanceAnomaly(vo);
+    }
 }
