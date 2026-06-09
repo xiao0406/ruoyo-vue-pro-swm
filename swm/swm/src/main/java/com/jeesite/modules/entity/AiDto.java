@@ -198,6 +198,55 @@ public class AiDto implements Serializable{
         private BigDecimal actualHours;
     }
 
+    @Data
+    //未注册人员
+    public static class UnregisteredPersonnel implements Serializable {
+        private static final long serialVersionUID = 1L;
+        String startDate;
+        String endDate;
 
+        @ApiModelProperty("设备ID")
+        private String deviceId;
+        @ApiModelProperty("身份证号")
+        private String idCard;
+        @ApiModelProperty("所在区域")
+        private String areaName;
+        @ApiModelProperty("最后定位时间")
+        private String time;
+    }
+
+    @Data
+    //设备异常（低电量）
+    public static class DeviceAnomaly implements Serializable {
+        private static final long serialVersionUID = 1L;
+        String startDate;
+        String endDate;
+
+        @ApiModelProperty("设备ID")
+        private String deviceId;
+        @ApiModelProperty("设备名称")
+        private String deviceName;
+        @ApiModelProperty("电量百分比")
+        private Integer batteryLevel;
+        @ApiModelProperty("绑定人员")
+        private String assignedPerson;
+    }
+
+    @Data
+    //闭环追踪
+    public static class ClosedLoopTracking implements Serializable {
+        private static final long serialVersionUID = 1L;
+        String startDate;
+        String endDate;
+
+        @ApiModelProperty("报警类型")
+        private String alarmType;
+        @ApiModelProperty("已排查工单数")
+        private Long handledCount;
+        @ApiModelProperty("报警工单总数")
+        private Long totalCount;
+        @ApiModelProperty("处置率")
+        private BigDecimal handleRate;
+    }
 
 }

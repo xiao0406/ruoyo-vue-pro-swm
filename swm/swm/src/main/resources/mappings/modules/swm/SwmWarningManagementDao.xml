@@ -533,4 +533,18 @@
         GROUP BY
             id_card
     </select>
+
+    <!-- 按报警类型分组统计已处置的预警数量 -->
+    <select id="countHandledGroupByWarningContent" resultType="map">
+        SELECT
+            warning_content AS warningContent,
+            COUNT(*) AS count
+        FROM swm_warning_management
+        WHERE handle_status = '1'
+          AND status = '0'
+          AND warning_content NOT IN ('一键SOS', '考勤打卡', '进入大门')
+          AND handle_time BETWEEN #{beginDate} AND #{endDate}
+        GROUP BY warning_content
+        ORDER BY count DESC
+    </select>
 </mapper>

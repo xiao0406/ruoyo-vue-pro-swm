@@ -9,11 +9,14 @@ import cn.hutool.json.JSONObject;
 import com.alibaba.cloud.commons.lang.StringUtils;
 import com.jeesite.common.entity.Page;
 import com.jeesite.common.lang.ObjectUtils;
+import com.jeesite.modules.swm.dao.SwmWarningManagementDao;
 import com.jeesite.modules.swm.entity.SwmDailyAttendance;
-import com.jeesite.modules.swm.service.SwmAreaService;
-import com.jeesite.modules.swm.service.SwmDailyAttendanceService;
-import com.jeesite.modules.swm.service.SwmPersonService;
-import com.jeesite.modules.swm.service.TDengineService;
+import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.service.*;
+import com.jeesite.modules.cache.service.RedisService;
+import com.jeesite.modules.constant.SwmRedisConstant;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.jeesite.modules.sys.utils.DictUtils;
 import com.jeesite.modules.utils.R;
 import com.jeesite.modules.entity.AiDto;
@@ -53,6 +56,12 @@ public class AiServiceImpl {
     @Autowired
     @Lazy
     private SwmAreaService swmAreaService;
+    @Autowired
+    private SwmHelmetDeviceService swmHelmetDeviceService;
+    @Autowired
+    private RedisService redisService;
+    @Autowired
+    private SwmWarningManagementDao swmWarningManagementDao;
 
 
     /**
@@ -869,5 +878,209 @@ public class AiServiceImpl {
 
         return page;
     }
+
+    /**
+     * 未注册人员：有设备在线但未在swm_person中注册的人员
+     */
+    public List<AiDto.UnregisteredPersonnel> unregisteredPersonnel(AiDto.UnregisteredPersonnel vo) {
+
+        // 日期默认处理
+        DateTime yesterday = DateUtil.yesterday();
+        if (ObjectUtils.isEmpty(vo.getStartDate())) {
+            vo.setStartDate(DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd HH:mm:ss"));
+        }
+        if (ObjectUtils.isEmpty(vo.getEndDate())) {
+            vo.setEndDate(DateUtil.format(DateUtil.endOfDay(yesterday), "yyyy-MM-dd HH:mm:ss"));
+        }
+
+        // 1. 从Redis获取在线设备ID
+        String corpCode = CorpUtils.getCurrentCorpCode();
+        Set<Object> deviceIds = redisService.sGet(corpCode + SwmRedisConstant.RedisIotKey.ONLINE_DEVICES_KEY);
+        if (deviceIds == null || deviceIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 2. 获取设备→人员映射
+        Set<String> allIdCards = new HashSet<>();
+        for (Object deviceId : deviceIds) {
+            String idCard = (String) redisService.hget(
+                    SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+            if (idCard != null && !idCard.isEmpty()) {
+                allIdCards.add(idCard);
+            }
+        }
+        if (allIdCards.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 3. 查询已注册人员，取差集得到未注册人员
+        List<SwmPerson> registeredPersons = swmPersonService.findByIdCards(new ArrayList<>(allIdCards));
+        Set<String> registeredIdCards = registeredPersons.stream()
+                .map(SwmPerson::getIdentityCard)
+                .collect(Collectors.toSet());
+
+        List<String> unregisteredIdCards = allIdCards.stream()
+                .filter(idCard -> !registeredIdCards.contains(idCard))
+                .collect(Collectors.toList());
+
+        if (unregisteredIdCards.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 4. 从Redis获取未注册人员的设备ID映射
+        Map<String, String> idCardDeviceMap = new HashMap<>();
+        for (Object deviceId : deviceIds) {
+            String idCard = (String) redisService.hget(
+                    SwmRedisConstant.RedisGlobalKey.DEVICE_PERSON_MAP, String.valueOf(deviceId));
+            if (idCard != null && unregisteredIdCards.contains(idCard)) {
+                idCardDeviceMap.put(idCard, String.valueOf(deviceId));
+            }
+        }
+
+        // 5. 查询TDengine获取最后坐标
+        String idCardList = unregisteredIdCards.stream()
+                .map(id -> "'" + id + "'")
+                .collect(Collectors.joining(","));
+
+        String sql = "SELECT LAST_ROW(id_card), LAST_ROW(x), LAST_ROW(y), LAST_ROW(time), LAST_ROW(address) " +
+                "FROM " + dbname + ".external_coordinate_data " +
+                "WHERE id_card IN (" + idCardList + ") " +
+                "AND time >= '" + vo.getStartDate() + "' AND time <= '" + vo.getEndDate() + "' " +
+                "PARTITION BY id_card";
+
+        R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+
+        List<AiDto.UnregisteredPersonnel> resultList = new ArrayList<>();
+        if (result.getCode() == R.SUCCESS && result.getData() != null) {
+            JSONArray dataArray = result.getData().getJSONArray("data");
+            if (dataArray != null) {
+                // 查询区域映射
+                List<AiDto.Trajectory> swmAreaList = swmAreaService.findAddressList();
+                Map<String, String> areaMap = swmAreaList.stream()
+                        .collect(Collectors.toMap(AiDto.Trajectory::getAddress, AiDto.Trajectory::getAreaName, (a, b) -> a));
+
+                for (int i = 0; i < dataArray.size(); i++) {
+                    JSONArray row = dataArray.getJSONArray(i);
+                    AiDto.UnregisteredPersonnel dto = new AiDto.UnregisteredPersonnel();
+                    String idCard = getStringSafe(row.get(0));
+                    dto.setIdCard(idCard);
+                    dto.setDeviceId(idCardDeviceMap.get(idCard));
+                    dto.setTime(getStringSafe(row.get(3)));
+                    String address = getStringSafe(row.get(4));
+                    dto.setAreaName(address != null ? areaMap.get(address) : null);
+                    resultList.add(dto);
+                }
+            }
+        }
+        return resultList;
+    }
+
+    /**
+     * 设备异常：电量低于20%的设备列表
+     */
+    public List<AiDto.DeviceAnomaly> deviceAnomalies(AiDto.DeviceAnomaly vo) {
+
+        // 从TDengine查询低电量设备
+        List<Map<String, String>> lowBatteryDevices = swmHelmetDeviceService.findDeviceIdAndIdBatteryByBatteryLevel(20);
+        if (lowBatteryDevices.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<AiDto.DeviceAnomaly> resultList = new ArrayList<>();
+        for (Map<String, String> m : lowBatteryDevices) {
+            String deviceId = m.get("deviceId");
+            Integer batteryLevel = Integer.parseInt(m.get("latestBattery"));
+
+            AiDto.DeviceAnomaly dto = new AiDto.DeviceAnomaly();
+            dto.setDeviceId(deviceId);
+            dto.setBatteryLevel(batteryLevel);
+
+            SwmHelmetDevice device = swmHelmetDeviceService.getByDeviceId(deviceId);
+            if (device != null) {
+                dto.setDeviceName(device.getDeviceId());
+                dto.setAssignedPerson(device.getPersonName());
+            }
+            resultList.add(dto);
+        }
+
+        return resultList;
+    }
+
+    /**
+     * 闭环追踪：按报警类型统计已排查工单数/报警工单总数
+     */
+    public List<AiDto.ClosedLoopTracking> closedLoopTracking(AiDto.ClosedLoopTracking vo) {
+
+        // 日期默认处理
+        DateTime yesterday = DateUtil.yesterday();
+        if (ObjectUtils.isEmpty(vo.getStartDate())) {
+            vo.setStartDate(DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd"));
+        }
+        if (ObjectUtils.isEmpty(vo.getEndDate())) {
+            vo.setEndDate(DateUtil.format(DateUtil.endOfDay(yesterday), "yyyy-MM-dd"));
+        }
+
+        Map<String, String> alarmDict = getAlarmDict();
+        List<String> alarmLabels = new ArrayList<>(alarmDict.values());
+
+        // 1. 从TDengine查各报警类型总数
+        String labelInClause = alarmLabels.stream()
+                .map(l -> "'" + l + "'")
+                .collect(Collectors.joining(","));
+
+        String sql = "SELECT warning_content, COUNT(1) AS cnt " +
+                "FROM " + dbname + ".swm_warning_management " +
+                "WHERE create_date >= '" + vo.getStartDate() + "' " +
+                "AND create_date <= '" + vo.getEndDate() + "' " +
+                "AND warning_content IN (" + labelInClause + ") " +
+                "GROUP BY warning_content";
+
+        Map<String, Long> totalMap = new HashMap<>();
+        R<JSONObject> result = tdengineService.executeTDengineSQL(sql);
+        if (result.getCode() == R.SUCCESS && result.getData() != null) {
+            JSONArray dataArray = result.getData().getJSONArray("data");
+            if (dataArray != null) {
+                for (int i = 0; i < dataArray.size(); i++) {
+                    JSONArray row = dataArray.getJSONArray(i);
+                    String content = getStringSafe(row.get(0));
+                    long cnt = Long.parseLong(row.get(2).toString());
+                    if (content != null) {
+                        totalMap.put(content, cnt);
+                    }
+                }
+            }
+        }
+
+        // 2. 从MySQL查各报警类型已处置数
+        Date beginDate = DateUtil.beginOfDay(DateUtil.parse(vo.getStartDate(), "yyyy-MM-dd"));
+        Date endDate = DateUtil.endOfDay(DateUtil.parse(vo.getEndDate(), "yyyy-MM-dd"));
+        List<Map<String, Object>> handledList = swmWarningManagementDao.countHandledGroupByWarningContent(beginDate, endDate);
+        Map<String, Long> handledMap = new HashMap<>();
+        for (Map<String, Object> row : handledList) {
+            String content = (String) row.get("warningContent");
+            Long count = ((Number) row.get("count")).longValue();
+            handledMap.put(content, count);
+        }
+
+        // 3. 合并计算处置率
+        List<AiDto.ClosedLoopTracking> resultList = new ArrayList<>();
+        for (Map.Entry<String, String> entry : alarmDict.entrySet()) {
+            String label = entry.getValue();
+            long total = totalMap.getOrDefault(label, 0L);
+            long handled = handledMap.getOrDefault(label, 0L);
+
+            AiDto.ClosedLoopTracking dto = new AiDto.ClosedLoopTracking();
+            dto.setAlarmType(label);
+            dto.setTotalCount(total);
+            dto.setHandledCount(handled);
+            dto.setHandleRate(total > 0
+                    ? new BigDecimal(handled).divide(new BigDecimal(total), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO);
+            resultList.add(dto);
+        }
+
+        return resultList;
+    }
+
 }
 

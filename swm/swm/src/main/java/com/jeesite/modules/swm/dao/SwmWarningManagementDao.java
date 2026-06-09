@@ -213,4 +213,12 @@ public interface SwmWarningManagementDao extends CrudDao<SwmWarningManagement> {
     Long theAlarmHasBeenDealtWith(String startTime, String endTime);
 
     List<String> getWarnIdCardByFiveMinute(DateTime dateTime);
+
+    /**
+     * 按报警类型分组统计已处置的预警数量
+     * @param beginDate 开始时间
+     * @param endDate 结束时间
+     * @return 每个报警类型的已处置数量
+     */
+    List<Map<String, Object>> countHandledGroupByWarningContent(@Param("beginDate") Date beginDate, @Param("endDate") Date endDate);
 }

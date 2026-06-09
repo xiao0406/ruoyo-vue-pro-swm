@@ -114,4 +114,25 @@ public class AiController {
         List<AiDto.TeamActualHours> result =  aiServiceImpl.teamActualHours(vo);
         return result;
     }
+
+    @PostMapping("unregisteredPersonnel")
+    @ResponseBody
+    @ApiOperation(value = "未注册人员")
+    public List<AiDto.UnregisteredPersonnel> unregisteredPersonnel(AiDto.UnregisteredPersonnel vo) {
+        return aiServiceImpl.unregisteredPersonnel(vo);
+    }
+
+    @PostMapping("deviceAnomalies")
+    @ResponseBody
+    @ApiOperation(value = "设备异常-低电量")
+    public List<AiDto.DeviceAnomaly> deviceAnomalies(AiDto.DeviceAnomaly vo) {
+        return aiServiceImpl.deviceAnomalies(vo);
+    }
+
+    @PostMapping("closedLoopTracking")
+    @ResponseBody
+    @ApiOperation(value = "闭环追踪-报警处置统计")
+    public List<AiDto.ClosedLoopTracking> closedLoopTracking(AiDto.ClosedLoopTracking vo) {
+        return aiServiceImpl.closedLoopTracking(vo);
+    }
 }
