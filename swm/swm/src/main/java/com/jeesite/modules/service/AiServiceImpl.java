@@ -887,7 +887,7 @@ public class AiServiceImpl {
         if (countResult.getCode() == R.SUCCESS && countResult.getData() != null) {
             JSONArray arr = countResult.getData().getJSONArray("data");
             if (arr != null && !arr.isEmpty()) {
-                total = (int) arr.getJSONArray(0).get(0);
+                total = ((Number) arr.getJSONArray(0).get(0)).intValue();
             }
         }
 
