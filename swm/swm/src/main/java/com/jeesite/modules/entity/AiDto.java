@@ -73,7 +73,7 @@ public class AiDto implements Serializable{
 
         String startDate;
         String endDate;
-        String corpCode;
+        String company;
     }
 
     @EqualsAndHashCode(callSuper = true)
@@ -83,6 +83,7 @@ public class AiDto implements Serializable{
         private static final long serialVersionUID = 1L;
         String startDate;
         String endDate;
+        String company;
 
         //静止报警	脱帽报警	应急呼叫	跌落报警	危险源闯入
         @ApiModelProperty("员工姓名")
@@ -119,7 +120,7 @@ public class AiDto implements Serializable{
         private static final long serialVersionUID = 1L;
         private String startDate;
         private String endDate;
-        String corpCode;
+        String company;
 
         @ApiModelProperty("报警总数")
         private Integer totalAlarm ;
@@ -139,7 +140,7 @@ public class AiDto implements Serializable{
         private static final long serialVersionUID = 1L;
         String startDate;
         String endDate;
-        String corpCode;
+        String company;
 
 //        人员信息：姓名、绑定安全帽ID、手机号、车间、班组
 //        定位坐标：X坐标，Y坐标，所在区域
@@ -193,7 +194,7 @@ public class AiDto implements Serializable{
         private static final long serialVersionUID = 1L;
         String startDate;
         String endDate;
-        String corpCode;
+        String company;
 
         @ApiModelProperty(value = "所属班组")
         private String teamName;
@@ -208,7 +209,7 @@ public class AiDto implements Serializable{
         private static final long serialVersionUID = 1L;
         String startDate;
         String endDate;
-        String corpCode;
+        String company;
 
         @ApiModelProperty("设备ID")
         private String deviceId;
@@ -226,7 +227,7 @@ public class AiDto implements Serializable{
         private static final long serialVersionUID = 1L;
         String startDate;
         String endDate;
-        String corpCode;
+        String company;
 
         @ApiModelProperty("设备ID")
         private String deviceId;
@@ -244,7 +245,7 @@ public class AiDto implements Serializable{
         private static final long serialVersionUID = 1L;
         String startDate;
         String endDate;
-        String corpCode;
+        String company;
 
         @ApiModelProperty("报警类型")
         private String alarmType;

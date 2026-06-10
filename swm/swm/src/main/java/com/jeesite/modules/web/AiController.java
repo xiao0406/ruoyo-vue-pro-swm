@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -44,9 +45,9 @@ public class AiController {
     @PostMapping("workEfficiencyTask")
     @ResponseBody
     @ApiOperation(value = "工效统计")
-    public Map<String, Object> workEfficiencyTask(String startDate, String endDate, String corpCode) {
+    public Map<String, Object> workEfficiencyTask(String startDate, String endDate, String company) {
         //设置租户信息
-        serCorpCode(corpCode);
+        serCorpCode(company);
         Map<String, Object> result =  aiServiceImpl.workEfficiencyTask(startDate,endDate);
         return result;
     }
@@ -57,7 +58,7 @@ public class AiController {
     @ApiOperation(value = "工人疲劳")
     public Page<AiDto.WorkerFatigue> workerFatigue(AiDto.WorkerFatigue vo ) {
         //设置租户信息
-        serCorpCode(vo.getCorpCode());
+        serCorpCode(vo.getCompany());
         Page<AiDto.WorkerFatigue> result =  aiServiceImpl.workerFatigue(vo);
         return result;
     }
@@ -68,7 +69,7 @@ public class AiController {
     public Page<AiDto.RiskStatistics> riskStatistics(AiDto.RiskStatistics vo ) {
         initPage(vo);
         //设置租户信息
-        serCorpCode(vo.getCorpCode());
+        serCorpCode(vo.getCompany());
         Page<AiDto.RiskStatistics> result =  aiServiceImpl.riskStatistics(vo);
         return result;
     }
@@ -79,7 +80,7 @@ public class AiController {
     public Page<AiDto.RiskStatistics> riskStatisticsArea(AiDto.RiskStatistics vo ) {
         initPage(vo);
         //设置租户信息
-        serCorpCode(vo.getCorpCode());
+        serCorpCode(vo.getCompany());
         Page<AiDto.RiskStatistics> result =  aiServiceImpl.riskStatisticsArea(vo);
         return result;
     }
@@ -91,7 +92,7 @@ public class AiController {
     public Page<AiDto.RiskStatistics> riskStatisticsDate(AiDto.RiskStatistics vo ) {
 //        initPage(vo);
         //设置租户信息
-        serCorpCode(vo.getCorpCode());
+        serCorpCode(vo.getCompany());
         Page<AiDto.RiskStatistics> result =  aiServiceImpl.riskStatisticsDate(vo);
         return result;
     }
@@ -101,7 +102,7 @@ public class AiController {
     @ApiOperation(value = "风险统计-时间段+区域")
     public Page<AiDto.RiskStatisticsAreaDate> riskStatisticsAreaDate(AiDto.RiskStatisticsAreaDate vo ) {
         //设置租户信息
-        serCorpCode(vo.getCorpCode());
+        serCorpCode(vo.getCompany());
         Page<AiDto.RiskStatisticsAreaDate> result =  aiServiceImpl.riskStatisticsAreaDate(vo);
         return result;
     }
@@ -137,7 +138,7 @@ public class AiController {
     @ApiOperation(value = "班组有效时长")
     public List<AiDto.TeamActualHours> teamActualHours(AiDto.TeamActualHours vo ) {
         //设置租户信息
-        serCorpCode(vo.getCorpCode());
+        serCorpCode(vo.getCompany());
         List<AiDto.TeamActualHours> result =  aiServiceImpl.teamActualHours(vo);
         return result;
     }
@@ -147,7 +148,7 @@ public class AiController {
     @ApiOperation(value = "未注册人员")
     public List<AiDto.UnregisteredPersonnel> unregisteredPersonnel(AiDto.UnregisteredPersonnel vo) {
         //设置租户信息
-        serCorpCode(vo.getCorpCode());
+        serCorpCode(vo.getCompany());
         return aiServiceImpl.unregisteredPersonnel(vo);
     }
 
@@ -156,7 +157,7 @@ public class AiController {
     @ApiOperation(value = "设备异常-低电量")
     public List<AiDto.DeviceAnomaly> deviceAnomalies(AiDto.DeviceAnomaly vo) {
         //设置租户信息
-        serCorpCode(vo.getCorpCode());
+        serCorpCode(vo.getCompany());
         return aiServiceImpl.deviceAnomalies(vo);
     }
 
@@ -165,7 +166,7 @@ public class AiController {
     @ApiOperation(value = "闭环追踪-报警处置统计")
     public List<AiDto.ClosedLoopTracking> closedLoopTracking(AiDto.ClosedLoopTracking vo) {
         //设置租户信息
-        serCorpCode(vo.getCorpCode());
+        serCorpCode(vo.getCompany());
         return aiServiceImpl.closedLoopTracking(vo);
     }
 
