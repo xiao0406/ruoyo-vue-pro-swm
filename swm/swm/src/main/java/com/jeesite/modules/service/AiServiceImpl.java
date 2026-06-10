@@ -231,6 +231,10 @@ public class AiServiceImpl {
 
         Page<AiDto.RiskStatistics> page = vo.getPage();
 
+        // ====== 分页默认值 ======
+        if (vo.getPageNo() == null || vo.getPageNo() < 1) vo.setPageNo(1);
+        if (vo.getPageSize() == null || vo.getPageSize() < 1) vo.setPageSize(10);
+
         // ====== 日期处理 ======
         DateTime yesterday = DateUtil.yesterday();
         if (ObjectUtils.isEmpty(vo.getStartDate())) {
@@ -403,6 +407,10 @@ public class AiServiceImpl {
     public Page<AiDto.RiskStatistics> riskStatisticsArea(AiDto.RiskStatistics vo) {
 
         Page<AiDto.RiskStatistics> page = vo.getPage();
+
+        // ====== 分页默认值 ======
+        if (vo.getPageNo() == null || vo.getPageNo() < 1) vo.setPageNo(1);
+        if (vo.getPageSize() == null || vo.getPageSize() < 1) vo.setPageSize(10);
 
         // ====== 日期处理 ======
         fillDefaultDate(vo);
@@ -615,11 +623,15 @@ public class AiServiceImpl {
 
         //查询人员信息
         List<AiDto.Trajectory> personList = swmPersonService.findPersonList();
-        Map<String, AiDto.Trajectory> personMap = personList.stream().collect(Collectors.toMap(AiDto.Trajectory::getIdCard, Function.identity()));
+        Map<String, AiDto.Trajectory> personMap = personList.stream()
+                .filter(p -> p.getIdCard() != null)
+                .collect(Collectors.toMap(AiDto.Trajectory::getIdCard, Function.identity(), (a, b) -> a));
 
         //查询区域信息
         List<AiDto.Trajectory> swmAreaList = swmAreaService.findAddressList();
-        Map<String, String> areaMap = swmAreaList.stream().collect(Collectors.toMap(AiDto.Trajectory::getAddress, AiDto.Trajectory::getAreaName));
+        Map<String, String> areaMap = swmAreaList.stream()
+                .filter(a -> a.getAddress() != null)
+                .collect(Collectors.toMap(AiDto.Trajectory::getAddress, AiDto.Trajectory::getAreaName, (a, b) -> a));
 
 
         // ====== 分页处理 ======
@@ -695,8 +707,8 @@ public class AiServiceImpl {
                         JSONArray t = trackArray.getJSONArray(j);
 
                         AiDto.Trajectory p = new AiDto.Trajectory();
-                        p.setX((Integer) t.get(0));
-                        p.setY((Integer) t.get(1));
+                        p.setX(((Number) t.get(0)).intValue());
+                        p.setY(((Number) t.get(1)).intValue());
 //                        p.setAddress((String) t.get(2));
                         p.setTime((String) t.get(3));
                         p.setAreaName(areaMap.get(t.get(2))); // 区域
@@ -724,7 +736,7 @@ public class AiServiceImpl {
         if (countResult.getCode() == R.SUCCESS && countResult.getData() != null) {
             JSONArray arr = countResult.getData().getJSONArray("data");
             if (arr != null && !arr.isEmpty()) {
-                total = (int) arr.getJSONArray(0).get(0);
+                total = ((Number) arr.getJSONArray(0).get(0)).intValue();
             }
         }
 
@@ -774,11 +786,15 @@ public class AiServiceImpl {
     public Page<AiDto.Trajectory> trajectoryV1(AiDto.Trajectory vo) {
         //查询人员信息
         List<AiDto.Trajectory> personList = swmPersonService.findPersonList();
-        Map<String, AiDto.Trajectory> personMap = personList.stream().collect(Collectors.toMap(AiDto.Trajectory::getIdCard, Function.identity()));
+        Map<String, AiDto.Trajectory> personMap = personList.stream()
+                .filter(p -> p.getIdCard() != null)
+                .collect(Collectors.toMap(AiDto.Trajectory::getIdCard, Function.identity(), (a, b) -> a));
 
         //查询区域信息
         List<AiDto.Trajectory> swmAreaList = swmAreaService.findAddressList();
-        Map<String, String> areaMap = swmAreaList.stream().collect(Collectors.toMap(AiDto.Trajectory::getAddress, AiDto.Trajectory::getAreaName));
+        Map<String, String> areaMap = swmAreaList.stream()
+                .filter(a -> a.getAddress() != null)
+                .collect(Collectors.toMap(AiDto.Trajectory::getAddress, AiDto.Trajectory::getAreaName, (a, b) -> a));
 
 
         // ====== 分页处理 ======
@@ -848,8 +864,8 @@ public class AiServiceImpl {
 
                 if (trackArray != null) {
                     JSONArray object = trackArray.getJSONArray(trackArray.size() - 1);
-                    dto.setX((Integer) object.get(0));
-                    dto.setY((Integer) object.get(1));
+                    dto.setX(((Number) object.get(0)).intValue());
+                    dto.setY(((Number) object.get(1)).intValue());
                     dto.setAreaName(areaMap.get(object.get(2)));
                 }
                 return dto;
@@ -1004,6 +1020,8 @@ public class AiServiceImpl {
             if (device != null) {
                 dto.setDeviceName(device.getDeviceId());
                 dto.setAssignedPerson(device.getPersonName());
+            } else {
+                dto.setDeviceName(deviceId);
             }
             resultList.add(dto);
         }
@@ -1019,10 +1037,10 @@ public class AiServiceImpl {
         // 日期默认处理
         DateTime yesterday = DateUtil.yesterday();
         if (ObjectUtils.isEmpty(vo.getStartDate())) {
-            vo.setStartDate(DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd"));
+            vo.setStartDate(DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd HH:mm:ss"));
         }
         if (ObjectUtils.isEmpty(vo.getEndDate())) {
-            vo.setEndDate(DateUtil.format(DateUtil.endOfDay(yesterday), "yyyy-MM-dd"));
+            vo.setEndDate(DateUtil.format(DateUtil.endOfDay(yesterday), "yyyy-MM-dd HH:mm:ss"));
         }
 
         Map<String, String> alarmDict = getAlarmDict();
@@ -1048,7 +1066,7 @@ public class AiServiceImpl {
                 for (int i = 0; i < dataArray.size(); i++) {
                     JSONArray row = dataArray.getJSONArray(i);
                     String content = getStringSafe(row.get(0));
-                    long cnt = Long.parseLong(row.get(2).toString());
+                    long cnt = Long.parseLong(row.get(1).toString());
                     if (content != null) {
                         totalMap.put(content, cnt);
                     }
@@ -1236,8 +1254,9 @@ public class AiServiceImpl {
                                          String startDate, String endDate, String reportType, boolean showNames) {
         StringBuilder md = new StringBuilder();
         boolean isMonthly = "monthly".equals(reportType);
+        String reportLabel = "daily".equals(reportType) ? "日" : "weekly".equals(reportType) ? "周" : "月";
 
-        md.append("## ").append(partNo).append("、 ").append(dimensionName).append("月出勤分析\n\n");
+        md.append("## ").append(partNo).append("、 ").append(dimensionName).append(reportLabel).append("出勤分析\n\n");
 
         // 汇总表
         md.append(buildSummaryTable(dimensions, allAttendance, dimensionName));
@@ -1261,7 +1280,7 @@ public class AiServiceImpl {
      */
     private String buildSummaryTable(List<String> dimensions, List<SwmDailyAttendance> allAttendance, String dimensionName) {
         StringBuilder sb = new StringBuilder();
-        sb.append("| ").append(dimensionName).append(" | 应出勤人数 | 实际出勤人数 | 人均出勤时长（月度） | 白班日出勤率 | 夜班日出勤率 | 月出勤率 |\n");
+        sb.append("| ").append(dimensionName).append(" | 应出勤人数 | 实际出勤人数 | 人均出勤时长 | 白班日出勤率 | 夜班日出勤率 | 月出勤率 |\n");
         sb.append("|------|------------|--------------|----------------------|--------------|--------------|----------|\n");
 
         int totalShould = 0, totalActual = 0;

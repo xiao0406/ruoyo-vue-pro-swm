@@ -74,6 +74,7 @@ public class AiTask {
         inputs.put("date", DateUtil.format(yesterday, "yyyy-MM-dd"));
         inputs.put("projectName", "广东厂慧眼安盾项目");
         inputs.put("corpCode", "ZJGGGD");
+        inputs.put("city", "441300");
 
         if (swmDify != null) {
             inputs.put("safetyIndex", swmDify.getSafetyIndex());
@@ -230,6 +231,7 @@ public class AiTask {
         inputs.put("date", DateUtil.format(yesterday, "yyyy-MM-dd"));
         inputs.put("projectName", "江苏厂慧眼安盾项目");
         inputs.put("corpCode", "ZJGGJS");
+        inputs.put("city", "321282");
 
         if (swmDify != null) {
             inputs.put("safetyIndex", swmDify.getSafetyIndex());
@@ -268,6 +270,7 @@ public class AiTask {
         inputs.put("date", DateUtil.format(lastMonday, "yyyy-MM-dd") + "~" + DateUtil.format(lastSunday, "yyyy-MM-dd"));
         inputs.put("projectName", "江苏厂慧眼安盾项目");
         inputs.put("corpCode", "ZJGGJS");
+        inputs.put("city", "321282");
 
         Map<String, Object> requestBody = buildRequestBody(inputs);
         XxlJobHelper.log("请求参数：{}", requestBody);
@@ -296,6 +299,7 @@ public class AiTask {
         inputs.put("date", DateUtil.format(lastMonthFirst, "yyyy-MM-dd") + "~" + DateUtil.format(lastMonthLast, "yyyy-MM-dd"));
         inputs.put("projectName", "江苏厂慧眼安盾项目");
         inputs.put("corpCode", "ZJGGJS");
+        inputs.put("city", "321282");
 
         Map<String, Object> requestBody = buildRequestBody(inputs);
         XxlJobHelper.log("请求参数：{}", requestBody);

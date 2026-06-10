@@ -970,14 +970,10 @@
     </select>
     <select id="workerFatigue" resultType="com.jeesite.modules.entity.AiDto$WorkerFatigue">
         SELECT
-#         sda.id,
         sda.employee_name,
-#         sda.device_id,
         sp.phone_number,
         sda.actual_hours,
-#         sp.department,
         fpa.position_name AS departmentName,
-#         sp.team,
         fwg.work_group_name AS teamName
         FROM
         swm_daily_attendance sda
