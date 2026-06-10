@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -1134,6 +1135,468 @@ public class AiServiceImpl {
         result.setLatePersonnel(latePersonnel);
         result.setEarlyPersonnel(earlyPersonnel);
         return result;
+    }
+
+    /**
+     * 生成第四、五部分 Markdown（车间/班组出勤分析），直接拼接到 Dify 生成的 text 后面
+     *
+     * @param startDate  yyyy-MM-dd
+     * @param endDate    yyyy-MM-dd
+     * @param reportType daily / weekly / monthly
+     */
+    public String generatePart45Markdown(String startDate, String endDate, String reportType) {
+        StringBuilder md = new StringBuilder();
+
+        // 1. 考勤数据
+        List<SwmDailyAttendance> allAttendance = swmDailyAttendanceService.findAllList(startDate, endDate);
+        if (CollectionUtils.isEmpty(allAttendance)) {
+            md.append("## 四、 车间月出勤分析\n\n暂无考勤数据。\n\n## 五、 班组月出勤分析\n\n暂无考勤数据。\n\n");
+            return md.toString();
+        }
+
+        // 2. 人员→车间/班组映射（报警数据用）
+        List<AiDto.Trajectory> personList = swmPersonService.findPersonList();
+        Map<String, AiDto.Trajectory> personMap = personList.stream()
+                .filter(p -> org.apache.commons.lang3.StringUtils.isNotBlank(p.getIdCard()))
+                .collect(Collectors.toMap(AiDto.Trajectory::getIdCard, Function.identity(), (a, b) -> a));
+
+        // 3. 迟到/早退明细
+        Date sDate = DateUtil.beginOfDay(DateUtil.parse(startDate, "yyyy-MM-dd"));
+        Date eDate = DateUtil.endOfDay(DateUtil.parse(endDate, "yyyy-MM-dd"));
+        SwmDashboardDto.NoAttendancePerson queryVo = new SwmDashboardDto.NoAttendancePerson();
+        queryVo.setStartDate(sDate);
+        queryVo.setEndDate(eDate);
+
+        List<SwmDashboardDto.NoAttendancePerson> lateAll = swmDailyAttendanceDao.beLatePersonWithDept(queryVo);
+        List<SwmDashboardDto.NoAttendancePerson> earlyAll = swmDailyAttendanceDao.leaveEarlyPersonWithDept(queryVo);
+
+        Map<String, List<String>> lateByDept = groupPersonNamesByDept(lateAll);
+        Map<String, List<String>> earlyByDept = groupPersonNamesByDept(earlyAll);
+        Map<String, List<String>> lateByTeam = groupPersonNamesByTeam(lateAll);
+        Map<String, List<String>> earlyByTeam = groupPersonNamesByTeam(earlyAll);
+
+        // 4. 车间列表 & 班组列表
+        Set<String> workshopSet = new LinkedHashSet<>();
+        Set<String> teamSet = new LinkedHashSet<>();
+        for (SwmDailyAttendance a : allAttendance) {
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(a.getDepartmentName())) {
+                workshopSet.add(a.getDepartmentName());
+            }
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(a.getTeamName())) {
+                teamSet.add(a.getTeamName());
+            }
+        }
+        List<String> workshops = new ArrayList<>(workshopSet);
+        List<String> teams = new ArrayList<>(teamSet);
+
+        // 5. 第四部分：车间出勤分析
+        md.append(buildDimensionSection("四", "车间", workshops, allAttendance,
+                lateByDept, earlyByDept, personMap, startDate, endDate, reportType, false));
+
+        // 6. 第五部分：班组出勤分析
+        md.append(buildDimensionSection("五", "班组", teams, allAttendance,
+                lateByTeam, earlyByTeam, personMap, startDate, endDate, reportType, true));
+
+        return md.toString();
+    }
+
+    /**
+     * 迟到/早退人员按车间分组
+     */
+    private Map<String, List<String>> groupPersonNamesByDept(List<SwmDashboardDto.NoAttendancePerson> list) {
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        if (CollectionUtils.isEmpty(list)) return result;
+        for (SwmDashboardDto.NoAttendancePerson p : list) {
+            String key = org.apache.commons.lang3.StringUtils.isNotBlank(p.getDepartmentName()) ? p.getDepartmentName() : "未知车间";
+            result.computeIfAbsent(key, k -> new ArrayList<>()).add(p.getEmployeeName());
+        }
+        return result;
+    }
+
+    /**
+     * 迟到/早退人员按班组分组
+     */
+    private Map<String, List<String>> groupPersonNamesByTeam(List<SwmDashboardDto.NoAttendancePerson> list) {
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        if (CollectionUtils.isEmpty(list)) return result;
+        for (SwmDashboardDto.NoAttendancePerson p : list) {
+            String key = org.apache.commons.lang3.StringUtils.isNotBlank(p.getTeamName()) ? p.getTeamName() : "未知班组";
+            result.computeIfAbsent(key, k -> new ArrayList<>()).add(p.getEmployeeName());
+        }
+        return result;
+    }
+
+    /**
+     * 生成维度（车间/班组）出勤分析章节
+     */
+    private String buildDimensionSection(String partNo, String dimensionName, List<String> dimensions,
+                                         List<SwmDailyAttendance> allAttendance,
+                                         Map<String, List<String>> lateMap, Map<String, List<String>> earlyMap,
+                                         Map<String, AiDto.Trajectory> personMap,
+                                         String startDate, String endDate, String reportType, boolean showNames) {
+        StringBuilder md = new StringBuilder();
+        boolean isMonthly = "monthly".equals(reportType);
+
+        md.append("## ").append(partNo).append("、 ").append(dimensionName).append("月出勤分析\n\n");
+
+        // 汇总表
+        md.append(buildSummaryTable(dimensions, allAttendance, dimensionName));
+
+        // 逐个维度详情
+        for (String dim : dimensions) {
+            md.append(buildDimensionDetail(dim, allAttendance, lateMap, earlyMap, dimensionName, isMonthly, showNames, startDate));
+        }
+
+        // 汇总
+        md.append(buildDimensionSummary(dimensions, allAttendance, dimensionName, isMonthly));
+
+        // 报警
+        md.append(buildAlarmSection(dimensions, personMap, dimensionName, startDate, endDate, reportType));
+
+        return md.toString();
+    }
+
+    /**
+     * 出勤汇总表
+     */
+    private String buildSummaryTable(List<String> dimensions, List<SwmDailyAttendance> allAttendance, String dimensionName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("| ").append(dimensionName).append(" | 应出勤人数 | 实际出勤人数 | 人均出勤时长（月度） | 白班日出勤率 | 夜班日出勤率 | 月出勤率 |\n");
+        sb.append("|------|------------|--------------|----------------------|--------------|--------------|----------|\n");
+
+        int totalShould = 0, totalActual = 0;
+        BigDecimal totalHours = BigDecimal.ZERO;
+        int totalDayShould = 0, totalDayActual = 0, totalNightShould = 0, totalNightActual = 0;
+
+        for (String dim : dimensions) {
+            List<SwmDailyAttendance> dimList = filterByDimension(allAttendance, dim, dimensionName);
+            int shouldArrive = (int) dimList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            int actualArrive = (int) dimList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            BigDecimal totalActualHours = dimList.stream().map(a -> a.getActualHours() != null ? a.getActualHours() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avgHours = actualArrive > 0 ? totalActualHours.divide(BigDecimal.valueOf(actualArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+
+            List<SwmDailyAttendance> dayList = dimList.stream().filter(a -> "1".equals(a.getClasses())).collect(Collectors.toList());
+            int dayShould = (int) dayList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            int dayActual = (int) dayList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            BigDecimal dayRate = dayShould > 0 ? BigDecimal.valueOf(dayActual).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(dayShould), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+
+            List<SwmDailyAttendance> nightList = dimList.stream().filter(a -> "3".equals(a.getClasses())).collect(Collectors.toList());
+            int nightShould = (int) nightList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            int nightActual = (int) nightList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            BigDecimal nightRate = nightShould > 0 ? BigDecimal.valueOf(nightActual).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(nightShould), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+
+            BigDecimal monthRate = shouldArrive > 0 ? BigDecimal.valueOf(actualArrive).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(shouldArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+
+            sb.append("| ").append(dim).append(" | ").append(shouldArrive).append("人 | ").append(actualArrive).append("人 | ")
+                    .append(avgHours).append("小时/人 | ").append(dayRate).append("% | ")
+                    .append(nightRate).append("% | ").append(monthRate).append("% |\n");
+
+            totalShould += shouldArrive;
+            totalActual += actualArrive;
+            totalHours = totalHours.add(totalActualHours);
+            totalDayShould += dayShould;
+            totalDayActual += dayActual;
+            totalNightShould += nightShould;
+            totalNightActual += nightActual;
+        }
+
+        BigDecimal totalAvgHours = totalActual > 0 ? totalHours.divide(BigDecimal.valueOf(totalActual), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        BigDecimal totalDayRate = totalDayShould > 0 ? BigDecimal.valueOf(totalDayActual).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(totalDayShould), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        BigDecimal totalNightRate = totalNightShould > 0 ? BigDecimal.valueOf(totalNightActual).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(totalNightShould), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        BigDecimal totalMonthRate = totalShould > 0 ? BigDecimal.valueOf(totalActual).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(totalShould), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+
+        sb.append("| 合计 | ").append(totalShould).append("人 | ").append(totalActual).append("人 | ")
+                .append(totalAvgHours).append("小时/人 | ").append(totalDayRate).append("% | ")
+                .append(totalNightRate).append("% | ").append(totalMonthRate).append("% |\n\n");
+
+        return sb.toString();
+    }
+
+    /**
+     * 单个维度（车间/班组）的详情
+     */
+    private String buildDimensionDetail(String dim, List<SwmDailyAttendance> allAttendance,
+                                        Map<String, List<String>> lateMap, Map<String, List<String>> earlyMap,
+                                        String dimensionName, boolean isMonthly, boolean showNames, String startDate) {
+        StringBuilder sb = new StringBuilder();
+        List<SwmDailyAttendance> dimList = filterByDimension(allAttendance, dim, dimensionName);
+
+        int shouldArrive = (int) dimList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+        int actualArrive = (int) dimList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+        BigDecimal totalActualHours = dimList.stream().map(a -> a.getActualHours() != null ? a.getActualHours() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal avgHours = actualArrive > 0 ? totalActualHours.divide(BigDecimal.valueOf(actualArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        BigDecimal attendRate = shouldArrive > 0 ? BigDecimal.valueOf(actualArrive).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(shouldArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+
+        sb.append("**").append(dim).append("：**\n\n");
+        sb.append("应到 ").append(shouldArrive).append(" 人，实到 ").append(actualArrive).append("人，出勤率 ").append(attendRate).append("%。\n\n");
+        sb.append("有效作业时长：平均 ").append(avgHours).append(" 小时/人（排除未出勤的）。\n\n");
+
+        // 迟到
+        List<String> lateNames = lateMap.getOrDefault(dim, Collections.emptyList());
+        sb.append("迟到：").append(lateNames.size()).append("人迟到");
+        if (showNames && !lateNames.isEmpty()) {
+            sb.append("，人员名单：").append(String.join("、", lateNames));
+        } else {
+            sb.append("（只汇总总数）");
+        }
+        sb.append("。\n\n");
+
+        // 早退
+        List<String> earlyNames = earlyMap.getOrDefault(dim, Collections.emptyList());
+        sb.append("早退：").append(earlyNames.size()).append("人早退");
+        if (showNames && !earlyNames.isEmpty()) {
+            sb.append("，人员名单：").append(String.join("、", earlyNames));
+        } else {
+            sb.append("（只汇总总数）");
+        }
+        sb.append("。\n\n");
+
+        // 月报：应出勤天数和实际出勤天数
+        if (isMonthly) {
+            String monthStr = startDate.substring(0, 7);
+            YearMonth ym = YearMonth.parse(monthStr);
+            int daysInMonth = ym.lengthOfMonth();
+
+            Set<String> clockedInIds = dimList.stream()
+                    .filter(a -> a.getClockInDate() != null)
+                    .map(SwmDailyAttendance::getEmployeeId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            double avgAttendanceDays = 0;
+            if (!clockedInIds.isEmpty()) {
+                long totalClockDays = dimList.stream()
+                        .filter(a -> a.getClockInDate() != null && clockedInIds.contains(a.getEmployeeId()))
+                        .map(a -> a.getEmployeeId() + "_" + DateUtil.format(a.getAttendanceDate(), "yyyy-MM-dd"))
+                        .distinct()
+                        .count();
+                avgAttendanceDays = (double) totalClockDays / clockedInIds.size();
+            }
+
+            sb.append("应出勤天数").append(daysInMonth).append("天，实际出勤天数平均").append(String.format("%.1f", avgAttendanceDays)).append("天（算平均值，去掉没有出勤过的人）。\n\n");
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * 维度汇总（效率最高/最低 + 月报未出勤名单）
+     */
+    private String buildDimensionSummary(List<String> dimensions, List<SwmDailyAttendance> allAttendance,
+                                         String dimensionName, boolean isMonthly) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("**汇总：**\n\n");
+
+        // 计算每个维度的效率
+        List<DimStat> stats = new ArrayList<>();
+        for (String dim : dimensions) {
+            List<SwmDailyAttendance> dimList = filterByDimension(allAttendance, dim, dimensionName);
+            int shouldArrive = (int) dimList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            int actualArrive = (int) dimList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            BigDecimal totalActualHours = dimList.stream().map(a -> a.getActualHours() != null ? a.getActualHours() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal avgHours = actualArrive > 0 ? totalActualHours.divide(BigDecimal.valueOf(actualArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+            BigDecimal monthRate = shouldArrive > 0 ? BigDecimal.valueOf(actualArrive).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(shouldArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+
+            DimStat stat = new DimStat();
+            stat.name = dim;
+            stat.avgHours = avgHours;
+            stat.monthRate = monthRate;
+            stats.add(stat);
+        }
+
+        stats.sort((a, b) -> b.avgHours.compareTo(a.avgHours));
+        int topCount = Math.max(1, (int) Math.ceil(stats.size() * 0.1));
+
+        if (!stats.isEmpty()) {
+            sb.append("效率最高").append(dimensionName).append("（按10%的比例去统计，例如30个，统计前3个）：");
+            for (int i = 0; i < Math.min(topCount, stats.size()); i++) {
+                if (i > 0) sb.append("、");
+                DimStat s = stats.get(i);
+                sb.append(s.name).append("（人均出勤时长").append(s.avgHours).append("小时，月出勤率").append(s.monthRate).append("%）");
+            }
+            sb.append("。\n\n");
+
+            sb.append("效率最低").append(dimensionName).append("（按10%的比例去统计，例如30个，统计前3个）：");
+            for (int i = stats.size() - 1; i >= Math.max(0, stats.size() - topCount); i--) {
+                if (i < stats.size() - 1) sb.append("、");
+                DimStat s = stats.get(i);
+                sb.append(s.name).append("（人均出勤时长").append(s.avgHours).append("小时，月出勤率").append(s.monthRate).append("%）");
+            }
+            sb.append("。\n\n");
+        }
+
+        // 月报：未出勤人员名单
+        if (isMonthly) {
+            sb.append("当期未出勤人员名单（只月报体现，0天）：");
+            List<String> notAttendedParts = new ArrayList<>();
+            for (String dim : dimensions) {
+                List<SwmDailyAttendance> dimList = filterByDimension(allAttendance, dim, dimensionName);
+                Set<String> allEmployeeIds = dimList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).collect(Collectors.toSet());
+                Set<String> clockedInIds = dimList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).collect(Collectors.toSet());
+                allEmployeeIds.removeAll(clockedInIds);
+                if (!allEmployeeIds.isEmpty()) {
+                    Set<String> names = new LinkedHashSet<>();
+                    for (String eid : allEmployeeIds) {
+                        dimList.stream().filter(a -> eid.equals(a.getEmployeeId())).findFirst()
+                                .ifPresent(a -> names.add(a.getEmployeeName()));
+                    }
+                    notAttendedParts.add(dim + "，" + String.join("、", names) + "未出勤");
+                }
+            }
+            if (notAttendedParts.isEmpty()) {
+                sb.append("无");
+            } else {
+                sb.append(String.join("；", notAttendedParts));
+            }
+            sb.append("。\n\n");
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * 报警段落
+     */
+    private String buildAlarmSection(List<String> dimensions, Map<String, AiDto.Trajectory> personMap,
+                                     String dimensionName, String startDate, String endDate, String reportType) {
+        StringBuilder sb = new StringBuilder();
+        boolean isDaily = "daily".equals(reportType);
+        sb.append("**报警（每天是按小时，每周每月是按天）：**\n\n");
+
+        Map<String, Map<String, Map<String, Integer>>> alarmData = queryAlarmGrouped(startDate, endDate, personMap, dimensionName, isDaily);
+        if (alarmData.isEmpty()) {
+            sb.append("暂无报警数据。\n\n");
+            return sb.toString();
+        }
+
+        List<String> timeUnits = new ArrayList<>(alarmData.keySet());
+        Collections.sort(timeUnits);
+
+        // 报警类型标签
+        Map<String, String> alarmLabelMap = new LinkedHashMap<>();
+        Map<String, String> alarmDict = getAlarmDict();
+        alarmLabelMap.put(alarmDict.get("fallAlarm"), "跌落");
+        alarmLabelMap.put(alarmDict.get("unsealAlarm"), "脱帽");
+        alarmLabelMap.put(alarmDict.get("dangerousSourceEntry"), "危险源");
+        alarmLabelMap.put(alarmDict.get("emergencyCall"), "应急");
+        alarmLabelMap.put(alarmDict.get("staticAlarm"), "长时间");
+
+        for (String timeUnit : timeUnits) {
+            Map<String, Map<String, Integer>> dimMap = alarmData.get(timeUnit);
+            if (dimMap == null || dimMap.isEmpty()) continue;
+
+            String timeDisplay;
+            if (isDaily) {
+                int h = Integer.parseInt(timeUnit);
+                timeDisplay = h + "点-" + (h + 1) + "点";
+            } else {
+                timeDisplay = timeUnit;
+            }
+
+            sb.append(timeDisplay);
+            boolean firstDim = true;
+            for (String dim : dimensions) {
+                Map<String, Integer> alarmCounts = dimMap.get(dim);
+                if (alarmCounts == null || alarmCounts.isEmpty()) continue;
+
+                if (!firstDim) sb.append("；");
+                firstDim = false;
+                sb.append("，").append(dim).append("：");
+
+                boolean firstType = true;
+                for (Map.Entry<String, String> entry : alarmLabelMap.entrySet()) {
+                    Integer count = alarmCounts.getOrDefault(entry.getKey(), 0);
+                    if (!firstType) sb.append("、");
+                    firstType = false;
+                    sb.append(entry.getValue()).append(count).append("次");
+                }
+            }
+            sb.append("。\n\n");
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * 从 TDengine 查询报警数据，按时间单位 + 维度 + 报警类型分组
+     */
+    private Map<String, Map<String, Map<String, Integer>>> queryAlarmGrouped(
+            String startDate, String endDate, Map<String, AiDto.Trajectory> personMap,
+            String dimensionName, boolean isDaily) {
+
+        Map<String, Map<String, Map<String, Integer>>> result = new LinkedHashMap<>();
+        String timeFormat = isDaily ? "HH24" : "YYYY-MM-DD";
+
+        String sql = "SELECT TO_CHAR(create_date, '" + timeFormat + "') AS time_unit, "
+                + "id_card, warning_content, COUNT(1) AS cnt "
+                + "FROM " + dbname + ".swm_warning_management "
+                + "WHERE create_date >= '" + startDate + " 00:00:00' "
+                + "AND create_date <= '" + endDate + " 23:59:59' "
+                + "AND id_card IS NOT NULL "
+                + "GROUP BY time_unit, id_card, warning_content";
+
+        R<JSONObject> queryResult = tdengineService.executeTDengineSQL(sql);
+        if (queryResult.getCode() != R.SUCCESS || queryResult.getData() == null) {
+            return result;
+        }
+
+        JSONArray dataArray = queryResult.getData().getJSONArray("data");
+        if (dataArray == null || dataArray.isEmpty()) {
+            return result;
+        }
+
+        for (int i = 0; i < dataArray.size(); i++) {
+            JSONArray row = dataArray.getJSONArray(i);
+            String timeUnit = getStringSafe(row.get(0));
+            String idCard = getStringSafe(row.get(1));
+            String warningContent = getStringSafe(row.get(2));
+            int cnt = getIntSafe(row.get(3));
+
+            if (timeUnit == null || warningContent == null) continue;
+
+            String dimName = resolveDimension(idCard, personMap, dimensionName);
+            if (dimName == null) continue;
+
+            result.computeIfAbsent(timeUnit, k -> new LinkedHashMap<>())
+                    .computeIfAbsent(dimName, k -> new LinkedHashMap<>())
+                    .merge(warningContent, cnt, Integer::sum);
+        }
+
+        return result;
+    }
+
+    /**
+     * 根据 idCard 解析车间名或班组名
+     */
+    private String resolveDimension(String idCard, Map<String, AiDto.Trajectory> personMap, String dimensionName) {
+        AiDto.Trajectory person = personMap.get(idCard);
+        if (person == null) return null;
+        if ("车间".equals(dimensionName)) {
+            return org.apache.commons.lang3.StringUtils.isNotBlank(person.getDepartmentName()) ? person.getDepartmentName() : null;
+        } else {
+            return org.apache.commons.lang3.StringUtils.isNotBlank(person.getTeamName()) ? person.getTeamName() : null;
+        }
+    }
+
+    /**
+     * 按维度（车间或班组）过滤考勤数据
+     */
+    private List<SwmDailyAttendance> filterByDimension(List<SwmDailyAttendance> list, String dimName, String dimensionName) {
+        return list.stream().filter(a -> {
+            if ("车间".equals(dimensionName)) {
+                return dimName.equals(a.getDepartmentName());
+            } else {
+                return dimName.equals(a.getTeamName());
+            }
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 维度统计内部类
+     */
+    private static class DimStat {
+        String name;
+        BigDecimal avgHours;
+        BigDecimal monthRate;
     }
 
 }
