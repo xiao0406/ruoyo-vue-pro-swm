@@ -322,9 +322,6 @@
         <foreach collection="list" item="item" separator=";">
             UPDATE swm_beacon_station
             <set>
-                <if test="item.area != null">
-                    area = #{item.area},
-                </if>
                 <if test="item.major != null">
                     major = #{item.major},
                 </if>
