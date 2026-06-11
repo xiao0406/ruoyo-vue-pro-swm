@@ -8,15 +8,20 @@ import com.alibaba.fastjson.JSONObject;
 import com.jeesite.modules.swm.entity.SwmDify;
 import com.jeesite.modules.swm.service.SwmDifyService;
 import com.jeesite.modules.service.AiServiceImpl;
+import com.jeesite.modules.config.TenantContext;
+import com.jeesite.modules.config.MinioConfiguration;
+import io.minio.MinioClient;
 import com.jeesite.modules.sys.utils.CorpUtils;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.io.ByteArrayInputStream;
 
 /**
  * AI相关任务
@@ -25,11 +30,15 @@ import java.util.*;
 @Component
 public class AiTask {
 
-    private static final String workflowUrl = "http://10.50.103.189:7780/v1/workflows/run";
-    private static final String AUTHORIZATION = "Bearer app-fZLfOEAP99eXlVX3AuzoK2bn";
-    private static final String CONTENT_TYPE = "application/json";
 
-    private static final String workflowId = "0a0b5524-0e96-474b-8b6a-c3ebe7277058";
+    @Value("${dify.workflow-url:http://58.251.8.11:17780/v1/workflows/run}")
+    private String workflowUrl;
+    @Value("${dify.authorization:Bearer app-fZLfOEAP99eXlVX3AuzoK2bn}")
+    private String AUTHORIZATION;
+    @Value("${dify.workflow-id:0a0b5524-0e96-474b-8b6a-c3ebe7277058}")
+    private String workflowId;
+
+    private static final String CONTENT_TYPE = "application/json";
     private static final String responseMode = "blocking";
 
     @Autowired
@@ -38,59 +47,70 @@ public class AiTask {
     @Autowired
     private AiServiceImpl aiServiceImpl;
 
+    @Autowired
+    private MinioClient minioClient;
+
+    @Autowired
+    private MinioConfiguration minioConfig;
+
     // ==================== 日报-广东厂 ====================
     // cron: 0 15 1 * * ?  每天凌晨1:15
     @XxlJob("aiDailyReportTaskBYZJGGGD")
     @Transactional(rollbackFor = Exception.class)
     public void aiDailyReportTaskBYZJGGGD() {
-        XxlJobHelper.log("=====================定时生成工效任务=================");
+        String corpCode = "ZJGGGD";
+        TenantContext.set(corpCode);
+        try {
+            XxlJobHelper.log("=====================定时生成工效任务=================");
 
-        //city 城市
+            //city 城市
 
-        Date yesterday = DateUtil.yesterday();
-        String jobParam = XxlJobHelper.getJobParam();
-        String startDate = "";
-        String endDate = "";
-        XxlJobHelper.log("参数：{}", jobParam);
+            Date yesterday = DateUtil.yesterday();
+            String jobParam = XxlJobHelper.getJobParam();
+            String startDate = "";
+            String endDate = "";
+            XxlJobHelper.log("参数：{}", jobParam);
 
-        if (jobParam != null && jobParam.contains(",")) {
-            String[] split = jobParam.split(",");
-            startDate = split[0];
-            endDate = split[1];
+            if (jobParam != null && jobParam.contains(",")) {
+                String[] split = jobParam.split(",");
+                startDate = split[0];
+                endDate = split[1];
+            }
+
+            if (startDate.isEmpty()) {
+                startDate = DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd");
+            }
+            if (endDate.isEmpty()) {
+                endDate = DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd");
+            }
+
+            XxlJobHelper.log("开始时间：{}, 结束时间：{}", startDate, endDate);
+
+            SwmDify swmDify = swmDifyService.getEntity(DateUtil.beginOfDay(yesterday), DateUtil.endOfDay(yesterday));
+
+            Map<String, Object> inputs = new HashMap<>();
+            inputs.put("date", DateUtil.format(yesterday, "yyyy-MM-dd"));
+            inputs.put("projectName", "广东厂慧眼安盾项目");
+            inputs.put("corpCode", "ZJGGGD");
+            inputs.put("city", "惠州市");
+
+            if (swmDify != null) {
+                inputs.put("safetyIndex", swmDify.getSafetyIndex());
+                inputs.put("workerIndex", swmDify.getWorkerIndex());
+            }
+
+            Map<String, Object> requestBody = buildRequestBody(inputs);
+
+            XxlJobHelper.log("请求参数：{}", requestBody);
+
+            // 请求并重试三次
+            JSONObject outputs = retryPostForValidResult(requestBody);
+
+            // 保存数据（广东厂不含四五部分）
+            saveAiDifyData(outputs, yesterday, inputs, "ZJGGGD", "中建钢构广东有限公司");
+        } finally {
+            TenantContext.clear();
         }
-
-        if (startDate.isEmpty()) {
-            startDate = DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd");
-        }
-        if (endDate.isEmpty()) {
-            endDate = DateUtil.format(DateUtil.endOfDay(yesterday), "yyyy-MM-dd");
-        }
-
-        XxlJobHelper.log("开始时间：{}, 结束时间：{}", startDate, endDate);
-
-        SwmDify swmDify = swmDifyService.getEntity(DateUtil.beginOfDay(yesterday), DateUtil.endOfDay(yesterday));
-
-        Map<String, Object> inputs = new HashMap<>();
-        inputs.put("date", DateUtil.format(yesterday, "yyyy-MM-dd"));
-        inputs.put("projectName", "广东厂慧眼安盾项目");
-        inputs.put("corpCode", "ZJGGGD");
-        inputs.put("city", "441300");
-
-        if (swmDify != null) {
-            inputs.put("safetyIndex", swmDify.getSafetyIndex());
-            inputs.put("workerIndex", swmDify.getWorkerIndex());
-        }
-
-        Map<String, Object> requestBody = buildRequestBody(inputs);
-
-        XxlJobHelper.log("请求参数：{}", requestBody);
-
-        // 请求并重试三次
-        JSONObject outputs = retryPostForValidResult(requestBody);
-
-        // 保存数据
-        saveAiDifyDataWithPart45(outputs, yesterday, inputs, "ZJGGGD", "中建钢构广东有限公司", startDate, endDate, "daily");
-
     }
 
     /**
@@ -185,7 +205,6 @@ public class AiTask {
         dify.setSafetyIndex(outputs.getLong("safetyIndex"));
         dify.setWorkerIndex(outputs.getLong("workerIndex"));
         dify.setText(outputs.getString("text"));
-        CorpUtils.setCurrentCorpCode(corpCode, projectName);
 
         swmDifyService.save(dify);
 
@@ -200,54 +219,59 @@ public class AiTask {
     @XxlJob("aiDailyReportTaskBYZJGGJS")
     @Transactional(rollbackFor = Exception.class)
     public void aiDailyReportTaskBYZJGGJS() {
-        XxlJobHelper.log("=====================定时生成工效任务=================");
+        String corpCode = "ZJGGJS";
+        TenantContext.set(corpCode);
+        try {
+            XxlJobHelper.log("=====================定时生成工效任务=================");
 
-        //city 城市
+            //city 城市
 
-        Date yesterday = DateUtil.yesterday();
-        String jobParam = XxlJobHelper.getJobParam();
-        String startDate = "";
-        String endDate = "";
-        XxlJobHelper.log("参数：{}", jobParam);
+            Date yesterday = DateUtil.yesterday();
+            String jobParam = XxlJobHelper.getJobParam();
+            String startDate = "";
+            String endDate = "";
+            XxlJobHelper.log("参数：{}", jobParam);
 
-        if (jobParam != null && jobParam.contains(",")) {
-            String[] split = jobParam.split(",");
-            startDate = split[0];
-            endDate = split[1];
+            if (jobParam != null && jobParam.contains(",")) {
+                String[] split = jobParam.split(",");
+                startDate = split[0];
+                endDate = split[1];
+            }
+
+            if (startDate.isEmpty()) {
+                startDate = DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd");
+            }
+            if (endDate.isEmpty()) {
+                endDate = DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd");
+            }
+
+            XxlJobHelper.log("开始时间：{}, 结束时间：{}", startDate, endDate);
+
+            SwmDify swmDify = swmDifyService.getEntity(DateUtil.beginOfDay(yesterday), DateUtil.endOfDay(yesterday));
+
+            Map<String, Object> inputs = new HashMap<>();
+            inputs.put("date", DateUtil.format(yesterday, "yyyy-MM-dd"));
+            inputs.put("projectName", "江苏厂慧眼安盾项目");
+            inputs.put("corpCode", "ZJGGJS");
+            inputs.put("city", "靖江市");
+
+            if (swmDify != null) {
+                inputs.put("safetyIndex", swmDify.getSafetyIndex());
+                inputs.put("workerIndex", swmDify.getWorkerIndex());
+            }
+
+            Map<String, Object> requestBody = buildRequestBody(inputs);
+
+            XxlJobHelper.log("请求参数：{}", requestBody);
+
+            // 请求并重试三次
+            JSONObject outputs = retryPostForValidResult(requestBody);
+
+            // 保存数据（拼接四五部分）
+            saveAiDifyDataWithPart45(outputs, yesterday, inputs, "ZJGGJS", "中建钢构江苏有限公司", startDate, endDate, "daily");
+        } finally {
+            TenantContext.clear();
         }
-
-        if (startDate.isEmpty()) {
-            startDate = DateUtil.format(DateUtil.beginOfDay(yesterday), "yyyy-MM-dd");
-        }
-        if (endDate.isEmpty()) {
-            endDate = DateUtil.format(DateUtil.endOfDay(yesterday), "yyyy-MM-dd");
-        }
-
-        XxlJobHelper.log("开始时间：{}, 结束时间：{}", startDate, endDate);
-
-        SwmDify swmDify = swmDifyService.getEntity(DateUtil.beginOfDay(yesterday), DateUtil.endOfDay(yesterday));
-
-        Map<String, Object> inputs = new HashMap<>();
-        inputs.put("date", DateUtil.format(yesterday, "yyyy-MM-dd"));
-        inputs.put("projectName", "江苏厂慧眼安盾项目");
-        inputs.put("corpCode", "ZJGGJS");
-        inputs.put("city", "321282");
-
-        if (swmDify != null) {
-            inputs.put("safetyIndex", swmDify.getSafetyIndex());
-            inputs.put("workerIndex", swmDify.getWorkerIndex());
-        }
-
-        Map<String, Object> requestBody = buildRequestBody(inputs);
-
-        XxlJobHelper.log("请求参数：{}", requestBody);
-
-        // 请求并重试三次
-        JSONObject outputs = retryPostForValidResult(requestBody);
-
-        // 保存数据（拼接四五部分）
-        saveAiDifyDataWithPart45(outputs, yesterday, inputs, "ZJGGJS", "中建钢构江苏有限公司", startDate, endDate, "daily");
-
     }
 
     // ==================== 周报-江苏厂 ====================
@@ -255,28 +279,34 @@ public class AiTask {
     @XxlJob("aiWeeklyReportTaskJS")
     @Transactional(rollbackFor = Exception.class)
     public void aiWeeklyReportTaskJS() {
-        XxlJobHelper.log("=====================周报任务-江苏厂=================");
+        String corpCode = "ZJGGJS";
+        TenantContext.set(corpCode);
+        try {
+            XxlJobHelper.log("=====================周报任务-江苏厂=================");
 
-        // 上周一 ~ 上周日
-        Date today = DateUtil.date();
-        Date lastMonday = DateUtil.beginOfWeek(DateUtil.offsetWeek(today, -1));
-        Date lastSunday = DateUtil.endOfWeek(DateUtil.offsetWeek(today, -1));
-        String startDate = DateUtil.format(lastMonday, "yyyy-MM-dd");
-        String endDate = DateUtil.format(lastSunday, "yyyy-MM-dd");
+            // 上周一 ~ 上周日
+            Date today = DateUtil.date();
+            Date lastMonday = DateUtil.beginOfWeek(DateUtil.offsetWeek(today, -1));
+            Date lastSunday = DateUtil.endOfWeek(DateUtil.offsetWeek(today, -1));
+            String startDate = DateUtil.format(lastMonday, "yyyy-MM-dd");
+            String endDate = DateUtil.format(lastSunday, "yyyy-MM-dd");
 
-        XxlJobHelper.log("开始时间：{}, 结束时间：{}", startDate, endDate);
+            XxlJobHelper.log("开始时间：{}, 结束时间：{}", startDate, endDate);
 
-        Map<String, Object> inputs = new HashMap<>();
-        inputs.put("date", DateUtil.format(lastMonday, "yyyy-MM-dd") + "~" + DateUtil.format(lastSunday, "yyyy-MM-dd"));
-        inputs.put("projectName", "江苏厂慧眼安盾项目");
-        inputs.put("corpCode", "ZJGGJS");
-        inputs.put("city", "321282");
+            Map<String, Object> inputs = new HashMap<>();
+            inputs.put("date", DateUtil.format(DateUtil.yesterday(), "yyyy-MM-dd"));
+            inputs.put("projectName", "江苏厂慧眼安盾项目");
+            inputs.put("corpCode", "ZJGGJS");
+            inputs.put("city", "靖江市");
 
-        Map<String, Object> requestBody = buildRequestBody(inputs);
-        XxlJobHelper.log("请求参数：{}", requestBody);
+            Map<String, Object> requestBody = buildRequestBody(inputs);
+            XxlJobHelper.log("请求参数：{}", requestBody);
 
-        JSONObject outputs = retryPostForValidResult(requestBody);
-        saveAiDifyDataWithPart45(outputs, lastMonday, inputs, "ZJGGJS", "中建钢构江苏有限公司", startDate, endDate, "weekly");
+            JSONObject outputs = retryPostForValidResult(requestBody);
+            saveAiDifyDataWithPart45(outputs, lastMonday, inputs, "ZJGGJS", "中建钢构江苏有限公司", startDate, endDate, "weekly");
+        } finally {
+            TenantContext.clear();
+        }
     }
 
     // ==================== 月报-江苏厂 ====================
@@ -284,32 +314,38 @@ public class AiTask {
     @XxlJob("aiMonthlyReportTaskJS")
     @Transactional(rollbackFor = Exception.class)
     public void aiMonthlyReportTaskJS() {
-        XxlJobHelper.log("=====================月报任务-江苏厂=================");
+        String corpCode = "ZJGGJS";
+        TenantContext.set(corpCode);
+        try {
+            XxlJobHelper.log("=====================月报任务-江苏厂=================");
 
-        // 上月
-        Date today = DateUtil.date();
-        Date lastMonthFirst = DateUtil.beginOfMonth(DateUtil.offsetMonth(today, -1));
-        Date lastMonthLast = DateUtil.endOfMonth(DateUtil.offsetMonth(today, -1));
-        String startDate = DateUtil.format(lastMonthFirst, "yyyy-MM-dd");
-        String endDate = DateUtil.format(lastMonthLast, "yyyy-MM-dd");
+            // 上月
+            Date today = DateUtil.date();
+            Date lastMonthFirst = DateUtil.beginOfMonth(DateUtil.offsetMonth(today, -1));
+            Date lastMonthLast = DateUtil.endOfMonth(DateUtil.offsetMonth(today, -1));
+            String startDate = DateUtil.format(lastMonthFirst, "yyyy-MM-dd");
+            String endDate = DateUtil.format(lastMonthLast, "yyyy-MM-dd");
 
-        XxlJobHelper.log("开始时间：{}, 结束时间：{}", startDate, endDate);
+            XxlJobHelper.log("开始时间：{}, 结束时间：{}", startDate, endDate);
 
-        Map<String, Object> inputs = new HashMap<>();
-        inputs.put("date", DateUtil.format(lastMonthFirst, "yyyy-MM-dd") + "~" + DateUtil.format(lastMonthLast, "yyyy-MM-dd"));
-        inputs.put("projectName", "江苏厂慧眼安盾项目");
-        inputs.put("corpCode", "ZJGGJS");
-        inputs.put("city", "321282");
+            Map<String, Object> inputs = new HashMap<>();
+            inputs.put("date", DateUtil.format(DateUtil.yesterday(), "yyyy-MM-dd"));
+            inputs.put("projectName", "江苏厂慧眼安盾项目");
+            inputs.put("corpCode", "ZJGGJS");
+            inputs.put("city", "靖江市");
 
-        Map<String, Object> requestBody = buildRequestBody(inputs);
-        XxlJobHelper.log("请求参数：{}", requestBody);
+            Map<String, Object> requestBody = buildRequestBody(inputs);
+            XxlJobHelper.log("请求参数：{}", requestBody);
 
-        JSONObject outputs = retryPostForValidResult(requestBody);
-        saveAiDifyDataWithPart45(outputs, lastMonthFirst, inputs, "ZJGGJS", "中建钢构江苏有限公司", startDate, endDate, "monthly");
+            JSONObject outputs = retryPostForValidResult(requestBody);
+            saveAiDifyDataWithPart45(outputs, lastMonthFirst, inputs, "ZJGGJS", "中建钢构江苏有限公司", startDate, endDate, "monthly");
+        } finally {
+            TenantContext.clear();
+        }
     }
 
     /**
-     * 保存 AI 日报数据，拼接 Java 生成的第四、五部分
+     * 保存 AI 日报数据，拼接 Java 生成的第四、五部分，并生成 PDF 上传 MinIO
      */
     private void saveAiDifyDataWithPart45(JSONObject outputs, Date yesterday, Map<String, Object> inputs,
                                           String corpCode, String projectName, String startDate, String endDate, String reportType) {
@@ -322,16 +358,45 @@ public class AiTask {
         String part45 = aiServiceImpl.generatePart45Markdown(startDate, endDate, reportType);
         String fullText = (outputs.getString("text") != null ? outputs.getString("text") : "") + "\n\n" + part45;
 
+        // 根据报告类型加后缀
+        String reportSuffix = "daily".equals(reportType) ? "_日报" : "weekly".equals(reportType) ? "_周报" : "_月报";
+        String finalProjectName = (String) inputs.get("projectName") + reportSuffix;
+
         SwmDify dify = new SwmDify();
         dify.setDate(yesterday);
-        dify.setProjectName((String) inputs.get("projectName"));
+        dify.setProjectName(finalProjectName);
         dify.setSafetyIndex(outputs.getLong("safetyIndex"));
         dify.setWorkerIndex(outputs.getLong("workerIndex"));
         dify.setText(fullText);
+
+        // 生成 PDF 并上传 MinIO
+        try {
+            byte[] pdfBytes = aiServiceImpl.convertMdToPdfBytes(fullText);
+            if (pdfBytes != null && pdfBytes.length > 0) {
+                String dateStr = DateUtil.format(yesterday, "yyyy-MM-dd");
+                String fileName = dateStr + "_" + reportType + ".pdf";
+                String objectName = "ai-report/" + corpCode + "/" + fileName;
+                // 直接用 MinioClient 上传
+                try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(pdfBytes)) {
+                    minioClient.putObject(io.minio.PutObjectArgs.builder()
+                            .bucket(minioConfig.getBucketName())
+                            .object(objectName)
+                            .stream(bais, pdfBytes.length, -1)
+                            .contentType("application/pdf")
+                            .build());
+                }
+                dify.setRemarks(objectName);
+                XxlJobHelper.log("PDF上传MinIO成功，objectName={}", objectName);
+            } else {
+                XxlJobHelper.log("PDF生成结果为空，跳过上传");
+            }
+        } catch (Exception e) {
+            XxlJobHelper.log("PDF生成或上传失败：{}", e.getMessage());
+        }
+
         CorpUtils.setCurrentCorpCode(corpCode, projectName);
-
         swmDifyService.save(dify);
-
+        CorpUtils.setCurrentCorpCode(null, null);
         XxlJobHelper.log("AI日报（含四五部分）保存成功，reportType={}", reportType);
     }
 

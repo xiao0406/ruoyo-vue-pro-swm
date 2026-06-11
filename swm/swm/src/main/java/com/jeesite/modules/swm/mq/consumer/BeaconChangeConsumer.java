@@ -6,21 +6,28 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.jeesite.modules.config.RabbitMqConfig;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.entity.SwmBeaconStation;
+import com.jeesite.modules.swm.entity.SwmThirdApiLog;
+import com.jeesite.modules.swm.service.SwmThirdApiLogService;
 import com.jeesite.modules.swm.util.MqSendUtil;
 import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 
 @Component
 public class BeaconChangeConsumer {
     private static final Logger logger = LoggerFactory.getLogger(BeaconChangeConsumer.class);
+
+    @Autowired
+    private SwmThirdApiLogService swmThirdApiLogService;
 
     // 第三方信标接口配置
     private static final String THIRD_PARTY_BEACON_URL = "http://第三方服务器/notify/beaconChange";
@@ -87,6 +94,9 @@ public class BeaconChangeConsumer {
             System.out.println("================================"+param.toJSONString()+"=======================================");
             System.out.println("================================"+param.toJSONString()+"=======================================");
             System.out.println("================================"+param.toJSONString()+"=======================================");
+            Date requestTime = new Date();
+            saveThirdApiLog("beacon", "POST", THIRD_PARTY_BEACON_URL, param.toJSONString(),
+                    "NOT_EXECUTED", requestTime, new Date(), null, null);
 
 //            String result = HttpUtil.createPost(THIRD_PARTY_PERSON_URL)
 //                    .body(param.toJSONString()) // 替换 setBody -> body
@@ -168,6 +178,9 @@ public class BeaconChangeConsumer {
                 System.out.println("================================"+batchParam.toJSONString()+"=======================================");
                 System.out.println("================================"+batchParam.toJSONString()+"=======================================");
                 System.out.println("================================"+batchParam.toJSONString()+"=======================================");
+                Date requestTime = new Date();
+                saveThirdApiLog("beacon", "POST", THIRD_PARTY_BEACON_BATCH_URL, batchParam.toJSONString(),
+                        "NOT_EXECUTED", requestTime, new Date(), null, null);
 
 //              String result = HttpUtil.createPost(THIRD_PARTY_PERSON_URL)
 //                    .body(batchParam.toJSONString()) // 替换 setBody -> body
@@ -184,5 +197,28 @@ public class BeaconChangeConsumer {
             }
         }
         return true;
+    }
+
+    private void saveThirdApiLog(String businessType, String httpMethod, String requestUrl, String requestParam,
+                                 String responseParam, Date requestTime, Date responseTime,
+                                 Integer httpStatus, String exceptionInfo) {
+        try {
+            SwmThirdApiLog apiLog = new SwmThirdApiLog();
+            apiLog.setBusinessType(businessType);
+            apiLog.setHttpMethod(httpMethod);
+            apiLog.setRequestUrl(requestUrl);
+            apiLog.setRequestParam(requestParam);
+            apiLog.setResponseParam(responseParam);
+            apiLog.setRequestTime(requestTime);
+            apiLog.setResponseTime(responseTime);
+            apiLog.setDuration(responseTime.getTime() - requestTime.getTime());
+            apiLog.setHttpStatus(httpStatus);
+            apiLog.setExceptionInfo(exceptionInfo);
+            apiLog.setExecuteStatus(httpStatus != null && httpStatus >= 200 && httpStatus < 300
+                    && responseParam != null && !"NOT_EXECUTED".equals(responseParam) ? "1" : "0");
+            swmThirdApiLogService.saveLog(apiLog);
+        } catch (Exception e) {
+            logger.error("保存第三方接口调用日志失败，url:{}", requestUrl, e);
+        }
     }
 }

@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.io.ByteArrayOutputStream;
 import java.time.YearMonth;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -42,6 +43,21 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class AiServiceImpl {
+
+    private static final java.util.List<org.commonmark.Extension> MARKDOWN_EXTENSIONS =
+            java.util.Collections.singletonList(org.commonmark.ext.gfm.tables.TablesExtension.create());
+
+    private static final org.commonmark.parser.Parser MARKDOWN_PARSER =
+            org.commonmark.parser.Parser.builder()
+                    .extensions(MARKDOWN_EXTENSIONS)
+                    .build();
+
+    private static final org.commonmark.renderer.html.HtmlRenderer MARKDOWN_HTML_RENDERER =
+            org.commonmark.renderer.html.HtmlRenderer.builder()
+                    .extensions(MARKDOWN_EXTENSIONS)
+                    .escapeHtml(true)
+                    .sanitizeUrls(true)
+                    .build();
 
     @Autowired
     private SwmDailyAttendanceService swmDailyAttendanceService;
@@ -68,6 +84,55 @@ public class AiServiceImpl {
     @Autowired
     private SwmDailyAttendanceDao swmDailyAttendanceDao;
 
+
+    private String normalizeMarkdown(String markdown) {
+        if (markdown == null) {
+            return "";
+        }
+        return markdown
+                .replace("\r\n", "\n")
+                .replace('\r', '\n')
+                .replace("\u0000", "")
+                .trim();
+    }
+
+    private String buildPdfHtml(String bodyHtml) {
+        return "<!DOCTYPE html>\n"
+                + "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
+                + "<head>\n"
+                + "<meta charset=\"UTF-8\"/>\n"
+                + "<style>\n"
+                + "@page { size: A4 portrait; margin: 18mm 16mm 22mm 16mm; "
+                + "@bottom-center { content: counter(page) ' / ' counter(pages); font-size: 8pt; color: #7a7a7a; } }\n"
+                + "* { box-sizing: border-box; }\n"
+                + "body { font-family: \"Microsoft YaHei\", \"SimSun\", \"Noto Sans CJK SC\", sans-serif; font-size: 10.5pt; line-height: 1.65; color: #2f2f2f; }\n"
+                + "h1, h2, h3, h4 { page-break-after: avoid; font-weight: 700; }\n"
+                + "h1 { font-size: 21pt; color: #1f3864; text-align: center; margin: 0 0 10pt 0; padding-bottom: 5pt; border-bottom: 3px solid #2e75b6; }\n"
+                + "h2 { font-size: 14pt; color: #2e75b6; margin: 16pt 0 8pt 0; padding: 4pt 0 4pt 8pt; border-left: 4px solid #2e75b6; background-color: #f3f7fb; }\n"
+                + "h3 { font-size: 12pt; color: #2e75b6; margin: 11pt 0 5pt 0; }\n"
+                + "h4 { font-size: 10.5pt; color: #333333; margin: 8pt 0 4pt 0; }\n"
+                + "p { margin: 4pt 0; orphans: 2; widows: 2; }\n"
+                + "strong { font-weight: 700; }\n"
+                + "ul, ol { margin: 4pt 0 4pt 18pt; padding-left: 0; }\n"
+                + "li { margin: 2pt 0; }\n"
+                + "blockquote { margin: 8pt 0; padding: 5pt 8pt; color: #555555; border-left: 3px solid #9bb7d4; background-color: #f7f9fb; }\n"
+                + "pre { margin: 6pt 0; padding: 6pt; white-space: pre-wrap; word-wrap: break-word; background-color: #f5f5f5; border: 1px solid #dddddd; font-size: 8.5pt; }\n"
+                + "code { font-family: \"Consolas\", \"Courier New\", monospace; font-size: 8.5pt; }\n"
+                + "img { max-width: 100%; height: auto; }\n"
+                + "table { border-collapse: collapse; width: 100%; margin: 8pt 0 10pt 0; table-layout: fixed; font-size: 8.8pt; page-break-inside: auto; }\n"
+                + "thead { display: table-header-group; }\n"
+                + "tbody { display: table-row-group; }\n"
+                + "tr { page-break-inside: avoid; page-break-after: auto; }\n"
+                + "th, td { border: 1px solid #9daec0; padding: 3.5pt 4pt; text-align: center; word-break: break-word; overflow-wrap: break-word; vertical-align: middle; }\n"
+                + "th { background-color: #2e75b6; color: #ffffff; font-weight: 700; }\n"
+                + "tbody tr:nth-child(even) { background-color: #f2f7fb; }\n"
+                + "</style>\n"
+                + "</head>\n"
+                + "<body>\n"
+                + bodyHtml
+                + "</body>\n"
+                + "</html>";
+    }
 
     /**
      * 工效统计
@@ -1219,7 +1284,7 @@ public class AiServiceImpl {
     }
 
     /**
-     * 迟到/早退人员按车间分组
+     * 迟到/早退人员按车间分组（去重）
      */
     private Map<String, List<String>> groupPersonNamesByDept(List<SwmDashboardDto.NoAttendancePerson> list) {
         Map<String, List<String>> result = new LinkedHashMap<>();
@@ -1228,11 +1293,13 @@ public class AiServiceImpl {
             String key = org.apache.commons.lang3.StringUtils.isNotBlank(p.getDepartmentName()) ? p.getDepartmentName() : "未知车间";
             result.computeIfAbsent(key, k -> new ArrayList<>()).add(p.getEmployeeName());
         }
+        // 去重
+        result.replaceAll((k, v) -> v.stream().distinct().collect(Collectors.toList()));
         return result;
     }
 
     /**
-     * 迟到/早退人员按班组分组
+     * 迟到/早退人员按班组分组（去重）
      */
     private Map<String, List<String>> groupPersonNamesByTeam(List<SwmDashboardDto.NoAttendancePerson> list) {
         Map<String, List<String>> result = new LinkedHashMap<>();
@@ -1241,6 +1308,8 @@ public class AiServiceImpl {
             String key = org.apache.commons.lang3.StringUtils.isNotBlank(p.getTeamName()) ? p.getTeamName() : "未知班组";
             result.computeIfAbsent(key, k -> new ArrayList<>()).add(p.getEmployeeName());
         }
+        // 去重
+        result.replaceAll((k, v) -> v.stream().distinct().collect(Collectors.toList()));
         return result;
     }
 
@@ -1289,19 +1358,19 @@ public class AiServiceImpl {
 
         for (String dim : dimensions) {
             List<SwmDailyAttendance> dimList = filterByDimension(allAttendance, dim, dimensionName);
-            int shouldArrive = (int) dimList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
-            int actualArrive = (int) dimList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            int shouldArrive = (int) dimList.stream().map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
+            int actualArrive = (int) dimList.stream().filter(a -> a.getClockInDate() != null).map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
             BigDecimal totalActualHours = dimList.stream().map(a -> a.getActualHours() != null ? a.getActualHours() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal avgHours = actualArrive > 0 ? totalActualHours.divide(BigDecimal.valueOf(actualArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
             List<SwmDailyAttendance> dayList = dimList.stream().filter(a -> "1".equals(a.getClasses())).collect(Collectors.toList());
-            int dayShould = (int) dayList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
-            int dayActual = (int) dayList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            int dayShould = (int) dayList.stream().map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
+            int dayActual = (int) dayList.stream().filter(a -> a.getClockInDate() != null).map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
             BigDecimal dayRate = dayShould > 0 ? BigDecimal.valueOf(dayActual).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(dayShould), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
             List<SwmDailyAttendance> nightList = dimList.stream().filter(a -> "3".equals(a.getClasses())).collect(Collectors.toList());
-            int nightShould = (int) nightList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
-            int nightActual = (int) nightList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            int nightShould = (int) nightList.stream().map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
+            int nightActual = (int) nightList.stream().filter(a -> a.getClockInDate() != null).map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
             BigDecimal nightRate = nightShould > 0 ? BigDecimal.valueOf(nightActual).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(nightShould), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
             BigDecimal monthRate = shouldArrive > 0 ? BigDecimal.valueOf(actualArrive).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(shouldArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
@@ -1340,23 +1409,21 @@ public class AiServiceImpl {
         StringBuilder sb = new StringBuilder();
         List<SwmDailyAttendance> dimList = filterByDimension(allAttendance, dim, dimensionName);
 
-        int shouldArrive = (int) dimList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
-        int actualArrive = (int) dimList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+        int shouldArrive = (int) dimList.stream().map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
+        int actualArrive = (int) dimList.stream().filter(a -> a.getClockInDate() != null).map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
         BigDecimal totalActualHours = dimList.stream().map(a -> a.getActualHours() != null ? a.getActualHours() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal avgHours = actualArrive > 0 ? totalActualHours.divide(BigDecimal.valueOf(actualArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
         BigDecimal attendRate = shouldArrive > 0 ? BigDecimal.valueOf(actualArrive).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(shouldArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
         sb.append("**").append(dim).append("：**\n\n");
         sb.append("应到 ").append(shouldArrive).append(" 人，实到 ").append(actualArrive).append("人，出勤率 ").append(attendRate).append("%。\n\n");
-        sb.append("有效作业时长：平均 ").append(avgHours).append(" 小时/人（排除未出勤的）。\n\n");
+        sb.append("有效作业时长：平均 ").append(avgHours).append(" 小时/人。\n\n");
 
         // 迟到
         List<String> lateNames = lateMap.getOrDefault(dim, Collections.emptyList());
         sb.append("迟到：").append(lateNames.size()).append("人迟到");
         if (showNames && !lateNames.isEmpty()) {
             sb.append("，人员名单：").append(String.join("、", lateNames));
-        } else {
-            sb.append("（只汇总总数）");
         }
         sb.append("。\n\n");
 
@@ -1365,8 +1432,6 @@ public class AiServiceImpl {
         sb.append("早退：").append(earlyNames.size()).append("人早退");
         if (showNames && !earlyNames.isEmpty()) {
             sb.append("，人员名单：").append(String.join("、", earlyNames));
-        } else {
-            sb.append("（只汇总总数）");
         }
         sb.append("。\n\n");
 
@@ -1378,14 +1443,14 @@ public class AiServiceImpl {
 
             Set<String> clockedInIds = dimList.stream()
                     .filter(a -> a.getClockInDate() != null)
-                    .map(SwmDailyAttendance::getEmployeeId)
+                    .map(a -> getUniquePersonKey(a))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
             double avgAttendanceDays = 0;
             if (!clockedInIds.isEmpty()) {
                 long totalClockDays = dimList.stream()
-                        .filter(a -> a.getClockInDate() != null && clockedInIds.contains(a.getEmployeeId()))
-                        .map(a -> a.getEmployeeId() + "_" + DateUtil.format(a.getAttendanceDate(), "yyyy-MM-dd"))
+                        .filter(a -> a.getClockInDate() != null && clockedInIds.contains(getUniquePersonKey(a)))
+                        .map(a -> getUniquePersonKey(a) + "_" + DateUtil.format(a.getAttendanceDate(), "yyyy-MM-dd"))
                         .distinct()
                         .count();
                 avgAttendanceDays = (double) totalClockDays / clockedInIds.size();
@@ -1409,8 +1474,8 @@ public class AiServiceImpl {
         List<DimStat> stats = new ArrayList<>();
         for (String dim : dimensions) {
             List<SwmDailyAttendance> dimList = filterByDimension(allAttendance, dim, dimensionName);
-            int shouldArrive = (int) dimList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
-            int actualArrive = (int) dimList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).distinct().count();
+            int shouldArrive = (int) dimList.stream().map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
+            int actualArrive = (int) dimList.stream().filter(a -> a.getClockInDate() != null).map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).distinct().count();
             BigDecimal totalActualHours = dimList.stream().map(a -> a.getActualHours() != null ? a.getActualHours() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal avgHours = actualArrive > 0 ? totalActualHours.divide(BigDecimal.valueOf(actualArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
             BigDecimal monthRate = shouldArrive > 0 ? BigDecimal.valueOf(actualArrive).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(shouldArrive), 1, RoundingMode.HALF_UP) : BigDecimal.ZERO;
@@ -1426,7 +1491,7 @@ public class AiServiceImpl {
         int topCount = Math.max(1, (int) Math.ceil(stats.size() * 0.1));
 
         if (!stats.isEmpty()) {
-            sb.append("效率最高").append(dimensionName).append("（按10%的比例去统计，例如30个，统计前3个）：");
+            sb.append("效率最高").append(dimensionName).append("：");
             for (int i = 0; i < Math.min(topCount, stats.size()); i++) {
                 if (i > 0) sb.append("、");
                 DimStat s = stats.get(i);
@@ -1434,7 +1499,7 @@ public class AiServiceImpl {
             }
             sb.append("。\n\n");
 
-            sb.append("效率最低").append(dimensionName).append("（按10%的比例去统计，例如30个，统计前3个）：");
+            sb.append("效率最低").append(dimensionName).append("：");
             for (int i = stats.size() - 1; i >= Math.max(0, stats.size() - topCount); i--) {
                 if (i < stats.size() - 1) sb.append("、");
                 DimStat s = stats.get(i);
@@ -1449,13 +1514,13 @@ public class AiServiceImpl {
             List<String> notAttendedParts = new ArrayList<>();
             for (String dim : dimensions) {
                 List<SwmDailyAttendance> dimList = filterByDimension(allAttendance, dim, dimensionName);
-                Set<String> allEmployeeIds = dimList.stream().map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).collect(Collectors.toSet());
-                Set<String> clockedInIds = dimList.stream().filter(a -> a.getClockInDate() != null).map(SwmDailyAttendance::getEmployeeId).filter(Objects::nonNull).collect(Collectors.toSet());
+                Set<String> allEmployeeIds = dimList.stream().map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).collect(Collectors.toSet());
+                Set<String> clockedInIds = dimList.stream().filter(a -> a.getClockInDate() != null).map(a -> getUniquePersonKey(a)).filter(Objects::nonNull).collect(Collectors.toSet());
                 allEmployeeIds.removeAll(clockedInIds);
                 if (!allEmployeeIds.isEmpty()) {
                     Set<String> names = new LinkedHashSet<>();
                     for (String eid : allEmployeeIds) {
-                        dimList.stream().filter(a -> eid.equals(a.getEmployeeId())).findFirst()
+                        dimList.stream().filter(a -> eid.equals(getUniquePersonKey(a))).findFirst()
                                 .ifPresent(a -> names.add(a.getEmployeeName()));
                     }
                     notAttendedParts.add(dim + "，" + String.join("、", names) + "未出勤");
@@ -1479,7 +1544,7 @@ public class AiServiceImpl {
                                      String dimensionName, String startDate, String endDate, String reportType) {
         StringBuilder sb = new StringBuilder();
         boolean isDaily = "daily".equals(reportType);
-        sb.append("**报警（每天是按小时，每周每月是按天）：**\n\n");
+        sb.append("**报警：**\n\n");
 
         Map<String, Map<String, Map<String, Integer>>> alarmData = queryAlarmGrouped(startDate, endDate, personMap, dimensionName, isDaily);
         if (alarmData.isEmpty()) {
@@ -1524,6 +1589,7 @@ public class AiServiceImpl {
                 boolean firstType = true;
                 for (Map.Entry<String, String> entry : alarmLabelMap.entrySet()) {
                     Integer count = alarmCounts.getOrDefault(entry.getKey(), 0);
+                    if (count == 0) continue;
                     if (!firstType) sb.append("、");
                     firstType = false;
                     sb.append(entry.getValue()).append(count).append("次");
@@ -1610,12 +1676,192 @@ public class AiServiceImpl {
     }
 
     /**
+     * 获取考勤记录的唯一人员标识，优先用 identityCard，为空时降级用 employeeName
+     */
+    private String getUniquePersonKey(SwmDailyAttendance a) {
+        if (a.getIdentityCard() != null && !a.getIdentityCard().isEmpty()) {
+            return a.getIdentityCard();
+        }
+        if (a.getEmployeeName() != null && !a.getEmployeeName().isEmpty()) {
+            return a.getEmployeeName();
+        }
+        return null;
+    }
+
+    /**
      * 维度统计内部类
      */
     private static class DimStat {
         String name;
         BigDecimal avgHours;
         BigDecimal monthRate;
+    }
+
+    /**
+     * 将 Markdown 文本转换为 PDF 字节数组
+     *
+     * @param markdown Markdown 文本
+     * @return PDF 字节数组
+     */
+    public byte[] convertMdToPdfBytes(String markdown) {
+        // 1. MD → HTML（注册表格扩展）
+        String safeMarkdown = normalizeMarkdown(markdown);
+        org.commonmark.node.Node document = MARKDOWN_PARSER.parse(safeMarkdown);
+        String bodyHtml = MARKDOWN_HTML_RENDERER.render(document);
+
+        // 1.5 后处理：给表格加上 thead/tbody + colgroup 控制列宽
+        bodyHtml = wrapTableHeadAndBody(bodyHtml);
+        bodyHtml = injectTableColgroup(bodyHtml);
+
+        // 2. 包裹完整 HTML + CSS（参照 Word 蓝色主题风格）
+        String fullHtml = "<!DOCTYPE html>\n"
+                + "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
+                + "<head>\n"
+                + "<meta charset=\"UTF-8\"/>\n"
+                + "<style>\n"
+                // 页面：A4 纵向，页脚页码
+                + "@page { size: A4 portrait; margin: 20mm 18mm 25mm 18mm; }\n"
+                // 基础排版
+                + "body { font-family: \"Microsoft YaHei\", \"SimSun\", sans-serif; font-size: 10.5pt; line-height: 1.6; color: #333; }\n"
+                // h1 = 大标题（深蓝，居中）
+                + "h1 { font-size: 22pt; color: #1f3864; text-align: center; margin: 0 0 6pt 0; padding-bottom: 4pt; border-bottom: 3px solid #2e75b6; }\n"
+                // h2 = 章节标题（蓝色，左侧竖线）
+                + "h2 { font-size: 14pt; color: #2e75b6; margin: 18pt 0 8pt 0; padding: 4pt 0 4pt 8pt; border-left: 4px solid #2e75b6; }\n"
+                // h3 = 子标题
+                + "h3 { font-size: 12pt; color: #2e75b6; margin: 12pt 0 6pt 0; }\n"
+                // 段落
+                + "p { margin: 4pt 0; text-indent: 0; }\n"
+                // 列表（项目符号）
+                + "ul, ol { margin: 4pt 0 4pt 18pt; padding-left: 0; }\n"
+                + "li { margin: 2pt 0; }\n"
+                // 表格：固定布局，蓝色表头
+                + "table { border-collapse: collapse; width: 100%; margin: 8pt 0; table-layout: fixed; font-size: 9pt; }\n"
+                + "th, td { border: 1px solid #aaa; padding: 3pt 4pt; text-align: center; word-break: break-all; overflow: hidden; }\n"
+                + "th { background-color: #2e75b6; color: white; font-weight: bold; font-size: 9pt; }\n"
+                + "tr:nth-child(even) { background-color: #f2f7fb; }\n"
+                + "</style>\n"
+                + "</head>\n"
+                + "<body>\n"
+                + bodyHtml
+                + "</body>\n"
+                + "</html>";
+        fullHtml = buildPdfHtml(bodyHtml);
+
+        // 3. HTML → PDF
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            com.openhtmltopdf.pdfboxout.PdfRendererBuilder builder = new com.openhtmltopdf.pdfboxout.PdfRendererBuilder();
+            builder.useFastMode();
+            boolean fontLoaded = registerChineseFont(builder);
+            if (!fontLoaded) {
+                log.warn("未找到中文字体，PDF中文可能显示为方块");
+            }
+            builder.withHtmlContent(fullHtml, null);
+            builder.toStream(baos);
+            builder.run();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            log.error("MD转PDF失败", e);
+            return null;
+        }
+    }
+
+    /**
+     * 给没有 thead/tbody 的表格补上（commonmark-ext-gfm-tables 已自带，这里做兼容处理）
+     */
+    private String wrapTableHeadAndBody(String html) {
+        // 如果已经有 <thead>，跳过
+        if (html.contains("<thead>")) return html;
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        while (i < html.length()) {
+            int tableStart = html.indexOf("<table>", i);
+            if (tableStart == -1) { sb.append(html.substring(i)); break; }
+            sb.append(html.substring(i, tableStart + 7));
+            int tableEnd = html.indexOf("</table>", tableStart);
+            if (tableEnd == -1) { sb.append(html.substring(tableStart + 7)); break; }
+            String tableContent = html.substring(tableStart + 7, tableEnd);
+            int firstTrEnd = tableContent.indexOf("</tr>");
+            if (firstTrEnd != -1) {
+                sb.append("<thead>").append(tableContent, 0, firstTrEnd + 5).append("</thead>");
+                String rest = tableContent.substring(firstTrEnd + 5).trim();
+                if (!rest.isEmpty()) {
+                    sb.append("<tbody>").append(rest).append("</tbody>");
+                }
+            } else {
+                sb.append(tableContent);
+            }
+            sb.append("</table>");
+            i = tableEnd + 8;
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 给 HTML 中的 table 注入 colgroup，控制列宽避免溢出
+     */
+    private String injectTableColgroup(String html) {
+        StringBuilder sb = new StringBuilder(html);
+        int idx = 0;
+        while ((idx = sb.indexOf("<table>", idx)) != -1) {
+            // 找到第一行（<tr>），统计其中的 <th> 数量
+            int firstTr = sb.indexOf("<tr>", idx);
+            if (firstTr == -1 || firstTr - idx > 500) { idx += 7; continue; }
+            int trEnd = sb.indexOf("</tr>", firstTr);
+            if (trEnd == -1) { idx += 7; continue; }
+            String firstRow = sb.substring(firstTr, trEnd);
+            int colCount = 0;
+            int p = 0;
+            while ((p = firstRow.indexOf("<th", p)) != -1) { colCount++; p += 3; }
+            if (colCount <= 1) { idx += 7; continue; }
+
+            // 生成 colgroup：第一列 15%，其余均分
+            int firstPct = 15;
+            int restPct = (100 - firstPct) / (colCount - 1);
+            StringBuilder colgroup = new StringBuilder("<table><colgroup>");
+            colgroup.append("<col style=\"width:").append(firstPct).append("%\"/>");
+            for (int c = 1; c < colCount; c++) {
+                colgroup.append("<col style=\"width:").append(restPct).append("%\"/>");
+            }
+            colgroup.append("</colgroup>");
+
+            sb.replace(idx, idx + 7, colgroup.toString());
+            idx += colgroup.length();
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 注册中文字体到 PdfRendererBuilder
+     * 依次尝试：项目 classpath 字体 → Windows 字体目录
+     */
+    private boolean registerChineseFont(com.openhtmltopdf.pdfboxout.PdfRendererBuilder builder) {
+        // 候选字体路径
+        String[][] candidates = {
+                // Windows 字体
+                {"C:/Windows/Fonts/msyh.ttc",   "Microsoft YaHei"},
+                {"C:/Windows/Fonts/simsun.ttc",  "SimSun"},
+                {"C:/Windows/Fonts/simhei.ttf",  "SimHei"},
+                {"C:/Windows/Fonts/msyhbd.ttc",  "Microsoft YaHei"},
+                {"/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", "Noto Sans CJK SC"},
+                {"/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", "Noto Sans CJK SC"},
+                {"/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", "WenQuanYi Micro Hei"},
+                {"/usr/share/fonts/truetype/arphic/uming.ttc", "AR PL UMing CN"},
+        };
+        int registeredCount = 0;
+        for (String[] c : candidates) {
+            java.io.File fontFile = new java.io.File(c[0]);
+            if (fontFile.exists() && fontFile.length() > 0) {
+                try {
+                    // useFont(File, fontName) — openhtmltopdf 推荐方式
+                    builder.useFont(fontFile, c[1]);
+                    log.info("中文字体注册成功：{} -> {}", c[1], c[0]);
+                    registeredCount++;
+                } catch (Exception e) {
+                    log.warn("字体注册失败：{} - {}", c[0], e.getMessage());
+                }
+            }
+        }
+        return registeredCount > 0;
     }
 
 }

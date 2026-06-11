@@ -944,6 +944,7 @@
     <select id="findAllList" resultType="com.jeesite.modules.swm.entity.SwmDailyAttendance">
         SELECT
         sda.id,
+        sda.employee_id,
         sda.classes,
         sda.attendance_date,
         sda.employee_name,
@@ -958,13 +959,11 @@
         fwg.work_group_name as teamName
         FROM
         swm_daily_attendance sda
-        LEFT JOIN swm_person sp ON sda.identity_card = sp.identity_card
+        LEFT JOIN swm_person sp ON sda.identity_card = sp.identity_card AND sp.STATUS = '0' AND sp.personnel_status = '1'
         LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group fwg ON sp.team = fwg.id  COLLATE utf8mb4_general_ci
         WHERE
         sda.STATUS = 0
-        AND sp.STATUS = 0
-          AND sp.personnel_status = '1'
         AND sda.attendance_date >= #{startDate}
         AND sda.attendance_date &lt;= #{endDate}
     </select>
@@ -1191,7 +1190,7 @@
         FROM
             swm_daily_attendance a
                 INNER JOIN swm_person sp ON a.employee_id = sp.id
-                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id
+                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
                 LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
         WHERE
             sp.`status` = '0' AND sp.personnel_status = '1'
@@ -1213,7 +1212,7 @@
         FROM
             swm_daily_attendance a
                 INNER JOIN swm_person sp ON a.employee_id = sp.id
-                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id
+                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
                 LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
         WHERE
             sp.`status` = '0' AND sp.personnel_status = '1'

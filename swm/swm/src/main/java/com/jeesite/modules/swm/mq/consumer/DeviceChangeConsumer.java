@@ -10,6 +10,8 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.jeesite.modules.config.RabbitMqConfig;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
+import com.jeesite.modules.swm.entity.SwmThirdApiLog;
+import com.jeesite.modules.swm.service.SwmThirdApiLogService;
 import com.jeesite.modules.swm.util.MqSendUtil;
 import com.jeesite.modules.swm.util.SignatureUtil;
 import com.rabbitmq.client.Channel;
@@ -17,11 +19,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -30,6 +34,11 @@ import java.util.stream.Collectors;
 public class DeviceChangeConsumer {
 
     private static final Logger logger = LoggerFactory.getLogger(DeviceChangeConsumer.class);
+
+    @Autowired
+    private SwmThirdApiLogService swmThirdApiLogService;
+
+    private final ThreadLocal<String> lastApiResponseBody = new ThreadLocal<>();
     // 第三方设备接口（和人员接口风格统一）
 
     @Value("${third-party.base-url:https://lbsapi.vgomap.com}")
@@ -141,7 +150,11 @@ public class DeviceChangeConsumer {
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
-                result = sendPutRequest(thirdPartyBaseUrl+thirdPartyDeviceUnbindPath, requestParam);
+                String requestUrl = thirdPartyBaseUrl + thirdPartyDeviceUnbindPath;
+                Date requestTime = new Date();
+                result = sendPutRequest(requestUrl, requestParam);
+                saveThirdApiLog("device", "PUT", requestUrl, requestParam.toJSONString(), getApiResponseParam(result),
+                        requestTime, new Date(), result != null ? 200 : null, null);
 
                 // ========== 分支2：新增设备（POST + JSON格式） ==========
             } else if (SyncDataOperateTypeEnum.HELMET_ADD.getCode().equals(operateType)) {
@@ -169,7 +182,11 @@ public class DeviceChangeConsumer {
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 // 发送POST请求
-                result = sendPostRequest(thirdPartyBaseUrl+thirdPartyDeviceBasePath, requestParam);
+                String requestUrl = thirdPartyBaseUrl + thirdPartyDeviceBasePath;
+                Date requestTime = new Date();
+                result = sendPostRequest(requestUrl, requestParam);
+                saveThirdApiLog("device", "POST", requestUrl, requestParam.toJSONString(), getApiResponseParam(result),
+                        requestTime, new Date(), result != null ? 200 : null, null);
                 // ========== 分支3：删除设备（DELETE + x-www-form-urlencoded） ==========
             } else if (SyncDataOperateTypeEnum.HELMET_DELETE.getCode().equals(operateType)) {
                 // 获取deviceId（非必传，但空则提示）
@@ -182,7 +199,11 @@ public class DeviceChangeConsumer {
                 System.out.println("================================"+deviceId+"=======================================");
                 System.out.println("================================"+deviceId+"=======================================");
                 // 发送DELETE请求：query参数传deviceId（x-www-form-urlencoded格式）
-                result = sendDeleteRequest(thirdPartyBaseUrl+thirdPartyDeviceBasePath,deviceId);
+                String requestUrl = thirdPartyBaseUrl + thirdPartyDeviceBasePath;
+                Date requestTime = new Date();
+                result = sendDeleteRequest(requestUrl, deviceId);
+                saveThirdApiLog("device", "DELETE", requestUrl, deviceId, getApiResponseParam(result),
+                        requestTime, new Date(), result != null ? 200 : null, null);
 
                 // ========== 分支4：更新设备（PUT + JSON格式） ==========
             } else if (SyncDataOperateTypeEnum.HELMET_EDIT.getCode().equals(operateType)) {
@@ -216,7 +237,11 @@ public class DeviceChangeConsumer {
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 System.out.println("================================"+requestParam.toJSONString()+"=======================================");
                 // 发送PUT请求
-                result = sendPutRequest(thirdPartyBaseUrl+thirdPartyDeviceBasePath, requestParam);
+                String requestUrl = thirdPartyBaseUrl + thirdPartyDeviceBasePath;
+                Date requestTime = new Date();
+                result = sendPutRequest(requestUrl, requestParam);
+                saveThirdApiLog("device", "PUT", requestUrl, requestParam.toJSONString(), getApiResponseParam(result),
+                        requestTime, new Date(), result != null ? 200 : null, null);
             } else {
                 // ========== 分支5：不支持的操作类型 ==========
                 logger.warn("暂不支持的设备操作类型，msgId:{}, type:{}", msgId, operateType);
@@ -330,7 +355,11 @@ public class DeviceChangeConsumer {
             System.out.println("------------------"+operateType+"---------------========="+requestBody+"=======================================");
 
             // 3. 调用第三方批量同步接口（POST + JSON格式）
-            String result = sendPostRequest(thirdPartyBaseUrl+thirdPartyDeviceBatchSyncPath, requestParam);
+            String requestUrl = thirdPartyBaseUrl + thirdPartyDeviceBatchSyncPath;
+            Date requestTime = new Date();
+            String result = sendPostRequest(requestUrl, requestParam);
+            saveThirdApiLog("device", "POST", requestUrl, requestBody, getApiResponseParam(result),
+                    requestTime, new Date(), result != null ? 200 : null, null);
 
             // 4. 响应校验：统一判断code=success
             boolean isSuccess = (result != null && "success".equals(JSONObject.parseObject(result).getString("code")));
@@ -372,6 +401,7 @@ public class DeviceChangeConsumer {
                         url, param.toJSONString());
                 if (response.isOk()) {
                     String body = response.body();
+                    lastApiResponseBody.set(body);
                     if (SignatureUtil.isBusinessSuccess(body)) {
                         return body;
                     } else {
@@ -414,6 +444,7 @@ public class DeviceChangeConsumer {
                         url, param.toJSONString());
                 if (response.isOk()) {
                     String body = response.body();
+                    lastApiResponseBody.set(body);
                     if (SignatureUtil.isBusinessSuccess(body)) {
                         logger.info("设备PUT请求成功，url:{}, HTTP状态:{}, 响应体:{}",
                                 url, response.getStatus(), body);
@@ -457,6 +488,7 @@ public class DeviceChangeConsumer {
                 logger.info("发送设备DELETE请求，url:{}, bodyLength:{}", url, deviceId.length());
                 if (response.isOk()) {
                     String resBody = response.body();
+                    lastApiResponseBody.set(resBody);
                     if (SignatureUtil.isBusinessSuccess(resBody)) {
                         return resBody;
                     } else {
@@ -473,6 +505,35 @@ public class DeviceChangeConsumer {
             logger.error("发送设备DELETE请求异常，url:{}, body:{}", url, deviceId, e);
             return null;
         }
+    }
+
+    private void saveThirdApiLog(String businessType, String httpMethod, String requestUrl, String requestParam,
+                                 String responseParam, Date requestTime, Date responseTime,
+                                 Integer httpStatus, String exceptionInfo) {
+        try {
+            SwmThirdApiLog apiLog = new SwmThirdApiLog();
+            apiLog.setBusinessType(businessType);
+            apiLog.setHttpMethod(httpMethod);
+            apiLog.setRequestUrl(requestUrl);
+            apiLog.setRequestParam(requestParam);
+            apiLog.setResponseParam(responseParam);
+            apiLog.setRequestTime(requestTime);
+            apiLog.setResponseTime(responseTime);
+            apiLog.setDuration(responseTime.getTime() - requestTime.getTime());
+            apiLog.setHttpStatus(httpStatus);
+            apiLog.setExceptionInfo(exceptionInfo);
+            apiLog.setExecuteStatus(httpStatus != null && httpStatus >= 200 && httpStatus < 300
+                    && responseParam != null && !"NOT_EXECUTED".equals(responseParam) ? "1" : "0");
+            swmThirdApiLogService.saveLog(apiLog);
+        } catch (Exception e) {
+            logger.error("保存第三方接口调用日志失败，url:{}", requestUrl, e);
+        }
+    }
+
+    private String getApiResponseParam(String result) {
+        String responseParam = result != null ? result : lastApiResponseBody.get();
+        lastApiResponseBody.remove();
+        return responseParam;
     }
 
 
