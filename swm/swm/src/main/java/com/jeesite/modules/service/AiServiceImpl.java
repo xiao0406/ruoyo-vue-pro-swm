@@ -105,7 +105,7 @@ public class AiServiceImpl {
                 + "@page { size: A4 portrait; margin: 18mm 16mm 22mm 16mm; "
                 + "@bottom-center { content: counter(page) ' / ' counter(pages); font-size: 8pt; color: #7a7a7a; } }\n"
                 + "* { box-sizing: border-box; }\n"
-                + "body { font-family: \"Microsoft YaHei\", \"SimSun\", \"Noto Sans CJK SC\", sans-serif; font-size: 10.5pt; line-height: 1.65; color: #2f2f2f; }\n"
+                + "body { font-family: \"Microsoft YaHei\", \"SimSun\", \"Noto Sans CJK SC\", \"WenQuanYi Micro Hei\", sans-serif; font-size: 10.5pt; line-height: 1.65; color: #2f2f2f; }\n"
                 + "h1, h2, h3, h4 { page-break-after: avoid; font-weight: 700; }\n"
                 + "h1 { font-size: 21pt; color: #1f3864; text-align: center; margin: 0 0 10pt 0; padding-bottom: 5pt; border-bottom: 3px solid #2e75b6; }\n"
                 + "h2 { font-size: 14pt; color: #2e75b6; margin: 16pt 0 8pt 0; padding: 4pt 0 4pt 8pt; border-left: 4px solid #2e75b6; background-color: #f3f7fb; }\n"
@@ -1846,6 +1846,11 @@ public class AiServiceImpl {
                 {"/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", "Noto Sans CJK SC"},
                 {"/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", "WenQuanYi Micro Hei"},
                 {"/usr/share/fonts/truetype/arphic/uming.ttc", "AR PL UMing CN"},
+                {"/usr/share/fonts/google-noto/NotoSansCJK-Regular.ttc", "Noto Sans CJK SC"},
+                {"/usr/share/fonts/google-noto/NotoSansCJK-Bold.ttc", "Noto Sans CJK SC"},
+                {"/usr/share/fonts/google-noto/NotoSansSC-Regular.otf", "Noto Sans CJK SC"},
+                {"/usr/share/fonts/google-noto/NotoSansSC-Bold.otf", "Noto Sans CJK SC"},
+                {"/usr/share/fonts/wqy-microhei/wqy-microhei.ttc", "WenQuanYi Micro Hei"},
         };
         int registeredCount = 0;
         for (String[] c : candidates) {
