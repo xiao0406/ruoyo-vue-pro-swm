@@ -206,12 +206,45 @@ public class AiTask {
         dify.setWorkerIndex(outputs.getLong("workerIndex"));
         dify.setText(outputs.getString("text"));
 
+        uploadPdfAndSetRemarks(dify, dify.getText(), corpCode, yesterday, "daily");
+
         swmDifyService.save(dify);
 
         XxlJobHelper.log("AI日报保存成功: {}", outputs.toJSONString());
     }
 
+    private void uploadPdfAndSetRemarks(SwmDify dify, String markdown, String corpCode, Date reportDate, String reportType) {
+        try {
+            byte[] pdfBytes = aiServiceImpl.convertMdToPdfBytes(markdown);
+            if (pdfBytes == null || pdfBytes.length == 0) {
+                XxlJobHelper.log("PDF生成结果为空，跳过上传，corpCode={}，reportType={}", corpCode, reportType);
+                return;
+            }
+            String dateStr = DateUtil.format(reportDate, "yyyy-MM-dd");
+            String fileName = dateStr + "_" + sanitizePdfFileName(dify.getProjectName()) + ".pdf";
+            String objectName = "ai-report/" + corpCode + "/" + fileName;
+            try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(pdfBytes)) {
+                minioClient.putObject(io.minio.PutObjectArgs.builder()
+                        .bucket(minioConfig.getBucketName())
+                        .object(objectName)
+                        .stream(bais, pdfBytes.length, -1)
+                        .contentType("application/pdf")
+                        .build());
+            }
+            dify.setRemarks(objectName);
+            XxlJobHelper.log("PDF上传MinIO成功，objectName={}", objectName);
+        } catch (Exception e) {
+            XxlJobHelper.log("PDF生成或上传失败，corpCode={}，reportType={}，error={}", corpCode, reportType, e.getMessage());
+            log.error("PDF生成或上传失败，corpCode={}, reportType={}", corpCode, reportType, e);
+        }
+    }
 
+    private String sanitizePdfFileName(String fileName) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            return "AI报告";
+        }
+        return fileName.trim().replaceAll("[\\\\/:*?\"<>|\\r\\n]+", "_");
+    }
 
 
     // ==================== 日报-江苏厂 ====================
@@ -374,7 +407,7 @@ public class AiTask {
             byte[] pdfBytes = aiServiceImpl.convertMdToPdfBytes(fullText);
             if (pdfBytes != null && pdfBytes.length > 0) {
                 String dateStr = DateUtil.format(yesterday, "yyyy-MM-dd");
-                String fileName = dateStr + "_" + reportType + ".pdf";
+                String fileName = dateStr + "_" + sanitizePdfFileName(dify.getProjectName()) + ".pdf";
                 String objectName = "ai-report/" + corpCode + "/" + fileName;
                 // 直接用 MinioClient 上传
                 try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(pdfBytes)) {

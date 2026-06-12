@@ -1,5 +1,6 @@
 package com.jeesite.modules.job.task;
 
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.dao.SwmPersonDao;
 import com.jeesite.modules.swm.entity.SwmPerson;
@@ -60,8 +61,8 @@ public class SwmPersonFullSyncXxlJob {
             SwmPerson person = new SwmPerson();
             person.setStatus("0");
             person.setPersonnelStatus("1");
-            person.getSqlMap().getWhere().disableAutoAddCorpCodeWhere();
-                    ;
+//            person.getSqlMap().getWhere().disableAutoAddCorpCodeWhere();
+            TenantContext.set("ZJGGGD");
             List<SwmPerson> personList = swmPersonDao.findListWithoutCorpCode(person);
 
             int totalCount = personList == null ? 0 : personList.size();

@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS `swm_third_api_log` (
   `id` varchar(64) NOT NULL COMMENT '主键',
-  `business_type` varchar(50) DEFAULT NULL COMMENT '业务类型：device-设备，beacon-信标',
+  `business_type` varchar(50) DEFAULT NULL COMMENT '业务类型：person-人员，device-设备，beacon-信标',
   `http_method` varchar(20) DEFAULT NULL COMMENT '请求方式',
   `request_url` varchar(1000) DEFAULT NULL COMMENT '接口地址',
   `request_param` longtext COMMENT '请求参数',

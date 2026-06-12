@@ -1,9 +1,11 @@
 package com.jeesite.modules.job.task;
 
+import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.dao.SwmHelmetDeviceDao;
 import com.jeesite.modules.swm.entity.SwmHelmetDevice;
 import com.jeesite.modules.swm.util.MqSendUtil;
+import com.jeesite.modules.sys.utils.CorpUtils;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
@@ -59,9 +61,12 @@ public class SwmHelmetDeviceFullSyncXxlJob {
             SwmHelmetDevice swmHelmetDevice = new SwmHelmetDevice();
             swmHelmetDevice.setStatus("0");
 //            swmHelmetDevice.setCorpCode(jobParam != null && !jobParam.trim().isEmpty() ? jobParam.trim() : null);
-            swmHelmetDevice.getSqlMap().getWhere().disableAutoAddCorpCodeWhere();
+//            swmHelmetDevice.getSqlMap().getWhere().disableAutoAddCorpCodeWhere();
+            CorpUtils.setCurrentCorpCode("ZJGGGD","中建钢构广东有限公司");
+            TenantContext.set("ZJGGGD");
             List<SwmHelmetDevice> deviceList = swmHelmetDeviceDao.findList(swmHelmetDevice);
-
+            CorpUtils.setCurrentCorpCode( null, null);
+            TenantContext.clear();
             int totalCount = deviceList == null ? 0 : deviceList.size();
             XxlJobHelper.log("【XXL-Job-{}】查询到有效设备数：{}", jobId, totalCount);
 

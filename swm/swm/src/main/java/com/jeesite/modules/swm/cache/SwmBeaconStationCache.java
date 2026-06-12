@@ -55,7 +55,7 @@ public class SwmBeaconStationCache implements ApplicationListener<ApplicationRea
         }
 
         for (User user : corpList) {
-
+            
             String corpCode = user.getCorpCode();
             String corpName = user.getCorpName();
 

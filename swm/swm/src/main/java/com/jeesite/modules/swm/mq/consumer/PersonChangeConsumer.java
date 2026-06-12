@@ -11,6 +11,8 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.jeesite.modules.config.RabbitMqConfig;
 import com.jeesite.modules.enums.SyncDataOperateTypeEnum;
 import com.jeesite.modules.swm.entity.SwmPerson;
+import com.jeesite.modules.swm.entity.SwmThirdApiLog;
+import com.jeesite.modules.swm.service.SwmThirdApiLogService;
 import com.jeesite.modules.swm.util.MqSendUtil;
 import com.jeesite.modules.swm.util.SignatureUtil;
 import com.rabbitmq.client.Channel;
@@ -18,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +29,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,6 +37,9 @@ import java.util.stream.Collectors;
 @Component
 public class PersonChangeConsumer {
     private static final Logger logger = LoggerFactory.getLogger(PersonChangeConsumer.class);
+
+    @Autowired
+    private SwmThirdApiLogService swmThirdApiLogService;
 
     // ====================== 配置项（从配置文件读取，避免硬编码） ======================
     @Value("${third-party.base-url:https://lbsapi.vgomap.com}")
@@ -50,13 +57,13 @@ public class PersonChangeConsumer {
     @Value("${third-party.person.batch-sync-url:/api/Open/Personnel/Sync}")
     private String thirdPartyPersonBatchSyncPath;
 
-    @Value("${third-party.app-key:fBPMJTYsQ8ndmNVz6SxzmZz7rdTVdkEf}")
+    @Value("${third-party.app-key:cIwPSUTrlxJt2VOx0iEPYjeYaWBt4FKX}")
     private String appKey;
 
-    @Value("${third-party.app-secret:XAt3NFSxQUpkH7UaATAStTYK7XB8JFct}")
+    @Value("${third-party.app-secret:tYGapfWe96wXDfdtNc6RW7ROK4t9WoPF}")
     private String appSecret;
 
-    @Value("${third-party.request.timeout:5000}")
+    @Value("${third-party.request.timeout:20000}")
     private int timeout;
 
     /**
@@ -251,6 +258,10 @@ public class PersonChangeConsumer {
      * @return 响应体字符串（null表示请求失败）
      */
     private String sendPostRequest(String url, JSONObject param) {
+        Date requestTime = new Date();
+        Integer httpStatus = null;
+        String responseBody = null;
+        String exceptionInfo = null;
         try {
             // 🔑 步骤1：生成签名所需参数（时间戳、随机串等）
             long timestamp = System.currentTimeMillis();
@@ -273,30 +284,38 @@ public class PersonChangeConsumer {
                     .header("Timestamp", String.valueOf(timestamp)) // 必选：时间戳
                     .header("Nonce", nonce)            // 可选：防重放随机数
                     .header("Sign", sign)         // 必选：签名值
-                    .setReadTimeout(timeout)
+                    .setReadTimeout(getRequestTimeout())
                     .execute()) {
 
                 logger.info("发送POST请求，url:{}, param:{}, headers:{{X-App-Key, X-Timestamp, X-Signature}}",
                         url, param.toJSONString());
+                httpStatus = response.getStatus();
+                responseBody = response.body();
                 if (response.isOk()) {
-                    String body = response.body();
                     // ✅ 新增：校验业务层是否成功
-                    if (SignatureUtil.isBusinessSuccess(body)) {
-                        return body;
+                    if (SignatureUtil.isBusinessSuccess(responseBody)) {
+                        return responseBody;
                     } else {
-                        logger.error("POST请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(body));
+                        exceptionInfo = SignatureUtil.getErrorMessage(responseBody);
+                        logger.error("POST请求业务失败，url:{}, response:{}", url, exceptionInfo);
                         return null;
                     }
                 } else {
+                    exceptionInfo = SignatureUtil.getErrorMessage(responseBody);
                     logger.error("POST请求HTTP失败，url:{}, status:{}, response:{}",
-                            url, response.getStatus(), SignatureUtil.getErrorMessage(response.body()));
+                            url, response.getStatus(), exceptionInfo);
                     return null;
                 }
 
             }
         } catch (Exception e) {
+            exceptionInfo = buildExceptionInfo(e);
             logger.error("发送POST请求异常，url:{}, param:{}", url, param.toJSONString(), e);
             return null;
+        } finally {
+            Date responseTime = new Date();
+            saveThirdApiLog("person", "POST", url, param.toJSONString(), responseBody,
+                    requestTime, responseTime, httpStatus, exceptionInfo);
         }
     }
 
@@ -309,6 +328,10 @@ public class PersonChangeConsumer {
      * @return 响应体字符串（null表示请求失败）
      */
     private String sendPutRequest(String url, JSONObject param) {
+        Date requestTime = new Date();
+        Integer httpStatus = null;
+        String responseBody = null;
+        String exceptionInfo = null;
         try {
             // 🔑 步骤1：生成签名所需参数（时间戳、随机串等）
             long timestamp = System.currentTimeMillis();
@@ -331,30 +354,38 @@ public class PersonChangeConsumer {
                     .header("Timestamp", String.valueOf(timestamp)) // 必选：时间戳
                     .header("Nonce", nonce)            // 可选：防重放随机数
                     .header("Sign", sign)              // 必选：签名值
-                    .setReadTimeout(timeout)
+                    .setReadTimeout(getRequestTimeout())
                     .execute()) {
 
                 logger.info("发送PUT请求，url:{}, param:{}, headers:{{AppId, Timestamp, Nonce, Sign}}",
                         url, param.toJSONString());
+                httpStatus = response.getStatus();
+                responseBody = response.body();
                 if (response.isOk()) {
-                    String body = response.body();
                     // ✅ 新增：校验业务层是否成功
-                    if (SignatureUtil.isBusinessSuccess(body)) {
-                        return body;
+                    if (SignatureUtil.isBusinessSuccess(responseBody)) {
+                        return responseBody;
                     } else {
-                        logger.error("PUT请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(body));
+                        exceptionInfo = SignatureUtil.getErrorMessage(responseBody);
+                        logger.error("PUT请求业务失败，url:{}, response:{}", url, exceptionInfo);
                         return null;
                     }
                 } else {
+                    exceptionInfo = SignatureUtil.getErrorMessage(responseBody);
                     logger.error("PUT请求HTTP失败，url:{}, status:{}, response:{}",
-                            url, response.getStatus(), SignatureUtil.getErrorMessage(response.body()));
+                            url, response.getStatus(), exceptionInfo);
                     return null;
                 }
 
             }
         } catch (Exception e) {
+            exceptionInfo = buildExceptionInfo(e);
             logger.error("发送PUT请求异常，url:{}, param:{}", url, param.toJSONString(), e);
             return null;
+        } finally {
+            Date responseTime = new Date();
+            saveThirdApiLog("person", "PUT", url, param.toJSONString(), responseBody,
+                    requestTime, responseTime, httpStatus, exceptionInfo);
         }
     }
 
@@ -475,7 +506,6 @@ public class PersonChangeConsumer {
 
                 // 身份证号码 identityCard
                 personObj.put("identityCard", StringUtils.isNotBlank(person.getIdentityCard()) ? person.getIdentityCard().trim() : "");
-
                 datasArray.add(personObj);
             }
 
@@ -564,6 +594,10 @@ public class PersonChangeConsumer {
      * @return 响应体字符串（null 表示失败）
      */
     private String sendDeleteRequest(String url, String body) {
+        Date requestTime = new Date();
+        Integer httpStatus = null;
+        String responseBody = null;
+        String exceptionInfo = null;
         try {
             long timestamp = System.currentTimeMillis();
             String nonce = UUID.randomUUID().toString().replace("-", "");
@@ -582,30 +616,69 @@ public class PersonChangeConsumer {
                     .header("Timestamp", String.valueOf(timestamp))
                     .header("Nonce", nonce)
                     .header("Sign", sign)
-                    .setReadTimeout(timeout)
+                    .setReadTimeout(getRequestTimeout())
                     .execute()) {
 
                 logger.info("发送DELETE请求，url:{}, bodyLength:{}", url, body.length());
+                httpStatus = response.getStatus();
+                responseBody = response.body();
                 if (response.isOk()) {
-                    String message = response.body();
                     // ✅ 新增：校验业务层是否成功
-                    if (SignatureUtil.isBusinessSuccess(message)) {
-                        return body;
+                    if (SignatureUtil.isBusinessSuccess(responseBody)) {
+                        return responseBody;
                     } else {
-                        logger.error("请求业务失败，url:{}, response:{}", url, SignatureUtil.getErrorMessage(message));
+                        exceptionInfo = SignatureUtil.getErrorMessage(responseBody);
+                        logger.error("请求业务失败，url:{}, response:{}", url, exceptionInfo);
                         return null;
                     }
                 } else {
+                    exceptionInfo = SignatureUtil.getErrorMessage(responseBody);
                     logger.error("POST请求HTTP失败，url:{}, status:{}, response:{}",
-                            url, response.getStatus(), SignatureUtil.getErrorMessage(response.body()));
+                            url, response.getStatus(), exceptionInfo);
                     return null;
                 }
 
             }
         } catch (Exception e) {
+            exceptionInfo = buildExceptionInfo(e);
             logger.error("发送DELETE请求异常，url:{}, body:{}", url, body, e);
             return null;
+        } finally {
+            Date responseTime = new Date();
+            saveThirdApiLog("person", "DELETE", url, body, responseBody,
+                    requestTime, responseTime, httpStatus, exceptionInfo);
         }
+    }
+
+    private void saveThirdApiLog(String businessType, String httpMethod, String requestUrl, String requestParam,
+                                 String responseParam, Date requestTime, Date responseTime,
+                                 Integer httpStatus, String exceptionInfo) {
+        try {
+            SwmThirdApiLog apiLog = new SwmThirdApiLog();
+            apiLog.setBusinessType(businessType);
+            apiLog.setHttpMethod(httpMethod);
+            apiLog.setRequestUrl(requestUrl);
+            apiLog.setRequestParam(requestParam);
+            apiLog.setResponseParam(responseParam);
+            apiLog.setRequestTime(requestTime);
+            apiLog.setResponseTime(responseTime);
+            apiLog.setDuration(responseTime.getTime() - requestTime.getTime());
+            apiLog.setHttpStatus(httpStatus);
+            apiLog.setExceptionInfo(exceptionInfo);
+            apiLog.setExecuteStatus(exceptionInfo == null && httpStatus != null && httpStatus >= 200 && httpStatus < 300
+                    && responseParam != null && !"NOT_EXECUTED".equals(responseParam) ? "1" : "0");
+            swmThirdApiLogService.saveLog(apiLog);
+        } catch (Exception e) {
+            logger.error("保存第三方接口调用日志失败，url:{}", requestUrl, e);
+        }
+    }
+
+    private int getRequestTimeout() {
+        return Math.max(timeout, 20000);
+    }
+
+    private String buildExceptionInfo(Exception e) {
+        return e.getMessage() + "，readTimeout=" + getRequestTimeout() + "ms";
     }
 
 

@@ -53,13 +53,13 @@ public class DeviceChangeConsumer {
     @Value("${third-party.device.unbind-url:/api/Open/Personnel/UnBind}")
     private String thirdPartyDeviceUnbindPath;
 
-    @Value("${third-party.app-key:fBPMJTYsQ8ndmNVz6SxzmZz7rdTVdkEf}")
+    @Value("${third-party.app-key:cIwPSUTrlxJt2VOx0iEPYjeYaWBt4FKX}")
     private String appKey;
 
-    @Value("${third-party.app-secret:XAt3NFSxQUpkH7UaATAStTYK7XB8JFct}")
+    @Value("${third-party.app-secret:tYGapfWe96wXDfdtNc6RW7ROK4t9WoPF}")
     private String appSecret;
 
-    @Value("${third-party.request.timeout:5000}")
+    @Value("${third-party.request.timeout:20000}")
     private int timeout;
 
     // 设备类型固定值（安全帽设备类型为5，抽成常量便于维护）

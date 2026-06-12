@@ -765,7 +765,6 @@
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         WHERE
         1=1
-          and a.corp_code is not null
         <!-- 动态条件：status（匹配传入的参数） -->
         <if test="status != null and status != ''">
             AND a.STATUS = #{status}
@@ -774,6 +773,8 @@
         <if test="personnelStatus != null and personnelStatus != ''">
             AND a.personnel_status = #{personnelStatus}
         </if>
+        GROUP BY
+        a.safety_helmet_id
         ORDER BY
         a.update_date DESC
     </select>
