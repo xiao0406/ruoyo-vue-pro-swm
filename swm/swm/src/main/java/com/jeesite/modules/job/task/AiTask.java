@@ -208,7 +208,9 @@ public class AiTask {
 
         uploadPdfAndSetRemarks(dify, dify.getText(), corpCode, yesterday, "daily");
 
+        CorpUtils.setCurrentCorpCode(corpCode, projectName);
         swmDifyService.save(dify);
+        CorpUtils.setCurrentCorpCode(null, null);
 
         XxlJobHelper.log("AI日报保存成功: {}", outputs.toJSONString());
     }
