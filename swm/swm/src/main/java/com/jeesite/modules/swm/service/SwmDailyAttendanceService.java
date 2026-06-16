@@ -79,10 +79,21 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
     @Autowired
     private SwmDictDataService swmDictDataService;
 
+    @Autowired
+    private SwmPersonWorkAreaService swmPersonWorkAreaService;
+
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy年MM月dd日HH点mm分");
+
+    private static final long CONTINUITY_THRESHOLD_MS = 5 * 60 * 1000; // 5分钟连续性阈值
+
+    /**
+     * 需要按人员绑定工作区计算考勤的租户编码
+     * 多个租户用逗号分隔，如："ZJGGJS,OTHERCORP"
+     */
+    private static final String PERSONAL_WORK_AREA_CORP_CODES = "ZJGGJS,ZJZK";
 
     /**
      * 获取单条数据
@@ -1523,12 +1534,38 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         String corpCode = TenantContext.get();
         String dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
 
-        //  强制排序（关键）
-        String sql = "select time,area_name,area_type from "
-                + dbNameNew + "." + TdengineSuperTableConstant.AREA_FENCE_DATA + "_" + deviceId + "_" + identityCard
-                + " where time >= '" + DateUtil.format(startDate, DatePattern.NORM_DATE_PATTERN)
-                + "' and time <= '" + DateUtil.format(endDate, DatePattern.NORM_DATE_PATTERN)
-                + "' order by time asc limit 1000000";
+        // 特定租户：查询人员绑定的工作区
+        List<String> boundAreaIds = null;
+        if (isPersonalWorkAreaCorp(corpCode)) {
+            boundAreaIds = getPersonBoundAreaIds(identityCard);
+            if (boundAreaIds != null && !boundAreaIds.isEmpty()) {
+                logger.info("特定租户{}，人员{}绑定了{}个工作区: {}", corpCode, identityCard, boundAreaIds.size(), boundAreaIds);
+            } else {
+                logger.info("特定租户{}，人员{}未绑定工作区，查询所有工作区", corpCode, identityCard);
+            }
+        }
+
+        // 构建 SQL
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("select time,area_name,area_type,area_id from ")
+                .append(dbNameNew).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA)
+                .append("_").append(deviceId).append("_").append(identityCard)
+                .append(" where time >= '").append(DateUtil.format(startDate, DatePattern.NORM_DATE_PATTERN))
+                .append("' and time <= '").append(DateUtil.format(endDate, DatePattern.NORM_DATE_PATTERN))
+                .append("'");
+
+        // 特定租户且有绑定工作区：增加 area_id 过滤条件
+        if (isPersonalWorkAreaCorp(corpCode) && boundAreaIds != null && !boundAreaIds.isEmpty()) {
+            String areaIdCondition = boundAreaIds.stream()
+                    .map(id -> "'" + id + "'")
+                    .collect(Collectors.joining(","));
+            sqlBuilder.append(" and area_id in (").append(areaIdCondition).append(")");
+        }
+
+        sqlBuilder.append(" order by time asc limit 1000000");
+        String sql = sqlBuilder.toString();
+
+        logger.info("查询工作区考勤SQL: {}", sql);
 
         List<JSONObject> list = new ArrayList<>();
 
@@ -1545,6 +1582,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
                     obj.set("time", row.getDate(0));
                     obj.set("area_name", row.getStr(1));
                     obj.set("area_type", row.get(2));
+                    obj.set("area_id", row.getStr(3));
 
                     //  防止脏数据
                     if (obj.getDate("time") != null) {
@@ -1613,8 +1651,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
                 continue;
             }
 
-            // ================== 3⃣ 时间断段（≥10分钟） ==================
-            if (diff >= 10 * 60 * 1000) {
+            // ================== 3⃣ 时间断段（≥1分钟） ==================
+            if (diff >= CONTINUITY_THRESHOLD_MS) {
 
                 addSegment(workList, restList, segmentType,
                         buildSegment(enterTime, enterAreaName, prevTime, enterAreaName));
@@ -1694,6 +1732,48 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     public void saveBatch(List<SwmDailyAttendance> insertList) {
         dao.insertBatch(insertList);
+    }
+
+    /**
+     * 获取人员绑定的工作区ID列表
+     * @param identityCard 身份证号
+     * @return 工作区ID列表，如果没有绑定返回空列表
+     */
+    private List<String> getPersonBoundAreaIds(String identityCard) {
+        try {
+            List<SwmPersonWorkArea> workAreaList = swmPersonWorkAreaService.findActiveByIdentityCard(identityCard);
+
+            if (workAreaList == null || workAreaList.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            return workAreaList.stream()
+                    .map(SwmPersonWorkArea::getAreaId)
+                    .filter(StringUtils::isNotBlank)
+                    .distinct()
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("查询人员绑定工作区失败: {}, 身份证: {}", e.getMessage(), identityCard);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 判断是否需要按人员绑定工作区计算考勤的租户
+     * @param corpCode 租户编码
+     * @return true-需要按人员绑定工作区计算，false-使用默认逻辑
+     */
+    private boolean isPersonalWorkAreaCorp(String corpCode) {
+        if (StringUtils.isBlank(corpCode) || StringUtils.isBlank(PERSONAL_WORK_AREA_CORP_CODES)) {
+            return false;
+        }
+        String[] codes = PERSONAL_WORK_AREA_CORP_CODES.split(",");
+        for (String code : codes) {
+            if (corpCode.equals(code.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

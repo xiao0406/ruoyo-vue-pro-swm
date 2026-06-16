@@ -192,20 +192,27 @@ public class SwmHazardSourceCache implements ApplicationListener<ApplicationRead
 
     /**
      * 危险源反向缓存，用mac地址作为key，value为危险源信息，用于iot服务的危险源报警
+     * beacon_identifier 存储的就是 MAC 地址，直接使用
      */
-    private void initHazardInfoCache(List<SwmHazardSource> list,String corpCode) {
-        String redisKey = corpCode+SwmRedisConstant.RedisSwmKey.MAC_TO_HAZARD_INFO;
-        //删除旧的缓存
+    private void initHazardInfoCache(List<SwmHazardSource> list, String corpCode) {
+        String redisKey = corpCode + SwmRedisConstant.RedisSwmKey.MAC_TO_HAZARD_INFO;
+        // 删除旧的缓存
         redisService.del(redisKey);
 
-        //添加缓存
+        // 添加缓存，beacon_identifier 就是 MAC 地址
         for (SwmHazardSource source : list) {
-            //80ECCCD241E7,80ECCCD241E5
             String[] macs = source.getBeaconIdentifiers();
+            if (macs == null || macs.length == 0) {
+                continue;
+            }
             for (String mac : macs) {
-                redisService.hset(redisKey, mac, source);
+                if (StringUtils.isNotBlank(mac)) {
+                    redisService.hset(redisKey, mac.trim(), source);
+                }
             }
         }
+
+        log.info("危险源 MAC 缓存初始化完成，redisKey={}, 共缓存 {} 个危险源", redisKey, list.size());
     }
 
     /**

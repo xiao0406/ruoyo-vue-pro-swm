@@ -65,6 +65,8 @@ public class AttendanceTask {
     private TDengineService tdengineService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private SwmPersonWorkAreaService swmPersonWorkAreaService;
 
     @Value("${tdengine.dbname:swm_db}")
     private String dbname;
@@ -75,11 +77,16 @@ public class AttendanceTask {
     @Qualifier("swmExecutor")
     @Autowired
     private ThreadPoolTaskExecutor swmExecutor;
-    
+
     // 定义常量
-    private static final long CONTINUITY_THRESHOLD_MS = 1 * 60 * 1000; // 10分钟连续性阈值
+    private static final long CONTINUITY_THRESHOLD_MS = 5 * 60 * 1000; // 5分钟连续性阈值
     private static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    /**
+     * 需要按人员绑定工作区计算考勤的租户编码
+     * 多个租户用逗号分隔，如："ZJGGJS,OTHERCORP"
+     */
+    private static final String PERSONAL_WORK_AREA_CORP_CODES = "ZJGGJS,ZJZK";
 
     /**
      * 定时生成两个月的日考勤数据-颠覆性产业园使用
@@ -2369,13 +2376,19 @@ public class AttendanceTask {
      */
     private boolean processAttendanceRecord(SwmDailyAttendance record,String corpCode) {
         boolean updated = false;
-        
+
         // 计算实际考勤时长 - 修改为工作区域时长
         // 新逻辑：实际考勤时长 = 上下班打卡时间范围内的工作区域活动时长
         // @author: Shawn
         // @date: 2025-08-20
         if (shouldCalculateActualHours(record)  || shouldCalculateActualHoursOther(record)) {
-            BigDecimal workAreaHours = calculateWorkAreaHours(record,corpCode);
+            BigDecimal workAreaHours;
+            // 特定租户：根据人员绑定的工作区计算
+            if (isPersonalWorkAreaCorp(corpCode)) {
+                workAreaHours = calculateWorkAreaHoursForZJGGJS(record, corpCode);
+            } else {
+                workAreaHours = calculateWorkAreaHours(record,corpCode);
+            }
             if (workAreaHours != null) {
                 record.setActualHours(workAreaHours);
                 updated = true;
@@ -2383,27 +2396,33 @@ public class AttendanceTask {
                     record.getEmployeeId(), record.getEmployeeName(), workAreaHours);
             }
         }
-        
+
         // 计算实际工作时长（使用当天24小时工作区域时长）
         if (shouldCalculateWorkHours(record)) {
-            BigDecimal workHours = calculateWorkAreaHours24h(record,corpCode);
+            BigDecimal workHours;
+            // 特定租户：根据人员绑定的工作区计算
+            if (isPersonalWorkAreaCorp(corpCode)) {
+                workHours = calculateWorkAreaHours24hForZJGGJS(record, corpCode);
+            } else {
+                workHours = calculateWorkAreaHours24h(record,corpCode);
+            }
             if (workHours != null) {
                 // 兜底逻辑：如果24小时工作区域时长小于实际考勤时长，使用实际考勤时长作为兜底
-                if (record.getActualHours() != null && 
+                if (record.getActualHours() != null &&
                     workHours.compareTo(record.getActualHours()) < 0) {
-                    
-                    XxlJobHelper.log("员工[{}]{}计算的24小时工作区域时长{}小时小于实际考勤时长{}小时，使用实际考勤时长作为兜底", 
-                        record.getEmployeeId(), record.getEmployeeName(), 
+
+                    XxlJobHelper.log("员工[{}]{}计算的24小时工作区域时长{}小时小于实际考勤时长{}小时，使用实际考勤时长作为兜底",
+                        record.getEmployeeId(), record.getEmployeeName(),
                         workHours, record.getActualHours());
-                    
+
                     record.setEffectiveWorkHours(record.getActualHours());
                 } else {
                     record.setEffectiveWorkHours(workHours);
                 }
-                
+
                 updated = true;
                 XxlJobHelper.log("员工[{}]{}最终实际工作时长: {} 小时",
-                    record.getEmployeeId(), record.getEmployeeName(), 
+                    record.getEmployeeId(), record.getEmployeeName(),
                     record.getEffectiveWorkHours());
             }
         }
@@ -2436,7 +2455,6 @@ public class AttendanceTask {
             }
         }
 
-        
         // 如果有更新，标记为已处理并保存
         if (updated) {
             // 计算应考勤时长（如果还没有值）
@@ -2448,7 +2466,7 @@ public class AttendanceTask {
                         record.getEmployeeId(), record.getEmployeeName(), scheduledHours);
                 }
             }
-            
+
             // 计算日考勤功效
             // 功效 = 实际考勤时长/应该考勤时长
             // @author: Shawn
@@ -2458,7 +2476,7 @@ public class AttendanceTask {
             XxlJobHelper.log("员工[{}]{}日考勤功效计算: 实际考勤时长{}/应该考勤时长{}，等于={}",
                 record.getEmployeeId(), record.getEmployeeName(),
                 record.getActualHours(), record.getScheduledHours(), dailyEfficiency);
-            
+
             // 计算日达成率
             // 达成率 = 实际工作时长 / 应考勤时长
             // @author: Shawn
@@ -2468,12 +2486,12 @@ public class AttendanceTask {
             XxlJobHelper.log("员工[{}]{}日达成率计算: {}小时 / {}小时 = {}",
                 record.getEmployeeId(), record.getEmployeeName(),
                 record.getEffectiveWorkHours(), record.getScheduledHours(), dailyAchievementRate);
-            
+
             // 更新考勤状态逻辑 - 使用新的业务规则
             // @author: Shawn
             // @date: 2025/01/13
             updateAttendanceStatusByNewRule(record);
-            
+
             markAsProcessed(record);
             swmDailyAttendanceService.update(record);
             return true;
@@ -3524,6 +3542,24 @@ public class AttendanceTask {
     }
     
     /**
+     * 判断是否需要按人员绑定工作区计算考勤的租户
+     * @param corpCode 租户编码
+     * @return true-需要按人员绑定工作区计算，false-使用默认逻辑
+     */
+    private boolean isPersonalWorkAreaCorp(String corpCode) {
+        if (StringUtils.isBlank(corpCode) || StringUtils.isBlank(PERSONAL_WORK_AREA_CORP_CODES)) {
+            return false;
+        }
+        String[] codes = PERSONAL_WORK_AREA_CORP_CODES.split(",");
+        for (String code : codes) {
+            if (corpCode.equals(code.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 计算当天24小时工作区域活动时长（专用方法）
      * 时间范围：当天00:00:00到23:59:59
      * @param record 考勤记录
@@ -3570,13 +3606,281 @@ public class AttendanceTask {
                 workSegments.size(), String.format("%.2f", totalHours));
             
             return BigDecimal.valueOf(totalHours).setScale(2, RoundingMode.HALF_UP);
-            
+
         } catch (Exception e) {
             XxlJobHelper.log("计算24小时工作区域时长失败: {}", e.getMessage());
             return BigDecimal.ZERO;
         }
     }
 
+    /**
+     * ZJGGJS 租户专用：计算实际考勤时长（打卡时间范围内）
+     * 根据人员绑定的工作区进行过滤
+     * @param record 考勤记录
+     * @param corpCode 租户编码
+     * @return 实际考勤时长（小时）
+     * @author Claude
+     * @date 2026-06-16
+     */
+    private BigDecimal calculateWorkAreaHoursForZJGGJS(SwmDailyAttendance record, String corpCode) {
+        // 获取人员绑定的工作区
+        List<String> boundAreaIds = getPersonBoundAreaIds(record.getIdentityCard());
+
+        // 如果没有绑定工作区，使用原逻辑（所有工作区）
+        if (boundAreaIds == null || boundAreaIds.isEmpty()) {
+            XxlJobHelper.log("员工[{}]{}未绑定工作区，使用所有工作区计算",
+                record.getEmployeeId(), record.getEmployeeName());
+            return calculateWorkAreaHours(record, corpCode);
+        }
+
+        XxlJobHelper.log("员工[{}]{}绑定了{}个工作区: {}",
+            record.getEmployeeId(), record.getEmployeeName(), boundAreaIds.size(), boundAreaIds);
+
+        // 确定时间范围
+        String[] timeRange = determineQueryTimeRange(record);
+        if (timeRange == null) {
+            XxlJobHelper.log("员工[{}]{}无法确定时间范围",
+                record.getEmployeeId(), record.getEmployeeName());
+            return null;
+        }
+
+        String startTime = timeRange[0];
+        String endTime = timeRange[1];
+
+        // 查询绑定工作区的连续段
+        List<WorkSegment> workSegments = queryAreaSegmentsForZJGGJS(
+            record.getIdentityCard(), startTime, endTime, "0", corpCode, boundAreaIds);
+
+        if (workSegments.isEmpty()) {
+            XxlJobHelper.log("员工[{}]{}在绑定工作区内无活动数据",
+                record.getEmployeeId(), record.getEmployeeName());
+            return BigDecimal.ZERO;
+        }
+
+        // 计算总时长
+        double totalHours = calculateTotalHours(workSegments);
+
+        XxlJobHelper.log("员工[{}]{}绑定工作区活动段数: {}, 总时长: {}小时",
+            record.getEmployeeId(), record.getEmployeeName(),
+            workSegments.size(), String.format("%.2f", totalHours));
+
+        return BigDecimal.valueOf(totalHours).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * ZJGGJS 租户专用：计算24小时工作区域时长
+     * 根据人员绑定的工作区进行过滤
+     * @param record 考勤记录
+     * @param corpCode 租户编码
+     * @return 24小时工作区域时长（小时）
+     * @author Claude
+     * @date 2026-06-16
+     */
+    private BigDecimal calculateWorkAreaHours24hForZJGGJS(SwmDailyAttendance record, String corpCode) {
+        // 获取人员绑定的工作区
+        List<String> boundAreaIds = getPersonBoundAreaIds(record.getIdentityCard());
+
+        // 如果没有绑定工作区，使用原逻辑（所有工作区）
+        if (boundAreaIds == null || boundAreaIds.isEmpty()) {
+            XxlJobHelper.log("员工[{}]{}未绑定工作区，使用所有工作区计算24小时时长",
+                record.getEmployeeId(), record.getEmployeeName());
+            return calculateWorkAreaHours24h(record, corpCode);
+        }
+
+        XxlJobHelper.log("员工[{}]{}绑定了{}个工作区，计算24小时时长",
+            record.getEmployeeId(), record.getEmployeeName(), boundAreaIds.size());
+
+        // 根据班次确定时间范围
+        String[] timeRange = determineQueryTimeRange(record);
+        if (timeRange == null) {
+            XxlJobHelper.log("员工[{}]{}无法确定时间范围，跳过工作区域时长计算",
+                record.getEmployeeId(), record.getEmployeeName());
+            return null;
+        }
+
+        String startTime = timeRange[0];
+        String endTime = timeRange[1];
+
+        XxlJobHelper.log("员工[{}]{}使用24小时时间范围: {} 到 {}",
+            record.getEmployeeId(), record.getEmployeeName(), startTime, endTime);
+
+        // 查询绑定工作区的连续段
+        List<WorkSegment> workSegments = queryAreaSegmentsForZJGGJS(
+            record.getIdentityCard(), startTime, endTime, "0", corpCode, boundAreaIds);
+
+        if (workSegments.isEmpty()) {
+            XxlJobHelper.log("员工[{}]{}在绑定工作区内24小时无活动数据",
+                record.getEmployeeId(), record.getEmployeeName());
+            return BigDecimal.ZERO;
+        }
+
+        // 计算总时长
+        double totalHours = calculateTotalHours(workSegments);
+
+        XxlJobHelper.log("员工[{}]{}绑定工作区24小时活动段数: {}, 总时长: {}小时",
+            record.getEmployeeId(), record.getEmployeeName(),
+            workSegments.size(), String.format("%.2f", totalHours));
+
+        return BigDecimal.valueOf(totalHours).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * 获取人员绑定的工作区ID列表
+     * @param identityCard 身份证号
+     * @return 工作区ID列表，如果没有绑定返回空列表
+     * @author Claude
+     * @date 2026-06-16
+     */
+    private List<String> getPersonBoundAreaIds(String identityCard) {
+        try {
+            SwmPersonWorkArea query = new SwmPersonWorkArea();
+            query.setIdentityCard(identityCard);
+            List<SwmPersonWorkArea> workAreaList = swmPersonWorkAreaService.findActiveByIdentityCard(identityCard);
+
+            if (workAreaList == null || workAreaList.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            return workAreaList.stream()
+                .map(SwmPersonWorkArea::getAreaId)
+                .filter(StringUtils::isNotBlank)
+                .distinct()
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            XxlJobHelper.log("查询人员绑定工作区失败: {}, 身份证: {}", e.getMessage(), identityCard);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * ZJGGJS 租户专用：查询指定工作区的活动段
+     * @param idCard 身份证号
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param areaType 区域类型（0-工作区，1-休息区）
+     * @param corpCode 租户编码
+     * @param areaIds 工作区ID列表
+     * @return 活动段列表
+     * @author Claude
+     * @date 2026-06-16
+     */
+    private List<WorkSegment> queryAreaSegmentsForZJGGJS(String idCard, String startTime, String endTime,
+                                                         String areaType, String corpCode, List<String> areaIds) {
+        List<WorkSegment> segments = new ArrayList<>();
+
+        try {
+            if (areaIds == null || areaIds.isEmpty()) {
+                return segments;
+            }
+
+            // 构建 IN 条件
+            String areaIdCondition = areaIds.stream()
+                .map(id -> "'" + id + "'")
+                .collect(Collectors.joining(","));
+
+            // 查询指定区域的时间戳
+            String sql = String.format(
+                "SELECT time FROM %s.%s " +
+                "WHERE id_card = '%s' " +
+                "AND area_type = '%s' " +
+                "AND area_id IN (%s) " +
+                "AND time >= '%s' " +
+                "AND time <= '%s' " +
+                "ORDER BY time ASC",
+                dbname, TdengineSuperTableConstant.AREA_FENCE_DATA,
+                idCard, areaType, areaIdCondition, startTime, endTime
+            );
+
+            XxlJobHelper.log("ZJGGJS 查询指定工作区数据SQL: {}", sql);
+
+            R<JSONObject> response = tdengineService.executeTDengineSQLByXXJOB(sql, corpCode);
+            if (response.getCode() != R.SUCCESS || response.getData() == null) {
+                XxlJobHelper.log("查询失败或无数据");
+                return segments;
+            }
+
+            JSONArray rows = response.getData().getJSONArray("data");
+            if (rows == null || rows.isEmpty()) {
+                return segments;
+            }
+
+            // 解析时间戳并识别连续段
+            List<Date> timestamps = new ArrayList<>();
+            for (int i = 0; i < rows.size(); i++) {
+                JSONArray row = rows.getJSONArray(i);
+                Date timestamp = parseTimestamp(row.get(0).toString());
+                if (timestamp != null) {
+                    timestamps.add(timestamp);
+                }
+            }
+
+            // 边界补充逻辑：处理打卡时间与实际数据的差异
+            if (!timestamps.isEmpty()) {
+                try {
+                    Date queryStart = DATETIME_FORMAT.parse(startTime);
+                    Date queryEnd = DATETIME_FORMAT.parse(endTime);
+                    Date firstData = timestamps.get(0);
+                    Date lastData = timestamps.get(timestamps.size() - 1);
+
+                    // 补充开始时间：如果第一条数据晚于查询开始时间且在10分钟内
+                    long startGap = firstData.getTime() - queryStart.getTime();
+                    if (startGap > 0 && startGap <= CONTINUITY_THRESHOLD_MS) {
+                        timestamps.add(0, queryStart);
+                        XxlJobHelper.log("第一条数据晚于打卡时间{}分钟，补充打卡时间作为开始",
+                            startGap / (60 * 1000));
+                    }
+
+                    // 补充结束时间：如果最后一条数据早于查询结束时间且在10分钟内
+                    long endGap = queryEnd.getTime() - lastData.getTime();
+                    if (endGap > 0 && endGap <= CONTINUITY_THRESHOLD_MS) {
+                        timestamps.add(queryEnd);
+                        XxlJobHelper.log("最后一条数据早于打卡时间{}分钟，补充打卡时间作为结束",
+                            endGap / (60 * 1000));
+                    }
+                } catch (Exception e) {
+                    XxlJobHelper.log("边界补充处理失败: {}", e.getMessage());
+                }
+            }
+
+            // 构建连续工作段
+            Date segmentStart = null;
+            Date lastTime = null;
+
+            for (Date currentTime : timestamps) {
+                if (segmentStart == null) {
+                    // 开始新段
+                    segmentStart = currentTime;
+                    lastTime = currentTime;
+                } else {
+                    long gap = currentTime.getTime() - lastTime.getTime();
+
+                    if (gap <= CONTINUITY_THRESHOLD_MS) {
+                        // 连续，更新最后时间
+                        lastTime = currentTime;
+                    } else {
+                        // 间隔太大，结束当前段
+                        segments.add(new WorkSegment(segmentStart, lastTime));
+
+                        // 开始新段
+                        segmentStart = currentTime;
+                        lastTime = currentTime;
+                    }
+                }
+            }
+
+            // 处理最后一段
+            if (segmentStart != null) {
+                segments.add(new WorkSegment(segmentStart, lastTime));
+            }
+
+            XxlJobHelper.log("ZJGGJS 识别到{}个连续工作段", segments.size());
+
+        } catch (Exception e) {
+            XxlJobHelper.log("ZJGGJS 查询工作段失败: {}", e.getMessage());
+        }
+
+        return segments;
+    }
 
     /**
      * 确定查询时间范围

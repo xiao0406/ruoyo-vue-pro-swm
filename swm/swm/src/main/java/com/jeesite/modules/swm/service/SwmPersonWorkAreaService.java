@@ -40,6 +40,15 @@ public class SwmPersonWorkAreaService extends CrudService<SwmPersonWorkAreaDao, 
         return super.findPage(swmPersonWorkArea);
     }
 
+    /**
+     * 根据身份证号查询有效的绑定记录
+     * @param identityCard 身份证号
+     * @return 绑定记录列表
+     */
+    public List<SwmPersonWorkArea> findActiveByIdentityCard(String identityCard) {
+        return dao.findActiveByIdentityCard(identityCard);
+    }
+
     @Override
     @Transactional(readOnly = false)
     public void save(SwmPersonWorkArea swmPersonWorkArea) {
