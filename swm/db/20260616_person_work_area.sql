@@ -1,0 +1,38 @@
+CREATE TABLE IF NOT EXISTS `swm_person_work_area` (
+  `id` varchar(64) NOT NULL COMMENT '主键',
+  `identity_card` varchar(32) NOT NULL COMMENT '身份证号码',
+  `person_name` varchar(100) NOT NULL COMMENT '人员姓名',
+  `area_id` varchar(64) NOT NULL COMMENT '区域ID',
+  `area_name` varchar(100) NOT NULL COMMENT '区域名称',
+  `status` char(1) DEFAULT '0' COMMENT '状态',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_date` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_date` datetime DEFAULT NULL COMMENT '更新时间',
+  `remarks` varchar(500) DEFAULT NULL COMMENT '备注信息',
+  `corp_code` varchar(64) DEFAULT NULL COMMENT '租户编码',
+  `corp_name` varchar(200) DEFAULT NULL COMMENT '租户名称',
+  PRIMARY KEY (`id`),
+  KEY `idx_swm_person_work_area_identity_card` (`identity_card`),
+  KEY `idx_swm_person_work_area_area_id` (`area_id`),
+  KEY `idx_swm_person_work_area_person_area_status` (`identity_card`, `area_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='人员工作区域绑定表';
+CREATE TABLE IF NOT EXISTS `swm_person_work_area` (
+  `id` varchar(64) NOT NULL COMMENT '主键',
+  `identity_card` varchar(32) NOT NULL COMMENT '身份证号码',
+  `person_name` varchar(100) NOT NULL COMMENT '人员姓名',
+  `area_id` varchar(64) NOT NULL COMMENT '区域ID',
+  `area_name` varchar(100) NOT NULL COMMENT '区域名称',
+  `status` char(1) DEFAULT '0' COMMENT '状态',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_date` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_date` datetime DEFAULT NULL COMMENT '更新时间',
+  `remarks` varchar(500) DEFAULT NULL COMMENT '备注信息',
+  `corp_code` varchar(64) DEFAULT NULL COMMENT '租户编码',
+  `corp_name` varchar(200) DEFAULT NULL COMMENT '租户名称',
+  PRIMARY KEY (`id`),
+  KEY `idx_swm_person_work_area_identity_card` (`identity_card`),
+  KEY `idx_swm_person_work_area_area_id` (`area_id`),
+  KEY `idx_swm_person_work_area_person_area_status` (`identity_card`, `area_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='人员工作区域绑定表';

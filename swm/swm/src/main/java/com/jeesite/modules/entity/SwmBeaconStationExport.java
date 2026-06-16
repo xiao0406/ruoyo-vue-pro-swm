@@ -10,8 +10,8 @@ public class SwmBeaconStationExport {
 
     @ExcelFields({
             @ExcelField(title = "MAC地址", attrName = "beaconId", align = ExcelField.Align.CENTER, sort = 10,width = 256*20),
-            @ExcelField(title = "设备名称", attrName = "deviceName", align = ExcelField.Align.CENTER, sort = 20,width = 256*20),
             @ExcelField(title = "所在位置", attrName = "location", align = ExcelField.Align.CENTER, sort = 10,width = 256*20),
+            @ExcelField(title = "设备名称", attrName = "deviceName", align = ExcelField.Align.CENTER, sort = 20,width = 256*20),
             @ExcelField(title = "所属区域", attrName = "area", align = ExcelField.Align.CENTER, sort = 20,width = 256*20),
             @ExcelField(title = "图纸像素X坐标", attrName = "pixelX", align = ExcelField.Align.CENTER, sort = 20,width = 256*20),
             @ExcelField(title = "图纸像素Y坐标", attrName = "pixelY", align = ExcelField.Align.CENTER, sort = 20,width = 256*20),

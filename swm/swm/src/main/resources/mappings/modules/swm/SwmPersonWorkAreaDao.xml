@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeesite.modules.swm.dao.SwmPersonWorkAreaDao">
+
+    <select id="findList" resultType="com.jeesite.modules.swm.entity.SwmPersonWorkArea">
+        SELECT
+            sp.id AS "id",
+            sp.id AS "personId",
+            sp.identity_card AS "identityCard",
+            sp.name AS "personName",
+            GROUP_CONCAT(DISTINCT a.id ORDER BY a.update_date DESC SEPARATOR ',') AS "bindIds",
+            GROUP_CONCAT(DISTINCT a.area_id ORDER BY sa.area_name SEPARATOR ',') AS "areaId",
+            GROUP_CONCAT(DISTINCT a.area_id ORDER BY sa.area_name SEPARATOR ',') AS "areaIds",
+            GROUP_CONCAT(DISTINCT sa.area_name ORDER BY sa.area_name SEPARATOR ',') AS "areaName",
+            MAX(a.remarks) AS "remarks",
+            sp.status AS "status",
+            sp.create_by AS "createBy",
+            sp.create_date AS "createDate",
+            sp.update_by AS "updateBy",
+            sp.update_date AS "updateDate",
+            COALESCE(jso.office_name, sp.company) AS "company",
+            COALESCE(pa.position_name, sp.department) AS "department",
+            COALESCE(pl.prod_line_name, sp.prod_line) AS "prodLine",
+            COALESCE(wg.work_group_name, sp.team) AS "team",
+            sp.job_type AS "jobType"
+        FROM swm_person sp
+        LEFT JOIN (
+            swm_person_work_area a
+            INNER JOIN swm_area sa ON a.area_id = sa.id COLLATE utf8mb4_general_ci
+                AND sa.status = '0'
+        ) ON sp.identity_card = a.identity_card COLLATE utf8mb4_general_ci
+            AND a.status = '0'
+        LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
+        <where>
+            sp.status = '0'
+            AND sp.personnel_status = '1'
+            <if test="identityCard != null and identityCard != ''">
+                AND sp.identity_card LIKE CONCAT('%', #{identityCard}, '%')
+            </if>
+            <if test="personName != null and personName != ''">
+                AND sp.name LIKE CONCAT('%', #{personName}, '%')
+            </if>
+            <if test="company != null and company != ''">
+                AND (
+                    jso.office_name LIKE CONCAT('%', #{company}, '%')
+                    OR sp.company = #{company}
+                    OR sp.company LIKE CONCAT('%', #{company}, '%')
+                )
+            </if>
+            <if test="department != null and department != ''">
+                AND (
+                    pa.position_name LIKE CONCAT('%', #{department}, '%')
+                    OR sp.department = #{department}
+                    OR sp.department LIKE CONCAT('%', #{department}, '%')
+                )
+            </if>
+            <if test="prodLine != null and prodLine != ''">
+                AND (
+                    pl.prod_line_name LIKE CONCAT('%', #{prodLine}, '%')
+                    OR sp.prod_line = #{prodLine}
+                    OR sp.prod_line LIKE CONCAT('%', #{prodLine}, '%')
+                )
+            </if>
+            <if test="team != null and team != ''">
+                AND (
+                    wg.work_group_name LIKE CONCAT('%', #{team}, '%')
+                    OR sp.team = #{team}
+                    OR sp.team LIKE CONCAT('%', #{team}, '%')
+                )
+            </if>
+            <if test="jobType != null and jobType != ''">
+                AND sp.job_type LIKE CONCAT('%', #{jobType}, '%')
+            </if>
+            <if test="areaId != null and areaId != ''">
+                AND sa.id = #{areaId}
+            </if>
+            <if test="areaName != null and areaName != ''">
+                AND sa.area_name LIKE CONCAT('%', #{areaName}, '%')
+            </if>
+        </where>
+        GROUP BY
+            sp.id,
+            sp.identity_card,
+            sp.name,
+            sp.status,
+            sp.create_by,
+            sp.create_date,
+            sp.update_by,
+            sp.update_date,
+            jso.office_name,
+            sp.company,
+            pa.position_name,
+            sp.department,
+            pl.prod_line_name,
+            sp.prod_line,
+            wg.work_group_name,
+            sp.team,
+            sp.job_type
+        ORDER BY sp.update_date DESC, MAX(a.update_date) DESC
+    </select>
+
+    <select id="countActiveSameBind" resultType="int">
+        SELECT COUNT(1)
+        FROM swm_person_work_area a
+        WHERE a.status = '0'
+          ${sqlMap.dsf}
+          AND a.identity_card = #{identityCard}
+          AND a.area_id = #{areaId}
+        <if test="id != null and id != ''">
+          AND a.id != #{id}
+        </if>
+    </select>
+
+    <select id="findActiveByIdentityCard" resultType="com.jeesite.modules.swm.entity.SwmPersonWorkArea">
+        SELECT
+            a.*
+        FROM swm_person_work_area a
+        INNER JOIN swm_area sa ON a.area_id = sa.id COLLATE utf8mb4_general_ci
+            AND sa.status = '0'
+        WHERE a.status = '0'
+          AND a.identity_card = #{identityCard}
+        ORDER BY a.update_date DESC
+    </select>
+
+    <update id="deleteByIdentityCardExcludeAreaIds">
+        UPDATE swm_person_work_area a
+        SET
+            a.status = '1',
+            a.update_date = NOW()
+        WHERE a.status = '0'
+          AND a.identity_card = #{identityCard}
+          AND a.area_id NOT IN
+          <foreach collection="areaIds" item="areaId" open="(" separator="," close=")">
+              #{areaId}
+          </foreach>
+    </update>
+
+    <update id="deleteAllByIdentityCard">
+        UPDATE swm_person_work_area a
+        SET
+            a.status = '1',
+            a.update_date = NOW()
+        WHERE a.status = '0'
+          AND a.identity_card = #{identityCard}
+    </update>
+
+    <update id="deleteInvalidAreaBinds">
+        UPDATE swm_person_work_area a
+        LEFT JOIN swm_area sa ON a.area_id = sa.id COLLATE utf8mb4_general_ci
+            AND sa.status = '0'
+        SET
+            a.status = '1',
+            a.update_date = NOW()
+        WHERE a.status = '0'
+          AND sa.id IS NULL
+    </update>
+
+    <insert id="insertBatch">
+        INSERT INTO swm_person_work_area (
+            id,
+            identity_card,
+            person_name,
+            area_id,
+            area_name,
+            status,
+            create_by,
+            create_date,
+            update_by,
+            update_date,
+            remarks,
+            corp_code,
+            corp_name
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.id},
+                #{item.identityCard},
+                #{item.personName},
+                #{item.areaId},
+                #{item.areaName},
+                #{item.status},
+                #{item.createBy},
+                #{item.createDate},
+                #{item.updateBy},
+                #{item.updateDate},
+                #{item.remarks},
+                #{item.corpCode},
+                #{item.corpName}
+            )
+        </foreach>
+    </insert>
+
+</mapper>
