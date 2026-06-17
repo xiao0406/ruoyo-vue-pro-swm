@@ -2437,7 +2437,7 @@ public class AttendanceTask {
                     record.getEffectiveWorkHours());
         }
 
-        // 计算怠工时长
+        // 计算怠工时长（休闲区不需要绑定，所有租户都用原有逻辑）
         if (shouldCalculateWorkHours(record)) {
             if(record.getActualHours() != null && record.getActualHours().compareTo(BigDecimal.ZERO) == 0){
                 record.setIdleHours(BigDecimal.ZERO);
@@ -2445,13 +2445,7 @@ public class AttendanceTask {
                 XxlJobHelper.log("员工[{}]{},实际工作时长为0,怠工时长也为0",
                         record.getEmployeeId(), record.getEmployeeName());
             }else {
-                BigDecimal idleHours;
-                // 特定租户：根据人员绑定的工作区计算怠工时长
-                if (isPersonalWorkAreaCorp(corpCode)) {
-                    idleHours = calculateIdleAreaHoursForZJGGJS(record, corpCode);
-                } else {
-                    idleHours = calculateIdleAreaHours(record, corpCode);
-                }
+                BigDecimal idleHours = calculateIdleAreaHours(record, corpCode);
                 if (idleHours != null) {
                     record.setIdleHours(idleHours);
                     updated = true;
@@ -3670,60 +3664,6 @@ public class AttendanceTask {
         XxlJobHelper.log("员工[{}]{}绑定工作区活动段数: {}, 总时长: {}小时",
             record.getEmployeeId(), record.getEmployeeName(),
             workSegments.size(), String.format("%.2f", totalHours));
-
-        return BigDecimal.valueOf(totalHours).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    /**
-     * ZJGGJS 租户专用：计算怠工时长（休闲区活动时长）
-     * 根据人员绑定的工作区对应的休闲区进行过滤
-     * @param record 考勤记录
-     * @param corpCode 租户编码
-     * @return 怠工时长（小时）
-     * @author Claude
-     * @date 2026-06-16
-     */
-    private BigDecimal calculateIdleAreaHoursForZJGGJS(SwmDailyAttendance record, String corpCode) {
-        // 获取人员绑定的工作区
-        List<String> boundAreaIds = getPersonBoundAreaIds(record.getIdentityCard());
-
-        // 如果没有绑定工作区，使用原逻辑（所有休闲区）
-        if (boundAreaIds == null || boundAreaIds.isEmpty()) {
-            XxlJobHelper.log("员工[{}]{}未绑定工作区，使用所有休闲区计算怠工时长",
-                record.getEmployeeId(), record.getEmployeeName());
-            return calculateIdleAreaHours(record, corpCode);
-        }
-
-        XxlJobHelper.log("员工[{}]{}绑定了{}个工作区，计算对应休闲区怠工时长",
-            record.getEmployeeId(), record.getEmployeeName(), boundAreaIds.size());
-
-        // 确定时间范围
-        String[] timeRange = determineQueryTimeRange(record);
-        if (timeRange == null) {
-            XxlJobHelper.log("员工[{}]{}无法确定时间范围，跳过怠工时长计算",
-                record.getEmployeeId(), record.getEmployeeName());
-            return null;
-        }
-
-        String startTime = timeRange[0];
-        String endTime = timeRange[1];
-
-        // 查询绑定工作区对应休闲区的连续段（areaType="1" 表示休闲区）
-        List<WorkSegment> idleSegments = queryAreaSegmentsForZJGGJS(
-            record.getIdentityCard(), startTime, endTime, "1", corpCode, boundAreaIds);
-
-        if (idleSegments.isEmpty()) {
-            XxlJobHelper.log("员工[{}]{}在绑定工作区对应休闲区内无活动数据",
-                record.getEmployeeId(), record.getEmployeeName());
-            return BigDecimal.ZERO;
-        }
-
-        // 计算总时长
-        double totalHours = calculateTotalHours(idleSegments);
-
-        XxlJobHelper.log("员工[{}]{}绑定工作区对应休闲区活动段数: {}, 怠工时长: {}小时",
-            record.getEmployeeId(), record.getEmployeeName(),
-            idleSegments.size(), String.format("%.2f", totalHours));
 
         return BigDecimal.valueOf(totalHours).setScale(2, RoundingMode.HALF_UP);
     }
