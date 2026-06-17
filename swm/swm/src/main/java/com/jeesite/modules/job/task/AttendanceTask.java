@@ -5,9 +5,11 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jeesite.common.lang.DateUtils;
 import com.jeesite.common.lang.StringUtils;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.modules.cache.service.RedisService;
 import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
+import com.jeesite.modules.entity.SwmArea;
 import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.entity.*;
 import com.jeesite.modules.swm.service.*;
@@ -67,6 +69,8 @@ public class AttendanceTask {
     private UserService userService;
     @Autowired
     private SwmPersonWorkAreaService swmPersonWorkAreaService;
+    @Autowired
+    private SwmAreaService swmAreaService;
 
     @Value("${tdengine.dbname:swm_db}")
     private String dbname;
@@ -2439,19 +2443,19 @@ public class AttendanceTask {
 
         // 计算怠工时长（休闲区不需要绑定，所有租户都用原有逻辑）
         if (shouldCalculateWorkHours(record)) {
-            if(record.getActualHours() != null && record.getActualHours().compareTo(BigDecimal.ZERO) == 0){
-                record.setIdleHours(BigDecimal.ZERO);
+            // 无论工作区时长是否为0，都需要计算休闲区时长
+            BigDecimal idleHours;
+            if (isPersonalWorkAreaCorp(corpCode)) {
+                // ZJGGJS 租户：使用原有逻辑查询所有休闲区
+                idleHours = calculateIdleAreaHours(record, corpCode);
+            } else {
+                idleHours = calculateIdleAreaHours(record, corpCode);
+            }
+            if (idleHours != null) {
+                record.setIdleHours(idleHours);
                 updated = true;
-                XxlJobHelper.log("员工[{}]{},实际工作时长为0,怠工时长也为0",
-                        record.getEmployeeId(), record.getEmployeeName());
-            }else {
-                BigDecimal idleHours = calculateIdleAreaHours(record, corpCode);
-                if (idleHours != null) {
-                    record.setIdleHours(idleHours);
-                    updated = true;
-                    XxlJobHelper.log("员工[{}]{}怠工时长更新为: {} 小时",
-                            record.getEmployeeId(), record.getEmployeeName(), idleHours);
-                }
+                XxlJobHelper.log("员工[{}]{}怠工时长更新为: {} 小时",
+                        record.getEmployeeId(), record.getEmployeeName(), idleHours);
             }
         }
 
@@ -3561,6 +3565,40 @@ public class AttendanceTask {
     }
 
     /**
+     * 根据 area_id 集合批量查询 SwmArea 表获取区域类型映射
+     * @param areaIds area_id 集合
+     * @return area_id -> area_type 的映射
+     */
+    private Map<String, String> buildAreaTypeMapFromIds(Set<String> areaIds) {
+        Map<String, String> areaTypeMap = new HashMap<>();
+
+        if (areaIds == null || areaIds.isEmpty()) {
+            return areaTypeMap;
+        }
+
+        try {
+            // 批量查询 SwmArea 表
+            SwmArea query = new SwmArea();
+            query.getSqlMap().getWhere().and("id", QueryType.IN, new ArrayList<>(areaIds));
+            query.setStatus(SwmArea.STATUS_NORMAL);
+            List<SwmArea> areaList = swmAreaService.findList(query);
+
+            if (areaList != null && !areaList.isEmpty()) {
+                for (SwmArea area : areaList) {
+                    if (StringUtils.isNotBlank(area.getId()) && StringUtils.isNotBlank(area.getAreaType())) {
+                        areaTypeMap.put(area.getId(), area.getAreaType());
+                    }
+                }
+            }
+            log.info("查询到 {} 个区域的类型映射", areaTypeMap.size());
+        } catch (Exception e) {
+            log.error("查询区域类型失败", e);
+        }
+
+        return areaTypeMap;
+    }
+
+    /**
      * 计算当天24小时工作区域活动时长（专用方法）
      * 时间范围：当天00:00:00到23:59:59
      * @param record 考勤记录
@@ -3779,17 +3817,16 @@ public class AttendanceTask {
                 .map(id -> "'" + id + "'")
                 .collect(Collectors.joining(","));
 
-            // 查询指定区域的时间戳（带 area_type 条件）
+            // 不用 TDengine 的 area_type（值可能是旧的），查询指定工作区的所有数据
             String sql = String.format(
                 "SELECT time FROM %s.%s " +
                 "WHERE id_card = '%s' " +
-                "AND area_type = '%s' " +
                 "AND area_id IN (%s) " +
                 "AND time >= '%s' " +
                 "AND time <= '%s' " +
                 "ORDER BY time ASC",
                 dbname, TdengineSuperTableConstant.AREA_FENCE_DATA,
-                idCard, areaType, areaIdCondition, startTime, endTime
+                idCard, areaIdCondition, startTime, endTime
             );
 
             XxlJobHelper.log("ZJGGJS 查询指定工作区数据SQL: {}", sql);
@@ -3936,7 +3973,7 @@ public class AttendanceTask {
      * @param idCard 身份证号
      * @param startTime 开始时间
      * @param endTime 结束时间
-     * @param areaType 区域类型（0-工作区，1-休息区）
+     * @param areaType 区域类型（0-工作区，1-休闲区）
      * @param corpCode 租户编码
      * @return 活动段列表
      * @author Shawn
@@ -3946,40 +3983,70 @@ public class AttendanceTask {
         List<WorkSegment> segments = new ArrayList<>();
 
         try {
-            // 查询指定区域的时间戳（带 area_type 条件）
+            // 不用 TDengine 的 area_type（值可能为空），查询所有数据
             String sql = String.format(
-                "SELECT time FROM %s.%s " +
+                "SELECT time, area_id FROM %s.%s " +
                 "WHERE id_card = '%s' " +
-                "AND area_type = '%s' " +
                 "AND time >= '%s' " +
                 "AND time <= '%s' " +
                 "ORDER BY time ASC",
-                dbname, TdengineSuperTableConstant.AREA_FENCE_DATA, idCard, areaType, startTime, endTime
+                dbname, TdengineSuperTableConstant.AREA_FENCE_DATA, idCard, startTime, endTime
             );
 
             XxlJobHelper.log("查询区域数据SQL: {}", sql);
-            
+
             R<JSONObject> response = tdengineService.executeTDengineSQLByXXJOB(sql,corpCode);
             if (response.getCode() != R.SUCCESS || response.getData() == null) {
                 XxlJobHelper.log("查询失败或无数据");
                 return segments;
             }
-            
+
             JSONArray rows = response.getData().getJSONArray("data");
             if (rows == null || rows.isEmpty()) {
                 return segments;
             }
-            
-            // 解析时间戳并识别连续段
+
+            // 解析数据：收集 area_id，用于后面过滤
             List<Date> timestamps = new ArrayList<>();
+            List<String> areaIds = new ArrayList<>();
             for (int i = 0; i < rows.size(); i++) {
                 JSONArray row = rows.getJSONArray(i);
                 Date timestamp = parseTimestamp(row.get(0).toString());
+                String areaId = row.getStr(1);
                 if (timestamp != null) {
                     timestamps.add(timestamp);
+                    areaIds.add(areaId);
                 }
             }
-            
+
+            // 根据 area_id 从 SwmArea 表查询区域类型，建立映射
+            Map<String, String> areaTypeMap = buildAreaTypeMapFromIds(new HashSet<>(areaIds));
+
+            // 过滤出指定区域类型的数据
+            List<Date> filteredTimestamps = new ArrayList<>();
+            for (int i = 0; i < timestamps.size(); i++) {
+                String areaId = areaIds.get(i);
+                String dbAreaType = areaTypeMap.get(areaId);
+                // 判断是否匹配：支持 "0" 或 "工作区"，"1" 或 "休闲区"
+                boolean isMatch = false;
+                if ("0".equals(areaType)) {
+                    isMatch = "0".equals(dbAreaType) || "工作区".equals(dbAreaType);
+                } else if ("1".equals(areaType)) {
+                    isMatch = "1".equals(dbAreaType) || "休闲区".equals(dbAreaType);
+                }
+                if (isMatch) {
+                    filteredTimestamps.add(timestamps.get(i));
+                }
+            }
+
+            XxlJobHelper.log("过滤后{}区域类型{}的数据: {}条", areaType, "0".equals(areaType) ? "工作区" : "休闲区", filteredTimestamps.size());
+
+            if (filteredTimestamps.isEmpty()) {
+                return segments;
+            }
+
+            timestamps = filteredTimestamps;
+
             // 边界补充逻辑：处理打卡时间与实际数据的差异
             if (!timestamps.isEmpty()) {
                 try {

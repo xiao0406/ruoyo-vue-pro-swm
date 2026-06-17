@@ -1540,7 +1540,9 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         String corpCode = TenantContext.get();
         String dbNameNew = CorpDbEnum.getDbNameByCorpCode(corpCode);
 
-        // 特定租户：查询人员绑定的工作区
+        // 特定租户（ZJGGJS）：查询人员绑定的工作区（用于过滤工作区数据）
+        // 未绑定：查询所有工作区
+        // 已绑定：只查询绑定的工作区
         List<String> boundAreaIds = null;
         if (isPersonalWorkAreaCorp(corpCode)) {
             boundAreaIds = getPersonBoundAreaIds(identityCard);
@@ -1551,7 +1553,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             }
         }
 
-        // 构建 SQL
+        // 构建 SQL（不加 area_id 过滤，查询所有数据）
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("select time,area_name,area_type,area_id from ")
                 .append(dbNameNew).append(".").append(TdengineSuperTableConstant.AREA_FENCE_DATA)
@@ -1559,14 +1561,6 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
                 .append(" where time >= '").append(DateUtil.format(startDate, DatePattern.NORM_DATE_PATTERN))
                 .append("' and time <= '").append(DateUtil.format(endDate, DatePattern.NORM_DATE_PATTERN))
                 .append("'");
-
-        // 特定租户且有绑定工作区：增加 area_id 过滤条件
-        if (isPersonalWorkAreaCorp(corpCode) && boundAreaIds != null && !boundAreaIds.isEmpty()) {
-            String areaIdCondition = boundAreaIds.stream()
-                    .map(id -> "'" + id + "'")
-                    .collect(Collectors.joining(","));
-            sqlBuilder.append(" and area_id in (").append(areaIdCondition).append(")");
-        }
 
         sqlBuilder.append(" order by time asc limit 1000000");
         String sql = sqlBuilder.toString();
@@ -1613,22 +1607,72 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             if (StringUtils.isNotBlank(areaId)) {
                 String areaType = areaTypeMap.get(areaId);
                 if (StringUtils.isNotBlank(areaType)) {
+                    String oldAreaType = obj.getStr("area_type");
                     obj.set("area_type", areaType);
+                    // 记录变化，帮助排查问题
+                    if (!areaType.equals(oldAreaType)) {
+                        logger.debug("区域{}的类型从{}更新为{}", areaId, oldAreaType, areaType);
+                    }
+                } else {
+                    logger.warn("区域{}在SwmArea表中未找到或area_type为空", areaId);
                 }
             }
         }
 
         // 根据前端传入的 types 参数过滤数据
-        // work -> area_type = "0"（工作区）
-        // slack -> area_type = "1"（休闲区）
+        // work -> area_type = "0" 或 "工作区"
+        // slack -> area_type = "1" 或 "休闲区"
         if (StringUtils.isNotBlank(types)) {
             String filterAreaType = "work".equals(types) ? "0" : "slack".equals(types) ? "1" : null;
             if (filterAreaType != null) {
-                logger.info("根据前端传入的类型过滤数据: types={}, area_type={}", types, filterAreaType);
+                logger.info("根据前端传入的类型过滤数据: types={}, filterAreaType={}", types, filterAreaType);
                 List<JSONObject> filteredList = new ArrayList<>();
                 for (JSONObject obj : list) {
                     String areaType = obj.getStr("area_type");
-                    if (filterAreaType.equals(areaType)) {
+                    // 判断是否匹配：支持 "0" 或 "工作区"，"1" 或 "休闲区"
+                    boolean isMatch = false;
+                    if ("0".equals(filterAreaType)) {
+                        isMatch = "0".equals(areaType) || "工作区".equals(areaType);
+                    } else if ("1".equals(filterAreaType)) {
+                        isMatch = "1".equals(areaType) || "休闲区".equals(areaType);
+                    }
+
+                    if (isMatch) {
+                        // 如果是工作区，且是特定租户且人员绑定了工作区，需要进一步过滤
+                        if ("0".equals(filterAreaType) && isPersonalWorkAreaCorp(corpCode)
+                                && boundAreaIds != null && !boundAreaIds.isEmpty()) {
+                            String areaId = obj.getStr("area_id");
+                            // 只保留绑定工作区的数据
+                            if (StringUtils.isNotBlank(areaId) && boundAreaIds.contains(areaId)) {
+                                filteredList.add(obj);
+                            }
+                        } else {
+                            // 休闲区或非特定租户或未绑定工作区，直接添加
+                            filteredList.add(obj);
+                        }
+                    }
+                }
+                list = filteredList;
+                logger.info("过滤后剩余 {} 条数据", list.size());
+            }
+        } else {
+            // 没有传 types 参数，返回所有数据
+            // 如果是特定租户且人员绑定了工作区，需要对工作区数据进行过滤
+            if (isPersonalWorkAreaCorp(corpCode) && boundAreaIds != null && !boundAreaIds.isEmpty()) {
+                logger.info("特定租户，人员绑定了工作区，对工作区数据进行绑定过滤");
+                List<JSONObject> filteredList = new ArrayList<>();
+                for (JSONObject obj : list) {
+                    String areaType = obj.getStr("area_type");
+                    String areaId = obj.getStr("area_id");
+                    // 判断是否是工作区：支持 "0" 或 "工作区"
+                    boolean isWorkArea = "0".equals(areaType) || "工作区".equals(areaType);
+                    if (isWorkArea) {
+                        // 工作区：只保留绑定工作区的数据
+                        if (StringUtils.isNotBlank(areaId) && boundAreaIds.contains(areaId)) {
+                            filteredList.add(obj);
+                        }
+                    } else {
+                        // 休闲区或其他区域：保留所有数据
                         filteredList.add(obj);
                     }
                 }
