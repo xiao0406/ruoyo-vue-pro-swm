@@ -9,10 +9,12 @@ import com.jeesite.common.entity.Page;
 import com.jeesite.common.idgen.IdGen;
 import com.jeesite.common.lang.ObjectUtils;
 import com.jeesite.common.lang.StringUtils;
+import com.jeesite.common.mybatis.mapper.query.QueryType;
 import com.jeesite.common.service.CrudService;
 import com.jeesite.modules.config.TenantContext;
 import com.jeesite.modules.constant.TdengineSuperTableConstant;
 import com.jeesite.modules.entity.AiDto;
+import com.jeesite.modules.entity.SwmArea;
 import com.jeesite.modules.enums.CorpDbEnum;
 import com.jeesite.modules.swm.dao.SwmDailyAttendanceDao;
 import com.jeesite.modules.swm.dao.SwmPersonScheduleLogDao;
@@ -81,6 +83,9 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
 
     @Autowired
     private SwmPersonWorkAreaService swmPersonWorkAreaService;
+
+    @Autowired
+    private SwmAreaService swmAreaService;
 
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
@@ -1529,6 +1534,7 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
         String deviceId = vo.getDeviceId();
         Date startDate = vo.getAttendanceDate();
         Date endDate = DateUtil.offsetDay(startDate, 1);
+        String types = vo.getTypes(); // 前端传入的类型：work-工作区，slack-休闲区，null-全部
 
         // 获取库名
         String corpCode = TenantContext.get();
@@ -1581,7 +1587,8 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
                     JSONObject obj = new JSONObject();
                     obj.set("time", row.getDate(0));
                     obj.set("area_name", row.getStr(1));
-                    obj.set("area_type", row.get(2));
+                    // 不使用 TDengine 的 area_type（值为空），后面根据 area_id 从数据库查询
+                    obj.set("area_type", null);
                     obj.set("area_id", row.getStr(3));
 
                     //  防止脏数据
@@ -1589,6 +1596,44 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
                         list.add(obj);
                     }
                 }
+            }
+        }
+
+        if (CollectionUtil.isEmpty(list)) {
+            return null;
+        }
+
+        // 根据 area_id 从 SwmArea 表查询区域类型，建立映射
+        Map<String, String> areaTypeMap = buildAreaTypeMap(list);
+        logger.info("查询到 {} 个区域的类型映射", areaTypeMap.size());
+
+        // 根据映射设置正确的 area_type
+        for (JSONObject obj : list) {
+            String areaId = obj.getStr("area_id");
+            if (StringUtils.isNotBlank(areaId)) {
+                String areaType = areaTypeMap.get(areaId);
+                if (StringUtils.isNotBlank(areaType)) {
+                    obj.set("area_type", areaType);
+                }
+            }
+        }
+
+        // 根据前端传入的 types 参数过滤数据
+        // work -> area_type = "0"（工作区）
+        // slack -> area_type = "1"（休闲区）
+        if (StringUtils.isNotBlank(types)) {
+            String filterAreaType = "work".equals(types) ? "0" : "slack".equals(types) ? "1" : null;
+            if (filterAreaType != null) {
+                logger.info("根据前端传入的类型过滤数据: types={}, area_type={}", types, filterAreaType);
+                List<JSONObject> filteredList = new ArrayList<>();
+                for (JSONObject obj : list) {
+                    String areaType = obj.getStr("area_type");
+                    if (filterAreaType.equals(areaType)) {
+                        filteredList.add(obj);
+                    }
+                }
+                list = filteredList;
+                logger.info("过滤后剩余 {} 条数据", list.size());
             }
         }
 
@@ -1774,6 +1819,48 @@ public class SwmDailyAttendanceService extends CrudService<SwmDailyAttendanceDao
             }
         }
         return false;
+    }
+
+    /**
+     * 根据 TDengine 查询结果中的 area_id，批量查询 SwmArea 表获取区域类型
+     * @param list TDengine 查询结果列表
+     * @return area_id -> area_type 的映射
+     */
+    private Map<String, String> buildAreaTypeMap(List<JSONObject> list) {
+        Map<String, String> areaTypeMap = new HashMap<>();
+
+        // 收集所有 area_id
+        Set<String> areaIds = new HashSet<>();
+        for (JSONObject obj : list) {
+            String areaId = obj.getStr("area_id");
+            if (StringUtils.isNotBlank(areaId)) {
+                areaIds.add(areaId);
+            }
+        }
+
+        if (areaIds.isEmpty()) {
+            return areaTypeMap;
+        }
+
+        try {
+            // 批量查询 SwmArea 表
+            SwmArea query = new SwmArea();
+            query.getSqlMap().getWhere().and("id", QueryType.IN, new ArrayList<>(areaIds));
+            query.setStatus(SwmArea.STATUS_NORMAL);
+            List<SwmArea> areaList = swmAreaService.findList(query);
+
+            if (areaList != null && !areaList.isEmpty()) {
+                for (SwmArea area : areaList) {
+                    if (StringUtils.isNotBlank(area.getId()) && StringUtils.isNotBlank(area.getAreaType())) {
+                        areaTypeMap.put(area.getId(), area.getAreaType());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("查询区域类型失败", e);
+        }
+
+        return areaTypeMap;
     }
 
     /**

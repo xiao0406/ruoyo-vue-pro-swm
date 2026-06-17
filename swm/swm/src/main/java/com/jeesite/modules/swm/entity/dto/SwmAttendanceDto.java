@@ -21,6 +21,8 @@ public class SwmAttendanceDto extends DataEntity<SwmAttendanceDto> {
     private String identityCard;
     @ApiModelProperty(value = "设备号")
     private String deviceId;
+    @ApiModelProperty(value = "区域类型（work-工作区，slack-休闲区），为空时返回所有区域")
+    private String types;
 
     //返回参数============
 

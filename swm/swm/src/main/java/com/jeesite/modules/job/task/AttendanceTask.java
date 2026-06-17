@@ -2445,7 +2445,13 @@ public class AttendanceTask {
                 XxlJobHelper.log("员工[{}]{},实际工作时长为0,怠工时长也为0",
                         record.getEmployeeId(), record.getEmployeeName());
             }else {
-                BigDecimal idleHours = calculateIdleAreaHours(record,corpCode);
+                BigDecimal idleHours;
+                // 特定租户：根据人员绑定的工作区计算怠工时长
+                if (isPersonalWorkAreaCorp(corpCode)) {
+                    idleHours = calculateIdleAreaHoursForZJGGJS(record, corpCode);
+                } else {
+                    idleHours = calculateIdleAreaHours(record, corpCode);
+                }
                 if (idleHours != null) {
                     record.setIdleHours(idleHours);
                     updated = true;
@@ -3478,12 +3484,13 @@ public class AttendanceTask {
                 return null;
             }
             
-            // 2. 查询指定区域的连续段
+            // 2. 查询指定区域的连续段（带 area_type 条件）
             List<WorkSegment> workSegments = queryAreaSegments(
-                record.getIdentityCard(), 
-                timeRange[0], 
+                record.getIdentityCard(),
+                timeRange[0],
                 timeRange[1],
-                areaType,corpCode
+                areaType,
+                corpCode
             );
             
             if (workSegments.isEmpty()) {
@@ -3588,9 +3595,9 @@ public class AttendanceTask {
             XxlJobHelper.log("员工[{}]{}使用24小时时间范围: {} 到 {}", 
                 record.getEmployeeId(), record.getEmployeeName(), startTime, endTime);
             
-            // 查询工作区域的连续段
+            // 查询工作区域的连续段（带 area_type 条件）
             List<WorkSegment> workSegments = queryAreaSegments(
-                record.getIdentityCard(), startTime, endTime, "0",corpCode);
+                record.getIdentityCard(), startTime, endTime, "0", corpCode);
             
             if (workSegments.isEmpty()) {
                 XxlJobHelper.log("员工[{}]{}在当天24小时内无工作区域活动数据", 
@@ -3663,6 +3670,60 @@ public class AttendanceTask {
         XxlJobHelper.log("员工[{}]{}绑定工作区活动段数: {}, 总时长: {}小时",
             record.getEmployeeId(), record.getEmployeeName(),
             workSegments.size(), String.format("%.2f", totalHours));
+
+        return BigDecimal.valueOf(totalHours).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * ZJGGJS 租户专用：计算怠工时长（休闲区活动时长）
+     * 根据人员绑定的工作区对应的休闲区进行过滤
+     * @param record 考勤记录
+     * @param corpCode 租户编码
+     * @return 怠工时长（小时）
+     * @author Claude
+     * @date 2026-06-16
+     */
+    private BigDecimal calculateIdleAreaHoursForZJGGJS(SwmDailyAttendance record, String corpCode) {
+        // 获取人员绑定的工作区
+        List<String> boundAreaIds = getPersonBoundAreaIds(record.getIdentityCard());
+
+        // 如果没有绑定工作区，使用原逻辑（所有休闲区）
+        if (boundAreaIds == null || boundAreaIds.isEmpty()) {
+            XxlJobHelper.log("员工[{}]{}未绑定工作区，使用所有休闲区计算怠工时长",
+                record.getEmployeeId(), record.getEmployeeName());
+            return calculateIdleAreaHours(record, corpCode);
+        }
+
+        XxlJobHelper.log("员工[{}]{}绑定了{}个工作区，计算对应休闲区怠工时长",
+            record.getEmployeeId(), record.getEmployeeName(), boundAreaIds.size());
+
+        // 确定时间范围
+        String[] timeRange = determineQueryTimeRange(record);
+        if (timeRange == null) {
+            XxlJobHelper.log("员工[{}]{}无法确定时间范围，跳过怠工时长计算",
+                record.getEmployeeId(), record.getEmployeeName());
+            return null;
+        }
+
+        String startTime = timeRange[0];
+        String endTime = timeRange[1];
+
+        // 查询绑定工作区对应休闲区的连续段（areaType="1" 表示休闲区）
+        List<WorkSegment> idleSegments = queryAreaSegmentsForZJGGJS(
+            record.getIdentityCard(), startTime, endTime, "1", corpCode, boundAreaIds);
+
+        if (idleSegments.isEmpty()) {
+            XxlJobHelper.log("员工[{}]{}在绑定工作区对应休闲区内无活动数据",
+                record.getEmployeeId(), record.getEmployeeName());
+            return BigDecimal.ZERO;
+        }
+
+        // 计算总时长
+        double totalHours = calculateTotalHours(idleSegments);
+
+        XxlJobHelper.log("员工[{}]{}绑定工作区对应休闲区活动段数: {}, 怠工时长: {}小时",
+            record.getEmployeeId(), record.getEmployeeName(),
+            idleSegments.size(), String.format("%.2f", totalHours));
 
         return BigDecimal.valueOf(totalHours).setScale(2, RoundingMode.HALF_UP);
     }
@@ -3778,7 +3839,7 @@ public class AttendanceTask {
                 .map(id -> "'" + id + "'")
                 .collect(Collectors.joining(","));
 
-            // 查询指定区域的时间戳
+            // 查询指定区域的时间戳（带 area_type 条件）
             String sql = String.format(
                 "SELECT time FROM %s.%s " +
                 "WHERE id_card = '%s' " +
@@ -3936,15 +3997,16 @@ public class AttendanceTask {
      * @param startTime 开始时间
      * @param endTime 结束时间
      * @param areaType 区域类型（0-工作区，1-休息区）
+     * @param corpCode 租户编码
      * @return 活动段列表
      * @author Shawn
      * @date 2025-08-13
      */
-    private List<WorkSegment> queryAreaSegments(String idCard, String startTime, String endTime, String areaType,String corpCode) {
+    private List<WorkSegment> queryAreaSegments(String idCard, String startTime, String endTime, String areaType, String corpCode) {
         List<WorkSegment> segments = new ArrayList<>();
-        
+
         try {
-            // 查询指定区域的时间戳
+            // 查询指定区域的时间戳（带 area_type 条件）
             String sql = String.format(
                 "SELECT time FROM %s.%s " +
                 "WHERE id_card = '%s' " +
@@ -3954,7 +4016,7 @@ public class AttendanceTask {
                 "ORDER BY time ASC",
                 dbname, TdengineSuperTableConstant.AREA_FENCE_DATA, idCard, areaType, startTime, endTime
             );
-            
+
             XxlJobHelper.log("查询区域数据SQL: {}", sql);
             
             R<JSONObject> response = tdengineService.executeTDengineSQLByXXJOB(sql,corpCode);
