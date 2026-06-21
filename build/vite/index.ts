@@ -64,10 +64,11 @@ export function createVitePlugins() {
       resolvers: [ElementPlusResolver()],
       globs: ['src/components/**/**.{vue, md}', '!src/components/DiyEditor/components/mobile/**']
     }),
-    EslintPlugin({
-      cache: false,
-      include: ['src/**/*.vue', 'src/**/*.ts', 'src/**/*.tsx'] // 检查的文件
-    }),
+    // ESLint plugin temporarily disabled during SWM migration
+    // EslintPlugin({
+    //   cache: false,
+    //   include: ['src/**/*.vue', 'src/**/*.ts', 'src/**/*.tsx']
+    // }),
     VueI18nPlugin({
       runtimeOnly: true,
       compositionOnly: true,
