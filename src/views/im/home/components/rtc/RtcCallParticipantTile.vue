@@ -11,7 +11,7 @@
     <!-- 视频可用：渲染 video；否则渲染头像或默认占位 -->
     <video
       v-if="participant.videoStream"
-      ref="videoRef"
+      :ref="videoRef"
       class="object-cover w-full h-full"
       autoplay
       playsinline
@@ -30,7 +30,7 @@
     <!-- 远端音频；通过 audio 元素播放，本端静音避免回声；扬声器关闭时整体静音 -->
     <audio
       v-if="participant.audioStream && !participant.isLocal"
-      ref="audioRef"
+      :ref="audioRef"
       autoplay
       :muted="!speakerEnabled"
     ></audio>
@@ -97,12 +97,14 @@ const audioRef = useMediaStreamElement<HTMLAudioElement>(() => props.participant
 .tile-dot {
   animation: tile-dot 1.4s infinite ease-in-out both;
 }
+
 @keyframes tile-dot {
   0%,
   80%,
   100% {
     opacity: 0.3;
   }
+
   40% {
     opacity: 1;
   }

@@ -12,11 +12,7 @@
         <GroupSelect v-model="queryParams.groupId" class="!w-240px" />
       </el-form-item>
       <el-form-item label="发送人" prop="senderId">
-        <UserSelectV2
-          v-model="queryParams.senderId"
-          placeholder="请选择发送人"
-          class="!w-240px"
-        />
+        <UserSelectV2 v-model="queryParams.senderId" placeholder="请选择发送人" class="!w-240px" />
       </el-form-item>
       <el-form-item label="内容类型" prop="type">
         <el-select
@@ -101,7 +97,7 @@
         <template #default="{ row }">
           <template v-if="row.atUserIds?.length">
             <span v-for="(userId, idx) in row.atUserIds" :key="userId">
-              <span v-if="idx > 0">、</span>
+              <span v-if="Number(idx) > 0">、</span>
               <template v-if="userId === IM_AT_ALL_USER_ID">@{{ IM_AT_ALL_NICKNAME }}</template>
               <template v-else>
                 @{{ row.atUserNicknames?.[idx] || userId }}

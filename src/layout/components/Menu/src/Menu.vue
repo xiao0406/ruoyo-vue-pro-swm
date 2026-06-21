@@ -1,6 +1,7 @@
 <script lang="tsx">
 import { PropType, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { ElMenu, ElScrollbar } from 'element-plus'
+import type { MenuInstance } from 'element-plus'
 import { useAppStore } from '@/store/modules/app'
 import { usePermissionStore } from '@/store/modules/permission'
 import { useRenderMenuItem } from './components/useRenderMenuItem'
@@ -8,11 +9,7 @@ import { hasOneShowingChild } from './helper'
 import { isUrl } from '@/utils/is'
 import { useDesign } from '@/hooks/web/useDesign'
 import { createRouteLocation, resolveDynamicPath } from '@/utils/routeParams'
-import {
-  isHeaderNavLayout,
-  isHorizontalMenuLayout,
-  isTwoColumnLayout
-} from '@/utils/layout'
+import { isHeaderNavLayout, isHorizontalMenuLayout, isTwoColumnLayout } from '@/utils/layout'
 import { cloneDeep } from 'lodash-es'
 import { pathResolve } from '@/utils/routerHelper'
 import {
@@ -67,10 +64,11 @@ export default defineComponent({
 
     const menuWrapRef = ref<HTMLElement>()
 
-    const menuRef = ref<InstanceType<typeof ElMenu>>()
+    const menuRef = ref<MenuInstance>()
 
-    const menuMode = computed((): 'vertical' | 'horizontal' =>
-      props.mode || (isHorizontalMenuLayout(unref(layout)) ? 'horizontal' : 'vertical')
+    const menuMode = computed(
+      (): 'vertical' | 'horizontal' =>
+        props.mode || (isHorizontalMenuLayout(unref(layout)) ? 'horizontal' : 'vertical')
     )
 
     const collapse = computed(() => appStore.getCollapse)
@@ -102,7 +100,8 @@ export default defineComponent({
 
     const routers = computed(() => {
       const sourceRouters =
-        props.menus || (props.split ? permissionStore.getMenuTabRouters : permissionStore.getRouters)
+        props.menus ||
+        (props.split ? permissionStore.getMenuTabRouters : permissionStore.getRouters)
       if (!props.rootOnly) {
         return sourceRouters
       }
@@ -113,7 +112,10 @@ export default defineComponent({
       const { meta, path } = unref(currentRoute)
       const currentPath = (meta.activeMenu as string) || path
       if (props.rootOnly) {
-        return permissionStore.getMenuRootPath || getRootMenuActivePath(permissionStore.getRouters, currentPath)
+        return (
+          permissionStore.getMenuRootPath ||
+          getRootMenuActivePath(permissionStore.getRouters, currentPath)
+        )
       }
       // if set path, the sidebar will highlight the path you set
       if (meta.activeMenu) {
@@ -134,7 +136,10 @@ export default defineComponent({
       props.theme === 'header' ? 'var(--el-color-primary)' : 'var(--left-menu-text-active-color)'
     )
 
-    const getFirstChildPath = (route: AppRouteRecordRaw, parentPath: string): string | undefined => {
+    const getFirstChildPath = (
+      route: AppRouteRecordRaw,
+      parentPath: string
+    ): string | undefined => {
       const firstChild = route.children?.find((child) => !child.meta?.hidden)
       if (!firstChild) {
         return undefined
@@ -218,7 +223,8 @@ export default defineComponent({
 
     const setSplitMenus = (targetPath: string) => {
       const rootInfo = getRootMenuRoute(permissionStore.getRouters, targetPath)
-      const rootPath = rootInfo?.fullPath || getRootMenuActivePath(permissionStore.getRouters, targetPath)
+      const rootPath =
+        rootInfo?.fullPath || getRootMenuActivePath(permissionStore.getRouters, targetPath)
       const rootRoute = rootInfo?.route
       const children = rootRoute?.children?.length
         ? cloneDeep(rootRoute.children).map((child) => {
@@ -386,7 +392,8 @@ export default defineComponent({
         }
         const targetPath =
           props.rootOnly && routeInfo?.route.children?.length
-            ? ((routeInfo.route.redirect as string) || getFirstChildPath(routeInfo.route, routeInfo.fullPath))
+            ? (routeInfo.route.redirect as string) ||
+              getFirstChildPath(routeInfo.route, routeInfo.fullPath)
             : index
 
         if (targetPath) {
@@ -541,9 +548,13 @@ export default defineComponent({
           'h-[100%] overflow-hidden flex-col bg-[var(--left-menu-bg-color)]',
           {
             'w-[var(--left-menu-min-width)]':
-              unref(collapse) && !isTwoColumnLayout(unref(layout)) && unref(menuMode) !== 'horizontal',
+              unref(collapse) &&
+              !isTwoColumnLayout(unref(layout)) &&
+              unref(menuMode) !== 'horizontal',
             'w-[var(--left-menu-max-width)]':
-              !unref(collapse) && !isTwoColumnLayout(unref(layout)) && unref(menuMode) !== 'horizontal'
+              !unref(collapse) &&
+              !isTwoColumnLayout(unref(layout)) &&
+              unref(menuMode) !== 'horizontal'
           }
         ]}
         style={{
@@ -642,13 +653,12 @@ $prefix-cls: #{$namespace}-menu;
     height: calc(var(--top-tool-height)) !important;
     min-width: 0;
     flex-shrink: 1;
-    overflow-x: hidden;
-    overflow-y: hidden;
+    overflow: hidden;
 
     :deep(.#{$elNamespace}-menu--horizontal) {
       height: calc(var(--top-tool-height));
-      border-bottom: none;
       min-width: 100%;
+      border-bottom: none;
       // 重新设置底部高亮颜色
       & > .#{$elNamespace}-sub-menu.is-active {
         .#{$elNamespace}-sub-menu__title {

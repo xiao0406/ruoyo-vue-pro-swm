@@ -116,7 +116,6 @@ import { ref } from 'vue'
 
 defineOptions({ name: 'MpUser' })
 
-const { t } = useI18n() // 国际化
 const message = useMessage() // 消息
 
 const isDialog = ref(false) // 是不是弹窗调用
@@ -133,7 +132,7 @@ const queryParams = reactive({
   nickname: ''
 })
 const queryFormRef = ref<FormInstance | null>(null) // 搜索的表单
-const tagList = ref<any[]>([]) // 公众号标签列表
+const tagList = ref<MpTagApi.SimpleTagVO[]>([]) // 公众号标签列表
 
 /** 侦听公众号变化 **/
 const onAccountChanged = (id: number) => {

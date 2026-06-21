@@ -123,6 +123,8 @@ const copyConfig = async () => {
       locale: ${appStore.getLocale},
       // 消息图标
       message: ${appStore.getMessage},
+      // IM 即时通讯图标
+      im: ${appStore.getIm},
       // 标签页
       tagsView: ${appStore.getTagsView},
       // 标签页
@@ -273,12 +275,14 @@ const clear = () => {
 
     <ElDivider />
     <div>
-      <ElButton class="w-full" type="primary" @click="copyConfig">{{ t('setting.copy') }}</ElButton>
+      <el-button class="w-full" type="primary" @click="copyConfig">
+        {{ t('setting.copy') }}
+      </el-button>
     </div>
     <div class="mt-5px">
-      <ElButton class="w-full" type="danger" @click="clear">
+      <el-button class="w-full" type="danger" @click="clear">
         {{ t('setting.clearAndReset') }}
-      </ElButton>
+      </el-button>
     </div>
   </ElDrawer>
 </template>

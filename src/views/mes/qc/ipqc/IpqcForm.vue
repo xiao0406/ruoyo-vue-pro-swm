@@ -89,9 +89,7 @@
               v-model="formData.taskId"
               :workOrderId="formData.workOrderId"
               :workstationId="formData.workstationId"
-              :statuses="[
-                MesProTaskStatusEnum.PREPARE
-              ]"
+              :statuses="[MesProTaskStatusEnum.PREPARE]"
               placeholder="请选择生产任务"
               class="!w-1/1"
               :disabled="isFromPendingTask || (!isFromPendingTask && !formData.workOrderId)"
@@ -333,30 +331,30 @@ const isFromPendingTask = computed(
 
 const formData = ref({
   id: undefined as number | undefined,
-  code: undefined,
-  name: undefined,
+  code: undefined as string | undefined,
+  name: undefined as string | undefined,
   status: undefined as number | undefined,
   type: undefined,
-  templateId: undefined,
+  templateId: undefined as number | undefined,
   sourceDocType: undefined,
-  sourceDocId: undefined,
-  sourceLineId: undefined,
+  sourceDocId: undefined as number | undefined,
+  sourceLineId: undefined as number | undefined,
   sourceDocCode: undefined,
-  workOrderId: undefined,
-  taskId: undefined,
-  workstationId: undefined,
-  processId: undefined,
-  itemId: undefined,
+  workOrderId: undefined as number | undefined,
+  taskId: undefined as number | undefined,
+  workstationId: undefined as number | undefined,
+  processId: undefined as number | undefined,
+  itemId: undefined as number | undefined,
   checkQuantity: undefined,
   qualifiedQuantity: undefined,
-  unqualifiedQuantity: undefined,
+  unqualifiedQuantity: undefined as number | undefined,
   laborScrapQuantity: 0,
   materialScrapQuantity: 0,
   otherScrapQuantity: 0,
   checkResult: undefined,
   inspectDate: undefined,
-  inspectorUserId: undefined,
-  remark: undefined,
+  inspectorUserId: undefined as number | undefined,
+  remark: undefined as string | undefined,
   // 缺陷统计（只读）
   criticalRate: 0,
   majorRate: 0,
@@ -475,21 +473,21 @@ const handleFinish = async () => {
 /** 重置表单 */
 const resetForm = () => {
   formData.value = {
-    id: undefined,
-    code: undefined,
-    name: undefined,
-    status: undefined,
+    id: undefined as number | undefined,
+    code: undefined as string | undefined,
+    name: undefined as string | undefined,
+    status: undefined as number | undefined,
     type: undefined,
-    templateId: undefined,
+    templateId: undefined as number | undefined,
     sourceDocType: undefined,
-    sourceDocId: undefined,
-    sourceLineId: undefined,
+    sourceDocId: undefined as number | undefined,
+    sourceLineId: undefined as number | undefined,
     sourceDocCode: undefined,
-    workOrderId: undefined,
-    taskId: undefined,
-    workstationId: undefined,
-    processId: undefined,
-    itemId: undefined,
+    workOrderId: undefined as number | undefined,
+    taskId: undefined as number | undefined,
+    workstationId: undefined as number | undefined,
+    processId: undefined as number | undefined,
+    itemId: undefined as number | undefined,
     checkQuantity: undefined,
     qualifiedQuantity: undefined,
     unqualifiedQuantity: undefined,
@@ -498,8 +496,8 @@ const resetForm = () => {
     otherScrapQuantity: 0,
     checkResult: undefined,
     inspectDate: undefined,
-    inspectorUserId: undefined,
-    remark: undefined,
+    inspectorUserId: undefined as number | undefined,
+    remark: undefined as string | undefined,
     criticalRate: 0,
     majorRate: 0,
     minorRate: 0,

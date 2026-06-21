@@ -28,6 +28,10 @@ export interface StringDictDataType extends DictDataType {
   value: string
 }
 
+export interface BooleanDictDataType extends DictDataType {
+  value: boolean
+}
+
 export const getDictOptions = (dictType: string) => {
   return dictStore.getDictByType(dictType) || []
 }
@@ -62,8 +66,8 @@ export const getStrDictOptions = (dictType: string) => {
   return dictOption
 }
 
-export const getBoolDictOptions = (dictType: string) => {
-  const dictOption: DictDataType[] = []
+export const getBoolDictOptions = (dictType: string): BooleanDictDataType[] => {
+  const dictOption: BooleanDictDataType[] = []
   const dictOptions: DictDataType[] = getDictOptions(dictType)
   dictOptions.forEach((dict: DictDataType) => {
     dictOption.push({
@@ -158,6 +162,7 @@ export enum DICT_TYPE {
   PAY_REFUND_STATUS = 'pay_refund_status', // 退款订单状态
   PAY_NOTIFY_STATUS = 'pay_notify_status', // 商户支付回调状态
   PAY_NOTIFY_TYPE = 'pay_notify_type', // 商户支付回调状态
+  PAY_TRANSFER_TYPE = 'pay_transfer_type', // 转账订单类型
   PAY_TRANSFER_STATUS = 'pay_transfer_status', // 转账订单状态
 
   // ========== MP 模块 ==========
