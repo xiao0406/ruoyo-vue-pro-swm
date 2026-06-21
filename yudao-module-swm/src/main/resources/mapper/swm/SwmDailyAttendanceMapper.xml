@@ -1,0 +1,1301 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmDailyAttendanceMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="swmDailyAttendanceResult" type="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        <id property="id" column="id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="employeeName" column="employee_name"/>
+        <result property="identityCard" column="identity_card"/>
+        <result property="personType" column="person_type"/>
+        <result property="attendanceDate" column="attendance_date"/>
+        <result property="workTimeRange" column="work_time_range"/>
+        <result property="classes" column="classes"/>
+        <result property="clockInTime" column="clock_in_time"/>
+        <result property="clockInDate" column="clock_in_date"/>
+        <result property="noonEndTime" column="noon_end_time"/>
+        <result property="noonEndDate" column="noon_end_date"/>
+        <result property="afterStartTime" column="after_start_time"/>
+        <result property="afterStartDate" column="after_start_date"/>
+        <result property="clockOutTime" column="clock_out_time"/>
+        <result property="clockOutDate" column="clock_out_date"/>
+        <result property="scheduledHours" column="scheduled_hours"/>
+        <result property="actualHours" column="actual_hours"/>
+        <result property="idleHours" column="idle_hours"/>
+        <result property="effectiveWorkHours" column="effective_work_hours"/>
+        <result property="dailyEfficiency" column="daily_efficiency"/>
+        <result property="dailyAchievementRate" column="daily_achievement_rate"/>
+        <result property="attendanceNormal" column="attendance_normal"/>
+        <result property="currentPosition" column="current_position"/>
+        <!-- 包含DataEntity的基础字段 -->
+        <result property="createBy" column="create_by"/>
+        <result property="createDate" column="create_date"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateDate" column="update_date"/>
+        <result property="remarks" column="remarks"/>
+        <result property="status" column="status"/>
+        <result property="pendingClockOutCompensate" column="pending_clock_out_compensate"/>
+    </resultMap>
+
+    <resultMap id="swmMonthlyAttendanceResult" type="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmMonthlyAttendance">
+        <id property="id" column="id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="employeeName" column="employee_name"/>
+        <result property="identityCard" column="identity_card"/>
+        <result property="monthly" column="monthly"/>
+        <result property="phoneNumber" column="phone_number"/>
+        <result property="team" column="team"/>
+        <result property="jobType" column="job_type"/>
+        <result property="attendanceDay" column="attendance_date_total"/>
+        <result property="monthlyAttendanceRate" column="attendance_rate"/>
+        <result property="validAttendanceDays" column="valid_attendance_total"/>
+        <result property="actualHours" column="actual_hours_total"/>
+        <result property="idleHours" column="idle_hours_total"/>
+    </resultMap>
+
+    <!-- 查询数据 -->
+    <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT  
+        ,jso.office_name AS company,
+        pa.position_name AS department,
+        pl.prod_line_name AS prodLine,
+        wg.work_group_name AS team
+        FROM 
+         JOIN swm_person sp ON a.identity_card = sp.identity_card AND sp.STATUS = '0' AND sp.personnel_status = '1'
+        LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN system_dept jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
+        <where>
+            
+            and  a.`status` = '0'
+            <!-- 自定义条件 -->
+            <if test="employeeId != null and employeeId != ''">
+                AND a.employee_id = #{employeeId}
+            </if>
+            <if test="employeeName != null and employeeName != ''">
+                AND a.employee_name LIKE concat('%', #{employeeName}, '%')
+            </if>
+            <if test="attendanceDate != null">
+                AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+            </if>
+            <if test="beginAttendanceDate != null and endAttendanceDate != null">
+                AND DATE(a.attendance_date) BETWEEN DATE(#{beginAttendanceDate}) AND DATE(#{endAttendanceDate})
+            </if>
+            <if test="workTimeRange != null and workTimeRange != ''">
+                AND a.work_time_range LIKE concat('%', #{workTimeRange}, '%')
+            </if>
+            <if test="company != null and company != ''">
+                AND sp.company = #{company}
+            </if>
+            <if test="department != null and department != ''">
+                AND sp.department = #{department}
+            </if>
+            <if test="prodLine != null and prodLine != ''">
+                AND sp.prod_line = #{prodLine}
+            </if>
+            <if test="team != null and team != ''">
+                AND sp.team = #{team}
+            </if>
+            <if test="random != null and random != 0 ">
+                AND #{random} = #{random}
+            </if>
+        </where>
+        <choose>
+            <when test="page != null and page.orderBy != null and page.orderBy != ''">
+                <choose>
+                    <when test="page.orderBy == 'clockInTime asc'">
+                        ORDER BY a.clock_in_time IS NULL ASC, a.clock_in_time ASC
+                    </when>
+                    <when test="page.orderBy == 'clockInTime desc'">
+                        ORDER BY a.clock_in_time DESC
+                    </when>
+                    <when test="page.orderBy == 'clockOutTime asc'">
+                        ORDER BY a.clock_out_time IS NULL ASC, a.clock_out_time ASC
+                    </when>
+                    <when test="page.orderBy == 'clockOutTime desc'">
+                        ORDER BY a.clock_out_time DESC
+                    </when>
+                    <when test="page.orderBy == 'effectiveWorkHours asc'">
+                        ORDER BY a.effective_work_hours = 0, a.effective_work_hours ASC
+                    </when>
+                    <when test="page.orderBy == 'effectiveWorkHours desc'">
+                        ORDER BY a.effective_work_hours DESC
+                    </when>
+                    <when test="page.orderBy == 'idleHours asc'">
+                        ORDER BY a.idle_hours = 0, a.idle_hours ASC
+                    </when>
+                    <when test="page.orderBy == 'idleHours desc'">
+                        ORDER BY a.idle_hours DESC
+                    </when>
+                    <otherwise>
+                        group by sp.identity_card
+                        ORDER BY ${page.orderBy}
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                group by a.identity_card
+                ORDER BY
+                    CASE
+                        WHEN a.clock_in_time IS NOT NULL
+                          OR a.clock_out_time IS NOT NULL
+                          OR a.effective_work_hours > 0
+                          OR a.idle_hours > 0
+                        THEN 0 
+                        ELSE 1
+                    END ASC,
+                    a.attendance_date DESC,
+                    a.update_date DESC,
+                    a.id DESC
+            </otherwise>
+        </choose>
+
+    </select>
+
+    <!-- 根据员工ID和日期查询考勤记录 -->
+    <select id="findByEmployeeIdAndDate" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        join swm_person sp on a.employee_id = sp.id
+        <where>
+            sp.status = '0' and sp.personnel_status = '1' and
+            a.employee_id = #{employeeId}
+            AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+        </where>
+    </select>
+
+    <!-- 根据员工姓名和日期查询考勤记录 -->
+    <select id="findByEmployeeAndDate" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_name = #{employeeName}
+            AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+        </where>
+    </select>
+
+    <!-- 根据员工ID和日期范围查询考勤记录 -->
+    <select id="findByEmployeeIdAndDateRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_id = #{employeeId}
+            AND DATE(a.attendance_date) BETWEEN DATE(#{beginDate}) AND DATE(#{endDate})
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+
+    <!-- 根据员工姓名和日期范围查询考勤记录 -->
+    <select id="findByEmployeeAndDateRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_name = #{employeeName}
+            AND DATE(a.attendance_date) BETWEEN DATE(#{beginDate}) AND DATE(#{endDate})
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+
+    <!-- 根据日期查询所有考勤记录 -->
+    <select id="findByDate" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+        a.id AS id,
+        a.employee_id AS employeeId,
+        a.employee_name AS employeeName,
+        a.identity_card AS identityCard,
+        -- a.person_type AS personType,  <!-- 已注释掉 -->
+        a.attendance_date AS attendanceDate,
+        a.work_time_range AS workTimeRange,
+        a.clock_in_time AS clockInTime,
+        a.clock_in_date AS clockInDate,
+        a.noon_end_time AS noonEndTime,
+        a.noon_end_date AS noonEndDate,
+        a.after_start_time AS afterStartTime,
+        a.after_start_date AS afterStartDate,
+        a.clock_out_time AS clockOutTime,
+        a.clock_out_date AS clockOutDate,
+        a.scheduled_hours AS scheduledHours,
+        a.actual_hours AS actualHours,
+        a.idle_hours AS idleHours,
+        a.effective_work_hours AS effectiveWorkHours,
+        a.daily_efficiency AS dailyEfficiency,
+        a.daily_achievement_rate AS dailyAchievementRate,
+        a.attendance_normal AS attendanceNormal,
+        a.status AS status,
+        a.create_by AS createBy,
+        a.create_date AS createDate,
+        a.update_by AS updateBy,
+        a.update_date AS updateDate,
+        a.remarks AS remarks,
+        sp.person_type AS personType,
+        a.classes AS classes
+        FROM swm_daily_attendance a
+        join swm_person sp  on a.employee_id  = sp.id
+        <where>
+            sp.`status` = 0 and sp.personnel_status = '1' and a.status = '0' and
+            DATE(a.attendance_date) = DATE(#{attendanceDate})
+        </where>
+        group by a.identity_card
+        ORDER BY a.employee_name ASC
+    </select>
+
+    <!-- 根据员工ID和月份查询考勤记录 -->
+    <select id="findByEmployeeIdAndMonth" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks",
+            a.attendance_normal AS "attendanceNormal"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_id = #{employeeId}
+            AND YEAR(a.attendance_date) = #{year}
+            AND MONTH(a.attendance_date) = #{month}
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+
+    <!-- 根据员工姓名和月份查询考勤记录 -->
+    <select id="findByEmployeeAndMonth" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            a.employee_name = #{employeeName}
+            AND YEAR(a.attendance_date) = #{year}
+            AND MONTH(a.attendance_date) = #{month}
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+
+    <!-- 按月查询日考勤记录 -->
+    <select id="findByMonth" resultMap="swmDailyAttendanceResult">
+        SELECT
+        a.id,
+        a.employee_id,
+        a.employee_name,
+        a.identity_card,
+        sp.person_type,
+        a.attendance_date,
+        a.work_time_range,
+        a.clock_in_time,
+        a.clock_in_date,
+        a.noon_end_time,
+        a.noon_end_date,
+        a.after_start_time,
+        a.after_start_date,
+        a.clock_out_time,
+        a.clock_out_date,
+        a.scheduled_hours,
+        a.actual_hours,
+        a.idle_hours,
+        a.effective_work_hours,
+        a.daily_efficiency,
+        a.daily_achievement_rate,
+        a.attendance_normal,
+        a.current_position,
+        a.create_by,
+        a.create_date,
+        a.update_by,
+        a.update_date,
+        a.remarks,
+        a.status
+        FROM
+        swm_daily_attendance a
+        join swm_person sp on a.employee_id = sp.id
+        WHERE
+        a.status = '0'
+        <if test="employeeIds != null and employeeIds.size() > 0">
+            AND a.employee_id IN
+            <foreach collection="employeeIds" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        AND DATE_FORMAT(a.attendance_date, '%Y-%m') = #{month}
+        ORDER BY
+        a.attendance_date DESC, a.update_date DESC
+    </select>
+
+    <!-- 自定义更新方法，确保包含打卡时间字段 -->
+    <update id="updateWithClockTime">
+        UPDATE `swm_daily_attendance` SET
+            `employee_id` = #{employeeId},
+            `employee_name` = #{employeeName},
+            `identity_card` = #{identityCard},
+            `person_type` = #{personType},
+            `attendance_date` = #{attendanceDate},
+            `work_time_range` = #{workTimeRange},
+            `clock_in_time` = #{clockInTime},
+            `clock_in_date` = #{clockInDate},
+            `noon_end_time` = #{noonEndTime},
+            `noon_end_date` = #{noonEndDate},
+            `after_start_time` = #{afterStartTime},
+            `after_start_date` = #{afterStartDate},
+            `clock_out_time` = #{clockOutTime},
+            `clock_out_date` = #{clockOutDate},
+            `scheduled_hours` = #{scheduledHours},
+            `actual_hours` = #{actualHours},
+            `idle_hours` = #{idleHours},
+            `effective_work_hours` = #{effectiveWorkHours},
+            `daily_efficiency` = #{dailyEfficiency},
+            `daily_achievement_rate` = #{dailyAchievementRate},
+            `attendance_normal` = #{attendanceNormal},
+            `current_position` = #{currentPosition},
+            `update_by` = #{updateBy},
+            `update_date` = #{updateDate},
+            `remarks` = #{remarks}
+        WHERE `id` = #{id}
+    </update>
+    <update id="updateBatch">
+        <foreach collection="records" item="item" separator=";">
+            UPDATE swm_daily_attendance
+            <set>
+                <if test="item.clockInDate != null">
+                    clock_in_date = #{item.clockInDate},
+                </if>
+                <if test="item.clockInTime != null">
+                    clock_in_time = #{item.clockInTime},
+                </if>
+                <if test="item.clockOutTime != null">
+                    clock_out_time = #{item.clockOutTime},
+                </if>
+                <if test="item.clockOutDate != null">
+                    clock_out_date = #{item.clockOutDate},
+                </if>
+                <if test="item.noonEndTime != null">
+                    noon_end_time = #{item.noonEndTime},
+                </if>
+                <if test="item.noonEndDate != null">
+                    noon_end_date = #{item.noonEndDate},
+                </if>
+                <if test="item.afterStartTime != null">
+                    after_start_time = #{item.afterStartTime},
+                </if>
+                <if test="item.afterStartDate != null">
+                    after_start_date = #{item.afterStartDate},
+                </if>
+                <if test="item.pendingClockOutCompensate != null">
+                    pending_clock_out_compensate = #{item.pendingClockOutCompensate},
+                </if>
+                <if test="item.classes != null and item.classes != ''">
+                    classes = #{item.classes},
+                </if>
+                <if test="item.workTimeRange != null and item.workTimeRange != ''">
+                    work_time_range = #{item.workTimeRange},
+                </if>
+                <if test="item.clockStartTime != null ">
+                    clock_start_time = #{item.clockStartTime},
+                </if>
+                <if test="item.clockEndTime != null ">
+                    clock_end_time = #{item.clockEndTime},
+                </if>
+                <if test="item.restTime != null ">
+                    rest_time = #{item.restTime},
+                </if>
+                update_date = NOW()
+            </set>
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 单条更新考勤记录（仅更新非空字段），替代 updateBatch 的多语句 SQL -->
+    <update id="updateAttendanceRecord">
+        UPDATE swm_daily_attendance
+        <set>
+            <if test="item.clockInDate != null">
+                clock_in_date = #{item.clockInDate},
+            </if>
+            <if test="item.clockInTime != null">
+                clock_in_time = #{item.clockInTime},
+            </if>
+            <if test="item.clockOutTime != null">
+                clock_out_time = #{item.clockOutTime},
+            </if>
+            <if test="item.clockOutDate != null">
+                clock_out_date = #{item.clockOutDate},
+            </if>
+            <if test="item.noonEndTime != null">
+                noon_end_time = #{item.noonEndTime},
+            </if>
+            <if test="item.noonEndDate != null">
+                noon_end_date = #{item.noonEndDate},
+            </if>
+            <if test="item.afterStartTime != null">
+                after_start_time = #{item.afterStartTime},
+            </if>
+            <if test="item.afterStartDate != null">
+                after_start_date = #{item.afterStartDate},
+            </if>
+            <if test="item.pendingClockOutCompensate != null">
+                pending_clock_out_compensate = #{item.pendingClockOutCompensate},
+            </if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{item.id}
+    </update>
+
+    <!-- 根据身份证和日期查询考勤记录 -->
+    <select id="findByIdentityCardAndDate" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.attendance_normal AS "attendanceNormal",
+            a.current_position AS "currentPosition",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        WHERE a.identity_card = #{identityCard}
+          AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+        AND a.corp_code = #{corpCode}
+        LIMIT 1
+    </select>
+
+    <!-- 根据身份证号和月份查询考勤记录 -->
+    <select id="findByIdentityCardAndMonth" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.attendance_normal AS "attendanceNormal",
+            a.current_position AS "currentPosition",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks",
+            a.classes AS "classes"
+        FROM swm_daily_attendance a
+        WHERE a.identity_card = #{identityCard}
+          AND DATE_FORMAT(a.attendance_date, '%Y-%m') = #{month}
+          AND a.status = '0'
+        ORDER BY a.attendance_date ASC
+    </select>
+
+    <!-- 按月查询月考勤记录 -->
+    <select id="findStatisticsByMonth" resultMap="swmMonthlyAttendanceResult">
+        SELECT
+            sda.employee_id AS employee_id,
+            sda.identity_card AS identity_card,
+            DATE_FORMAT(sda.attendance_date, '%Y-%m') AS monthly,
+            sda.employee_name AS employee_name,
+            sp.phone_number AS phone_number,
+            fwg.work_group_name AS team,
+            sp.job_type AS job_type,
+            SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) AS attendance_date_total,
+            CONCAT(ROUND(SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) * 100
+                             / (DATEDIFF(#{endDate}, #{startDate}) + 1), 2),'%') AS attendance_rate,
+            SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) AS valid_attendance_total,
+            SUM(sda.actual_hours) AS actual_hours_total,
+            SUM(sda.idle_hours) AS idle_hours_total
+        FROM
+            swm_daily_attendance sda
+                LEFT JOIN swm_person sp
+                          ON sp.identity_card = sda.identity_card AND sp.NAME = sda.employee_name
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.personnel_status = '1'
+          AND sp.STATUS = '0'
+          AND sda.attendance_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY
+            sda.employee_id, sda.employee_name
+    </select>
+
+    <!-- 按月查询月考勤记录分页处理 -->
+    <select id="findStatisticsByMonthWithPage" resultMap="swmMonthlyAttendanceResult">
+        SELECT
+            sda.employee_id AS employee_id,
+            sda.identity_card AS identity_card,
+            DATE_FORMAT(sda.attendance_date, '%Y-%m') AS monthly,
+            sda.employee_name AS employee_name,
+            sp.phone_number AS phone_number,
+            fwg.work_group_name AS team,
+            sp.job_type AS job_type,
+            SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) AS attendance_date_total,
+            CONCAT(ROUND(SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) * 100
+                                / (DATEDIFF(#{endDate}, #{startDate}) + 1), 2),'%') AS attendance_rate,
+            SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) AS valid_attendance_total,
+            SUM(sda.actual_hours) AS actual_hours_total,
+            SUM(sda.idle_hours) AS idle_hours_total
+        FROM
+            swm_daily_attendance sda
+                LEFT JOIN swm_person sp
+                          ON sp.identity_card = sda.identity_card AND sp.NAME = sda.employee_name
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+           sp.personnel_status = '1'
+          AND sp.STATUS = '0'
+          AND sda.attendance_date BETWEEN #{startDate} AND #{endDate}
+        <if test="team != null and team != ''">
+            AND sp.team = #{team}
+        </if>
+        <if test="employeeName != null and employeeName != ''">
+            AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
+        </if>
+        GROUP BY
+            sda.employee_id, sda.employee_name
+        LIMIT #{pageNum}, #{pageSize}
+    </select>
+
+    <!-- 按月查询月考勤记录总条数 -->
+    <select id="findStatisticsTotalByMonth" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM (
+        SELECT DISTINCT sda.employee_id
+        FROM swm_daily_attendance sda
+        LEFT JOIN swm_person sp
+        ON sp.identity_card = sda.identity_card AND sp.name = sda.employee_name
+        LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+         sp.personnel_status = '1'
+        AND sp.status = '0'
+        AND sda.attendance_date BETWEEN #{startDate} AND #{endDate}
+        <if test="team != null and team != ''">
+            AND sp.team = #{team}
+        </if>
+        <if test="employeeName != null and employeeName != ''">
+            AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
+        </if>
+        GROUP BY sda.employee_id
+        ) AS t
+    </select>
+
+    <!-- 指定日期的出勤工种分布 -->
+    <select id="statisticsPersonJobType" resultType="Map">
+        SELECT
+            job_type as jobType,
+            COUNT(1) as count
+        from
+            swm_daily_attendance a
+        left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+            and a.attendance_date = #{date}
+          AND b.personnel_status = '1' and b.status = '0'
+        GROUP BY b.job_type
+    </select>
+
+    <!-- 指定日期，车间的出勤人数统计 -->
+    <select id="countAttendanceByWorkshop" resultType="java.lang.Long">
+        SELECT
+            COUNT(1) as count
+        from
+            swm_daily_attendance a
+            left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+        and a.attendance_date = #{date}
+        and b.company = #{companyName}
+        and b.department = #{workshopName}
+        and a.clock_in_time is NOT null
+          AND b.personnel_status = '1' and b.status = '0'
+    </select>
+
+    <!-- 指定日期，班组的出勤人数统计 -->
+    <select id="countAttendanceByTeam" resultType="java.lang.Long">
+        SELECT
+            COUNT(1) as count
+        from
+            swm_daily_attendance a
+            left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+            b.job_type is NOT null and b.job_type != ''
+          and a.attendance_date = #{date}
+          and b.company = #{companyName}
+          and b.department = #{workshopName}
+          and b.prod_line = #{lineName}
+          and b.team = #{teamName}
+          and a.clock_in_time is NOT null
+          AND b.personnel_status = '1' and b.status = '0'
+    </select>
+
+    <!-- 指定日期的出勤人数列表 -->
+    <select id="attendanceList" resultType="cn.iocoder.yudao.module.swm.controller.admin.dashboard.vo.DashboardPersonVO">
+        SELECT
+            b.name,
+            b.gender,
+            b.phone_number as phone,
+            b.person_type,
+            a.clock_in_date
+        from
+            swm_daily_attendance a
+                left JOIN swm_person b on a.employee_id = b.id
+        WHERE
+           b.personnel_status = '1' and b.status = '0' and
+            b.job_type is NOT null and b.job_type != ''
+          and a.attendance_date = #{date}
+          and a.clock_in_time is not null
+    </select>
+    <!-- 指定日期的出勤人数列表 -->
+<!--    <select id="attendanceList" resultType="Map">-->
+<!--        SELECT-->
+<!--            b.name,-->
+<!--            b.gender,-->
+<!--            b.phone_number,-->
+<!--            b.person_type,-->
+<!--            a.clock_in_date-->
+<!--        from-->
+<!--            swm_daily_attendance a-->
+<!--        left JOIN swm_person b on a.employee_id = b.id-->
+<!--        WHERE-->
+<!--            b.job_type is NOT null and b.job_type != ''-->
+<!--        and a.attendance_date = #{date}-->
+<!--        and a.clock_in_time is not null-->
+<!--    </select>-->
+
+    <!-- 根据员工姓名和日期范围查询考勤记录 -->
+    <select id="findByDateRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            a.id AS "id",
+            a.employee_id AS "employeeId",
+            a.employee_name AS "employeeName",
+            a.identity_card AS "identityCard",
+            a.person_type AS "personType",
+            a.attendance_date AS "attendanceDate",
+            a.work_time_range AS "workTimeRange",
+            a.clock_in_time AS "clockInTime",
+            a.clock_in_date AS "clockInDate",
+            a.noon_end_time AS "noonEndTime",
+            a.noon_end_date AS "noonEndDate",
+            a.after_start_time AS "afterStartTime",
+            a.after_start_date AS "afterStartDate",
+            a.clock_out_time AS "clockOutTime",
+            a.clock_out_date AS "clockOutDate",
+            a.scheduled_hours AS "scheduledHours",
+            a.actual_hours AS "actualHours",
+            a.idle_hours AS "idleHours",
+            a.effective_work_hours AS "effectiveWorkHours",
+            a.daily_efficiency AS "dailyEfficiency",
+            a.daily_achievement_rate AS "dailyAchievementRate",
+            a.status AS "status",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks"
+        FROM swm_daily_attendance a
+        <where>
+            DATE(a.attendance_date) BETWEEN DATE(#{beginDate}) AND DATE(#{endDate})
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+    <select id="attendanceListPage" resultType="cn.iocoder.yudao.module.swm.controller.admin.dashboard.vo.DashboardPersonVO">
+        SELECT
+        b.name,
+        b.gender,
+        b.phone_number as phone,
+        b.person_type,
+        a.clock_in_date
+        FROM
+        swm_daily_attendance a
+        JOIN swm_person b ON a.employee_id = b.id
+        <where>
+            b.personnel_status = '1'
+            AND b.status = '0'
+            AND a.attendance_date = #{date}
+            AND a.clock_in_date IS NOT NULL
+            <if test="personTypeList != null and personTypeList.size() > 0">
+                AND b.person_type IN
+                <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                    #{personType}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="attendanceListCount" resultType="java.lang.Long">
+        SELECT
+            count(1)
+        from
+            swm_daily_attendance a
+                left JOIN swm_person b on a.employee_id = b.id
+        <where>
+            b.personnel_status = '1' and b.status = '0' and a.attendance_date = #{date}
+            AND a.clock_in_date IS NOT NULL
+            <if test="personTypeList != null and personTypeList.size >0">
+                AND  b.person_type IN
+                <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                    #{personType}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <select id="findByEmployeeIdAndDateBatch" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+        a.id AS "id",
+        a.employee_id AS "employeeId",
+        a.identity_card AS "identityCard",
+        a.effective_work_hours AS "effectiveWorkHours",
+        a.attendance_normal AS "attendanceNormal",
+        a.clock_in_time AS "clockInTime",
+        a.work_time_range AS "workTimeRange"
+        FROM swm_daily_attendance a
+        <where>
+            <if test="employeeIds != null and employeeIds.size() > 0">
+                 a.employee_id IN
+                <foreach collection="employeeIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            AND DATE(a.attendance_date) = DATE(#{attendanceDate})
+        </where>
+        ORDER BY a.attendance_date ASC
+    </select>
+    <select id="findAllList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+        sda.id,
+        sda.employee_id,
+        sda.classes,
+        sda.attendance_date,
+        sda.employee_name,
+        sda.identity_card,
+        sda.clock_in_date,
+        sda.clock_out_date,
+        sda.scheduled_hours,
+        sda.actual_hours,
+        sp.department,
+        fpa.position_name as departmentName,
+        sp.team,
+        fwg.work_group_name as teamName
+        FROM
+        swm_daily_attendance sda
+        LEFT JOIN swm_person sp ON sda.identity_card = sp.identity_card AND sp.STATUS = '0' AND sp.personnel_status = '1'
+        LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group fwg ON sp.team = fwg.id  COLLATE utf8mb4_general_ci
+        WHERE
+        sda.STATUS = 0
+        AND sda.attendance_date >= #{startDate}
+        AND sda.attendance_date &lt;= #{endDate}
+    </select>
+    <select id="workerFatigue" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.AiDto$WorkerFatigue">
+        SELECT
+        sda.employee_name,
+        sp.phone_number,
+        sda.actual_hours,
+        fpa.position_name AS departmentName,
+        fwg.work_group_name AS teamName
+        FROM
+        swm_daily_attendance sda
+        LEFT JOIN swm_person sp ON sda.identity_card = sp.identity_card
+        LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+        sda.STATUS = 0
+        AND sp.STATUS = 0
+          AND sp.personnel_status = '1'
+          AND sda.attendance_date >= #{startDate}
+          AND sda.attendance_date &lt;= #{endDate}
+        AND sda.actual_hours >= #{actualHours}
+        ORDER BY
+        sda.actual_hours DESC
+    </select>
+    <select id="findClockInCardList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        select * from swm_daily_attendance where attendance_date = #{date}
+                                             and clock_in_date is null
+                                            and #{random} = #{random}
+    </select>
+    <select id="findClockOutCardList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        select *
+        from swm_daily_attendance
+        where
+            ((attendance_date = #{yestDay} and classes = '3')
+          or  attendance_date = #{nowDate})
+          and #{random} = #{random}
+        and corp_code = #{corpCode}
+    </select>
+    <select id="getAllTeamNumber"
+            resultType="cn.iocoder.yudao.module.swm.controller.admin.dashboard.vo.AttendanceAnalysisVO">
+        SELECT
+            fwg.work_group_name as name,
+            count(sp.id) as count
+        FROM
+            swm_person sp
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.STATUS = '0'
+          AND sp.personnel_status = '1'
+          AND sp.company = #{companyCode}
+          AND sp.team IS NOT NULL
+        GROUP BY
+            fwg.work_group_name
+        ORDER BY
+            count DESC
+    </select>
+    <select id="getTeamAttendance"
+            resultType="cn.iocoder.yudao.module.swm.controller.admin.dashboard.vo.AttendanceAnalysisVO">
+        SELECT
+            fwg.work_group_name as name,
+            count(sp.id)  as attendanceCount
+        FROM
+            swm_daily_attendance sda
+                LEFT JOIN swm_person sp ON sda.identity_card = sp.identity_card
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sda.attendance_date = #{date}
+          AND sda.STATUS = '0'
+          AND sp.STATUS = '0'
+          AND sp.personnel_status = '1'
+          AND sp.company = #{companyCode}
+          AND sp.team IS NOT NULL
+          AND (sda.clock_in_date IS NOT NULL OR sda.clock_out_date IS NOT NULL)
+        GROUP BY
+            fwg.work_group_name
+        ORDER BY
+            attendanceCount DESC
+    </select>
+    <select id="idleHoursRankingList"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$IdleHoursRankingDto">
+        SELECT
+            a.employee_name AS employeeName,
+            pa.position_name AS departmentName,
+            sp.job_type AS jobType,
+            a.idle_hours AS idleHours,
+            SUM(IFNULL(a.idle_hours, 0)) AS monthIdleHours
+        FROM `swm_daily_attendance` a
+                 JOIN swm_person sp ON a.identity_card = sp.identity_card
+                 left JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
+        WHERE a.`status` = '0'
+          AND sp.`status` = '0'
+          AND sp.personnel_status = '1'
+           AND sp.person_type != '1'
+          AND a.attendance_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY sp.identity_card
+        ORDER BY monthIdleHours DESC
+    </select>
+    <select id="managementOnDuty"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$ManagementOnDutyDto">
+        SELECT
+            t.employee_name AS employeeName,
+            sp.phone_number AS phoneNumber,
+            t.useHours,
+            t.workDepartmentHours
+        FROM (
+                 SELECT
+                     identity_card,
+                     employee_name,
+                     SUM(IFNULL(idle_hours + effective_work_hours, 0)) AS useHours,
+                     SUM(IFNULL(effective_work_hours, 0)) AS workDepartmentHours
+                 FROM swm_daily_attendance
+                 WHERE status = '0'
+                   AND attendance_date BETWEEN #{startDate} AND #{endDate}
+                 GROUP BY identity_card
+             ) t
+                 JOIN swm_person sp
+                      ON t.identity_card = sp.identity_card
+        WHERE sp.status = '0'
+          AND sp.personnel_status = '1'
+          AND sp.person_type = '1'
+        ORDER BY t.workDepartmentHours DESC
+    </select>
+    <select id="teamAttendanceAnalysis"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$TeamAttendanceAnalysis">
+        SELECT
+            a.employee_id,
+            a.clock_in_date,
+            fwg.work_group_name  as teamName,
+            a.attendance_date,
+            a.classes
+        FROM
+            swm_daily_attendance a
+                INNER JOIN swm_person sp ON a.employee_id = sp.id
+                LEFT JOIN fms_work_group fwg on sp.team = fwg.id  COLLATE utf8mb4_general_ci
+        WHERE
+            sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
+            a.attendance_date BETWEEN #{startDate} AND #{endDate}
+    </select>
+    <select id="departmentAttendanceAnalysis"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$TeamAttendanceAnalysis">
+        SELECT
+            a.employee_id,
+            a.clock_in_date,
+            fpa.position_name   as departmentName,
+            a.attendance_date,
+            a.classes
+        FROM
+            swm_daily_attendance a
+                INNER JOIN swm_person sp ON a.employee_id = sp.id
+                LEFT JOIN fms_position_archive  fpa on sp.department = fpa.id  COLLATE utf8mb4_general_ci
+        WHERE
+            sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
+            a.attendance_date BETWEEN #{startDate} AND #{endDate}
+    </select>
+    <select id="noAttendancePerson"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+            sp.NAME AS employeeName,
+            IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
+            sp.phone_number AS phoneNumber,
+            DATEDIFF(CURDATE(), IFNULL(last_att.last_clock_date, sp.create_date)) AS absentDays,
+            sp.id
+        FROM
+            swm_person sp
+                LEFT JOIN (SELECT employee_id, MAX(attendance_date) AS last_clock_date FROM swm_daily_attendance WHERE clock_in_date IS NOT NULL GROUP BY employee_id) last_att ON sp.id = last_att.employee_id
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
+            DATEDIFF(CURDATE(), IFNULL(last_att.last_clock_date, sp.create_date)) >= 5
+        ORDER BY
+            absentDays DESC
+    </select>
+    <select id="beLatePerson"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+            a.employee_name,
+            a.clock_in_date,
+            fwg.work_group_name AS teamName
+
+        FROM
+            swm_daily_attendance a
+                INNER JOIN swm_person sp ON a.employee_id = sp.id
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
+            a.attendance_date BETWEEN #{startDate} AND #{endDate}
+          AND a.clock_in_date > STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', 1), '%H:%i')
+        order by a.clock_in_date
+    </select>
+    <select id="leaveEarlyPerson"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+        sp.NAME AS employeeName,
+        fwg.work_group_name AS teamName,
+        a.clock_out_date AS clockOutDate,
+        a.work_time_range
+        FROM
+        swm_daily_attendance a
+        JOIN swm_person sp ON a.employee_id = sp.id
+        LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.`status` = '0' and sp.personnel_status = '1' and
+            sp.person_type != '1' and
+        a.attendance_date BETWEEN #{startDate} AND #{endDate}
+        AND a.clock_out_date IS NOT NULL
+        AND TIME(a.clock_out_date) &lt; STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', - 1), '%H:%i')
+        ORDER BY
+        a.clock_out_date
+    </select>
+
+    <!-- 迟到人员（含车间信息） -->
+    <select id="beLatePersonWithDept"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+            sp.NAME AS employeeName,
+            a.clock_in_date AS clockInDate,
+            IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
+            IFNULL(fpa.position_name, '未分配车间') AS departmentName
+        FROM
+            swm_daily_attendance a
+                INNER JOIN swm_person sp ON a.employee_id = sp.id
+                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.`status` = '0' AND sp.personnel_status = '1'
+            AND sp.person_type != '1'
+            AND a.attendance_date BETWEEN #{startDate} AND #{endDate}
+            AND a.clock_in_date IS NOT NULL
+            AND a.clock_in_date &gt; STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', 1), '%H:%i')
+        ORDER BY a.clock_in_date
+    </select>
+
+    <!-- 早退人员（含车间信息） -->
+    <select id="leaveEarlyPersonWithDept"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+            sp.NAME AS employeeName,
+            a.clock_out_date AS clockOutDate,
+            IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
+            IFNULL(fpa.position_name, '未分配车间') AS departmentName
+        FROM
+            swm_daily_attendance a
+                INNER JOIN swm_person sp ON a.employee_id = sp.id
+                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.`status` = '0' AND sp.personnel_status = '1'
+            AND sp.person_type != '1'
+            AND a.attendance_date BETWEEN #{startDate} AND #{endDate}
+            AND a.clock_out_date IS NOT NULL
+            AND TIME(a.clock_out_date) &lt; STR_TO_DATE(SUBSTRING_INDEX(a.work_time_range, '-', -1), '%H:%i')
+        ORDER BY a.clock_out_date
+    </select>
+
+    <select id="findClasses" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            *
+        FROM
+            swm_daily_attendance
+        WHERE
+           classes = #{classes}
+        order by attendance_date desc
+        limit 1
+    </select>
+    <select id="findDateByIdCards" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
+        SELECT
+            *
+        FROM
+            swm_daily_attendance
+        WHERE
+        identity_card IN
+        <foreach collection="idCard" item="card" open="(" separator="," close=")">
+            #{card}
+        </foreach>
+          and attendance_date = #{nowDate}
+    </select>
+    <select id="findStatisticsByWeekWithPage" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmMonthlyAttendance">
+            SELECT
+            sda.employee_id as employee_id,
+            sda.identity_card as identity_card,
+            sda.employee_name as employee_name,
+            sp.phone_number as phone_number,
+            fwg.work_group_name as team,
+            sp.job_type as job_type,
+            SUM(CASE WHEN sda.clock_in_date IS NOT NULL THEN 1 ELSE 0 END) as attendanceDay,
+            SUM(CASE WHEN sda.attendance_normal = 0 THEN 1 ELSE 0 END) as validAttendanceDays,
+            SUM(sda.actual_hours) as actualHours,
+            SUM(sda.idle_hours) as idleHours
+            FROM swm_daily_attendance sda
+            LEFT JOIN swm_person sp
+            ON sp.identity_card = sda.identity_card and sp.name= sda.employee_name
+            LEFT JOIN  fms_work_group fwg on sp.team = fwg.id COLLATE utf8mb4_general_ci
+        <where>
+                sp.personnel_status = '1' and sp.status = '0' and
+                sda.attendance_date between #{startDate} and #{endDate}
+                <if test="team != null and team != ''">
+                    AND sp.team = #{team}
+                </if>
+                <if test="employeeName != null and employeeName != ''">
+                    AND sda.employee_name LIKE concat('%', #{employeeName}, '%')
+                </if>
+            <if test="personType != null and personType != ''">
+                AND sp.person_type = #{personType}
+            </if>
+            </where>
+            GROUP BY sda.employee_name
+    </select>
+    <select id="noMonthAttendancePerson"
+            resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$NoAttendancePerson">
+        SELECT
+            sp.NAME AS employeeName,
+            sp.id,
+            sp.phone_number AS phoneNumber,
+            DATEDIFF( #{now},GREATEST( IFNULL(last_att.last_clock_date, #{startDate}),sp.create_date ) ) AS absentDays
+        FROM
+            swm_person sp
+                LEFT JOIN (SELECT employee_id, MAX(attendance_date) AS last_clock_date
+                FROM swm_daily_attendance
+                WHERE  clock_in_date IS NOT NULL AND attendance_date BETWEEN #{startDate} AND #{endDate}
+                GROUP BY
+                    employee_id
+            ) last_att ON sp.id = last_att.employee_id
+                LEFT JOIN fms_work_group fwg
+                          ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+           sp.`status` = '0'
+          AND sp.personnel_status = '1'
+          AND sp.person_type != '1'
+        AND DATEDIFF(#{now}, IFNULL(last_att.last_clock_date, sp.create_date)) >= 1
+        ORDER BY
+            absentDays DESC
+    </select>
+</mapper>

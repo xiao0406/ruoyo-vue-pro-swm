@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHazardSourceMapper">
+
+    <!-- 获取单条数据 -->
+    <select id="get" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHazardSourceDO">
+        SELECT
+            a.*
+        FROM swm_hazard_source a
+        WHERE a.id = #{id}
+    </select>
+
+    <!-- 查询数据列表 -->
+    <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHazardSourceDO">
+        SELECT
+            a.*
+        FROM swm_hazard_source a
+        <where>
+            
+            <if test="hazardName != null and hazardName != ''">
+                AND a.hazard_name LIKE CONCAT('%', #{hazardName}, '%')
+            </if>
+            <if test="hazardCategory != null and hazardCategory != ''">
+                AND a.hazard_category = #{hazardCategory}
+            </if>
+            <if test="location != null and location != ''">
+                AND a.location LIKE CONCAT('%', #{location}, '%')
+            </if>
+            <if test="beaconIdentifier != null and beaconIdentifier != ''">
+                AND (
+                    a.beacon_identifier LIKE CONCAT('%', #{beaconIdentifier}, '%')
+                    OR EXISTS (
+                        SELECT 1 FROM swm_beacon_station b
+                        WHERE FIND_IN_SET(b.beacon_id, a.beacon_identifier) > 0
+                        AND (b.device_name LIKE CONCAT('%', #{beaconIdentifier}, '%')
+                             OR b.beacon_id LIKE CONCAT('%', #{beaconIdentifier}, '%'))
+                        AND b.status = '0'
+                    )
+                )
+            </if>
+            <!-- 支持多信标搜索的额外条件 -->
+            <if test="beaconIdentifierSearchList != null and beaconIdentifierSearchList.size() > 0">
+                <foreach collection="beaconIdentifierSearchList" item="searchTerm" separator="">
+                    AND (
+                        a.beacon_identifier LIKE CONCAT('%', #{searchTerm}, '%')
+                        OR EXISTS (
+                            SELECT 1 FROM swm_beacon_station b
+                            WHERE FIND_IN_SET(b.beacon_id, a.beacon_identifier) > 0
+                            AND (b.device_name LIKE CONCAT('%', #{searchTerm}, '%')
+                                 OR b.beacon_id LIKE CONCAT('%', #{searchTerm}, '%'))
+                            AND b.status = '0'
+                        )
+                    )
+                </foreach>
+            </if>
+            <if test="beaconTag != null and beaconTag != ''">
+                AND a.beacon_tag LIKE CONCAT('%', #{beaconTag}, '%')
+            </if>
+            <if test="isPatrolIncluded != null and isPatrolIncluded != ''">
+                AND a.is_patrol_included = #{isPatrolIncluded}
+            </if>
+            <if test="hazardStatus != null and hazardStatus != ''">
+                AND a.hazard_status = #{hazardStatus}
+            </if>
+            <if test="status != null and status != ''">
+                AND a.status = #{status}
+            </if>
+        </where>
+        ORDER BY a.create_date DESC
+    </select>
+
+    <!-- 根据状态统计数量 -->
+    <select id="countByStatusAndMonth" resultType="int">
+        SELECT COUNT(*)
+        FROM swm_hazard_source
+        WHERE hazard_status = #{status}
+        <if test="year != null and year != ''">AND YEAR(registration_time) = #{year}</if>
+        <if test="month != null and month != ''">AND MONTH(registration_time) = #{month}</if>
+        AND status = '0';
+    </select>
+
+    <!-- 按危险源类别统计数量 -->
+    <select id="countByCategoryAndMonth" resultType="map">
+        SELECT
+            hazard_category AS category,
+            COUNT(*) AS count
+        FROM swm_hazard_source
+        WHERE status = '0'
+            <if test="year != null and year != ''">AND YEAR(registration_time) = #{year}</if>
+            <if test="month != null and month != ''">AND MONTH(registration_time) = #{month}</if>
+        GROUP BY hazard_category
+    </select>
+
+    <!-- 获取危险源类别排名前10 -->
+    <select id="getTop10Categories" resultType="map">
+        SELECT
+            hazard_category AS category,
+            COUNT(*) AS count
+        FROM swm_hazard_source
+        WHERE status = '0'
+            <if test="year != null and year != ''">AND YEAR(registration_time) = #{year}</if>
+            <if test="month != null and month != ''">AND MONTH(registration_time) = #{month}</if>
+        GROUP BY hazard_category
+        ORDER BY count DESC
+        LIMIT 10
+    </select>
+
+    <select id="countByYearAndMonth" resultType="int">
+        SELECT COUNT(*)
+        FROM swm_hazard_source
+        WHERE status = '0'
+            <if test="year != null and year != ''">AND YEAR(registration_time) = #{year}</if>
+            <if test="month != null and month != ''">AND MONTH(registration_time) = #{month}</if>
+    </select>
+
+    <select id="findTopCategories" resultType="map">
+        SELECT
+        hazard_category AS category,
+        COUNT(*) AS count
+        FROM swm_hazard_source
+        WHERE status = '0'
+        <if test="beginDate != null and beginDate != ''">
+            AND DATE(registration_time) <![CDATA[>=]]> #{beginDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(registration_time) <![CDATA[<=]]> #{endDate}
+        </if>
+        GROUP BY hazard_category
+        ORDER BY count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 按日期范围分组统计 -->
+    <select id="countByDateRangeGroupByDay" resultType="map">
+        SELECT
+            DATE_FORMAT(registration_time, '%Y-%m-%d') as date,
+            COUNT(*) as count
+        FROM swm_hazard_source
+        WHERE DATE(registration_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+          AND status = '0'
+        GROUP BY DATE(registration_time)
+        ORDER BY date
+    </select>
+
+    <!-- 按类别和日期范围分组统计 -->
+    <select id="countCategoryTrendByDateRange" resultType="map">
+        SELECT
+        hazard_category as category,
+        DATE_FORMAT(registration_time, '%Y-%m-%d') as date,
+        COUNT(*) as count
+        FROM swm_hazard_source
+        WHERE DATE(registration_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
+        AND status = '0'
+        GROUP BY hazard_category, DATE(registration_time)
+        ORDER BY date, category
+    </select>
+
+    <select id="findCategoryDistribution" resultType="map">
+        SELECT
+        hazard_category AS category,
+        COUNT(*) AS count
+        FROM swm_hazard_source
+        WHERE status = '0'
+        <if test="beginDate != null and beginDate != ''">
+            AND DATE(registration_time) <![CDATA[>=]]> #{beginDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND DATE(registration_time) <![CDATA[<=]]> #{endDate}
+        </if>
+        GROUP BY hazard_category
+        ORDER BY count DESC
+    </select>
+
+    <!-- 按日期范围和状态统计 -->
+    <select id="countByDateRange" resultType="int">
+        SELECT COUNT(*)
+        FROM swm_hazard_source
+        WHERE registration_time BETWEEN #{beginDate} AND #{endDate}
+        AND status = '0'
+        <if test="statusList != null and !statusList.isEmpty()">
+            AND hazard_status IN
+            <foreach item="status" collection="statusList" open="(" separator="," close=")">
+                #{status}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 统计未制定巡检计划的数量 -->
+    <select id="countNoInspectionPlan" resultType="int">
+        SELECT COUNT(*)
+        FROM swm_hazard_source
+        WHERE registration_time BETWEEN #{beginDate} AND #{endDate}
+        AND status = '0'
+          AND (is_patrol_included = '0' OR is_patrol_included IS NULL)
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM swm_hazard_source WHERE status = '0'
+    </select>
+</mapper>

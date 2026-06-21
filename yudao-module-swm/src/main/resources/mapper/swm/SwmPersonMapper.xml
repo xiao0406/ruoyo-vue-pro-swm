@@ -1,0 +1,805 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmPersonMapper">
+
+    <!-- 查询数据 -->
+    <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT DISTINCT
+               a.id AS "id",
+               a.name AS "name",
+               a.person_type AS "personType",
+               a.gender AS "gender",
+                jso.office_name AS "company",
+                pa.position_name AS "department",
+                pl.prod_line_name AS "prodLine",
+                wg.work_group_name AS "team",
+                a.job_type AS "jobType",
+               a.safety_helmet_id AS "safetyHelmetId",
+               a.personnel_status AS "personnelStatus",
+               a.safety_education AS "safetyEducation",
+               a.identity_card AS "identityCard",
+               a.phone_number AS "phoneNumber",
+               a.helmet_returned AS "helmetReturned",
+               a.departure_type AS "departureType",
+               a.departure_reason AS "departureReason",
+               a.departure_date AS "departureDate",
+               a.is_external_personnel AS "isExternalPersonnel",
+               a.create_by AS "createBy",
+               a.create_date AS "createDate",
+               a.update_by AS "updateBy",
+               a.update_date AS "updateDate",
+               a.remarks AS "remarks",
+               a.status AS "status",
+               a.dept ,
+               a.position,
+               a.person_number,
+               a.age,
+               a.urgent_person,
+               a.urgent_phone_number,
+               a.corp_code AS "corpCode",
+               a.corp_name AS "corpName"
+        FROM 
+        LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        LEFT JOIN system_dept jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+        <where>
+            a.status = '0' and a.personnel_status = '1'
+            <if test="company != null and company != ''">
+                AND jso.office_name LIKE CONCAT('%', #{company}, '%')
+            </if>
+            <if test="personNumber != null and personNumber != ''">
+                AND a.person_number LIKE CONCAT('%', #{personNumber}, '%')
+            </if>
+            <if test="id != null and id != ''">
+                AND a.id = #{id}
+            </if>
+            <if test="department != null and department != ''">
+                AND  pa.position_name = #{department}
+            </if>
+            <if test="prodLine != null and prodLine != ''">
+                AND pl.prod_line_name = #{prodLine}
+            </if>
+            <if test="team != null and team != ''">
+                AND wg.work_group_name = #{team}
+            </if>
+            <if test="jobType != null and jobType != ''">
+                AND a.job_type = #{jobType}
+            </if>
+            
+            <!-- 非组织字段保留原有查询方式 -->
+            <if test="name != null and name != ''">
+                AND a.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="identityCard != null and identityCard != ''">
+                AND a.identity_card LIKE CONCAT('%', #{identityCard}, '%')
+            </if>
+            <if test="phoneNumber != null and phoneNumber != ''">
+                AND a.phone_number LIKE CONCAT('%', #{phoneNumber}, '%')
+            </if>
+            <if test="personnelStatus != null and personnelStatus != ''">
+                AND a.personnel_status = #{personnelStatus}
+            </if>
+            <if test="status != null and status != ''">
+                AND a.status = #{status}
+            </if>
+            <if test="personType != null and personType != ''">
+                AND a.person_type = #{personType}
+            </if>
+            <if test="gender != null and gender != ''">
+                AND a.gender = #{gender}
+            </if>
+            <if test="safetyHelmetId != null and safetyHelmetId != ''">
+                AND a.safety_helmet_id = #{safetyHelmetId}
+            </if>
+            <if test="safetyEducation != null and safetyEducation != ''">
+                AND a.safety_education = #{safetyEducation}
+            </if>
+            <if test="helmetReturned != null and helmetReturned != ''">
+                AND a.helmet_returned = #{helmetReturned}
+            </if>
+            <if test="departureType != null and departureType != ''">
+                AND a.departure_type = #{departureType}
+            </if>
+            <if test="isExternalPersonnel != null and isExternalPersonnel != ''">
+                AND a.is_external_personnel = #{isExternalPersonnel}
+            </if>
+
+            <!-- 只有在 powerOnStatus 不为空时才加条件 -->
+            <if test="powerOnStatus != null and powerOnStatus != ''">
+                <!-- 假如 status = 0，则使用 IN -->
+                <if test="powerOnStatus == '0'.toString() ">
+                <if test="todayOnSiteIdCards != null and todayOnSiteIdCards.size >0">
+                    AND a.identity_card IN
+                    <foreach collection="todayOnSiteIdCards" item="id" open="(" separator="," close=")">
+                        #{id}
+                    </foreach>
+                </if>
+
+                </if>
+                <!-- 否则 NOT IN -->
+                <if test="powerOnStatus == '1'.toString() ">
+                    <if test="todayOnSiteIdCards != null and todayOnSiteIdCards.size >0">
+                        AND a.identity_card NOT IN
+                        <foreach collection="todayOnSiteIdCards" item="id" open="(" separator="," close=")">
+                            #{id}
+                        </foreach>
+                    </if>
+                </if>
+            </if>
+            <if test="random != null and random != 0 ">
+                AND #{random} = #{random}
+            </if>
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
+        </where>
+        ORDER BY 
+    </select>
+
+    <!-- 根据身份证号码查询离职人员 -->
+    <select id="findDepartedByIdentityCard" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT
+            a.id, a.name, a.person_type, a.gender, a.company, a.department, a.prod_line,
+            a.work_process, a.team, a.job_type, a.safety_helmet_id, a.personnel_status,
+            a.safety_education, a.identity_card, a.phone_number, a.helmet_returned,
+            a.departure_type, a.departure_reason, a.departure_date,
+            a.create_by, a.create_date, a.update_by, a.update_date, a.remarks
+        FROM swm_person a
+        <where>
+            a.identity_card = #{identityCard}
+            AND a.personnel_status = #{personnelStatus}
+            AND a.status = '0'
+        </where>
+        ORDER BY a.departure_date DESC
+    </select>
+
+    <select id="findListByIds" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        select * from swm_person where id in
+        <foreach item="item" index="index" collection="employeeIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 根据部门条件查询在职人员 -->
+    <select id="findPersonsByDepartmentCondition" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT DISTINCT
+               a.id AS "id",
+               a.name AS "name",
+               a.person_type AS "personType",
+               a.gender AS "gender",
+               -- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
+               COALESCE(o.office_name, backup_o.office_name) AS "company",
+               COALESCE(p.position_name, backup_p.position_name) AS "department",
+               COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
+               COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
+               -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
+               COALESCE(
+                   NULLIF(TRIM(f.work_type), ''),
+                   NULLIF(TRIM(backup_wt.work_type), ''),
+                   NULLIF(TRIM(a.job_type), '')
+               ) AS "jobType",
+               a.safety_helmet_id AS "safetyHelmetId",
+               a.personnel_status AS "personnelStatus",
+               a.safety_education AS "safetyEducation",
+               a.identity_card AS "identityCard",
+               a.phone_number AS "phoneNumber",
+               a.helmet_returned AS "helmetReturned",
+               a.departure_type AS "departureType",
+               a.departure_reason AS "departureReason",
+               a.departure_date AS "departureDate",
+               a.create_by AS "createBy",
+               a.create_date AS "createDate",
+               a.update_by AS "updateBy",
+               a.update_date AS "updateDate",
+               a.remarks AS "remarks",
+               a.status AS "status"
+        FROM swm_person a
+        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = f.identity_code
+                AND fw2.create_date > f.create_date
+            )
+        LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
+        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
+        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
+        -- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
+        LEFT JOIN system_dept backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
+        LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
+        LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        WHERE a.personnel_status = '1'
+        AND (
+            p.id = #{departmentCondition}
+            OR wg.id = #{departmentCondition}
+            OR fpl.id = #{departmentCondition}
+            OR o.office_code = #{departmentCondition}
+            OR a.identity_card = #{departmentCondition}
+            OR a.company = #{departmentCondition}
+            OR a.department = #{departmentCondition}
+            OR a.prod_line = #{departmentCondition}
+            OR a.team = #{departmentCondition}
+            OR a.job_type = #{departmentCondition}
+        )
+        AND a.status = '0'
+        ORDER BY a.update_date DESC
+    </select>
+
+    <!-- 搜索人员（支持多字段搜索） -->
+    <select id="searchPersonsByKeyword" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT DISTINCT
+               a.id AS "id",
+               a.name AS "name",
+               a.person_type AS "personType",
+               a.gender AS "gender",
+               -- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
+               COALESCE(o.office_name, backup_o.office_name) AS "company",
+               COALESCE(p.position_name, backup_p.position_name) AS "department",
+               COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
+               COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
+               -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
+               COALESCE(
+                   NULLIF(TRIM(f.work_type), ''),
+                   NULLIF(TRIM(backup_wt.work_type), ''),
+                   NULLIF(TRIM(a.job_type), '')
+               ) AS "jobType",
+               a.safety_helmet_id AS "safetyHelmetId",
+               a.personnel_status AS "personnelStatus",
+               a.safety_education AS "safetyEducation",
+               a.identity_card AS "identityCard",
+               a.phone_number AS "phoneNumber",
+               a.helmet_returned AS "helmetReturned",
+               a.departure_type AS "departureType",
+               a.departure_reason AS "departureReason",
+               a.departure_date AS "departureDate",
+               a.create_by AS "createBy",
+               a.create_date AS "createDate",
+               a.update_by AS "updateBy",
+               a.update_date AS "updateDate",
+               a.remarks AS "remarks",
+               a.status AS "status",
+               a.is_external_personnel AS "isExternalPersonnel"
+        FROM swm_person a
+        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+            AND NOT EXISTS (
+                SELECT 1
+                FROM fms_worker fw2
+                WHERE fw2.identity_code = f.identity_code
+                AND fw2.create_date > f.create_date
+            )
+        LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
+        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
+        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
+        -- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
+        LEFT JOIN system_dept backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
+        LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
+        LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        WHERE a.personnel_status = '1'
+        AND a.status = '0'
+        <if test="keyword != null and keyword != ''">
+            AND (
+                a.name LIKE CONCAT('%', #{keyword}, '%')
+                OR a.identity_card LIKE CONCAT('%', #{keyword}, '%')
+                OR a.phone_number LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY a.update_date DESC
+    </select>
+
+    <!-- 查询所有在职人员的详细信息（包含关联表ID）- 用于缓存初始化 -->
+    <select id="findActivePersonsWithIds" resultType="java.util.Map">
+        SELECT DISTINCT
+            a.id AS "id",
+            a.NAME AS "name",
+            a.person_type AS "personType",
+            a.gender AS "gender",
+            jso.office_name AS "company",
+            pa.position_name AS "department",
+            pl.prod_line_name AS "prodLine",
+            wg.work_group_name AS "team",
+            a.job_type AS "jobType",
+            a.safety_helmet_id AS "safetyHelmetId",
+            a.personnel_status AS "personnelStatus",
+            a.identity_card AS "identityCard",
+            a.phone_number AS "phoneNumber",
+            a.create_by AS "createBy",
+            a.create_date AS "createDate",
+            a.update_by AS "updateBy",
+            a.update_date AS "updateDate",
+            a.remarks AS "remarks",
+            a.STATUS AS "status",
+            a.is_external_personnel AS "isExternalPersonnel",
+            f.id AS "workerArchiveId",
+            a.company AS "officeCode",
+            a.department AS "positionArchiveId",
+            a.team AS "workGroupId",
+            a.prod_line AS "prodLineId"
+        FROM
+            swm_person a
+                LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
+                LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
+                LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
+                LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+                LEFT JOIN system_dept jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+                LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+                AND NOT EXISTS (SELECT 1 FROM fms_worker fw2 WHERE fw2.identity_code = f.identity_code AND fw2.create_date > f.create_date)
+        WHERE a.personnel_status = '1'
+          AND a.status = '0'
+        <if test="idCard != null and idCard != ''">
+            and a.identity_card = #{idCard}
+        </if>
+        <if test="random != null and random != 0 ">
+            AND #{random} = #{random}
+        </if>
+        ORDER BY a.update_date DESC
+    </select>
+
+
+    <!-- 根据身份证号列表查询人员 -->
+    <select id="findByIdCards" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT
+            *
+        FROM swm_person
+        WHERE status = '0' and personnel_status = '1'
+          AND identity_card IN
+        <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
+            #{idCard}
+        </foreach>
+    </select>
+
+    <!-- 统计不重复身份证的人员数量 -->
+    <select id="countDistinctByIdentityCard" resultType="int">
+        SELECT COUNT(DISTINCT identity_card)
+        FROM swm_person
+        WHERE status = '0' and personnel_status = '1'
+    </select>
+
+    <select id="listByOrgAndWorkType" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT
+        a.id AS "id",
+        a.name AS "name",
+        a.person_type AS "personType",
+        a.gender AS "gender",
+        jso.office_name AS "company",
+        pa.position_name AS "department",
+        pl.prod_line_name AS "prodLine",
+        wg.work_group_name AS "team",
+        a.job_type AS "jobType",
+        a.safety_helmet_id AS "safetyHelmetId",
+        a.personnel_status AS "personnelStatus",
+        a.identity_card AS "identityCard",
+        a.phone_number AS "phoneNumber",
+        a.create_by AS "createBy",
+        a.create_date AS "createDate",
+        a.update_by AS "updateBy",
+        a.update_date AS "updateDate",
+        a.remarks AS "remarks",
+        a.status AS "status"
+        FROM swm_person a
+        left join fms_position_archive pa on a.department = pa.id  COLLATE utf8mb4_general_ci
+        left join fms_prod_line pl on a.prod_line = pl.id COLLATE utf8mb4_general_ci
+        left join fms_work_group wg on a.team = wg.id   COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        left join system_dept jso on a.company = jso.office_code  COLLATE utf8mb4_general_ci
+        WHERE a.personnel_status = '1'
+        AND a.status = '0'
+        <if test="query.officeCode != null and query.officeCode != ''">
+            AND a.company = #{query.officeCode}
+        </if>
+        <if test="query.positionArchiveId != null and query.positionArchiveId != ''">
+            AND a.department = #{query.positionArchiveId}
+        </if>
+        <if test="query.prodLineId != null and query.prodLineId != ''">
+            AND a.prod_line = #{query.prodLineId}
+        </if>
+        <if test="query.workGroupId != null and query.workGroupId != ''">
+            AND a.team = #{query.workGroupId}
+        </if>
+        <if test="query.jobType != null and query.jobType != ''">
+            AND a.job_type = #{query.jobType}
+        </if>
+        GROUP BY a.id  <!-- 只需按主键分组 -->
+        ORDER BY MAX(a.update_date) DESC  <!-- 聚合排序字段 -->
+    </select>
+
+    <!-- 根据身份证号列表查询在职人员 -->
+    <select id="findActivePersonsByIdentityCards" parameterType="java.util.List" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT 
+            a.id AS "id",
+            a.name AS "name",
+            a.identity_card AS "identityCard",
+            a.phone_number AS "phoneNumber",
+            a.personnel_status AS "personnelStatus",
+            a.person_type AS "personType"
+        FROM swm_person a
+        WHERE a.personnel_status = '1'
+        AND a.status = '0'
+        AND a.identity_card IN
+        <foreach collection="identityCards" item="identityCard" open="(" separator="," close=")">
+            #{identityCard}
+        </foreach>
+    </select>
+
+    <!-- 根据手机号列表查询在职人员 -->
+    <select id="findActivePersonsByPhoneNumbers" parameterType="java.util.List" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT 
+            a.id AS "id",
+            a.name AS "name",
+            a.identity_card AS "identityCard",
+            a.phone_number AS "phoneNumber",
+            a.personnel_status AS "personnelStatus"
+        FROM swm_person a
+        WHERE a.personnel_status = '1'
+        AND a.status = '0'
+        AND a.phone_number IN
+        <foreach collection="phoneNumbers" item="phoneNumber" open="(" separator="," close=")">
+            #{phoneNumber}
+        </foreach>
+    </select>
+    <select id="findByIdCardsPage" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT
+        id, name, identity_card, person_type, phone_number, status, personnel_status,
+        team, department, prod_line, job_type, safety_helmet_id, company,
+        create_by, create_date, update_by, update_date, remarks,dept , position,  gender
+        FROM swm_person
+        WHERE status = '0' and personnel_status = '1'
+        AND identity_card IN
+        <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
+            #{idCard}
+        </foreach>
+    </select>
+    <select id="findByIdCardsCount" resultType="java.lang.Long">
+        SELECT
+        count(id)
+        FROM swm_person
+        WHERE status = '0' and personnel_status = '1'
+        AND identity_card IN
+        <foreach collection="idCards" item="idCard" open="(" separator="," close=")">
+            #{idCard}
+        </foreach>
+    </select>
+    <select id="findTableName" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.AiDto$RiskStatistics">
+        SELECT
+            sp.`name` personName,
+            CONCAT('swm_warning_management_', shd.device_id, '_', shd.assigned_person) tableName
+        FROM
+            swm_helmet_device shd
+                JOIN swm_person sp ON shd.assigned_person = sp.identity_card
+        WHERE
+            shd.`status` = 0
+          AND sp.`status` = 0
+          and sp.personnel_status = '1'
+          AND shd.assigned_person IS NOT NULL
+    </select>
+    <select id="findPersonList" resultType="cn.iocoder.yudao.module.swm.controller.admin.area.vo.AreaTrajectoryVO">
+        SELECT
+            sp.id,
+            sp.`name` as employeeName,
+            sp.identity_card as idCard,
+            sp.safety_helmet_id as deviceId,
+            sp.phone_number,
+            sp.department,
+            fpa.position_name AS departmentName,
+            sp.team,
+            fwg.work_group_name AS teamName
+        FROM
+            swm_person sp
+                LEFT JOIN fms_position_archive fpa ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+                LEFT JOIN fms_work_group fwg ON sp.team = fwg.id COLLATE utf8mb4_general_ci
+        WHERE
+            sp.STATUS = 0 and sp.personnel_status = '1'
+    </select>
+    <select id="findTodayAttendance" resultType="cn.iocoder.yudao.module.swm.controller.admin.dashboard.vo.DashboardPersonVO">
+        SELECT
+            sp.`name`,
+            sp.gender,
+            sp.phone_number,
+            sp.person_type
+        FROM
+            swm_daily_attendance sda
+                join swm_person sp on sda.identity_card = sp.identity_card
+        <where>
+             sda.`status` = '0' and sp.`status` ='0' and sp.personnel_status = '1'
+            and sda.clock_in_date  is not  NULL
+            and sda.attendance_date  = #{date}
+              <if test="personTypeList != null and personTypeList.size >0">
+                and sp.person_type in
+                  <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                    #{personType}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <select id="findManageTodayList" resultType="cn.iocoder.yudao.module.swm.controller.admin.dashboard.vo.DashboardPersonVO">
+        SELECT
+        sp.`name`,
+        sp.gender,
+        sp.phone_number,
+        sp.person_type
+        FROM
+         swm_person sp
+        <where>
+            sp.`status` ='0' and sp.personnel_status = '1'
+            <if test="personTypeList != null and personTypeList.size >0">
+                and sp.person_type in
+                <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                    #{personType}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <select id="peronsList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT DISTINCT
+        a.id AS "id",
+        a.NAME AS "name",
+        a.person_type AS "personType",
+        a.gender AS "gender",
+        a.corp_name AS "company",
+        a.job_type AS "jobType",
+        a.safety_helmet_id AS "safetyHelmetId",
+        a.personnel_status AS "personnelStatus",
+        a.safety_education AS "safetyEducation",
+        a.identity_card AS "identityCard",
+        a.phone_number AS "phoneNumber",
+        a.helmet_returned AS "helmetReturned",
+        a.departure_type AS "departureType",
+        a.departure_reason AS "departureReason",
+        a.departure_date AS "departureDate",
+        a.is_external_personnel AS "isExternalPersonnel",
+        a.create_by AS "createBy",
+        a.create_date AS "createDate",
+        a.update_by AS "updateBy",
+        a.update_date AS "updateDate",
+        a.remarks AS "remarks",
+        a.STATUS AS "status",
+        a.dept,
+        a.position
+        FROM 
+        <where>
+            <if test="personnelStatus != null and personnelStatus != ''">
+                AND a.personnel_status = #{personnelStatus}
+            </if>
+            <if test="status != null and status != ''">
+                AND a.status = #{status}
+            </if>
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
+            AND #{random} = #{random}
+        </where>
+        ORDER BY 
+    </select>
+
+    <update id="updateBatch">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE swm_person
+            <set>
+                <if test="item.personNumber != null and item.personNumber != '' ">
+                    person_number = #{item.personNumber},
+                </if>
+                <if test="item.age != null and item.age != '' ">
+                    age = #{item.age},
+                </if>
+                <if test="item.urgentPerson != null and item.urgentPerson != ''">
+                    urgent_person = #{item.urgentPerson},
+                </if>
+                <if test="item.urgentPhoneNumber != null and item.urgentPhoneNumber != ''">
+                    urgent_phone_number = #{item.urgentPhoneNumber},
+                </if>
+                update_date = NOW()
+            </set>
+            WHERE identity_card = #{item.identityCard}
+        </foreach>
+    </update>
+    <update id="updateTeamBatch">
+        <foreach collection="list" item="item" separator=";">
+        UPDATE swm_person
+        <set>
+            <if test="item.department != null and item.department != ''">
+                department = #{item.department},
+            </if>
+            <if test="item.prodLine != null and item.prodLine != ''">
+                prod_line = #{item.prodLine},
+            </if>
+            <if test="item.team != null and item.team != ''">
+                team = #{item.team},
+            </if>
+            update_date = NOW()
+        </set>
+        WHERE identity_card = #{item.identityCard}
+        </foreach>
+    </update>
+
+
+    <select id="findListByJobTypeList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT id,name,identity_card,phone_number
+        FROM swm_person
+        <where>
+            <if test="jobtypeList != null and jobtypeList.size >0">
+                AND job_type in
+                <foreach collection="jobtypeList" item="jobtype" open="(" separator="," close=")">
+                    #{jobtype}
+                </foreach>
+            </if>
+            AND STATUS = '0'
+            AND personnel_status = '1'
+        </where>
+    </select>
+    <select id="selectByNames" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.FmsPositionArchiveDO">
+        SELECT
+        *
+        FROM
+        fms_position_archive
+        WHERE
+            corp_code = #{corpCode} and
+        position_name IN
+        <foreach collection="departments" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+    <select id="selectProdLineByNames" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.FmsProdLineDO">
+        SELECT
+        *
+        FROM
+        fms_prod_line
+        WHERE
+        corp_code = #{corpCode} and
+        prod_line_name IN
+        <foreach collection="productionLines" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+    <select id="selectWorkGroupByNames" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.FmsWorkGroupDO">
+        SELECT
+        *
+        FROM
+        fms_work_group
+        WHERE
+        corp_code = #{corpCode} and
+        work_group_name IN
+        <foreach collection="teams" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+    <select id="findListByPersonNames" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
+        SELECT
+        *
+        FROM swm_person
+        WHERE status = '0' and personnel_status = '1'
+        AND name IN
+        <foreach collection="personNames" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+
+    <resultMap id="SwmPersonResultMap" type="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO"> <!-- 替换为实体类包路径 -->
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="personType" property="personType"/>
+        <result column="gender" property="gender"/>
+        <result column="company" property="company"/>
+        <result column="department" property="department"/>
+        <result column="prodLine" property="prodLine"/>
+        <result column="team" property="team"/>
+        <result column="jobType" property="jobType"/>
+        <result column="safetyHelmetId" property="safetyHelmetId"/>
+        <result column="personnelStatus" property="personnelStatus"/>
+        <result column="safetyEducation" property="safetyEducation"/>
+        <result column="identityCard" property="identityCard"/>
+        <result column="phoneNumber" property="phoneNumber"/>
+        <result column="helmetReturned" property="helmetReturned"/>
+        <result column="departureType" property="departureType"/>
+        <result column="departureReason" property="departureReason"/>
+        <result column="departureDate" property="departureDate"/>
+        <result column="isExternalPersonnel" property="isExternalPersonnel"/>
+        <result column="createBy" property="createBy"/>
+        <result column="createDate" property="createDate"/>
+        <result column="updateBy" property="updateBy"/>
+        <result column="updateDate" property="updateDate"/>
+        <result column="remarks" property="remarks"/>
+        <result column="status" property="status"/>
+        <result column="dept" property="dept"/>
+        <result column="position" property="position"/>
+        <result column="personNumber" property="personNumber"/>
+        <result column="age" property="age"/>
+        <result column="urgentPerson" property="urgentPerson"/>
+        <result column="urgentPhoneNumber" property="urgentPhoneNumber"/>
+        <result column="corpCode" property="corpCode"/>
+        <result column="corpName" property="corpName"/>
+    </resultMap>
+
+    <!-- 自定义查询：无corpCode过滤的人员列表（核心方法） -->
+    <select id="findListWithoutCorpCode" parameterType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO" resultMap="SwmPersonResultMap">
+        SELECT DISTINCT
+        a.id AS "id",
+        a.NAME AS "name",
+        a.person_type AS "personType",
+        a.gender AS "gender",
+        jso.office_name AS "company",
+        pa.position_name AS "department",
+        pl.prod_line_name AS "prodLine",
+        wg.work_group_name AS "team",
+        a.job_type AS "jobType",
+        a.safety_helmet_id AS "safetyHelmetId",
+        a.personnel_status AS "personnelStatus",
+        a.safety_education AS "safetyEducation",
+        a.identity_card AS "identityCard",
+        a.phone_number AS "phoneNumber",
+        a.helmet_returned AS "helmetReturned",
+        a.departure_type AS "departureType",
+        a.departure_reason AS "departureReason",
+        a.departure_date AS "departureDate",
+        a.is_external_personnel AS "isExternalPersonnel",
+        a.create_by AS "createBy",
+        a.create_date AS "createDate",
+        a.update_by AS "updateBy",
+        a.update_date AS "updateDate",
+        a.remarks AS "remarks",
+        a.STATUS AS "status",
+        a.dept,
+        a.position,
+        a.person_number AS "personNumber",
+        a.age,
+        a.urgent_person AS "urgentPerson",
+        a.urgent_phone_number AS "urgentPhoneNumber",
+        a.corp_code AS "corpCode",
+        a.corp_name AS "corpName"
+        FROM
+        `swm_person` a
+        LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        LEFT JOIN system_dept jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+        WHERE
+        1=1
+        <!-- 动态条件：status（匹配传入的参数） -->
+        <if test="status != null and status != ''">
+            AND a.STATUS = #{status}
+        </if>
+        <!-- 动态条件：personnelStatus（匹配传入的参数） -->
+        <if test="personnelStatus != null and personnelStatus != ''">
+            AND a.personnel_status = #{personnelStatus}
+        </if>
+        GROUP BY
+        a.safety_helmet_id
+        ORDER BY
+        a.update_date DESC
+    </select>
+
+
+    <update id="updateBatchUrgentPerson">
+        <foreach collection="updateList" item="item" separator=";">
+            update swm_person
+            <set>
+                <if test="item.urgentPerson != null and item.urgentPerson != ''">
+                    urgent_person = #{item.urgentPerson},
+                </if>
+                <if test="item.urgentPhoneNumber != null and item.urgentPhoneNumber != ''">
+                    urgent_phone_number = #{item.urgentPhoneNumber},
+                </if>
+                <if test="item.bloodType != null and item.bloodType != ''">
+                    blood_type = #{item.bloodType},
+                </if>
+                <if test="item.team != null and item.team != ''">
+                    team = #{item.team},
+                </if>
+                update_date = now()
+            </set>
+            where name = #{item.name}
+            and phone_number = #{item.phoneNumber}
+        </foreach>
+    </update>
+</mapper>

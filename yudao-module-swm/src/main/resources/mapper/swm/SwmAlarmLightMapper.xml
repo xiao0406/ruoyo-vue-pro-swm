@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmAlarmLightMapper">
+	
+	<sql id="swmAlarmLightColumns">
+		a.id,
+		a.light_name,
+		a.sn_code,
+		a.enable_alarm,
+		a.status,
+		a.create_by,
+		a.create_date,
+		a.update_by,
+		a.update_date,
+		a.remarks
+	</sql>
+	
+	<sql id="swmAlarmLightJoins">
+	</sql>
+	
+	<select id="get" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmAlarmLightDO">
+		SELECT 
+			<include refid="swmAlarmLightColumns"/>
+		FROM swm_alarm_light a
+		<include refid="swmAlarmLightJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmAlarmLightDO">
+		SELECT
+			<include refid="swmAlarmLightColumns"/>,
+			(SELECT COUNT(1) FROM swm_alarm_light_config c WHERE c.light_id = a.id AND c.status = '0') AS configCount,
+			(SELECT GROUP_CONCAT(b.alarm_name SEPARATOR ',')
+			 FROM swm_alarm_light_config c
+			 LEFT JOIN swm_alarm_config b ON b.id = c.alarm_config_id AND b.status = '0'
+			 WHERE c.light_id = a.id AND c.status = '0'
+			 ORDER BY c.create_date ASC) AS alarmTypeNames
+		FROM swm_alarm_light a
+		<include refid="swmAlarmLightJoins"/>
+		<where>
+			a.status = #{STATUS_NORMAL}
+			<if test="lightName != null and lightName != ''">
+				AND a.light_name LIKE CONCAT('%', #{lightName}, '%')
+			</if>
+			<if test="snCode != null and snCode != ''">
+				AND a.sn_code LIKE CONCAT('%', #{snCode}, '%')
+			</if>
+			<if test="enableAlarm != null and enableAlarm != ''">
+				AND a.enable_alarm = #{enableAlarm}
+			</if>
+			<if test="alarmTypeName != null and alarmTypeName != ''">
+				AND EXISTS (
+					SELECT 1 FROM swm_alarm_light_config c2
+					LEFT JOIN swm_alarm_config b2 ON b2.id = c2.alarm_config_id AND b2.status = '0'
+					WHERE c2.light_id = a.id AND c2.status = '0'
+					AND b2.alarm_name LIKE CONCAT('%', #{alarmTypeName}, '%')
+				)
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmAlarmLightDO">
+		SELECT 
+			<include refid="swmAlarmLightColumns"/>
+		FROM swm_alarm_light a
+		<include refid="swmAlarmLightJoins"/>
+		<where>
+			a.status = #{STATUS_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+</mapper>

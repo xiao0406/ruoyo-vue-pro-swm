@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmAreaMapper">
+    
+    <!-- 查询数据 -->
+    <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmAreaDO">
+        SELECT 
+        FROM 
+        <where>
+            
+            <if test="random != null and random != 0">
+                AND #{random} = #{random}
+            </if>
+        </where>
+        ORDER BY 
+    </select>
+    <select id="findAddressList" resultType="cn.iocoder.yudao.module.swm.controller.admin.area.vo.AreaTrajectoryVO">
+        SELECT
+            sbs.location as address,
+            sa.area_name
+        FROM
+            swm_beacon_station sbs
+                Left JOIN swm_area sa ON sbs.area = sa.id
+        WHERE
+            sbs.`status` = 0
+          AND sa.status = 0
+          AND sbs.location IS NOT NULL
+          AND TRIM(sbs.location) != ''
+        order by sbs.location
+    </select>
+
+</mapper> 

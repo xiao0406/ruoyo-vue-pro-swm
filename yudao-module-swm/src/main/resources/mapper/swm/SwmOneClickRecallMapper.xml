@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmOneClickRecallMapper">
+	
+	<!-- 查询数据 -->
+	<select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmOneClickRecallDO">
+		SELECT 
+		FROM 
+		<where>
+			
+		</where>
+		ORDER BY 
+	</select>
+
+	<!-- 根据节点类型和节点列表查询人员信息 -->
+	<select id="findPersonnelByNodes" resultType="java.util.Map">
+		SELECT DISTINCT
+		a.id AS "id",
+		a.name AS "name",
+		a.person_type AS "personType",
+		a.gender AS "gender",
+		-- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
+		COALESCE(o.office_name, backup_o.office_name) AS "company",
+		COALESCE(p.position_name, backup_p.position_name) AS "department",
+		COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
+		COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
+		COALESCE(f.work_type, backup_wt.work_type) AS "jobType",
+		a.safety_helmet_id AS "safetyHelmetId",
+		a.personnel_status AS "personnelStatus",
+		a.safety_education AS "safetyEducation",
+		a.identity_card AS "identityCard",
+		a.phone_number AS "phoneNumber",
+		a.helmet_returned AS "helmetReturned",
+		a.departure_type AS "departureType",
+		a.departure_reason AS "departureReason",
+		a.departure_date AS "departureDate",
+		a.create_by AS "createBy",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.status AS "status"
+		FROM swm_person a
+		-- 原有的关联查询（通过fms_worker关联）
+		LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+		LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+		LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
+		LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
+		LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
+		-- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
+		LEFT JOIN system_dept backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
+		LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
+		LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
+		LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+		LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+		WHERE a.personnel_status IN ('1') and a.status = '0'
+		<if test="selectedNodes != null and selectedNodes.size() > 0">
+			AND (
+			<foreach collection="selectedNodes" item="node" separator=" OR ">
+				<choose>
+					<when test="node.nodeType == 'workshop'">
+						(p.id = #{node.id} OR a.department = #{node.id})
+					</when>
+					<when test="node.nodeType == 'workGroup'">
+						(wg.id = #{node.id} OR a.team = #{node.id})
+					</when>
+					<when test="node.nodeType == 'prodLine'">
+						(fpl.id = #{node.id} OR a.prod_line = #{node.id})
+					</when>
+					<when test="node.nodeType == 'office'">
+						(o.office_code = #{node.id} OR a.company = #{node.id})
+					</when>
+					<when test="node.nodeType == 'worker'">
+						a.identity_card = #{node.idCard}
+					</when>
+				</choose>
+			</foreach>
+			)
+		</if>
+		ORDER BY a.update_date DESC
+	</select>
+
+	<!-- 根据身份证列表查询设备信息 -->
+	<select id="findDevicesByIdentityCards" resultType="java.util.Map">
+		SELECT DISTINCT
+		hd.device_id AS "deviceId",
+		hd.assigned_person AS "identityCard",
+		sp.name AS "personName",
+		hd.status AS "deviceStatus"
+		FROM swm_helmet_device hd
+		LEFT JOIN swm_person sp ON hd.assigned_person = sp.identity_card
+		WHERE hd.assigned_person IN
+		<foreach collection="identityCards" item="idCard" open="(" separator="," close=")">
+			#{idCard}
+		</foreach>
+		AND hd.status = '0'
+		AND sp.personnel_status = '1'
+		AND sp.status = '0'
+	</select>
+
+	<!-- 根据节点类型和节点列表查询人员信息 (使用OR组合条件) -->
+	<select id="findPersonnelByNodesWithOr" resultType="java.util.Map">
+		SELECT DISTINCT
+		a.id AS "id",
+		a.name AS "name",
+		a.person_type AS "personType",
+		a.gender AS "gender",
+		-- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
+		COALESCE(o.office_name, backup_o.office_name) AS "company",
+		COALESCE(p.position_name, backup_p.position_name) AS "department",
+		COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
+		COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
+		COALESCE(f.work_type, backup_wt.work_type) AS "jobType",
+		a.safety_helmet_id AS "safetyHelmetId",
+		a.personnel_status AS "personnelStatus",
+		a.safety_education AS "safetyEducation",
+		a.identity_card AS "identityCard",
+		a.phone_number AS "phoneNumber",
+		a.helmet_returned AS "helmetReturned",
+		a.departure_type AS "departureType",
+		a.departure_reason AS "departureReason",
+		a.departure_date AS "departureDate",
+		a.create_by AS "createBy",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.status AS "status"
+		FROM swm_person a
+		-- 原有的关联查询（通过fms_worker关联）
+		LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+		LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+		LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
+		LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
+		LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
+		-- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
+		LEFT JOIN system_dept backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
+		LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
+		LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
+		LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
+		LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+		WHERE a.personnel_status IN ('1') and a.status = '0'
+		<if test="selectedNodes != null and selectedNodes.size() > 0">
+			AND (
+			<foreach collection="selectedNodes" item="node" separator=" OR ">
+				(p.id = #{node.id}
+				OR wg.id = #{node.id}
+				OR fpl.id = #{node.id}
+				OR o.office_code = #{node.id}
+				OR a.identity_card = #{node.idCard}
+				OR a.company = #{node.id}
+				OR a.department = #{node.id}
+				OR a.prod_line = #{node.id}
+				OR a.team = #{node.id}
+				OR a.job_type = #{node.id})
+			</foreach>
+			)
+		</if>
+		ORDER BY a.update_date DESC
+	</select>
+
+	<!-- 根据设备ID列表查询人员信息 -->
+	<select id="findPersonnelByDeviceIds" resultType="java.util.Map">
+		SELECT DISTINCT
+		hd.device_id AS "deviceId",
+		hd.assigned_person AS "identityCard",
+		sp.name AS "personName",
+		sp.gender AS "gender",
+		sp.phone_number AS "phoneNumber",
+		hd.status AS "deviceStatus"
+		FROM swm_helmet_device hd
+		LEFT JOIN swm_person sp ON hd.assigned_person = sp.identity_card
+		WHERE hd.device_id IN
+		<foreach collection="deviceIds" item="deviceId" open="(" separator="," close=")">
+			#{deviceId}
+		</foreach>
+		AND hd.status = '0'
+		AND sp.personnel_status = '1'
+		AND sp.status = '0'
+		ORDER BY sp.name
+	</select>
+
+	<!-- 查询所有应该接收全体推送的目标人员 -->
+	<select id="findAllTargetPersonnelForBroadcast" resultType="java.util.Map">
+		SELECT DISTINCT
+			hd.device_id AS "deviceId",
+			hd.assigned_person AS "identityCard",
+			sp.name AS "personName",
+			sp.gender AS "gender",
+			sp.phone_number AS "phoneNumber",
+			hd.status AS "deviceStatus"
+		FROM swm_person sp
+				 LEFT JOIN swm_helmet_device hd ON sp.identity_card = hd.assigned_person
+		WHERE sp.personnel_status = '1'    -- 在职人员
+		  AND sp.status = '0'              -- 有效状态
+		  AND hd.device_id IS NOT NULL     -- 有设备分配
+		  AND hd.status = '0'              -- 设备有效
+		ORDER BY sp.name
+	</select>
+
+	<select id="findAllTargetPersonnelForBroadcastByPersonType" resultType="java.util.Map">
+		SELECT DISTINCT
+		hd.device_id AS "deviceId",
+		hd.assigned_person AS "identityCard",
+		sp.name AS "personName",
+		sp.gender AS "gender",
+		sp.phone_number AS "phoneNumber",
+		hd.status AS "deviceStatus"
+		FROM swm_person sp
+		INNER JOIN swm_helmet_device hd ON sp.identity_card = hd.assigned_person
+		<where>
+			sp.personnel_status = '1'
+			AND sp.status = '0'
+			AND hd.status = '0'
+			<if test="personTypeList != null and personTypeList.size > 0">
+				AND sp.person_type IN
+				<foreach collection="personTypeList" item="personType" separator="," open="(" close=")">
+					#{personType}
+				</foreach>
+			</if>
+		</where>
+		ORDER BY sp.name
+	</select>
+
+</mapper> 

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHelmetConfigMapper">
+	
+	<!-- 查询数据 -->
+	<select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetConfigDO">
+		SELECT 
+		FROM 
+		<where>
+			
+		</where>
+		ORDER BY 
+	</select>
+	
+	<!-- 获取车间数据 -->
+	<!-- author: Shawn -->
+	<!-- date: 2025/06/24 -->
+	<!-- description: 查询fms_position_archive表中type='CJ'的车间数据 -->
+	<select id="getWorkshopData" resultType="java.util.Map">
+		SELECT 
+			id, 
+			'0001A110000000002ZWA' AS parent_id, 
+			position_name AS title 
+		FROM fms_position_archive 
+		WHERE type = 'CJ' 
+		  AND region = '0001A110000000002ZWA' 
+		  AND status = '0'
+	</select>
+	
+	<!-- 获取车间-产线-班组数据 -->
+	<!-- author: Shawn -->
+	<!-- date: 2025/06/24 -->
+	<!-- description: 根据用户要求的SQL查询车间-产线-班组数据，将workshop_name、line_name、work_group_name拼接作为名称 -->
+	<select id="getWorkshopLineGroupData" resultType="java.util.Map">
+		SELECT
+		    pa.position_name AS workshop_name, -- 从车间表获取车间名称
+		    pl.prod_line_name AS line_name,     -- 从产线表获取产线名称
+		    wg.work_group_name, -- 获取班组表的所有字段信息
+		    wg.id,
+		    CONCAT(pa.position_name, '-', pl.prod_line_name, '-', wg.work_group_name) AS title -- 拼接名称
+		FROM
+		    -- 基础表：车间归档表，并设置别名为 pa
+		    fms_position_archive pa
+		JOIN
+		    -- 连接产线表 (pl)，关联条件是 车间id = 产线中的work_shop_id
+		    fms_prod_line pl ON pa.id = pl.work_shop_id
+		JOIN
+		    -- 连接班组表 (wg)，关联条件是 产线id = 班组中的prod_line_id
+		    fms_work_group wg ON pl.id = wg.prod_line_id
+		WHERE
+		    -- 设置 fms_position_archive 表的筛选条件
+		    -- 您可以根据需要修改这些值
+		    pa.type = 'CJ'
+		    AND pa.region = '0001A110000000002ZWA'
+		    AND pa.status = '0'
+	</select>
+	
+	<!-- 获取人员类型字典数据 -->
+	<!-- author: Shawn -->
+	<!-- date: 2025/06/24 -->
+	<!-- description: 获取字典类型为person_type_enum的字典数据，用于"按人员类型展示"的颜色配置 -->
+	<select id="getPersonTypeEnumData" resultType="java.util.Map">
+		SELECT 
+		    dict_value AS id,
+		    dict_label AS title
+		FROM swm_dict_data
+		WHERE dict_type = 'person_type_enum' 
+		  AND status = '0'
+	</select>
+	
+	<!-- 获取工种数据 -->
+	<!-- author: Shawn -->
+	<!-- date: 2025/06/24 -->
+	<!-- description: 获取 swm_work_type 表中的工种数据，用于"按工种展示"的颜色配置 -->
+	<select id="getWorkTypeEnumData" resultType="java.util.Map">
+		SELECT 
+		    dict_label AS id,
+			dict_label AS title
+		FROM swm_dict_data
+		WHERE status = '0'
+		ORDER BY dict_label
+	</select>
+    <select id="getByDeviceId" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
+		select * from swm_helmet_device_config where device_id = #{deviceId} and status = '0'
+	</select>
+
+</mapper> 

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHelmetDeviceConfigMapper">
+    
+    <!-- 插入或更新配置 -->
+    <insert id="saveOrUpdateConfig" parameterType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceConfigDO">
+        INSERT INTO swm_helmet_device_config (
+            id,
+            device_id,
+            server_ip,
+            server_port,
+            bluetooth_scan_window,
+            group_duration,
+            normal_beacon_cs,
+            special_beacon_cs,
+            location_mode,
+            deep_sleep_duration,
+            bluetooth_scan_duration,
+            send_interval,
+            hazard_retrigger_interval,
+            sleep_wakeup_time,
+            beacon_filter_name,
+            status,
+            create_by,
+            create_date,
+            update_by,
+            update_date,
+            remarks,
+            corp_code,
+            corp_name,
+            hat_off_alarm_interval
+        ) VALUES (
+            #{id},
+            #{deviceId},
+            #{serverIp},
+            #{serverPort},
+            #{bluetoothScanWindow},
+            #{groupDuration},
+            #{normalBeaconCs},
+            #{specialBeaconCs},
+            #{locationMode},
+            #{deepSleepDuration},
+            #{bluetoothScanDuration},
+            #{sendInterval},
+            #{hazardRetriggerInterval},
+            #{sleepWakeupTime},
+            #{beaconFilterName},
+            '0',
+            #{createBy},
+            NOW(),
+            #{updateBy},
+            NOW(),
+            #{remarks},
+            #{corpCode},
+            #{corpName},
+            #{hatOffAlarmInterval}
+        )
+        ON DUPLICATE KEY UPDATE
+            server_ip = IFNULL(NULLIF(VALUES(server_ip), ''), server_ip),
+            server_port = IFNULL(NULLIF(VALUES(server_port), ''), server_port),
+            bluetooth_scan_window = IFNULL(VALUES(bluetooth_scan_window), bluetooth_scan_window),
+            group_duration = IFNULL(VALUES(group_duration), group_duration),
+            normal_beacon_cs = IFNULL(VALUES(normal_beacon_cs), normal_beacon_cs),
+            special_beacon_cs = IFNULL(VALUES(special_beacon_cs), special_beacon_cs),
+            location_mode = IFNULL(NULLIF(VALUES(location_mode), ''), location_mode),
+            deep_sleep_duration = IFNULL(VALUES(deep_sleep_duration), deep_sleep_duration),
+            bluetooth_scan_duration = IFNULL(VALUES(bluetooth_scan_duration), bluetooth_scan_duration),
+            send_interval = IFNULL(VALUES(send_interval), send_interval),
+            hazard_retrigger_interval = IFNULL(VALUES(hazard_retrigger_interval), hazard_retrigger_interval),
+            sleep_wakeup_time = IFNULL(VALUES(sleep_wakeup_time), sleep_wakeup_time),
+            beacon_filter_name = IFNULL(NULLIF(VALUES(beacon_filter_name), ''), beacon_filter_name),
+            status = '0',
+            update_by = VALUES(update_by),
+            update_date = NOW(),
+            remarks = IFNULL(NULLIF(VALUES(remarks), ''), remarks),
+            corp_code = IFNULL(NULLIF(VALUES(corp_code), ''), corp_code),
+            corp_name = IFNULL(NULLIF(VALUES(corp_name), ''), corp_name),
+            hat_off_alarm_interval = IFNULL(NULLIF(VALUES(hat_off_alarm_interval), ''), hat_off_alarm_interval)
+    </insert>
+    
+</mapper>

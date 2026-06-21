@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmBeaconStationMapper">
+    
+    <!-- 
+        注意：基本的CRUD操作已由实体类注解自动处理
+        此文件中只保留特殊查询方法
+    -->
+
+    <sql id="swmBeaconStationQueryColumns">
+        a.id AS "id",
+        a.beacon_id AS "beaconId",
+        a.device_name AS "deviceName",
+        a.beacon_type AS "beaconType",
+        a.beacon_color AS "beaconColor",
+        a.control_type AS "controlType",
+        a.location AS "location",
+        a.area AS "area",
+        a.map_coord AS "mapCoord",
+        a.pixel_x AS "pixelX",
+        a.pixel_y AS "pixelY",
+        a.real_x AS "realX",
+        a.real_y AS "realY",
+        a.gps_coord AS "gpsCoord",
+        a.gps_longitude AS "gpsLongitude",
+        a.gps_latitude AS "gpsLatitude",
+        a.beacon_status AS "beaconStatus",
+        a.deploy_status AS "deployStatus",
+        a.stream_url AS "streamUrl",
+        a.floor_id AS "floorId",
+        a.building_id AS "buildingId",
+        building_node.map_name AS "building",
+        floor_node.map_name AS "floor",
+        a.create_by AS "createBy",
+        a.create_date AS "createDate",
+        a.update_by AS "updateBy",
+        a.update_date AS "updateDate",
+        a.remarks AS "remarks",
+        a.status AS "status",
+        a.corp_code AS "corpCode",
+        a.corp_name AS "corpName"
+    </sql>
+
+    <!-- 获取单条信标，并补齐建筑/楼层名称 -->
+    <select id="get" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT
+            <include refid="swmBeaconStationQueryColumns"/>
+        FROM swm_beacon_station a
+        LEFT JOIN swm_site_map_management building_node
+            ON building_node.id = a.building_id
+            <if test="corpCode != null and corpCode != ''">
+                AND building_node.corp_code = #{corpCode}
+            </if>
+        LEFT JOIN swm_site_map_management floor_node
+            ON floor_node.id = a.floor_id
+            <if test="corpCode != null and corpCode != ''">
+                AND floor_node.corp_code = #{corpCode}
+            </if>
+        WHERE a.id = #{id}
+        <if test="corpCode != null and corpCode != ''">
+            AND a.corp_code = #{corpCode}
+        </if>
+    </select>
+
+    <!-- 查询信标列表，并按建筑名称、楼层ID过滤 -->
+    <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT
+            <include refid="swmBeaconStationQueryColumns"/>
+        FROM swm_beacon_station a
+        LEFT JOIN swm_site_map_management building_node
+            ON building_node.id = a.building_id
+            <if test="corpCode != null and corpCode != ''">
+                AND building_node.corp_code = #{corpCode}
+            </if>
+        LEFT JOIN swm_site_map_management floor_node
+            ON floor_node.id = a.floor_id
+            <if test="corpCode != null and corpCode != ''">
+                AND floor_node.corp_code = #{corpCode}
+            </if>
+        <where>
+            a.status = '0'
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
+            <if test="beaconId != null and beaconId != ''">
+                AND a.beacon_id LIKE CONCAT('%', #{beaconId}, '%')
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                AND a.device_name LIKE CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test="beaconType != null and beaconType != ''">
+                AND a.beacon_type = #{beaconType}
+            </if>
+            <if test="location != null and location != ''">
+                AND a.location LIKE CONCAT('%', #{location}, '%')
+            </if>
+            <if test="area != null and area != ''">
+                AND a.area LIKE CONCAT('%', #{area}, '%')
+            </if>
+            <if test="beaconStatus != null and beaconStatus != ''">
+                AND a.beacon_status = #{beaconStatus}
+            </if>
+            <if test="deployStatus != null and deployStatus != ''">
+                AND a.deploy_status = #{deployStatus}
+            </if>
+            <if test="buildingId != null and buildingId != ''">
+                AND a.building_id = #{buildingId}
+            </if>
+            <if test="building != null and building != ''">
+                AND building_node.map_name LIKE CONCAT('%', #{building}, '%')
+            </if>
+            <if test="floorId != null and floorId != ''">
+                AND a.floor_id = #{floorId}
+            </if>
+        </where>
+        ORDER BY 
+    </select>
+
+    <!-- 根据信标编号查询基站 -->
+    <select id="getByBeaconId" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT 
+            *
+        FROM swm_beacon_station a
+        WHERE a.beacon_id = #{beaconId}
+        LIMIT 1
+    </select>
+    
+    <!-- 根据信标编号列表批量查询基站 -->
+    <select id="findByBeaconIds" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT 
+            *
+        FROM swm_beacon_station a
+        WHERE a.beacon_id IN 
+        <foreach collection="beaconIds" item="beaconId" open="(" separator="," close=")">
+            #{beaconId}
+        </foreach>
+    </select>
+    
+    <!-- 检查是否存在相同信标编号且状态为正常的记录（用于重复性校验） -->
+    <select id="countByBeaconIdAndStatus" resultType="int">
+        SELECT COUNT(1)
+        FROM swm_beacon_station a
+        WHERE a.beacon_id = #{beaconId}
+        AND a.status = '0' <!-- 正常状态 -->
+        <if test="id != null and id != ''">
+            AND a.id != #{id} <!-- 排除当前记录ID，用于编辑时校验 -->
+        </if>
+    </select>
+    
+    <!-- 查询指定位置的基站列表 -->
+    <select id="findByLocation" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT 
+            *
+        FROM swm_beacon_station a
+        WHERE a.location LIKE CONCAT('%', #{location}, '%')
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 查询在线状态的基站列表 -->
+    <select id="findOnlineBeacons" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT 
+            *
+        FROM swm_beacon_station a
+        WHERE a.beacon_status = '1' <!-- BeaconStatusEnum.ONLINE -->
+        AND a.status = '0' <!-- 正常状态 -->
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 根据GPS坐标范围查询基站列表 -->
+    <select id="findByGpsRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT 
+            *
+        FROM swm_beacon_station a
+        WHERE a.status = '0' <!-- 正常状态 -->
+        <if test="minLongitude != null">
+            AND a.gps_longitude >= #{minLongitude}
+        </if>
+        <if test="maxLongitude != null">
+            AND a.gps_longitude &lt;= #{maxLongitude}
+        </if>
+        <if test="minLatitude != null">
+            AND a.gps_latitude >= #{minLatitude}
+        </if>
+        <if test="maxLatitude != null">
+            AND a.gps_latitude &lt;= #{maxLatitude}
+        </if>
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 根据图纸像素坐标范围查询基站列表 -->
+    <select id="findByPixelRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT 
+            *
+        FROM swm_beacon_station a
+        WHERE a.status = '0' <!-- 正常状态 -->
+        <if test="minX != null">
+            AND a.pixel_x >= #{minX}
+        </if>
+        <if test="maxX != null">
+            AND a.pixel_x &lt;= #{maxX}
+        </if>
+        <if test="minY != null">
+            AND a.pixel_y >= #{minY}
+        </if>
+        <if test="maxY != null">
+            AND a.pixel_y &lt;= #{maxY}
+        </if>
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 根据区域查询基站列表 -->
+    <select id="findByArea" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT 
+            *
+        FROM swm_beacon_station a
+        WHERE a.area = #{area}
+        AND a.status = '0' <!-- 正常状态 -->
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 获取所有区域列表 -->
+    <select id="findAllAreas" resultType="java.lang.String">
+        SELECT DISTINCT a.area
+        FROM swm_beacon_station a
+        WHERE a.area IS NOT NULL 
+        AND a.area != ''
+        AND a.status = '0' <!-- 正常状态 -->
+        ORDER BY a.area ASC
+    </select>
+
+    <!-- 获取当前信标列表实际使用到的区域ID -->
+    <select id="findAreaOptionsFromBeacon" resultType="java.lang.String">
+        <!-- 这里复用列表的数据范围条件，保证和当前信标列表口径一致。 -->
+        SELECT DISTINCT TRIM(a.area)
+        FROM swm_beacon_station a
+        <where>
+            a.status = '0'
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
+            AND a.area IS NOT NULL
+            AND TRIM(a.area) != ''
+        </where>
+        ORDER BY TRIM(a.area) ASC
+    </select>
+
+    <!-- 根据区域ID列表批量查询区域名称 -->
+    <select id="findAreaNameMappings" resultType="java.util.HashMap">
+        SELECT
+            a.id AS "value",
+            a.area_name AS "label"
+        FROM swm_area a
+        WHERE a.id IN
+        <foreach collection="areaIds" item="areaId" open="(" separator="," close=")">
+            #{areaId}
+        </foreach>
+        <if test="corpCode != null and corpCode != ''">
+            AND a.corp_code = #{corpCode}
+        </if>
+    </select>
+
+    <!-- 获取当前信标列表实际使用到的楼层ID -->
+    <select id="findFloorOptionsFromBeacon" resultType="java.lang.String">
+        SELECT DISTINCT TRIM(a.floor_id)
+        FROM swm_beacon_station a
+        <where>
+            a.status = '0'
+            <if test="corpCode != null and corpCode != ''">
+                AND a.corp_code = #{corpCode}
+            </if>
+            AND a.floor_id IS NOT NULL
+            AND TRIM(a.floor_id) != ''
+        </where>
+        ORDER BY TRIM(a.floor_id) ASC
+    </select>
+
+    <!-- 根据楼层ID列表批量查询楼层名称 -->
+    <select id="findFloorNameMappings" resultType="java.util.HashMap">
+        SELECT
+            a.id AS "value",
+            a.map_name AS "label"
+        FROM swm_site_map_management a
+        WHERE a.map_type = 'floor'
+        AND a.id IN
+        <foreach collection="floorIds" item="floorId" open="(" separator="," close=")">
+            #{floorId}
+        </foreach>
+        <if test="corpCode != null and corpCode != ''">
+            AND a.corp_code = #{corpCode}
+        </if>
+    </select>
+
+    <!-- 根据精确的像素坐标查找信标 -->
+    <select id="findByPixelCoordinates" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT 
+            *
+        FROM swm_beacon_station a
+        WHERE a.pixel_x = #{pixelX}
+        AND a.pixel_y = #{pixelY}
+        AND a.status = '0' <!-- 正常状态 -->
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 清空指定区域下所有信标的区域和颜色字段 -->
+    <update id="clearAreaAndColorByArea">
+        UPDATE swm_beacon_station 
+        SET area = NULL, beacon_color = NULL, update_by = #{updateBy}, update_date = #{updateDate}
+        WHERE area = #{area} AND status = '0'
+    </update>
+    
+    <!-- 批量清空指定信标的区域和颜色字段 -->
+    <update id="clearAreaAndColorByIds">
+        UPDATE swm_beacon_station
+        SET area = NULL, beacon_color = NULL, update_by = #{updateBy}, update_date = #{updateDate}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND status = '0'
+    </update>
+    <update id="updateBatch">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE swm_beacon_station
+            <set>
+                <if test="item.major != null">
+                    major = #{item.major},
+                </if>
+                <if test="item.minor != null">
+                    minor = #{item.minor},
+                </if>
+                update_date = NOW()
+            </set>
+            WHERE beacon_id = #{item.beaconId}
+        </foreach>
+    </update>
+
+    <!-- 查询没有区域ID的信标列表 -->
+    <select id="findBeaconsWithoutArea" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT
+            *
+        FROM swm_beacon_station a
+        WHERE (a.area IS NULL OR a.area = '' OR TRIM(a.area) = '')
+        AND a.status = '0'
+        ORDER BY a.update_date DESC
+    </select>
+
+    <!-- 查询危险源类型的信标列表 -->
+    <select id="findDangerousSourceBeacons" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT
+            *
+        FROM swm_beacon_station a
+        WHERE a.status = '0' 
+        AND a.beacon_type = '3'  <!-- 危险源类型 -->
+        ORDER BY a.update_date DESC
+    </select>
+
+    <!-- 查询可用的危险源类型信标列表（排除已被使用的） -->
+    <select id="findAvailableDangerousSourceBeacons" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT
+            *
+        FROM swm_beacon_station a
+        WHERE a.status = '0' 
+        AND a.beacon_type = '3'  <!-- 危险源类型 -->
+        AND NOT EXISTS (
+            SELECT 1 FROM swm_hazard_source h
+            WHERE h.status = '0'
+            <if test="excludeHazardSourceId != null and excludeHazardSourceId != ''">
+                AND h.id != #{excludeHazardSourceId}  <!-- 排除当前编辑的记录 -->
+            </if>
+            AND (
+                h.beacon_identifier = a.beacon_id
+                OR h.beacon_identifier LIKE CONCAT(a.beacon_id, ',%')
+                OR h.beacon_identifier LIKE CONCAT('%,', a.beacon_id, ',%')
+                OR h.beacon_identifier LIKE CONCAT('%,', a.beacon_id)
+            )
+        )
+        ORDER BY a.update_date DESC
+    </select>
+    <select id="findMacList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
+        SELECT
+            *
+        FROM swm_beacon_station a
+        WHERE a.status = '0'
+          AND #{random} = #{random}
+    </select>
+    <select id="findBeaconLocationForMap" resultType="java.util.Map">
+        SELECT
+            beacon_id,
+            location,
+            pixel_x,
+            pixel_y
+        FROM swm_beacon_station
+        WHERE beacon_type = '1'
+          AND `status` = 0
+          AND beacon_id IS NOT NULL
+          AND pixel_x IS NOT NULL
+          AND pixel_y IS NOT NULL
+    </select>
+
+</mapper>

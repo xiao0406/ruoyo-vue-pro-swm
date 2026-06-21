@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.PersonTrackMapper">
+
+    <!-- 查询人员追踪信息 -->
+    <select id="findPersonTrackInfo" resultType="cn.iocoder.yudao.module.swm.controller.admin.persontrack.vo.PersonTrackInfoVO">
+        SELECT
+        a.*,
+        jso.office_name AS organization,
+        pa.position_name AS workShop,
+        pl.prod_line_name AS prodLine,
+        wg.work_group_name AS teamGroup,
+        f.id AS workerArchiveId
+        FROM
+        swm_person a
+        LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
+        LEFT JOIN system_dept jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
+        AND NOT EXISTS (SELECT 1 FROM fms_worker fw2 WHERE fw2.identity_code = f.identity_code AND fw2.create_date > f.create_date)
+        WHERE
+        a.personnel_status = '1'
+        AND a.STATUS = '0'
+        <if test="searchName != null and searchName != ''">
+            AND a.name LIKE CONCAT('%', #{searchName}, '%')
+        </if>
+        <if test="personTypeList != null and personTypeList.size >0">
+            AND a.person_type IN
+            <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
+                #{personType}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 根据身份证号码查询人员信息 -->
+    <select id="getPersonByIdCard" resultType="cn.iocoder.yudao.module.swm.controller.admin.persontrack.vo.PersonTrackInfoVO">
+        SELECT 
+            a.id AS id,
+            a.name AS name,
+            a.person_type AS personType,
+            a.gender AS gender,
+            o.office_name AS organization,
+            p.position_name AS workShop,
+            fpl.prod_line_name AS prodLine,
+            wg.work_group_name AS teamGroup,
+            f.work_type AS workType,
+            a.identity_card AS identityCard,
+            -- 关联表的ID字段 2025/06/24 Shawn 添加
+            f.id AS workerArchiveId,                    -- 工人档案ID
+            o.office_code AS officeCode,                -- 组织编码
+            p.id AS positionArchiveId,                  -- 车间ID
+            wg.id AS workGroupId,                       -- 班组ID
+            fpl.id AS prodLineId                        -- 产线ID
+        FROM swm_person a 
+        LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci 
+        LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL 
+        LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ' 
+        LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id 
+        LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
+        WHERE a.identity_card = #{identityCard} AND a.personnel_status = '1' 
+        LIMIT 1
+    </select>
+
+    <!-- 根据key值查询颜色信息 -->
+    <select id="getColorByKey" resultType="java.lang.String">
+        SELECT color 
+        FROM swm_helmet_subitem 
+        WHERE `key` = #{key} AND status = '0'
+        ORDER BY create_date DESC 
+        LIMIT 1
+    </select>
+
+    <!-- 批量查询颜色信息 -->
+    <select id="getColorsByKeys" resultType="java.util.Map">
+        SELECT `key`, color 
+        FROM swm_helmet_subitem 
+        WHERE `key` IN 
+        <foreach collection="keys" item="key" open="(" separator="," close=")">
+            #{key}
+        </foreach>
+        AND status = '0'
+        ORDER BY create_date DESC
+    </select>
+    
+</mapper> 

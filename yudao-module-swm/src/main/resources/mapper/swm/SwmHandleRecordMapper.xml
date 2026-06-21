@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHandleRecordMapper">
+
+    <!-- 查询数据 -->
+    <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHandleRecordDO">
+        SELECT
+            a.id, a.create_by AS createBy, a.create_date AS createDate,
+            a.update_by AS updateBy, a.update_date AS updateDate,
+            a.remarks, a.status, a.record_name AS recordName,
+            a.warning_id AS warningId, a.warning_record AS warningRecord,
+            a.alarm_time AS alarmTime, a.handler, a.handle_time AS handleTime,
+            a.handle_process AS handleProcess, a.handle_status AS handleStatus,
+            a.attachment,
+            b.warning_content AS warningContent,
+            b.person_name AS warningMan
+        FROM swm_handle_record a
+        LEFT JOIN swm_warning_management b ON a.warning_id = b.id
+        <where>
+            a.status = '0'
+            <!-- 自定义条件 -->
+            <if test="recordName != null and recordName != ''">
+                AND a.record_name LIKE concat('%', #{recordName}, '%')
+            </if>
+            <if test="warningId != null and warningId != ''">
+                AND a.warning_id = #{warningId}
+            </if>
+            <if test="warningRecord != null and warningRecord != ''">
+                AND a.warning_record LIKE concat('%', #{warningRecord}, '%')
+            </if>
+            <if test="warningContent != null and warningContent != ''">
+                AND b.warning_content = #{warningContent}
+            </if>
+            <if test="handler != null and handler != ''">
+                AND a.handler LIKE concat('%', #{handler}, '%')
+            </if>
+            <if test="handleStatus != null and handleStatus != ''">
+                AND a.handle_status = #{handleStatus}
+            </if>
+            <if test="beginAlarmTime != null and endAlarmTime != null">
+                AND a.alarm_time BETWEEN #{beginAlarmTime} AND #{endAlarmTime}
+            </if>
+            <if test="beginHandleTime != null and endHandleTime != null">
+                AND a.handle_time BETWEEN #{beginHandleTime} AND #{endHandleTime}
+            </if>
+        </where>
+        ORDER BY a.create_date DESC
+    </select>
+
+    <select id="latestHandleRecord" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHandleRecordDO">
+        SELECT a.id             AS id,
+               a.record_name    AS recordName,
+               a.warning_id     AS warningId,
+               a.warning_record AS warningRecord,
+               a.alarm_time     AS alarmTime,
+               a.handler        AS handler,
+               a.handle_time    AS handleTime,
+               a.handle_process AS handleProcess,
+               a.handle_status  AS handleStatus,
+               a.remarks,
+               a.attachment,
+               a.create_by      AS createBy,
+               a.create_date    AS createDate,
+               a.update_by      AS updateBy,
+               a.update_date    AS updateDate,
+               b.person_name    AS warningMan,
+               b.warning_content AS warningContent
+        FROM swm_handle_record a
+            left join swm_warning_management b on a.warning_id = b.id
+        WHERE a.status = '0'
+        order by a.alarm_time DESC
+        limit #{limit}
+    </select>
+</mapper>

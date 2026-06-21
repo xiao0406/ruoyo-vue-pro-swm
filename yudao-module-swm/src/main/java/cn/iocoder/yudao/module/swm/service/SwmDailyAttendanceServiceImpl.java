@@ -1,0 +1,184 @@
+package cn.iocoder.yudao.module.swm.service;
+
+import cn.hutool.core.util.StrUtil;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.swm.controller.admin.attendance.vo.SwmDailyAttendancePageReqVO;
+import cn.iocoder.yudao.module.swm.controller.admin.attendance.vo.SwmDailyAttendanceSaveReqVO;
+import cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO;
+import cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO;
+import cn.iocoder.yudao.module.swm.dal.mysql.SwmDailyAttendanceMapper;
+import cn.iocoder.yudao.module.swm.dal.mysql.SwmPersonMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.swm.enums.ErrorCodeConstants.ATTENDANCE_NOT_EXISTS;
+
+/**
+ * 每日考勤 Service 实现类
+ */
+@Service
+@Validated
+@Slf4j
+public class SwmDailyAttendanceServiceImpl implements SwmDailyAttendanceService {
+
+    @Resource
+    private SwmDailyAttendanceMapper swmDailyAttendanceMapper;
+
+    @Resource
+    private SwmPersonMapper swmPersonMapper;
+
+    @Override
+    public String createDailyAttendance(SwmDailyAttendanceSaveReqVO createReqVO) {
+        SwmDailyAttendanceDO attendance = BeanUtils.toBean(createReqVO, SwmDailyAttendanceDO.class);
+        swmDailyAttendanceMapper.insert(attendance);
+        return attendance.getId();
+    }
+
+    @Override
+    public void updateDailyAttendance(SwmDailyAttendanceSaveReqVO updateReqVO) {
+        validateDailyAttendanceExists(updateReqVO.getId());
+        SwmDailyAttendanceDO updateObj = BeanUtils.toBean(updateReqVO, SwmDailyAttendanceDO.class);
+        swmDailyAttendanceMapper.updateById(updateObj);
+    }
+
+    @Override
+    public void deleteDailyAttendance(String id) {
+        validateDailyAttendanceExists(id);
+        swmDailyAttendanceMapper.deleteById(id);
+    }
+
+    @Override
+    public SwmDailyAttendanceDO getDailyAttendance(String id) {
+        return swmDailyAttendanceMapper.selectById(id);
+    }
+
+    @Override
+    public PageResult<SwmDailyAttendanceDO> getDailyAttendancePage(SwmDailyAttendancePageReqVO pageReqVO) {
+        return swmDailyAttendanceMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+    }
+
+    @Override
+    public List<SwmDailyAttendanceDO> findList(SwmDailyAttendanceDO query) {
+        LambdaQueryWrapper<SwmDailyAttendanceDO> wrapper = new LambdaQueryWrapper<>();
+        if (query.getEmployeeId() != null) {
+            wrapper.eq(SwmDailyAttendanceDO::getEmployeeId, query.getEmployeeId());
+        }
+        if (query.getIdentityCard() != null) {
+            wrapper.eq(SwmDailyAttendanceDO::getIdentityCard, query.getIdentityCard());
+        }
+        if (query.getAttendanceDate() != null) {
+            wrapper.eq(SwmDailyAttendanceDO::getAttendanceDate, query.getAttendanceDate());
+        }
+        if (query.getBeginAttendanceDate() != null) {
+            wrapper.ge(SwmDailyAttendanceDO::getAttendanceDate, query.getBeginAttendanceDate());
+        }
+        if (query.getEndAttendanceDate() != null) {
+            wrapper.le(SwmDailyAttendanceDO::getAttendanceDate, query.getEndAttendanceDate());
+        }
+        return swmDailyAttendanceMapper.selectList(wrapper);
+    }
+
+    @Override
+    public void save(SwmDailyAttendanceDO attendance) {
+        swmDailyAttendanceMapper.insert(attendance);
+    }
+
+    @Override
+    public void update(SwmDailyAttendanceDO attendance) {
+        swmDailyAttendanceMapper.updateById(attendance);
+    }
+
+    @Override
+    public void saveBatch(List<SwmDailyAttendanceDO> list) {
+        swmDailyAttendanceMapper.insertBatch(list);
+    }
+
+    @Override
+    public void updateBatch(List<SwmDailyAttendanceDO> list) {
+        swmDailyAttendanceMapper.updateBatch(list);
+    }
+
+    @Override
+    public SwmDailyAttendanceDO findByEmployeeIdAndDate(String employeeId, LocalDate attendanceDate) {
+        return swmDailyAttendanceMapper.selectOne(
+                new LambdaQueryWrapper<SwmDailyAttendanceDO>()
+                        .eq(SwmDailyAttendanceDO::getEmployeeId, employeeId)
+                        .eq(SwmDailyAttendanceDO::getAttendanceDate, attendanceDate)
+                        .last("LIMIT 1"));
+    }
+
+    @Override
+    public SwmDailyAttendanceDO findByIdentityCardAndDate(String identityCard, LocalDate attendanceDate) {
+        return swmDailyAttendanceMapper.selectOne(
+                new LambdaQueryWrapper<SwmDailyAttendanceDO>()
+                        .eq(SwmDailyAttendanceDO::getIdentityCard, identityCard)
+                        .eq(SwmDailyAttendanceDO::getAttendanceDate, attendanceDate)
+                        .last("LIMIT 1"));
+    }
+
+    @Override
+    public List<SwmDailyAttendanceDO> findClockInCardList(String date, Integer random) {
+        LocalDate ld = LocalDate.parse(date);
+        return swmDailyAttendanceMapper.selectList(
+                new LambdaQueryWrapper<SwmDailyAttendanceDO>()
+                        .eq(SwmDailyAttendanceDO::getAttendanceDate, ld));
+    }
+
+    @Override
+    public List<SwmDailyAttendanceDO> findClockOutCardList(String yestDay, String nowDate, Integer random) {
+        LocalDate start = LocalDate.parse(yestDay);
+        LocalDate end = LocalDate.parse(nowDate);
+        return swmDailyAttendanceMapper.selectList(
+                new LambdaQueryWrapper<SwmDailyAttendanceDO>()
+                        .ge(SwmDailyAttendanceDO::getAttendanceDate, start)
+                        .le(SwmDailyAttendanceDO::getAttendanceDate, end));
+    }
+
+    @Override
+    public String getIdCardByEmployeeId(String employeeId) {
+        SwmPersonDO person = swmPersonMapper.selectById(employeeId);
+        return person != null ? person.getIdentityCard() : null;
+    }
+
+    @Override
+    public double calculateIdleTimeByIdCard(String idCard, String dateStr, String workTimeRange) {
+        // TODO: implement actual idle time calculation based on TDengine data
+        return 0.0;
+    }
+
+    @Override
+    public double calculateEffectiveWorkHoursByIdCard(String idCard, String dateStr, String workTimeRange) {
+        // TODO: implement actual effective work hours calculation based on TDengine data
+        return 0.0;
+    }
+
+    @Override
+    public List<SwmDailyAttendanceDO> findByMonth(String month) {
+        // month format: yyyy-MM
+        String[] parts = month.split("-");
+        int year = Integer.parseInt(parts[0]);
+        int mon = Integer.parseInt(parts[1]);
+        LocalDate start = LocalDate.of(year, mon, 1);
+        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+        return swmDailyAttendanceMapper.selectList(
+                new LambdaQueryWrapper<SwmDailyAttendanceDO>()
+                        .ge(SwmDailyAttendanceDO::getAttendanceDate, start)
+                        .le(SwmDailyAttendanceDO::getAttendanceDate, end));
+    }
+
+    private void validateDailyAttendanceExists(String id) {
+        if (swmDailyAttendanceMapper.selectById(id) == null) {
+            throw exception(ATTENDANCE_NOT_EXISTS);
+        }
+    }
+
+}

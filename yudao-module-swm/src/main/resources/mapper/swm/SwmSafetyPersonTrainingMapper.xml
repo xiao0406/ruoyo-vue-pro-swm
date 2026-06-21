@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmSafetyPersonTrainingMapper">
+	<update id="appUpdate">
+		UPDATE swm_safety_person_training
+		<set>
+			<if test="progress != null and progress != ''">progress=#{progress},</if>
+			<if test="completeDate != null ">complete_date=#{completeDate},</if>
+			<if test="completeStatus != null and jobType != ''">complete_status=#{completeStatus},</if>
+			update_date=now()
+		</set>
+		WHERE id = #{id}
+	</update>
+
+
+	<select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmSafetyPersonTrainingDO">
+		SELECT
+		fm.title,
+		fm.push_date,
+		fm.job_type,
+		fm.type,
+		sp.name as personName,
+		jso.office_name AS "company",
+		pa.position_name AS "department",
+		pl.prod_line_name AS "prodLine",
+		wg.work_group_name AS "team",
+		a.*
+		FROM swm_safety_person_training a
+		JOIN swm_safety_file_manage fm ON a.safety_manage_id = fm.id
+		JOIN swm_person sp ON a.identity_card = sp.identity_card
+		LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
+		LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
+		LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
+		LEFT JOIN system_dept jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
+		<where>
+			
+			 <if test="personName != null and personName != ''">
+				AND sp.name LIKE concat('%',#{personName},'%')
+			</if>
+			<if test="pushDateStr != null and pushDateStr != ''">
+				AND fm.push_date = #{pushDateStr}
+			</if>
+			<if test="title != null and title != ''">
+				AND fm.title LIKE concat('%',#{title},'%')
+			</if>
+			<if test="department != null and department != ''">
+				AND  pa.position_name = #{department}
+			</if>
+			<if test="prodLine != null and prodLine != ''">
+				AND pl.prod_line_name = #{prodLine}
+			</if>
+			<if test="team != null and team != ''">
+				AND wg.work_group_name = #{team}
+			</if>
+			<if test="company != null and company != ''">
+				AND jso.office_name LIKE CONCAT('%', #{company}, '%')
+			</if>
+		</where>
+		ORDER BY 
+	</select>
+	<select id="appPageList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmSafetyPersonTrainingDO">
+		SELECT
+		fm.title,
+		fm.push_date,
+		fm.job_type,
+		fm.type,
+		fm.cover_url,
+		fm.file_url,
+		fm.duration,
+		sp.name AS personName,
+		a.*
+		FROM swm_safety_person_training a
+		INNER JOIN swm_safety_file_manage fm
+		ON a.safety_manage_id = fm.id
+		INNER JOIN swm_person sp
+		ON a.identity_card = sp.identity_card
+		<where>
+			<if test="completeStatus != null and completeStatus != ''">
+				AND a.complete_status = #{completeStatus}
+			</if>
+			<if test="identityCard != null and identityCard != ''">
+				AND a.identity_card = #{identityCard}
+			</if>
+			<if test="phoneNumber != null and phoneNumber != ''">
+				<choose>
+					<when test="phone != null and phone != ''">
+						AND (a.phone_number = #{phoneNumber} OR a.phone_number = #{phone})
+					</when>
+					<otherwise>
+						AND a.phone_number = #{phoneNumber}
+					</otherwise>
+				</choose>
+			</if>
+			<if test="id != null and id != ''">
+				AND a.id = #{id}
+			</if>
+		</where>
+		ORDER BY 
+	</select>
+	<select id="findListByIdCard" resultType="java.lang.String">
+		SELECT
+			a.identity_card
+		FROM swm_safety_person_training a
+		where a.status = '0'
+		  and a.complete_status = '1'
+		  and a.create_date between #{startMonth} and #{endMonth}
+	</select>
+
+</mapper>

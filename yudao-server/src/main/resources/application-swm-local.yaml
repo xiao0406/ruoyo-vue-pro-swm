@@ -1,0 +1,127 @@
+# ============================================================
+# SWM 模块本地配置
+# 从 JeeSite Nacos swm.yml + iot.yml 迁移，去除 JeeSite 专有配置
+# MySQL: swm_ts (10.50.103.166:3306)
+# ============================================================
+
+spring:
+  # RabbitMQ — SWM/IoT 消息队列
+  rabbitmq:
+    host: 10.50.103.166
+    port: 5672
+    username: admin
+    password: zjgg@2025
+    virtual-host: /
+    listener:
+      simple:
+        max-concurrency: 1
+    connection-timeout: 60000
+
+# TDengine REST API（时序数据库）
+tdengine:
+  url: http://10.50.103.166:6041/rest/sql
+  authorization: Basic cm9vdDp6amdnQDg4OCM=
+  dbname: plb
+  retentionPolicy: 3650
+
+# XXL-Job 分布式定时任务
+xxl:
+  job:
+    admin:
+      addresses: http://10.50.103.166:8088/xxl-job-admin
+    executor:
+      appname: swm-executor
+      port: 9998
+      logpath: /data/applogs/xxl-job/jobhandler
+      logretentiondays: 30
+    accessToken: default_token
+
+# ==================== MQTT 设备接入 ====================
+mqtt:
+  enabled: true
+  brokers:
+    - name: imdm
+      url: tcp://zt.imdm.com.cn:1883
+      client-id: iot-client-iot-swm-166
+      username: ceict_admin
+      password: ceict_2020xx
+      role: subscribe_only
+    - name: zjgg
+      url: tcp://58.250.244.169:1883
+      client-id: iot-client-iot-swm-166
+      username: admin
+      password: zjgg@yfzx
+      role: both
+  clean-session: false
+
+# ==================== TCP Netty 设备接入 ====================
+tcp:
+  enabled: true
+  port: 8992
+  boss-thread: 1
+  worker-thread: 4
+  so-backlog: 1024
+  so-keep-alive: true
+  tcp-no-delay: true
+  heartbeat-interval: 7200000
+  connect-timeout: 3600000
+
+# ==================== WebSocket 实时推送 ====================
+websocket:
+  enabled: true
+  endpoint: /swm/ws
+  allowed-origins: "*"
+
+# ==================== SWM 业务配置 ====================
+swm:
+  helmet:
+    runde-api-url: http://10.50.103.166:8090
+    location-sync-interval: 30000
+  beacon:
+    offline-threshold: 300000
+    color-default: "#00FF00"
+  alarm:
+    check-interval: 60000
+    sos-immediate: true
+  attendance:
+    work-start: "08:00"
+    work-end: "17:30"
+    noon-start: "12:00"
+    noon-end: "13:30"
+    late-threshold: 5
+    early-leave-threshold: 5
+    idle-threshold: 30
+    effective-work-minutes: 420
+  dify:
+    api-url: http://10.50.103.166:8080/v1
+    api-key: app-xxxx
+    timeout: 300
+
+# ==================== 文件存储 ====================
+minio:
+  endpoint: http://10.50.103.166:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket-name: swm-files
+
+# ==================== 外部服务 ====================
+weather:
+  api-url: http://apis.juhe.cn/simpleWeather/query
+  api-key: xxxx
+
+dingtalk:
+  app-key: xxxx
+  app-secret: xxxx
+
+sms:
+  enabled: false
+  provider: aliyun
+  sign-name: xxxx
+  template-code: xxxx
+
+# ==================== 线程池 ====================
+swm.executor:
+  core-pool-size: 4
+  max-pool-size: 8
+  queue-capacity: 100
+  thread-name-prefix: swm-exec-

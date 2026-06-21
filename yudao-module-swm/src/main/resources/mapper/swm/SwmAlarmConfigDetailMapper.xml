@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmAlarmConfigDetailMapper">
+
+
+    <select id="findByMainId" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmAlarmConfigDetailDO">
+        select id from swm_alarm_config_detail where main_id = #{mainId}
+        <if test="id != null and id != ''">
+            and id  != #{id}
+        </if>
+        limit 1
+    </select>
+    <select id="findByUserIds" resultType="java.lang.String">
+        SELECT
+        extend_s1
+        FROM
+        system_user
+        WHERE
+        user_code in
+        <foreach item="item" collection="users" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        AND extend_s1 IS NOT NULL
+    </select>
+    <select id="findByRoleIds" resultType="java.lang.String">
+        SELECT
+        u.extend_s1
+        FROM
+        system_user_role r
+        JOIN system_user u ON r.user_code = u.user_code
+        WHERE
+        role_code in
+        <foreach item="item" collection="roles" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        AND u.extend_s1 IS NOT NULL
+    </select>
+    <select id="getByAlarmKey" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmAlarmConfigDO">
+        SELECT
+            a.id,
+            is_send_zjt AS isSendZjt
+        FROM
+            swm_alarm_config a
+        WHERE
+            a.alarm_key = #{alarmKey}
+          AND a.status = '0'
+        LIMIT 1
+    </select>
+</mapper>

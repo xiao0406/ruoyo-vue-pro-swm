@@ -1,0 +1,1 @@
+export interface ActionItem { icon?: string; label?: string; tooltip?: string; color?: string; onClick?: (...args: any[]) => void; disabled?: boolean; divider?: boolean; auth?: string; ifShow?: boolean | ((action: any) => boolean); popConfirm?: { title: string; confirm: (...args: any[]) => void; cancel?: (...args: any[]) => void; }; }

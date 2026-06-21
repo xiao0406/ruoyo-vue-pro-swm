@@ -1,0 +1,213 @@
+import { FormSchema } from '@/components/swm/Form';
+
+/**
+ * 考勤记录表单配置
+ */
+export const formSchema: FormSchema[] = [
+  {
+    field: 'id',
+    label: 'ID',
+    component: 'Input',
+    show: false,
+  },
+  {
+    field: 'employeeName',
+    label: '员工姓名',
+    component: 'Input',
+    componentProps: {
+      disabled: true,
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'employeeId',
+    label: '员工ID',
+    component: 'Input',
+    componentProps: {
+      disabled: true,
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'attendanceDate',
+    label: '考勤日期',
+    component: 'DatePicker',
+    required: true,
+    componentProps: {
+      disabled: true,
+      format: 'YYYY-MM-DD',
+      valueFormat: 'YYYY-MM-DD',
+      style: { width: '100%' },
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'workTimeRange',
+    label: '应考勤时间范围',
+    component: 'Input',
+    required: true,
+    componentProps: {
+      disabled: true,
+      placeholder: '格式如：08:00-17:00',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'clockInDate',
+    label: '上班打卡时间',
+    component: 'TimePicker',
+    componentProps: {
+      disabled: true,
+      format: 'YYYY-MM-DD HH:mm:ss',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      style: { width: '100%' },
+      placeholder: '请选择上班打卡时间',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'clockOutDate',
+    label: '下班打卡时间',
+    component: 'TimePicker',
+    componentProps: {
+      disabled: true,
+      format: 'YYYY-MM-DD HH:mm:ss',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      style: { width: '100%' },
+      placeholder: '请选择下班打卡时间',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'scheduledHours',
+    label: '应考勤时长(h)',
+    component: 'InputNumber',
+    required: true,
+    componentProps: {
+      disabled: true,
+      min: 0,
+      step: 0.5,
+      precision: 2,
+      style: { width: '100%' },
+      placeholder: '请输入应考勤时长',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'actualHours',
+    label: '实际考勤时长(h)',
+    component: 'InputNumber',
+    componentProps: {
+      disabled: true,
+      min: 0,
+      step: 0.5,
+      precision: 2,
+      style: { width: '100%' },
+      placeholder: '请输入实际考勤时长',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'idleHours',
+    label: '怠工时长(h)',
+    component: 'InputNumber',
+    componentProps: {
+      disabled: true,
+      min: 0,
+      step: 0.1,
+      precision: 2,
+      style: { width: '100%' },
+      placeholder: '请输入怠工时长',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'effectiveWorkHours',
+    label: '实际工作时长(h)',
+    component: 'InputNumber',
+    componentProps: {
+      disabled: true,
+      min: 0,
+      step: 0.1,
+      precision: 2,
+      style: { width: '100%' },
+      placeholder: '请输入实际工作时长',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'dailyEfficiency',
+    label: '今日工效',
+    component: 'InputNumber',
+    componentProps: {
+      disabled: true,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      precision: 4,
+      style: { width: '100%' },
+      placeholder: '请输入今日工效',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'dailyAchievementRate',
+    label: '今日达成率',
+    component: 'InputNumber',
+    componentProps: {
+      disabled: true,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      precision: 4,
+      style: { width: '100%' },
+      placeholder: '请输入今日达成率',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'attendanceNormal',
+    label: '考勤状态',
+    component: 'JeeSiteSelect',
+    required: true,
+    componentProps: {
+      disabled: true,
+      dictType: 'swm_attendance_status',
+    },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'currentPosition',
+    label: '当前位置',
+    component: 'JeeSiteSelect',
+    componentProps: {
+      disabled: true,
+      dictType: 'swm_current_position',
+    },
+    colProps: { span: 12 },
+  },
+  // {
+  //   field: 'status',
+  //   label: '记录状态',
+  //   component: 'Select',
+  //   defaultValue: '0',
+  //   componentProps: {
+  //     options: [
+  //       { label: '正常', value: '0' },
+  //       { label: '已删除', value: '1' },
+  //     ],
+  //   },
+  //   colProps: { span: 12 },
+  // },
+  {
+    field: 'remarks',
+    label: '备注',
+    component: 'InputTextArea',
+    componentProps: {
+      disabled: true,
+      rows: 4,
+      placeholder: '请输入备注信息',
+    },
+    colProps: { span: 24 },
+  },
+];

@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHelmetDeviceMapper">
+    
+    <!-- 
+        注意：基本的CRUD操作已由实体类注解自动处理
+        此文件中只保留特殊查询方法
+    -->
+    
+    <!-- 查询可用的安全帽列表（未绑定人员的） -->
+    <select id="findAvailableHelmets" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
+        SELECT
+            a.id,
+            a.device_id,
+            a.helmet_type,
+            a.battery_level,
+            a.ip,
+            a.mac_address,
+            a.assigned_person,
+            a.person_name,
+            a.person_phone,
+            a.assigned_workshop,
+            a.assigned_process,
+            a.assigned_team,
+            a.motion_status,
+            a.bind_time,
+            a.unbind_time,
+            a.bind_duration_days,
+            a.usage_status,
+            a.server_ip,
+            a.server_port,
+            a.bluetooth_scan_window,
+            a.group_duration,
+            a.normal_beacon_cs,
+            a.special_beacon_cs,
+            a.location_mode,
+            a.deep_sleep_duration,
+            a.bluetooth_scan_duration,
+            a.send_interval,
+            a.hazard_retrigger_interval,
+            a.sleep_wakeup_time,
+            a.beacon_filter_name,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks,
+            a.imei,
+            a.device_color
+        FROM swm_helmet_device a
+        WHERE a.status = '0'
+        AND (a.assigned_person IS NULL OR a.assigned_person = '')
+        <if test="keyword != null and keyword != ''">
+            AND a.device_id LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 根据头盔编号查询设备 -->
+    <select id="getByDeviceId" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
+        SELECT
+            a.*
+        FROM swm_helmet_device a
+        WHERE a.device_id = #{deviceId}
+        AND a.status = '0'
+        LIMIT 1
+    </select>
+    
+    <!-- 强制清空设备绑定信息（将assigned_person等字段设置为null） -->
+    <update id="clearDeviceAssignment">
+        UPDATE swm_helmet_device 
+        SET 
+            assigned_person = NULL,
+            person_name = NULL,
+            person_phone = NULL,
+            assigned_workshop = NULL,
+            assigned_process = NULL,
+            assigned_team = NULL,
+            unbind_time = NOW(),
+            usage_status = 0,
+            update_date = NOW()
+        WHERE device_id = #{deviceId}
+        AND status = '0'
+    </update>
+    
+    <!-- 带有人员关联信息的列表查询，用于替代实体类默认查询 -->
+    <!-- 注意：JeeSite框架会自动在SQL末尾添加LIMIT子句，无需手动添加 -->
+    <select id="findHelmetDeviceListWithRelations" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
+        SELECT
+            a.id,
+            a.device_id,
+            a.helmet_type,
+            a.battery_level,
+            a.ip,
+            a.mac_address,
+            a.assigned_person,
+            sp.name as personName,
+            sp.phone_number as personPhone,
+            fpa.position_name AS assigned_workshop,
+            wg.work_group_name as assigned_team,
+            a.motion_status,
+            a.bind_time,
+            a.unbind_time,
+            a.bind_duration_days,
+            a.usage_status,
+            a.server_ip,
+            a.server_port,
+            a.bluetooth_scan_window,
+            a.group_duration,
+            a.normal_beacon_cs,
+            a.special_beacon_cs,
+            a.location_mode,
+            a.deep_sleep_duration,
+            a.bluetooth_scan_duration,
+            a.send_interval,
+            a.hazard_retrigger_interval,
+            a.sleep_wakeup_time,
+            a.beacon_filter_name,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks,
+            a.imei,
+            a.device_color
+        FROM swm_helmet_device a
+        LEFT JOIN swm_person sp ON a.assigned_person = sp.identity_card COLLATE utf8mb4_general_ci and sp.`status` = '0'
+        LEFT JOIN fms_position_archive fpa  ON sp.department = fpa.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
+        <where>
+            a.status = '0' 
+            <if test="deviceId != null and deviceId != ''">
+                AND a.device_id LIKE CONCAT('%', #{deviceId}, '%')
+            </if>
+            <if test="helmetType != null and helmetType != ''">
+                AND a.helmet_type = #{helmetType}
+            </if>
+            <if test="assignedPerson != null and assignedPerson != ''">
+                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+            </if>
+            <if test="personName != null and personName != ''">
+                AND a.person_name LIKE CONCAT('%', #{personName}, '%')
+            </if>
+            <if test="imei != null and imei != ''">
+                AND a.imei LIKE CONCAT('%', #{imei}, '%')
+            </if>
+            <if test="deviceColor != null and deviceColor != ''">
+                AND a.device_color LIKE CONCAT('%', #{deviceColor}, '%')
+            </if>
+
+            <!-- 只有在 powerOnStatus 不为空时才加条件 -->
+            <if test="powerOnStatus != null and powerOnStatus != ''">
+                <!-- 假如 status = 0，则使用 IN -->
+                <if test="powerOnStatus == '0'.toString() ">
+                    AND a.device_id IN
+                    <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
+                        #{id}
+                    </foreach>
+                </if>
+                <!-- 否则 NOT IN -->
+                <if test="powerOnStatus == '1'.toString() ">
+                    AND a.device_id NOT IN
+                    <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
+                        #{id}
+                    </foreach>
+                </if>
+            </if>
+
+
+        </where>
+        group by a.id
+        ORDER BY a.update_date DESC
+    </select>
+    
+    <!-- 带有人员关联信息的计数查询，用于替代框架默认的计数查询 -->
+    <select id="findHelmetDeviceCountWithRelations" resultType="Long">
+        SELECT COALESCE(COUNT(DISTINCT a.id), 0)
+        FROM swm_helmet_device a
+        LEFT JOIN fms_worker w ON a.assigned_person = w.identity_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_position_archive pa ON w.work_shop_code = pa.id COLLATE utf8mb4_general_ci
+        <where>
+            a.status = '0' 
+            <if test="deviceId != null and deviceId != ''">
+                AND a.device_id LIKE CONCAT('%', #{deviceId}, '%')
+            </if>
+            <if test="helmetType != null and helmetType != ''">
+                AND a.helmet_type = #{helmetType}
+            </if>
+            <if test="assignedPerson != null and assignedPerson != ''">
+                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+            </if>
+            <if test="personName != null and personName != ''">
+                AND a.person_name LIKE CONCAT('%', #{personName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据设备ID列表查询设备详情（带人员关联信息） -->
+    <select id="findHelmetDeviceListByDeviceIds" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
+        SELECT
+            a.id,
+            a.device_id,
+            a.helmet_type,
+            a.battery_level,
+            a.ip,
+            a.mac_address,
+            a.assigned_person,
+            a.person_name,
+            a.person_phone,
+            CASE
+                WHEN a.assigned_person IS NOT NULL AND a.assigned_person != '' THEN pa.position_name
+                ELSE a.assigned_workshop
+            END AS assigned_workshop,
+            a.assigned_process,
+            CASE
+                WHEN a.assigned_person IS NOT NULL AND a.assigned_person != '' THEN wg.work_group_name
+                ELSE a.assigned_team
+            END AS assigned_team,
+            a.motion_status,
+            a.bind_time,
+            a.unbind_time,
+            a.bind_duration_days,
+            a.usage_status,
+            a.server_ip,
+            a.server_port,
+            a.bluetooth_scan_window,
+            a.group_duration,
+            a.normal_beacon_cs,
+            a.special_beacon_cs,
+            a.location_mode,
+            a.deep_sleep_duration,
+            a.bluetooth_scan_duration,
+            a.send_interval,
+            a.hazard_retrigger_interval,
+            a.sleep_wakeup_time,
+            a.beacon_filter_name,
+            a.create_by,
+            a.create_date,
+            a.update_by,
+            a.update_date,
+            a.remarks,
+            a.imei,
+            a.device_color
+        FROM swm_helmet_device a
+        LEFT JOIN fms_worker w ON a.assigned_person = w.identity_code COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id COLLATE utf8mb4_general_ci
+        LEFT JOIN fms_position_archive pa ON w.work_shop_code = pa.id COLLATE utf8mb4_general_ci
+        <where>
+            a.status = '0' 
+            <if test="deviceIdList != null and deviceIdList.size() > 0">
+                AND a.device_id IN
+                <foreach collection="deviceIdList" item="deviceId" open="(" separator="," close=")">
+                    #{deviceId}
+                </foreach>
+            </if>
+            <if test="helmetType != null and helmetType != ''">
+                AND a.helmet_type = #{helmetType}
+            </if>
+            <if test="assignedPerson != null and assignedPerson != ''">
+                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+            </if>
+            <if test="personName != null and personName != ''">
+                AND a.person_name LIKE CONCAT('%', #{personName}, '%')
+            </if>
+        </where>
+        ORDER BY a.update_date DESC
+    </select>
+    <select id="findDeviceCorpMapping" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
+        SELECT
+            device_id, corp_code,assigned_person
+        FROM
+            swm_helmet_device a
+        where `status` = '0'
+          AND corp_code = #{corpCode}
+          AND #{random} = #{random}
+    </select>
+    <select id="findListInit" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
+        select * from swm_helmet_device
+        <where>
+            `status` = '0'
+            <if test="random != null and random != 0 ">
+                AND #{random} = #{random}
+            </if>
+        </where>
+    </select>
+    <!-- 批量根据设备ID（主键id）查询安全帽设备列表 -->
+    <select id="findHelmetDeviceListByIds" parameterType="java.util.List" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
+        SELECT
+        a.*
+        FROM
+        swm_helmet_device a
+        WHERE
+        a.id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND a.status = '0'
+    </select>
+    <select id="findDeviceIdsByDeviceSource" resultType="java.lang.String">
+        SELECT
+        a.device_id
+        FROM
+        swm_helmet_device a
+        WHERE
+        a.device_source = #{deviceSource}
+        AND a.status = '0'
+        AND #{random} = #{random}
+    </select>
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT
+        COUNT(a.id)
+        FROM swm_helmet_device a
+        <where>
+            a.status = '0' 
+            <if test="deviceId != null and deviceId != ''">
+                AND a.device_id LIKE CONCAT('%', #{deviceId}, '%')
+            </if>
+            <if test="helmetType != null and helmetType != ''">
+                AND a.helmet_type = #{helmetType}
+            </if>
+            <if test="assignedPerson != null and assignedPerson != ''">
+                AND a.assigned_person LIKE CONCAT('%', #{assignedPerson}, '%')
+            </if>
+            <if test="personName != null and personName != ''">
+                AND a.person_name LIKE CONCAT('%', #{personName}, '%')
+            </if>
+            <if test="imei != null and imei != ''">
+                AND a.imei LIKE CONCAT('%', #{imei}, '%')
+            </if>
+            <if test="deviceColor != null and deviceColor != ''">
+                AND a.device_color LIKE CONCAT('%', #{deviceColor}, '%')
+            </if>
+
+            <!-- 开机状态条件 -->
+            <if test="powerOnStatus != null and powerOnStatus != ''">
+                <if test="powerOnStatus == '0'.toString() ">
+                    AND a.device_id IN
+                    <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
+                        #{id}
+                    </foreach>
+                </if>
+                <if test="powerOnStatus == '1'.toString() ">
+                    AND a.device_id NOT IN
+                    <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
+                        #{id}
+                    </foreach>
+                </if>
+            </if>
+        </where>
+    </select>
+
+</mapper> 
