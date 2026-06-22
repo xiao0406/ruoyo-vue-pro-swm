@@ -23,6 +23,7 @@ import java.util.List;
 @Component
 
 public class WeatherAlertTask {
+private static final Logger log = LoggerFactory.getLogger(WeatherAlertTask.class);
 
     @Resource
     private ConfigApi configApi;

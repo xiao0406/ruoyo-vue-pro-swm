@@ -17,6 +17,7 @@ import java.util.Map;
 @Service
 @Validated
 public class HelmetRundeCaReportLocationTdEnginServiceImpl implements HelmetRundeCaReportLocationTdEnginService {
+private static final Logger log = LoggerFactory.getLogger(HelmetRundeCaReportLocationTdEnginServiceImpl.class);
 
     @Override
     public R<JSONObject> saveHelmetData(String deviceId, Map<String, Object> data) {

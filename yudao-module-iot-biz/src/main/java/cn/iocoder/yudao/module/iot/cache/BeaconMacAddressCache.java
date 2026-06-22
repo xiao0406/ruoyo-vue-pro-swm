@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class BeaconMacAddressCache {
+private static final Logger log = LoggerFactory.getLogger(BeaconMacAddressCache.class);
 
     /**
      * 根据MAC地址获取信标信息

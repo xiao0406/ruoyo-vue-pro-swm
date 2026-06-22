@@ -14,7 +14,7 @@ import cn.iocoder.yudao.module.iot.tcp.model.TcpMessageData;
 import cn.iocoder.yudao.module.iot.service.HelmetSosTdEngineService;
 import cn.iocoder.yudao.module.iot.service.SwmWarningManagementService;
 import cn.iocoder.yudao.module.swm.service.VoiceAlarmService;
-import cn.iocoder.yudao.module.swm.util.DictUtils;
+import cn.iocoder.yudao.module.iot.util.DictUtils;
 import cn.iocoder.yudao.module.iot.tcp.service.TcpBeaconLocationService;
 import cn.iocoder.yudao.module.iot.util.R;
 import cn.hutool.json.JSONObject;

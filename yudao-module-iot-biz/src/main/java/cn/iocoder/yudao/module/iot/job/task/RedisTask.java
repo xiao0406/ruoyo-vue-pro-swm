@@ -25,6 +25,7 @@ import java.util.Set;
  */
 @Component
 public class RedisTask {
+private static final Logger log = LoggerFactory.getLogger(RedisTask.class);
 
     @Resource
     private RedisService redisService;

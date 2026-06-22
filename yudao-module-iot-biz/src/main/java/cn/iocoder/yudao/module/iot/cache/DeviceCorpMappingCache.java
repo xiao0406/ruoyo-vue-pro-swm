@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DeviceCorpMappingCache {
+private static final Logger log = LoggerFactory.getLogger(DeviceCorpMappingCache.class);
 
     /**
      * 刷新缓存

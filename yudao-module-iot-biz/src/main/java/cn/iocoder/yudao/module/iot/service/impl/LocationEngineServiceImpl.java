@@ -16,6 +16,7 @@ import java.util.Map;
 @Service
 @Validated
 public class LocationEngineServiceImpl implements LocationEngineService {
+private static final Logger log = LoggerFactory.getLogger(LocationEngineServiceImpl.class);
 
     @Override
     public Object getCoordinate(Object... args) {

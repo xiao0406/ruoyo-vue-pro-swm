@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class RedisUtil {
+private static final Logger log = LoggerFactory.getLogger(RedisUtil.class);
     // TODO: This class needs to be replaced with Yudao's RedisUtils
 
     @Resource

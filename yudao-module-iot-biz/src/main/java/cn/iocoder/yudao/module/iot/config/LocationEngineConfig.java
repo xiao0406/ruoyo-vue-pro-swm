@@ -19,6 +19,7 @@ import jakarta.annotation.PostConstruct;
  */
 @Component
 public class LocationEngineConfig {
+private static final Logger log = LoggerFactory.getLogger(LocationEngineConfig.class);
 
     // 原有配置保持不变
     @Value("${JIAI.url:http://58.240.212.6:8094}")

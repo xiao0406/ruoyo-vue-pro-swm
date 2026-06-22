@@ -16,6 +16,7 @@ import java.util.Map;
 @Service
 @Validated
 public class HelmetSendingMessageTdEngineServiceImpl implements HelmetSendingMessageTdEngineService {
+private static final Logger log = LoggerFactory.getLogger(HelmetSendingMessageTdEngineServiceImpl.class);
 
     @Override
     public R<JSONObject> saveHelmetSendingMessageData(String deviceId, Map<String, Object> data) {

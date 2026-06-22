@@ -22,6 +22,7 @@ import java.util.*;
 
 @Component
 public class RecallMessageHandler {
+private static final Logger log = LoggerFactory.getLogger(RecallMessageHandler.class);
 
     @Resource
     private NettyTcpServer nettyTcpServer;

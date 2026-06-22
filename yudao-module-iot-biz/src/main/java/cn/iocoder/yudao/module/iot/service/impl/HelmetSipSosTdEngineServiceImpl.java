@@ -16,6 +16,7 @@ import java.util.Map;
 @Service
 @Validated
 public class HelmetSipSosTdEngineServiceImpl implements HelmetSipSosTdEngineService {
+private static final Logger log = LoggerFactory.getLogger(HelmetSipSosTdEngineServiceImpl.class);
 
     @Override
     public R<JSONObject> saveHelmetSipSosData(String deviceId, Map<String, Object> data) {

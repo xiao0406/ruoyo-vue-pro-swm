@@ -2,7 +2,6 @@ package cn.iocoder.yudao.module.iot.mqtt.dto.zhongtai;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -16,7 +15,7 @@ import java.math.BigDecimal;
  *
  */
 @Data
-@Schema(description = "中泰mqtt报警信息", description = "中泰mqtt报警信息")
+@Schema(description = "中泰mqtt报警信息")
 public class ZhongTaiAlarmDto {
 
     @Schema(description = "报警类型，例如：SOS")

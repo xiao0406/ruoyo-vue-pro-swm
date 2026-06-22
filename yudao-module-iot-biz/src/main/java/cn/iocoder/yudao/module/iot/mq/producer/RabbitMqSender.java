@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class RabbitMqSender {
+private static final Logger log = LoggerFactory.getLogger(RabbitMqSender.class);
 
     @Resource
     private RabbitTemplate rabbitTemplate;

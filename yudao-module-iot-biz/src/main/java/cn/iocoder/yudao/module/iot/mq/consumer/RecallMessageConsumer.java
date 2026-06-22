@@ -21,6 +21,7 @@ import jakarta.annotation.Resource;
 @Log4j2
 @Conditional(AmqConfig.class)
 public class RecallMessageConsumer {
+private static final Logger log = LoggerFactory.getLogger(RecallMessageConsumer.class);
 
     @Resource
     private RecallMessageHandler recallMessageHandler;
