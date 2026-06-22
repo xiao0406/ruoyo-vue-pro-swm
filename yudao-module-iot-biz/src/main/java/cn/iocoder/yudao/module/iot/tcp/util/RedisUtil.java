@@ -1,14 +1,14 @@
 package cn.iocoder.yudao.module.iot.tcp.util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.iocoder.yudao.module.swm.service.cache.DeviceCorpMappingCache;
 import cn.iocoder.yudao.module.swm.service.RedisService;
 import cn.iocoder.yudao.module.swm.api.constant.SwmRedisKeyConstants;
 import jakarta.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
 public class RedisUtil {
     // TODO: This class needs to be replaced with Yudao's RedisUtils
 

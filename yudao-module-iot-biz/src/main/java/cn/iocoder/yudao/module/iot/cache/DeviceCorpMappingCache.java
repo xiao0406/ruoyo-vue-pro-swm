@@ -1,13 +1,13 @@
 package cn.iocoder.yudao.module.iot.cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
  * 设备企业映射缓存
  */
 @Component
-@Slf4j
 public class DeviceCorpMappingCache {
 
     /**

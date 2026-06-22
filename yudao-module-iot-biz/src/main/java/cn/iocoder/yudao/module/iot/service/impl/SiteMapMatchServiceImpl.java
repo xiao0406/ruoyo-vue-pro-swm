@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.iot.service.impl;
 
 import cn.iocoder.yudao.module.iot.service.SiteMapMatchService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -10,6 +9,5 @@ import org.springframework.validation.annotation.Validated;
  */
 @Service
 @Validated
-@Slf4j
 public class SiteMapMatchServiceImpl implements SiteMapMatchService {
 }

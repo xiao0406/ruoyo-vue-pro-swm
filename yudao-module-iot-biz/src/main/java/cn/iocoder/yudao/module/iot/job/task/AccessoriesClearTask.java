@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.iot.job.task;
 
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
  * @date 2022/6/5
  */
 @Component
-@Slf4j
 @Transactional(readOnly = true)
 public class AccessoriesClearTask {
 

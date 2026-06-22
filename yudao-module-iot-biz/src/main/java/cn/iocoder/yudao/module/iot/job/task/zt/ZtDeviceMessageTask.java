@@ -7,7 +7,6 @@ import cn.iocoder.yudao.module.iot.tcp.model.TcpMessageData;
 import cn.iocoder.yudao.module.iot.tcp.processor.AlarmZeroTcpProcessor;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
-import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +17,6 @@ import java.util.stream.Collectors;
  * 中泰设备专用定时任务
  */
 @Component
-@Slf4j
 public class ZtDeviceMessageTask {
 
     private static final String LOG_PREFIX = "【中泰-定时任务消息】- ";

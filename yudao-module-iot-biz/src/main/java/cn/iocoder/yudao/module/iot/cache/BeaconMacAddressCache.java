@@ -1,14 +1,14 @@
 package cn.iocoder.yudao.module.iot.cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.iocoder.yudao.module.iot.dal.dataobject.BeaconStationDO;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
  * Beacon MAC 地址缓存
  */
 @Component
-@Slf4j
 public class BeaconMacAddressCache {
 
     /**

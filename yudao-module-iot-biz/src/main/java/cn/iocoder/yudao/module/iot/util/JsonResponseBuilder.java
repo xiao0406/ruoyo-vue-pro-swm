@@ -2,12 +2,10 @@ package cn.iocoder.yudao.module.iot.util;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * JSON 响应构建工具类
  */
-@Slf4j
 public class JsonResponseBuilder {
 
     /**

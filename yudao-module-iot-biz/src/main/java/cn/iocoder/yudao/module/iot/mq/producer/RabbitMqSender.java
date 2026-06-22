@@ -1,8 +1,9 @@
 package cn.iocoder.yudao.module.iot.mq.producer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.module.iot.mq.SwmQueueKey;
-import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.Resource;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
@@ -12,7 +13,6 @@ import org.springframework.stereotype.Component;
  *
  * 迁移自 JeeSite: com.jeesite.modules.mq.producer.RabbitMqSender
  */
-@Slf4j
 @Component
 public class RabbitMqSender {
 

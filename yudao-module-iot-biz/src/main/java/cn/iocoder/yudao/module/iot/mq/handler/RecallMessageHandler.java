@@ -1,4 +1,6 @@
 package cn.iocoder.yudao.module.iot.mq.handler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.hutool.json.JSONObject;
 import com.alibaba.fastjson.JSON;
@@ -13,13 +15,11 @@ import cn.iocoder.yudao.module.iot.service.scheduler.MethodScheduler;
 import cn.iocoder.yudao.module.iot.tcp.server.NettyTcpServer;
 import cn.iocoder.yudao.module.iot.tcp.session.DeviceSession;
 import cn.iocoder.yudao.module.iot.tcp.session.SessionManager;
-import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
-@Slf4j
 @Component
 public class RecallMessageHandler {
 

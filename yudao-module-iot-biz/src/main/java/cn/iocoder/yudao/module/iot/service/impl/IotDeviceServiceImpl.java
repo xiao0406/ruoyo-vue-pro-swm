@@ -8,7 +8,6 @@ import cn.iocoder.yudao.module.iot.dal.mysql.IotDeviceMapper;
 import cn.iocoder.yudao.module.iot.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.iot.service.IotDeviceService;
 import jakarta.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -16,7 +15,6 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 
 @Service
 @Validated
-@Slf4j
 public class IotDeviceServiceImpl implements IotDeviceService {
 
     @Resource

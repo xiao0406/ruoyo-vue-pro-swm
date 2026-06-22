@@ -1,4 +1,6 @@
 package cn.iocoder.yudao.module.iot.job.task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.json.JSONArray;
@@ -9,7 +11,6 @@ import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import jakarta.annotation.Resource;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.stereotype.Component;
@@ -20,7 +21,6 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-@Slf4j
 
 public class WeatherAlertTask {
 

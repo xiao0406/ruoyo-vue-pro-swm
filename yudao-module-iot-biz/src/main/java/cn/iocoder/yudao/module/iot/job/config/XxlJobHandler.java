@@ -2,7 +2,6 @@ package cn.iocoder.yudao.module.iot.job.config;
 
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -21,7 +20,6 @@ import jakarta.annotation.Resource;
  */
 
 @Component
-@Slf4j
 public class XxlJobHandler {
 
 }

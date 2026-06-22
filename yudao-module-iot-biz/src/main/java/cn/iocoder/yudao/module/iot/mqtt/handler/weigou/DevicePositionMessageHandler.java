@@ -11,7 +11,6 @@ import cn.iocoder.yudao.module.iot.enums.MqttSendPositionParamEnum;
 import cn.iocoder.yudao.module.iot.mqtt.handler.MqttBusinessHandler;
 import cn.iocoder.yudao.module.iot.service.*;
 import cn.iocoder.yudao.module.iot.util.R;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.slf4j.Logger;
@@ -34,7 +33,6 @@ import java.util.*;
  */
 @Component
 @ConditionalOnProperty(prefix = "iot.mqtt", name = "enabled", havingValue = "true")
-@Slf4j
 public class DevicePositionMessageHandler implements MqttBusinessHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(DevicePositionMessageHandler.class);

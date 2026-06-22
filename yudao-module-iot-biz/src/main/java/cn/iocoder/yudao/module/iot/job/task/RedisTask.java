@@ -1,4 +1,6 @@
 package cn.iocoder.yudao.module.iot.job.task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import cn.iocoder.yudao.module.iot.cache.DeviceCorpMappingCache;
@@ -8,7 +10,6 @@ import cn.iocoder.yudao.module.system.dal.dataobject.tenant.TenantDO;
 import cn.iocoder.yudao.module.system.service.tenant.TenantService;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
@@ -23,7 +24,6 @@ import java.util.Set;
  * redis定时任务
  */
 @Component
-@Slf4j
 public class RedisTask {
 
     @Resource

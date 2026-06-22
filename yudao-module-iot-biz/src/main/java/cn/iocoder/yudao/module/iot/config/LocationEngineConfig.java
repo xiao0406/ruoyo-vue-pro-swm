@@ -1,7 +1,8 @@
 package cn.iocoder.yudao.module.iot.config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.iocoder.yudao.module.iot.cache.DeviceCorpMappingCache;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +17,6 @@ import jakarta.annotation.PostConstruct;
  * @author Shawn
  * @date 2025-07-23
  */
-@Slf4j
 @Component
 public class LocationEngineConfig {
 

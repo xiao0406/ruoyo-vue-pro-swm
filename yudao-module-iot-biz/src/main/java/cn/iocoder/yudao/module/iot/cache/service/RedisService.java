@@ -1,6 +1,5 @@
 package cn.iocoder.yudao.module.iot.cache.service;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +11,6 @@ import java.util.concurrent.TimeUnit;
  * Redis 服务封装
  */
 @Component
-@Slf4j
 public class RedisService {
 
     @Resource

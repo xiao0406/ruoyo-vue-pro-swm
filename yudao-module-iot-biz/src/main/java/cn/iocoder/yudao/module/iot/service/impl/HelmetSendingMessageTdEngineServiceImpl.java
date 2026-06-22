@@ -1,9 +1,10 @@
 package cn.iocoder.yudao.module.iot.service.impl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.iocoder.yudao.module.iot.service.HelmetSendingMessageTdEngineService;
 import cn.iocoder.yudao.module.iot.util.R;
 import cn.hutool.json.JSONObject;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -14,7 +15,6 @@ import java.util.Map;
  */
 @Service
 @Validated
-@Slf4j
 public class HelmetSendingMessageTdEngineServiceImpl implements HelmetSendingMessageTdEngineService {
 
     @Override
