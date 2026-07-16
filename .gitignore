@@ -56,6 +56,7 @@ application-my.yaml
 
 cscec-jeesite-cloud-swm/
 cscec-jessite-cloud-iot/
+swm-frontend/
 
 # Local large/export files that should not be pushed to GitHub
 swm.sql
