@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.PersonTrackMapper">
 
-    <!-- 查询人员追踪信息 -->
+    <!-- 閺屻儴顕楁禍鍝勬喅鏉╁€熼嚋娣団剝浼?-->
     <select id="findPersonTrackInfo" resultType="cn.iocoder.yudao.module.swm.controller.admin.persontrack.vo.PersonTrackInfoVO">
         SELECT
         a.*,
@@ -17,7 +17,7 @@
         LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
-        LEFT JOIN system_dept jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         AND NOT EXISTS (SELECT 1 FROM fms_worker fw2 WHERE fw2.identity_code = f.identity_code AND fw2.create_date > f.create_date)
         WHERE
@@ -34,7 +34,7 @@
         </if>
     </select>
 
-    <!-- 根据身份证号码查询人员信息 -->
+    <!-- 閺嶈宓侀煬顐″敜鐠囦礁褰块惍浣圭叀鐠囶澀姹夐崨妯逛繆閹?-->
     <select id="getPersonByIdCard" resultType="cn.iocoder.yudao.module.swm.controller.admin.persontrack.vo.PersonTrackInfoVO">
         SELECT 
             a.id AS id,
@@ -47,15 +47,15 @@
             wg.work_group_name AS teamGroup,
             f.work_type AS workType,
             a.identity_card AS identityCard,
-            -- 关联表的ID字段 2025/06/24 Shawn 添加
-            f.id AS workerArchiveId,                    -- 工人档案ID
-            o.office_code AS officeCode,                -- 组织编码
-            p.id AS positionArchiveId,                  -- 车间ID
-            wg.id AS workGroupId,                       -- 班组ID
-            fpl.id AS prodLineId                        -- 产线ID
+            -- 閸忓疇浠堢悰銊ф畱ID鐎涙顔?2025/06/24 Shawn 濞ｈ濮?
+            f.id AS workerArchiveId,                    -- 瀹搞儰姹夊锝嗩攳ID
+            o.office_code AS officeCode,                -- 缂佸嫮绮愮紓鏍垳
+            p.id AS positionArchiveId,                  -- 鏉烇箓妫縄D
+            wg.id AS workGroupId,                       -- 閻濐厾绮岻D
+            fpl.id AS prodLineId                        -- 娴溠呭殠ID
         FROM swm_person a 
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci 
-        LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL 
+        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL 
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ' 
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id 
         LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
@@ -63,7 +63,7 @@
         LIMIT 1
     </select>
 
-    <!-- 根据key值查询颜色信息 -->
+    <!-- 閺嶈宓乲ey閸婂吋鐓＄拠銏ゎ杹閼硅弓淇婇幁?-->
     <select id="getColorByKey" resultType="java.lang.String">
         SELECT color 
         FROM swm_helmet_subitem 
@@ -72,7 +72,7 @@
         LIMIT 1
     </select>
 
-    <!-- 批量查询颜色信息 -->
+    <!-- 閹靛綊鍣洪弻銉嚄妫版粏澹婃穱鈩冧紖 -->
     <select id="getColorsByKeys" resultType="java.util.Map">
         SELECT `key`, color 
         FROM swm_helmet_subitem 

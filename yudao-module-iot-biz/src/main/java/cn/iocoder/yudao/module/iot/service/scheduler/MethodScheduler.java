@@ -7,4 +7,16 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MethodScheduler {
+
+    public MethodScheduler() {
+    }
+
+    public MethodScheduler(Integer intervalSeconds, Integer retryCount) {
+    }
+
+    public void scheduleMethod(Runnable runnable) {
+        if (runnable != null) {
+            runnable.run();
+        }
+    }
 }

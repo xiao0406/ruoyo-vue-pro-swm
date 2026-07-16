@@ -1,6 +1,6 @@
 package cn.iocoder.yudao.module.iot.tcp.util;
 
-import cn.iocoder.yudao.module.swm.service.TcpDeviceCommandLogService;
+import cn.iocoder.yudao.module.iot.service.TcpDeviceCommandLogService;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

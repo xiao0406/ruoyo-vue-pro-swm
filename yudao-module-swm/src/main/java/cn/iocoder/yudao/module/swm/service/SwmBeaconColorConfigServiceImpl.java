@@ -59,7 +59,11 @@ public class SwmBeaconColorConfigServiceImpl implements SwmBeaconColorConfigServ
 
     @Override
     public PageResult<SwmBeaconColorConfigDO> getBeaconColorConfigPage(SwmBeaconColorConfigPageReqVO pageReqVO) {
-        return swmBeaconColorConfigMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmBeaconColorConfigMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmBeaconColorConfigDO>()
+                        .likeIfPresent(SwmBeaconColorConfigDO::getName, pageReqVO.getName())
+                        .eqIfPresent(SwmBeaconColorConfigDO::getColor, pageReqVO.getColor())
+                        .orderByDesc(SwmBeaconColorConfigDO::getCreateTime));
     }
 
     private void validateBeaconColorConfigExists(String id) {

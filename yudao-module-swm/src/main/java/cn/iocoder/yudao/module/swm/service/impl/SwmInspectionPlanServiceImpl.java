@@ -51,7 +51,9 @@ public class SwmInspectionPlanServiceImpl implements SwmInspectionPlanService {
 
     @Override
     public PageResult<SwmInspectionPlanDO> getSwmInspectionPlanPage(SwmInspectionPlanPageReqVO pageReqVO) {
-        return mapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return mapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmInspectionPlanDO>()
+                        .orderByDesc(SwmInspectionPlanDO::getCreateTime));
     }
 
     private void validateExists(String id) {
@@ -65,5 +67,14 @@ public class SwmInspectionPlanServiceImpl implements SwmInspectionPlanService {
             wrapper.eq(SwmInspectionPlanDO::getPlanStatus, queryPlan.getPlanStatus());
         }
         return mapper.selectList(wrapper);
+    }
+
+    @Override
+    public boolean updateStatus(String id, String status) {
+        validateExists(id);
+        SwmInspectionPlanDO update = new SwmInspectionPlanDO();
+        update.setId(id);
+        update.setPlanStatus(status);
+        return mapper.updateById(update) > 0;
     }
 }

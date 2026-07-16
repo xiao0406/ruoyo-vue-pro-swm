@@ -1,10 +1,8 @@
 package cn.iocoder.yudao.module.iot.tcp.service;
 
-import cn.iocoder.yudao.module.swm.service.cache.DeviceCorpMappingCache;
-import cn.iocoder.yudao.module.swm.service.RedisService;
+import cn.iocoder.yudao.module.iot.cache.DeviceTenantMappingCache;
+import cn.iocoder.yudao.module.iot.cache.service.RedisService;
 import cn.iocoder.yudao.module.swm.api.constant.SwmRedisKeyConstants;
-import cn.iocoder.yudao.module.swm.dal.dataobject.SwmAreaDO;
-import cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO;
 import cn.iocoder.yudao.module.iot.tcp.model.TcpMessageData;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
@@ -20,8 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * TCP信标位置服务
- * 提供从蓝牙信标中获取位置和区域信息的通用服务
+ * TCP淇℃爣浣嶇疆鏈嶅姟
+ * 鎻愪緵浠庤摑鐗欎俊鏍囦腑鑾峰彇浣嶇疆鍜屽尯鍩熶俊鎭殑閫氱敤鏈嶅姟
  *
  * @author Shawn
  * @date 2025-01-27
@@ -36,28 +34,28 @@ public class TcpBeaconLocationService {
     @Resource
     private RedisService redisService;
     @Resource
-    private DeviceCorpMappingCache deviceCorpMappingCache;
+    private DeviceTenantMappingCache deviceTenantMappingCache;
 
     /**
-     * 从蓝牙信标中获取位置信息
-     * 按信号强度从强到弱依次查询，直到找到在swm_beacon_station表中存在的信标
+     * 浠庤摑鐗欎俊鏍囦腑鑾峰彇浣嶇疆淇℃伅
+     * 鎸変俊鍙峰己搴︿粠寮哄埌寮变緷娆℃煡璇紝鐩村埌鎵惧埌鍦╯wm_beacon_station琛ㄤ腑瀛樺湪鐨勪俊鏍?
      *
-     * @param messageData TCP消息数据
-     * @return 位置信息，如果未找到返回空字符串
+     * @param messageData TCP娑堟伅鏁版嵁
+     * @return 浣嶇疆淇℃伅锛屽鏋滄湭鎵惧埌杩斿洖绌哄瓧绗︿覆
      */
     public String getLocationFromBeacons(TcpMessageData messageData) {
         if (messageData == null) {
             return "";
         }
         String deviceId = messageData.getDeviceId();
-        String corpCode = deviceCorpMappingCache.getCorpCode(deviceId);
+        String tenantKey = deviceTenantMappingCache.getTenantKey(deviceId);
 
         List<Map<String, Object>> bluetoothBeacons = messageData.getBluetoothBeacons();
         if (bluetoothBeacons == null || bluetoothBeacons.isEmpty()) {
             return "";
         }
 
-        // 将信标按RSSI值排序（从强到弱）
+        // 灏嗕俊鏍囨寜RSSI鍊兼帓搴忥紙浠庡己鍒板急锛?
         List<Map<String, Object>> sortedBeacons = new ArrayList<>(bluetoothBeacons);
         sortedBeacons.sort((b1, b2) -> {
             try {
@@ -65,13 +63,13 @@ public class TcpBeaconLocationService {
                 String rssi2Str = (String) b2.get("RSSI");
                 int rssi1 = Integer.parseInt(rssi1Str);
                 int rssi2 = Integer.parseInt(rssi2Str);
-                return Integer.compare(rssi2, rssi1); // 降序排列
+                return Integer.compare(rssi2, rssi1); // 闄嶅簭鎺掑垪
             } catch (Exception e) {
                 return 0;
             }
         });
 
-        // 按信号强度顺序查询，直到找到存在的信标
+        // 鎸変俊鍙峰己搴﹂『搴忔煡璇紝鐩村埌鎵惧埌瀛樺湪鐨勪俊鏍?
 //        String sql = "SELECT location FROM swm_beacon_station WHERE beacon_id = ? AND status = '0'";
 
         for (Map<String, Object> beacon : sortedBeacons) {
@@ -81,31 +79,31 @@ public class TcpBeaconLocationService {
             if (StringUtils.isNotBlank(mac)) {
                 try {
 //                    List<String> results = jdbcTemplate.queryForList(sql, String.class, mac.toUpperCase());
-                    //查询位置名称
-                    String location = this.getLocationByMac(mac, corpCode);
+                    //鏌ヨ浣嶇疆鍚嶇О
+                    String location = this.getLocationByMac(mac, tenantKey);
                     if (!location.isEmpty()) {
-                        logger.info("找到信标位置: MAC={}, RSSI={}, location={}",
+                        logger.info("鎵惧埌淇℃爣浣嶇疆: MAC={}, RSSI={}, location={}",
                             mac, rssiStr, location);
                         return location;
                     } else {
-                        logger.debug("信标未在数据库中找到: MAC={}, RSSI={}", mac, rssiStr);
+                        logger.debug("淇℃爣鏈湪鏁版嵁搴撲腑鎵惧埌: MAC={}, RSSI={}", mac, rssiStr);
                     }
                 } catch (Exception e) {
-                    logger.error("查询location失败, MAC: {}", mac, e);
+                    logger.error("鏌ヨlocation澶辫触, MAC: {}", mac, e);
                 }
             }
         }
 
-        logger.warn("所有蓝牙信标都未在swm_beacon_station表中找到，deviceId: {}", messageData.getDeviceId());
+        logger.warn("鎵€鏈夎摑鐗欎俊鏍囬兘鏈湪swm_beacon_station琛ㄤ腑鎵惧埌锛宒eviceId: {}", messageData.getDeviceId());
         return "";
     }
 
     /**
-     * 从蓝牙信标中获取区域名称
-     * 按信号强度从强到弱依次查询，直到找到在swm_beacon_station表中存在的信标
+     * 浠庤摑鐗欎俊鏍囦腑鑾峰彇鍖哄煙鍚嶇О
+     * 鎸変俊鍙峰己搴︿粠寮哄埌寮变緷娆℃煡璇紝鐩村埌鎵惧埌鍦╯wm_beacon_station琛ㄤ腑瀛樺湪鐨勪俊鏍?
      *
-     * @param messageData TCP消息数据
-     * @return 区域名称，如果未找到返回空字符串
+     * @param messageData TCP娑堟伅鏁版嵁
+     * @return 鍖哄煙鍚嶇О锛屽鏋滄湭鎵惧埌杩斿洖绌哄瓧绗︿覆
      */
     public String getAreaNameFromBeacons(TcpMessageData messageData) {
         if (messageData == null) {
@@ -113,14 +111,14 @@ public class TcpBeaconLocationService {
         }
 
         String deviceId = messageData.getDeviceId();
-        String corpCode = deviceCorpMappingCache.getCorpCode(deviceId);
+        String tenantKey = deviceTenantMappingCache.getTenantKey(deviceId);
 
         List<Map<String, Object>> bluetoothBeacons = messageData.getBluetoothBeacons();
         if (bluetoothBeacons == null || bluetoothBeacons.isEmpty()) {
             return "";
         }
 
-        // 将信标按RSSI值排序（从强到弱）
+        // 灏嗕俊鏍囨寜RSSI鍊兼帓搴忥紙浠庡己鍒板急锛?
         List<Map<String, Object>> sortedBeacons = new ArrayList<>(bluetoothBeacons);
         sortedBeacons.sort((b1, b2) -> {
             try {
@@ -128,13 +126,13 @@ public class TcpBeaconLocationService {
                 String rssi2Str = (String) b2.get("RSSI");
                 int rssi1 = Integer.parseInt(rssi1Str);
                 int rssi2 = Integer.parseInt(rssi2Str);
-                return Integer.compare(rssi2, rssi1); // 降序排列
+                return Integer.compare(rssi2, rssi1); // 闄嶅簭鎺掑垪
             } catch (Exception e) {
                 return 0;
             }
         });
 
-        // 按信号强度顺序查询，直到找到存在的信标
+        // 鎸変俊鍙峰己搴﹂『搴忔煡璇紝鐩村埌鎵惧埌瀛樺湪鐨勪俊鏍?
 //        String sql = "SELECT a.area_name " +
 //                    "FROM swm_beacon_station bs " +
 //                    "LEFT JOIN swm_area a ON bs.area = a.id AND a.del_flag = '0' AND a.status = '0' " +
@@ -148,35 +146,35 @@ public class TcpBeaconLocationService {
             if (StringUtils.isNotBlank(mac)) {
                 try {
 //                    List<String> results = jdbcTemplate.queryForList(sql, String.class, mac.toUpperCase());
-                    //根据mac地址查询区域信息
-                    Map<String, Object> result = this.getAreaNameByMac(mac, corpCode);
+                    //鏍规嵁mac鍦板潃鏌ヨ鍖哄煙淇℃伅
+                    Map<String, Object> result = this.getAreaNameByMac(mac, tenantKey);
                     String areaName = null;
                     if (result != null){
                         areaName = (String)result.get("areaName");
                     }
 
                     if (!areaName.isEmpty() ) {
-                        logger.info("找到信标区域: MAC={}, RSSI={}, areaName={}",
+                        logger.info("鎵惧埌淇℃爣鍖哄煙: MAC={}, RSSI={}, areaName={}",
                             mac, rssiStr, areaName);
                         return areaName;
                     } else {
-                        logger.debug("信标未在数据库中找到区域: MAC={}, RSSI={}", mac, rssiStr);
+                        logger.debug("淇℃爣鏈湪鏁版嵁搴撲腑鎵惧埌鍖哄煙: MAC={}, RSSI={}", mac, rssiStr);
                     }
                 } catch (Exception e) {
-                    logger.error("查询areaName失败, MAC: {}", mac, e);
+                    logger.error("鏌ヨareaName澶辫触, MAC: {}", mac, e);
                 }
             }
         }
 
-        logger.warn("所有蓝牙信标都未在swm_beacon_station表中找到区域，deviceId: {}", messageData.getDeviceId());
+        logger.warn("鎵€鏈夎摑鐗欎俊鏍囬兘鏈湪swm_beacon_station琛ㄤ腑鎵惧埌鍖哄煙锛宒eviceId: {}", messageData.getDeviceId());
         return "";
     }
 
     /**
-     * 将MAC地址格式化为带冒号的格式
+     * 灏哅AC鍦板潃鏍煎紡鍖栦负甯﹀啋鍙风殑鏍煎紡
      *
-     * @param mac 无冒号的MAC地址（如：80ECCCD0BCF6）
-     * @return 带冒号的MAC地址（如：80:EC:CC:D0:BC:F6）
+     * @param mac 鏃犲啋鍙风殑MAC鍦板潃锛堝锛?0ECCCD0BCF6锛?
+     * @return 甯﹀啋鍙风殑MAC鍦板潃锛堝锛?0:EC:CC:D0:BC:F6锛?
      */
     public String formatMacWithColon(String mac) {
         if (mac == null || mac.length() != 12) {
@@ -194,22 +192,22 @@ public class TcpBeaconLocationService {
     }
 
     /**
-     * 从蓝牙信标中获取区域名称
-     * 过滤 RSSI ≤ -80 的信标，按信号强度从强到弱查询
+     * 浠庤摑鐗欎俊鏍囦腑鑾峰彇鍖哄煙鍚嶇О
+     * 杩囨护 RSSI 鈮?-80 鐨勪俊鏍囷紝鎸変俊鍙峰己搴︿粠寮哄埌寮辨煡璇?
      */
     public Map<String,Object> getAreaNameFromBeaconsFilter(TcpMessageData messageData) {
         if (messageData == null) {
             return null;
         }
         String deviceId = messageData.getDeviceId();
-        String corpCode = deviceCorpMappingCache.getCorpCode(deviceId);
+        String tenantKey = deviceTenantMappingCache.getTenantKey(deviceId);
 
         List<Map<String, Object>> bluetoothBeacons = messageData.getBluetoothBeacons();
         if (bluetoothBeacons == null || bluetoothBeacons.isEmpty()) {
             return null;
         }
 
-        // 1. 过滤 RSSI > -80 且可解析的信标
+        // 1. 杩囨护 RSSI > -80 涓斿彲瑙ｆ瀽鐨勪俊鏍?
         List<Map<String, Object>> validBeacons = new ArrayList<>();
         for (Map<String, Object> beacon : bluetoothBeacons) {
             Object rssiObj = beacon.get("RSSI");
@@ -220,27 +218,27 @@ public class TcpBeaconLocationService {
             try {
                 int rssi = Integer.parseInt(rssiObj.toString());
                 if (rssi > -80) {
-                    beacon.put("_rssiInt", rssi); // 缓存解析结果
+                    beacon.put("_rssiInt", rssi); // 缂撳瓨瑙ｆ瀽缁撴灉
                     validBeacons.add(beacon);
                 }
             } catch (Exception e) {
-                logger.debug("非法 RSSI，忽略该信标: {}", beacon);
+                logger.debug("闈炴硶 RSSI锛屽拷鐣ヨ淇℃爣: {}", beacon);
             }
         }
 
         if (validBeacons.isEmpty()) {
-            logger.warn("所有蓝牙信标 RSSI ≤ -80，被过滤，deviceId: {}", messageData.getDeviceId());
+            logger.warn("鎵€鏈夎摑鐗欎俊鏍?RSSI 鈮?-80锛岃杩囨护锛宒eviceId: {}", messageData.getDeviceId());
             return null;
         }
 
-        // 2. 按 RSSI 从强到弱排序
+        // 2. 鎸?RSSI 浠庡己鍒板急鎺掑簭
         validBeacons.sort((b1, b2) -> {
             int rssi1 = (int) b1.get("_rssiInt");
             int rssi2 = (int) b2.get("_rssiInt");
             return Integer.compare(rssi2, rssi1);
         });
 
-        // 3. 按信号强度顺序查询区域
+        // 3. 鎸変俊鍙峰己搴﹂『搴忔煡璇㈠尯鍩?
 //        String sql =
 //                "SELECT a.area_name as areaName ,a.id as id " +
 //                        "FROM swm_beacon_station bs " +
@@ -260,29 +258,29 @@ public class TcpBeaconLocationService {
 //                if (!results.isEmpty()){
 //                    return results.get(0);
 //                }
-                //根据mac地址查询区域信息
-                Map<String, Object> result = this.getAreaNameByMac(mac, corpCode);
+                //鏍规嵁mac鍦板潃鏌ヨ鍖哄煙淇℃伅
+                Map<String, Object> result = this.getAreaNameByMac(mac, tenantKey);
                 return result;
 
 
             } catch (Exception e) {
-                logger.error("查询 areaName 失败, MAC: {}", mac, e);
+                logger.error("鏌ヨ areaName 澶辫触, MAC: {}", mac, e);
             }
         }
 
-        logger.warn("有效蓝牙信标均未在 swm_beacon_station 表中找到区域，deviceId: {}",
+        logger.warn("鏈夋晥钃濈墮淇℃爣鍧囨湭鍦?swm_beacon_station 琛ㄤ腑鎵惧埌鍖哄煙锛宒eviceId: {}",
                 messageData.getDeviceId());
         return null;
     }
 
     /**
-     * 根据mac地址查出信标所属位置
+     * 鏍规嵁mac鍦板潃鏌ュ嚭淇℃爣鎵€灞炰綅缃?
      */
-    public String getLocationByMac(String mac, String corpCode) {
+    public String getLocationByMac(String mac, String tenantKey) {
         if (StringUtils.isBlank(mac)) {
             return null;
         }
-        String beaconCacheKey = corpCode+ SwmRedisKeyConstants.SwmKey.BEACON_MAC_CACHE_KEY;
+        String beaconCacheKey = tenantKey+ SwmRedisKeyConstants.SwmKey.BEACON_MAC_CACHE_KEY;
         SwmBeaconStation beaconStation = (SwmBeaconStation) redisService.hget(beaconCacheKey,mac.toUpperCase() );
         if (ObjectUtils.isEmpty(beaconStation)){
             return null;
@@ -292,15 +290,15 @@ public class TcpBeaconLocationService {
     }
 
     /**
-     * 根据mac地址查出信标所属区域
+     * 鏍规嵁mac鍦板潃鏌ュ嚭淇℃爣鎵€灞炲尯鍩?
      */
-    public Map<String, Object> getAreaNameByMac(String mac, String corpCode) {
+    public Map<String, Object> getAreaNameByMac(String mac, String tenantKey) {
         if (StringUtils.isBlank(mac)) {
             return null;
         }
 
-        // 1.先查出信标所属区域
-        String beaconCacheKey = corpCode+ SwmRedisKeyConstants.SwmKey.BEACON_MAC_CACHE_KEY;
+        // 1.鍏堟煡鍑轰俊鏍囨墍灞炲尯鍩?
+        String beaconCacheKey = tenantKey+ SwmRedisKeyConstants.SwmKey.BEACON_MAC_CACHE_KEY;
         SwmBeaconStation beaconStation = (SwmBeaconStation) redisService.hget(beaconCacheKey,mac.toUpperCase() );
         if (ObjectUtils.isEmpty(beaconStation)){
             return null;
@@ -309,8 +307,8 @@ public class TcpBeaconLocationService {
         if (StringUtils.isBlank(areaId)){
             return null;
         }
-        //2.根据区域id查出区域名称
-        String areaIdCacheKey = corpCode+ SwmRedisKeyConstants.SwmKey.AREA_ID_CACHE_KEY;
+        //2.鏍规嵁鍖哄煙id鏌ュ嚭鍖哄煙鍚嶇О
+        String areaIdCacheKey = tenantKey+ SwmRedisKeyConstants.SwmKey.AREA_ID_CACHE_KEY;
         SwmArea swmArea = (SwmArea) redisService.hget(areaIdCacheKey, areaId);
         if (ObjectUtils.isEmpty(swmArea)){
             return null;
@@ -325,3 +323,4 @@ public class TcpBeaconLocationService {
     }
 
 }
+

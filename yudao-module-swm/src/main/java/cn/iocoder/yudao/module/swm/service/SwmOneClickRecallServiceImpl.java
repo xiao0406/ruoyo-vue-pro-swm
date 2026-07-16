@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.swm.enums.ErrorCodeConstants.ONE_CLICK_RECALL_NOT_EXISTS;
 
@@ -28,6 +31,13 @@ public class SwmOneClickRecallServiceImpl implements SwmOneClickRecallService {
     @Override
     public String createOneClickRecall(SwmOneClickRecallSaveReqVO createReqVO) {
         SwmOneClickRecallDO oneClickRecall = BeanUtils.toBean(createReqVO, SwmOneClickRecallDO.class);
+        // JeeSite 原表使用 varchar 主键，迁移到 MyBatis Plus 后需要在业务层补齐主键和默认值。
+        oneClickRecall.setId(UUID.randomUUID().toString().replace("-", ""));
+        oneClickRecall.setRecallTime(LocalDateTime.now());
+        oneClickRecall.setRecallSuccessCount(oneClickRecall.getRecallSuccessCount() == null ? 0 : oneClickRecall.getRecallSuccessCount());
+        oneClickRecall.setRecallFailCount(oneClickRecall.getRecallFailCount() == null ? 0 : oneClickRecall.getRecallFailCount());
+        oneClickRecall.setRecallResult(oneClickRecall.getRecallResult() == null ? "0" : oneClickRecall.getRecallResult());
+        oneClickRecall.setStatus("0");
         swmOneClickRecallMapper.insert(oneClickRecall);
         return oneClickRecall.getId();
     }
@@ -52,7 +62,12 @@ public class SwmOneClickRecallServiceImpl implements SwmOneClickRecallService {
 
     @Override
     public PageResult<SwmOneClickRecallDO> getOneClickRecallPage(SwmOneClickRecallPageReqVO pageReqVO) {
-        return swmOneClickRecallMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmOneClickRecallMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmOneClickRecallDO>()
+                        .likeIfPresent(SwmOneClickRecallDO::getTemplateName, pageReqVO.getTemplateName())
+                        .likeIfPresent(SwmOneClickRecallDO::getEvacuationPlan, pageReqVO.getEvacuationPlan())
+                        .eqIfPresent(SwmOneClickRecallDO::getRecallResult, pageReqVO.getRecallResult())
+                        .orderByDesc(SwmOneClickRecallDO::getRecallTime));
     }
 
     private void validateOneClickRecallExists(String id) {

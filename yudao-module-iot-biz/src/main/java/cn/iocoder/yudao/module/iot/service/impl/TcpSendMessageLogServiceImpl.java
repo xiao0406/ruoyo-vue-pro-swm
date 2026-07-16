@@ -26,6 +26,6 @@ public class TcpSendMessageLogServiceImpl implements TcpSendMessageLogService {
 
     @Override
     public PageResult<TcpSendMessageLogDO> getTcpSendMessageLogPage(TcpSendMessageLogPageReqVO pageReqVO) {
-        return tcpSendMessageLogMapper.selectPage(pageReqVO);
+        return PageResult.empty();
     }
 }

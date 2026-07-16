@@ -15,7 +15,7 @@ public interface SwmRedisKeyConstants {
      * 全局 Redis Key（设备-人员映射等）
      */
     interface GlobalKey {
-        String DEVICE_TO_CORP = "swm:device_to_corp";
+        String DEVICE_TO_TENANT = "swm:device_to_tenant";
         String DEVICE_PERSON_MAP = "swm:device_person_map";
         String PERSON_DEVICE_MAP = "swm:person_device_map";
         String ACTIVE_PERSON_CACHE_KEY = "swm:active_person_cache";
@@ -32,6 +32,7 @@ public interface SwmRedisKeyConstants {
         String AREA_CACHE = "swm:area_cache";
         String IS_PROD_VOICE_ALARM = "swm:is_prod_voice_alarm";
         String HAZARD_IS_ALARM_BEACON = "swm:hazard_is_alarm_beacon";
+        String Hazard_ISALARM_BEACON = HAZARD_IS_ALARM_BEACON;
         String PRODUCTION_VOICE_ALARM_INTERVAL = "swm:production_voice_alarm_interval";
         String MAC_TO_HAZARD_INFO = "swm:mac_to_hazard_info";
         String VOICE_TEMPLATE_CACHE = "swm:voice_template_cache";
@@ -42,6 +43,13 @@ public interface SwmRedisKeyConstants {
         String ZT_DEVICE_BATTERY = "swm:zt_device_battery";
         String ZT_DEVICE_BLE_DATA = "swm:zt_device_ble_data";
         String ZT_DEVICE_MESSAGE_DATA = "swm:zt_device_message_data";
+    }
+
+    interface RedisSwmKey {
+        String ZT_DEVICE_BATTERY = SwmKey.ZT_DEVICE_BATTERY;
+        String ZT_DEVICE_BLE_DATA = SwmKey.ZT_DEVICE_BLE_DATA;
+        String ZT_DEVICE_MESSAGE_DATA = SwmKey.ZT_DEVICE_MESSAGE_DATA;
+        String VOICE_TEMPLATE_CACHE = SwmKey.VOICE_TEMPLATE_CACHE;
     }
 
     /**

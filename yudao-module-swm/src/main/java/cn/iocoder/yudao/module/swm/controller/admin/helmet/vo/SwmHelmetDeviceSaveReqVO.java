@@ -38,6 +38,12 @@ public class SwmHelmetDeviceSaveReqVO {
     @Schema(description = "手机号码")
     private String personPhone;
 
+    @Schema(description = "Bind time")
+    private LocalDateTime bindTime;
+
+    @Schema(description = "Unbind time")
+    private LocalDateTime unbindTime;
+
     @Schema(description = "所属车间")
     private String assignedWorkshop;
 

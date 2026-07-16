@@ -22,7 +22,8 @@ public interface SwmSafetyPersonTrainingMapper extends BaseMapperX<SwmSafetyPers
                                               @Param("department") String department,
                                               @Param("prodLine") String prodLine,
                                               @Param("team") String team,
-                                              @Param("company") String company);
+                                              @Param("company") String company,
+                                              @Param("tenantId") Long tenantId);
 
     List<SwmSafetyPersonTrainingDO> appPageList(@Param("completeStatus") String completeStatus,
                                                   @Param("identityCard") String identityCard,
@@ -33,3 +34,4 @@ public interface SwmSafetyPersonTrainingMapper extends BaseMapperX<SwmSafetyPers
     List<String> findListByIdCard(@Param("startMonth") String startMonth,
                                    @Param("endMonth") String endMonth);
 }
+

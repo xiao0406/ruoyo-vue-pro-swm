@@ -2,7 +2,7 @@ package cn.iocoder.yudao.module.iot.mqtt.handler.zhongtai;
 
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import cn.iocoder.yudao.module.iot.cache.DeviceCorpMappingCache;
+import cn.iocoder.yudao.module.iot.cache.DeviceTenantMappingCache;
 import cn.iocoder.yudao.module.iot.cache.service.RedisService;
 import cn.iocoder.yudao.module.swm.api.constant.SwmRedisKeyConstants;
 import cn.iocoder.yudao.module.iot.dal.dao.BeaconStationDao;
@@ -26,8 +26,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 设备蓝牙信息处理器
- * 处理设备蓝牙信息MQTT消息
+ * 璁惧钃濈墮淇℃伅澶勭悊鍣?
+ * 澶勭悊璁惧钃濈墮淇℃伅MQTT娑堟伅
  *
  * @author wxy
  * @date 2026-04-03
@@ -39,29 +39,29 @@ public class DeviceIbeaconStatusHandler implements MqttBusinessHandler {
     @Resource
     private RedisService redisService;
     @Resource
-    private DeviceCorpMappingCache deviceCorpMappingCache;
+    private DeviceTenantMappingCache deviceTenantMappingCache;
     @Resource
     private AlarmZeroTcpProcessor alarmZeroTcpProcessor;
     @Resource
     private HazardSourceTcpProcessor hazardSourceTcpProcessor;
 
     private static final Logger logger = LoggerFactory.getLogger(DeviceIbeaconStatusHandler.class);
-    private static final String LOG_PREFIX = "【中泰-MQTT消息-蓝牙信息】- ";
+    private static final String LOG_PREFIX = "銆愪腑娉?MQTT娑堟伅-钃濈墮淇℃伅銆? ";
 
-    // 缓存：key = sipAccount，value = 上一次发送时间戳
+    // 缂撳瓨锛歬ey = sipAccount锛寁alue = 涓婁竴娆″彂閫佹椂闂存埑
     private static final ConcurrentHashMap<String, Long> ibeaconStatusMap = new ConcurrentHashMap<>();
 
     /**
-     * 危险源报警专用
+     * 鍗遍櫓婧愭姤璀︿笓鐢?
      */
-    // 缓存每个设备最后一次处理的时间，保证线程安全
+    // 缂撳瓨姣忎釜璁惧鏈€鍚庝竴娆″鐞嗙殑鏃堕棿锛屼繚璇佺嚎绋嬪畨鍏?
     private static final Map<String, Long> LAST_PROCESS_TIME_CACHE = new ConcurrentHashMap<>();
-    // 10秒间隔（单位：毫秒）
+    // 10绉掗棿闅旓紙鍗曚綅锛氭绉掞級
     private static final long PROCESS_INTERVAL = 10 * 1000L;
 
     @Override
     public boolean canHandle(String topic, MqttMessage message) {
-        // 检查主题是否包含 /sensor/ibeacon
+        // 妫€鏌ヤ富棰樻槸鍚﹀寘鍚?/sensor/ibeacon
         if (!topic.contains(MqttConstants.SENSOR +"/"+ MqttConstants.IBEACON)) {
             return false;
         }
@@ -70,52 +70,52 @@ public class DeviceIbeaconStatusHandler implements MqttBusinessHandler {
 
     @Override
     public void handle(String topic, MqttMessage message) {
-        // 解析消息内容
+        // 瑙ｆ瀽娑堟伅鍐呭
         String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
-        logger.info(LOG_PREFIX+"处理设备蓝牙信息消息: topic={}, payload={}", topic, payload);
+        logger.info(LOG_PREFIX+"澶勭悊璁惧钃濈墮淇℃伅娑堟伅: topic={}, payload={}", topic, payload);
 
-        //定位数据实体类
+        //瀹氫綅鏁版嵁瀹炰綋绫?
         TcpMessageData messageData = new TcpMessageData();
-        //蓝牙解析数据实体类
+        //钃濈墮瑙ｆ瀽鏁版嵁瀹炰綋绫?
         IBeaconMessage iBeaconMessage = new IBeaconMessage();
 
-        //蓝牙信标数据列表每个Map包含：MAC, RSSI, TIME
+        //钃濈墮淇℃爣鏁版嵁鍒楄〃姣忎釜Map鍖呭惈锛歁AC, RSSI, TIME
         List<Map<String, Object>> beacons = new ArrayList<>();
 
         try {
 
-            // 1.先校验设备是否入库
-            if (!MqttConstants.verifyDeviceExists(topic, messageData, redisService, deviceCorpMappingCache)){
+            // 1.鍏堟牎楠岃澶囨槸鍚﹀叆搴?
+            if (!MqttConstants.verifyDeviceExists(topic, messageData, redisService, deviceTenantMappingCache)){
                 return;
             }
 
-            // 2. 解析消息内容
-            // 2.1. 解析 MQTT 消息体
+            // 2. 瑙ｆ瀽娑堟伅鍐呭
+            // 2.1. 瑙ｆ瀽 MQTT 娑堟伅浣?
             payload = new String(message.getPayload(), StandardCharsets.UTF_8);
-            // 2.2. 转换为告警 DTO
+            // 2.2. 杞崲涓哄憡璀?DTO
             iBeaconMessage = JSONUtil.toBean(payload, IBeaconMessage.class);
             if (iBeaconMessage == null){
                 return;
             }
             String deviceId = messageData.getDeviceId();
-            // ==============检验数据是否重复发送
+            // ==============妫€楠屾暟鎹槸鍚﹂噸澶嶅彂閫?
             Long now = iBeaconMessage.getTime();
             Long lastTime = ibeaconStatusMap.get(deviceId);
             if (lastTime != null && lastTime.equals(now)){
-                logger.info(LOG_PREFIX+"{}数据重复发送，忽略", deviceId);
+                logger.info(LOG_PREFIX+"{}鏁版嵁閲嶅鍙戦€侊紝蹇界暐", deviceId);
                 return ;
             }else{
-                // 添加到缓存
+                // 娣诲姞鍒扮紦瀛?
                 ibeaconStatusMap.put(deviceId, now);
             }
 
 
-            // 2.3 拿到 major和minor ，然后去查信标表，得到mac地址
+            // 2.3 鎷垮埌 major鍜宮inor 锛岀劧鍚庡幓鏌ヤ俊鏍囪〃锛屽緱鍒癿ac鍦板潃
             Long time = iBeaconMessage.getTime();
             for (IBeaconMessage.BeaconData beaconStation : iBeaconMessage.getData()) {
                 String redisKey = beaconStation.getMajor() + "_" + beaconStation.getMinor();
-                String corpCode = deviceCorpMappingCache.getCorpCode(deviceId);
-                Object mac = redisService.hget(corpCode + SwmRedisKeyConstants.SwmKey.MAJOR_MINOR_TO_MAC, redisKey);
+                String tenantKey = deviceTenantMappingCache.getTenantKey(deviceId);
+                Object mac = redisService.hget(tenantKey + SwmRedisKeyConstants.SwmKey.MAJOR_MINOR_TO_MAC, redisKey);
                 Map<String, Object> beacon = new HashMap<>();
                 if(mac != null){
                     Integer rssi = beaconStation.getRssi();
@@ -131,49 +131,49 @@ public class DeviceIbeaconStatusHandler implements MqttBusinessHandler {
             messageData.setBluetoothBeacons(beacons);
             messageData.setScanTimestamp(time);
 
-            //拿到电量
-            Integer batteryLevel = MqttConstants.getBatteryLevel(deviceId, redisService, deviceCorpMappingCache);
+            //鎷垮埌鐢甸噺
+            Integer batteryLevel = MqttConstants.getBatteryLevel(deviceId, redisService, deviceTenantMappingCache);
             messageData.setBatteryLevel(batteryLevel);
 
-            // 3. 调用定位算法，处理蓝牙数据
+            // 3. 璋冪敤瀹氫綅绠楁硶锛屽鐞嗚摑鐗欐暟鎹?
 //            if (beacons.size() > 3){
             if (beacons.size() > 1){
                 alarmZeroTcpProcessor.process(messageData);
                 this.putIBeaconDataToRedis(messageData.getDeviceId(), beacons);
-                //判断危险源
+                //鍒ゆ柇鍗遍櫓婧?
                 this.hazardSourceProcessor(messageData.getDeviceId(), messageData);
             }
         }catch (Exception e){
-            logger.error(LOG_PREFIX+"处理设备蓝牙信息消息异常: topic={}, payload={}", topic, payload, e);
+            logger.error(LOG_PREFIX+"澶勭悊璁惧钃濈墮淇℃伅娑堟伅寮傚父: topic={}, payload={}", topic, payload, e);
         }
 
 
     }
 
     /**
-     * 将蓝牙数据放入redis，有效期60s
+     * 灏嗚摑鐗欐暟鎹斁鍏edis锛屾湁鏁堟湡60s
      */
     public void putIBeaconDataToRedis(String deviceId, List<Map<String, Object>> beacons){
-        String corpCode = deviceCorpMappingCache.getCorpCode(deviceId);
-        redisService.hset(corpCode +SwmRedisKeyConstants.SwmKey.ZT_DEVICE_BLE_DATA, deviceId, beacons, 60);
+        String tenantKey = deviceTenantMappingCache.getTenantKey(deviceId);
+        redisService.hset(tenantKey +SwmRedisKeyConstants.SwmKey.ZT_DEVICE_BLE_DATA, deviceId, beacons, 60);
     }
 
     /**
-     * 危险源报警，增加个逻辑，每10s报一次，防止长时间停留在危险源一直报警
+     * 鍗遍櫓婧愭姤璀︼紝澧炲姞涓€昏緫锛屾瘡10s鎶ヤ竴娆★紝闃叉闀挎椂闂村仠鐣欏湪鍗遍櫓婧愪竴鐩存姤璀?
      */
     private void hazardSourceProcessor(String deviceId, TcpMessageData tcpData) {
-        boolean alarm = MqttConstants.isAlarm(AlarmConfigEnum.WX.getCode(), deviceId, redisService, deviceCorpMappingCache);
+        boolean alarm = MqttConstants.isAlarm(AlarmConfigEnum.WX.getCode(), deviceId, redisService, deviceTenantMappingCache);
         if (alarm) {
             tcpData.setZTDevice(true);
             Long now = tcpData.getScanTimestamp();
-            // 获取该设备最后一次处理时间
+            // 鑾峰彇璇ヨ澶囨渶鍚庝竴娆″鐞嗘椂闂?
             long lastProcessTime = LAST_PROCESS_TIME_CACHE.getOrDefault(deviceId, 0L);
-            // 判断：距离上次处理是否满10秒
+            // 鍒ゆ柇锛氳窛绂讳笂娆″鐞嗘槸鍚︽弧10绉?
             if (now - lastProcessTime >= PROCESS_INTERVAL) {
-                // 更新最后处理时间
+                // 鏇存柊鏈€鍚庡鐞嗘椂闂?
                 LAST_PROCESS_TIME_CACHE.put(deviceId, now);
 
-                // 核心处理逻辑,危险源报警
+                // 鏍稿績澶勭悊閫昏緫,鍗遍櫓婧愭姤璀?
                 hazardSourceTcpProcessor.process(tcpData, null);
             }
         }

@@ -15,4 +15,6 @@ public interface HelmetRundeCaReportLocationTdEnginService {
      * 保存安全帽数据
      */
     R<JSONObject> saveHelmetData(String deviceId, Map<String, Object> data);
+
+    R<JSONObject> saveHelmetRundeData(String deviceId, Object messageData, Map<String, Object> data);
 }

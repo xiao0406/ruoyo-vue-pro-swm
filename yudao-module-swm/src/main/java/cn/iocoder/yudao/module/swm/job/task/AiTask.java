@@ -10,7 +10,7 @@ import cn.iocoder.yudao.module.swm.dal.dataobject.SwmDifyDO;
 import cn.iocoder.yudao.module.swm.service.SwmDifyService;
 import cn.iocoder.yudao.module.swm.service.AiServiceImpl;
 import cn.iocoder.yudao.module.swm.config.MinioConfiguration;
-import cn.iocoder.yudao.module.swm.api.enums.CorpDbEnum;
+import cn.iocoder.yudao.module.swm.api.enums.TenantDbEnum;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import io.minio.MinioClient;
 import com.xxl.job.core.context.XxlJobHelper;

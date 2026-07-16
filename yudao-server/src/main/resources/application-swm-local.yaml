@@ -27,14 +27,15 @@ tdengine:
 # XXL-Job 分布式定时任务
 xxl:
   job:
+    accessToken: YVO2VPY5UTKBU9ISFRHK2USO1ZETAFCKMWBCJQM6HU8LHAW2325VQVGPOZ24YFQLAXZDX0AHV5WM5LK3Q2TWEW4ZCAQ5MGEMX8NE
     admin:
       addresses: http://10.50.103.166:8088/xxl-job-admin
     executor:
-      appname: swm-executor
-      port: 9998
+      ip:
+      appname: jeesite-cloud-module-swm
+      port: -1
       logpath: /data/applogs/xxl-job/jobhandler
-      logretentiondays: 30
-    accessToken: default_token
+      logretentiondays: -1
 
 # ==================== MQTT 设备接入 ====================
 mqtt:

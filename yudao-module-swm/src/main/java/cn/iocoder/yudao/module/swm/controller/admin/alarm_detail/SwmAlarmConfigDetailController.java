@@ -62,6 +62,19 @@ public class SwmAlarmConfigDetailController {
         return success(BeanUtils.toBean(alarmConfigDetail, SwmAlarmConfigDetailRespVO.class));
     }
 
+    @GetMapping("/get-by-main-id")
+    @Operation(summary = "Get alarm detail by main configuration")
+    @PreAuthorize("@ss.hasPermission('swm:alarm-config-detail:query')")
+    public CommonResult<SwmAlarmConfigDetailRespVO> getByMainId(@RequestParam("mainId") String mainId) {
+        SwmAlarmConfigDetailPageReqVO reqVO = new SwmAlarmConfigDetailPageReqVO();
+        reqVO.setMainId(mainId);
+        reqVO.setPageNo(1);
+        reqVO.setPageSize(1);
+        PageResult<SwmAlarmConfigDetailDO> page = alarmConfigDetailService.getAlarmConfigDetailPage(reqVO);
+        SwmAlarmConfigDetailDO detail = page.getList().stream().findFirst().orElse(null);
+        return success(BeanUtils.toBean(detail, SwmAlarmConfigDetailRespVO.class));
+    }
+
     @GetMapping("/page")
     @Operation(summary = "获得告警配置详情分页")
     @PreAuthorize("@ss.hasPermission('swm:alarm-config-detail:query')")

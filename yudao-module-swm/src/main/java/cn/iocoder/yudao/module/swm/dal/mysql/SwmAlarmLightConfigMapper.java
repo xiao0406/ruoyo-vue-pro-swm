@@ -23,3 +23,4 @@ public interface SwmAlarmLightConfigMapper extends BaseMapperX<SwmAlarmLightConf
     void deleteByLightId(@Param("lightId") String lightId,
                           @Param("updateBy") String updateBy);
 }
+

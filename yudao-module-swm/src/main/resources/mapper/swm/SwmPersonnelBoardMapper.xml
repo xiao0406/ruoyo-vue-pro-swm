@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmPersonnelBoardMapper">
     
-    <!-- 通用查询映射结果 -->
+    <!-- 闁氨鏁ら弻銉嚄閺勭姴鐨犵紒鎾寸亯 -->
     <resultMap id="personnelBoardResult" type="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonnelBoardDO">
         <id property="id" column="id" />
         <result property="name" column="name" />
@@ -28,12 +28,12 @@
         <result property="status" column="status" />
     </resultMap>
     
-    <!-- 查询休闲区域ID (area_type=3 的区域) -->
+    <!-- 閺屻儴顕楁导鎴︽＝閸栧搫鐓橧D (area_type=3 閻ㄥ嫬灏崺? -->
     <select id="findLeisureAreaIds" resultType="java.lang.String">
         SELECT id FROM swm_area WHERE area_type = '3' AND status = '0'
     </select>
     
-    <!-- 查询数据 -->
+    <!-- 閺屻儴顕楅弫鐗堝祦 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonnelBoardDO">
         SELECT
             a.id AS "id",
@@ -43,25 +43,25 @@
             pl.prod_line_name  AS "process",
             wg.work_group_name  AS "team",
             hd.device_id AS "deviceId",
-            NULL AS "workStatus",
-            NULL AS "helmetStatus",
+            CASE WHEN hd.device_id IS NULL OR hd.device_id = '' THEN '2' ELSE '1' END AS "workStatus",
+            CASE WHEN hd.device_id IS NULL OR hd.device_id = '' THEN '0' ELSE '1' END AS "helmetStatus",
             a.personnel_status AS "personnelStatus",
             COALESCE(da_stats.attendance_count, 0) AS "attendanceCount",
             COALESCE(da_stats.working_hours, 0) AS "workingHours",
             COALESCE(da_stats.idle_hours, 0) AS "idleHours",
             a.identity_card AS "idCard",
-            a.create_by AS "createBy",
-            a.create_date AS "createDate",
-            a.update_by AS "updateBy",
-            a.update_date AS "updateDate",
+            a.create_by AS "creator",
+            a.create_date AS "createTime",
+            a.update_by AS "updater",
+            a.update_date AS "updateTime",
             a.remarks AS "remarks",
             a.status AS "status"
         FROM swm_person a
         LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
-        LEFT JOIN system_dept jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
-        LEFT JOIN swm_helmet_device hd ON a.identity_card = hd.assigned_person
+        LEFT JOIN js_sys_office jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN swm_helmet_device hd ON a.identity_card = hd.assigned_person AND hd.status = '0'
         LEFT JOIN (
             SELECT
                 da.employee_id,
@@ -69,9 +69,9 @@
                     WHEN da.clock_in_date IS NOT NULL
                          OR da.clock_out_date IS NOT NULL
                     THEN 1
-                END) AS attendance_count, -- 本月出勤次数 - 实际出勤次数 实际出勤天数=本月有上班打卡的天数
-                COALESCE(SUM(da.effective_work_hours), 0) AS working_hours, -- 本月工作时长 - 每日实际工作时长
-                COALESCE(SUM(da.idle_hours), 0) AS idle_hours -- 本月怠工时长 - 每日怠工时长总和
+                END) AS attendance_count, -- 閺堫剚婀€閸戝搫瀚熷▎鈩冩殶 - 鐎圭偤妾崙鍝勫珶濞嗏剝鏆?鐎圭偤妾崙鍝勫珶婢垛晜鏆?閺堫剚婀€閺堝绗傞悵顓熷ⅵ閸楋紕娈戞径鈺傛殶
+                COALESCE(SUM(da.effective_work_hours), 0) AS working_hours, -- 閺堫剚婀€瀹搞儰缍旈弮鍫曟毐 - 濮ｅ繑妫╃€圭偤妾銉ょ稊閺冨爼鏆?
+                COALESCE(SUM(da.idle_hours), 0) AS idle_hours -- 閺堫剚婀€閹姴浼愰弮鍫曟毐 - 濮ｅ繑妫╅幀鐘蹭紣閺冨爼鏆遍幀璇叉嫲
             FROM swm_daily_attendance da
             WHERE da.status = '0'
                 <if test="timeType != null and timeValue != null">
@@ -111,11 +111,11 @@
             </if>
             <if test="deviceIds != null and deviceIds.size() > 0">
                 <choose>
-                    <!-- 查询未分配设备的情况 -->
+                    <!-- 閺屻儴顕楅張顏勫瀻闁板秷顔曟径鍥╂畱閹懎鍠?-->
                     <when test="deviceIds.size() == 1 and deviceIds.contains('')">
                         AND (hd.device_id IS NULL OR hd.device_id = '')
                     </when>
-                    <!-- 查询有设备的情况（工作中或休息中） -->
+                    <!-- 閺屻儴顕楅張澶庮啎婢跺洨娈戦幆鍛枌閿涘牆浼愭担婊€鑵戦幋鏍︾搐閹垯鑵戦敍?-->
                     <otherwise>
                         AND hd.device_id IN 
                         <foreach collection="deviceIds" item="deviceId" open="(" separator="," close=")">
@@ -128,7 +128,8 @@
                 AND a.personnel_status = #{personnelStatus}
             </if>
         </where>
-        ORDER BY 
+        ORDER BY a.create_date DESC
     </select>
     
 </mapper> 
+

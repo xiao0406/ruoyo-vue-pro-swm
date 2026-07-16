@@ -6,6 +6,8 @@ import cn.iocoder.yudao.module.swm.controller.admin.helmet.vo.SwmHelmetDeviceSav
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 /**
  * 安全帽设备 Service 接口
  */
@@ -48,5 +50,75 @@ public interface SwmHelmetDeviceService {
      * @return 安全帽设备分页
      */
     PageResult<SwmHelmetDeviceDO> getHelmetDevicePage(SwmHelmetDevicePageReqVO pageReqVO);
+
+    SwmHelmetDeviceDO getByDeviceId(String deviceId);
+
+    List<SwmHelmetDeviceDO> findAvailableHelmets(String keyword);
+
+    boolean assignPerson(String deviceId, String personId, String personName, String binder);
+
+    boolean unassignPerson(String deviceId);
+
+    default void save(SwmHelmetDeviceDO device) {
+    }
+
+    default void update(SwmHelmetDeviceDO device) {
+    }
+
+    default boolean updateServerIp(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateServerPort(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateGroupDuration(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateNormalBeaconCs(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateSpecialBeaconCs(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateDeepSleepDuration(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateLocationMode(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateBluetoothScanWindow(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateBluetoothScanDuration(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateSendInterval(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateHazardRetriggerInterval(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateSleepWakeupTime(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updateBeaconFilterName(String deviceId, String value) {
+        return false;
+    }
+
+    default boolean updatehatOffAlarmInterval(String deviceId, String value) {
+        return false;
+    }
 
 }

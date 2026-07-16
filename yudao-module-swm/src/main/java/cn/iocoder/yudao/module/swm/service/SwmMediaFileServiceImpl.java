@@ -59,7 +59,13 @@ public class SwmMediaFileServiceImpl implements SwmMediaFileService {
 
     @Override
     public PageResult<SwmMediaFileDO> getMediaFilePage(SwmMediaFilePageReqVO pageReqVO) {
-        return swmMediaFileMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmMediaFileMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmMediaFileDO>()
+                        .likeIfPresent(SwmMediaFileDO::getFileName, pageReqVO.getFileName())
+                        .eqIfPresent(SwmMediaFileDO::getFileType, pageReqVO.getFileType())
+                        .eqIfPresent(SwmMediaFileDO::getBusinessType, pageReqVO.getBusinessType())
+                        .likeIfPresent(SwmMediaFileDO::getUploadBy, pageReqVO.getUploadBy())
+                        .orderByDesc(SwmMediaFileDO::getUploadTime));
     }
 
     private void validateMediaFileExists(String id) {

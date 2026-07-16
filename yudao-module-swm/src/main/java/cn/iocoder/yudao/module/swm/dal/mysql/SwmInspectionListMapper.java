@@ -28,3 +28,4 @@ public interface SwmInspectionListMapper extends BaseMapperX<SwmInspectionListDO
 
     int countByPlanIdAndDate(@Param("planId") String planId, @Param("dateStr") String dateStr);
 }
+

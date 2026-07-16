@@ -59,7 +59,12 @@ public class SwmDictTypeServiceImpl implements SwmDictTypeService {
 
     @Override
     public PageResult<SwmDictTypeDO> getDictTypePage(SwmDictTypePageReqVO pageReqVO) {
-        return swmDictTypeMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmDictTypeMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmDictTypeDO>()
+                        .likeIfPresent(SwmDictTypeDO::getDictName, pageReqVO.getDictName())
+                        .likeIfPresent(SwmDictTypeDO::getDictType, pageReqVO.getDictType())
+                        .eqIfPresent(SwmDictTypeDO::getIsSys, pageReqVO.getIsSys())
+                        .orderByDesc(SwmDictTypeDO::getCreateTime));
     }
 
     private void validateDictTypeExists(String id) {

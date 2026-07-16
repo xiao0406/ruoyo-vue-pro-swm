@@ -24,3 +24,4 @@ public interface SwmHandleRecordMapper extends BaseMapperX<SwmHandleRecordDO> {
 
     List<SwmHandleRecordDO> latestHandleRecord(@Param("limit") Integer limit);
 }
+

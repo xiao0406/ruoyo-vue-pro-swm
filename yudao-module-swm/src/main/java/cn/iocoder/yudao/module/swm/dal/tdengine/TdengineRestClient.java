@@ -2,7 +2,7 @@ package cn.iocoder.yudao.module.swm.dal.tdengine;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.swm.enums.TdengineSuperTableConstants;
 import cn.iocoder.yudao.module.swm.enums.SwmRedisKeyConstants;
-import cn.iocoder.yudao.module.swm.api.enums.CorpDbEnum;
+import cn.iocoder.yudao.module.swm.api.enums.TenantDbEnum;
 import cn.iocoder.yudao.module.swm.dal.dataobject.DeviceDataDTO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.QueryParamDTO;
 
@@ -79,7 +79,7 @@ public class TdengineRestClient {
         log.info("初始化 TDengine 多租户数据库");
 
         // 遍历所有租户数据库映射
-        for (CorpDbEnum corpDb : CorpDbEnum.values()) {
+        for (TenantDbEnum corpDb : TenantDbEnum.values()) {
             String dbName = corpDb.getDbName();
             String sql = "create database if not exists " + dbName + " keep " + retentionPolicy;
             log.info("创建数据库 SQL: {}", sql);
@@ -782,7 +782,7 @@ public class TdengineRestClient {
         String dbNameNew = dbname;
         Long tenantId = TenantContextHolder.getTenantId();
         if (tenantId != null) {
-            dbNameNew = CorpDbEnum.getDbNameByTenantId(tenantId);
+            dbNameNew = TenantDbEnum.getDbNameByTenantId(tenantId);
         }
 
         // 3. 替换 SQL 中的占位 {db} 为真实数据库名
@@ -818,7 +818,7 @@ public class TdengineRestClient {
             tenantId = TenantContextHolder.getTenantId();
         }
         if (tenantId != null) {
-            dbNameNew = CorpDbEnum.getDbNameByTenantId(tenantId);
+            dbNameNew = TenantDbEnum.getDbNameByTenantId(tenantId);
         }
 
         // 3. 替换 SQL 中的占位 {db} 为真实数据库名

@@ -14,6 +14,7 @@ public class R<T> implements Serializable {
 
     public static final int SUCCESS = 0;
     public static final int ERROR = 1;
+    public static final int FAIL = ERROR;
 
     private int code;
     private String msg;
@@ -43,6 +44,14 @@ public class R<T> implements Serializable {
         r.setCode(code);
         r.setMsg(msg);
         return r;
+    }
+
+    public static <T> R<T> fail(String msg) {
+        return error(msg);
+    }
+
+    public static <T> R<T> fail(int code, String msg) {
+        return error(code, msg);
     }
 
 }

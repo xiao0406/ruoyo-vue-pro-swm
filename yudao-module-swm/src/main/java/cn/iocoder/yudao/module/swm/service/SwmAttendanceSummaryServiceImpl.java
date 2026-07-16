@@ -5,9 +5,16 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.swm.controller.admin.attendanceSummary.vo.SwmAttendanceSummaryPageReqVO;
 import cn.iocoder.yudao.module.swm.controller.admin.attendanceSummary.vo.SwmAttendanceSummarySaveReqVO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmAttendanceSummaryDO;
+import cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmAttendanceSummaryMapper;
+import cn.iocoder.yudao.module.swm.dal.mysql.SwmPersonMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import jakarta.annotation.Resource;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -25,6 +32,8 @@ public class SwmAttendanceSummaryServiceImpl implements SwmAttendanceSummaryServ
 
     @Resource
     private SwmAttendanceSummaryMapper swmAttendanceSummaryMapper;
+    @Resource
+    private SwmPersonMapper swmPersonMapper;
 
     @Override
     public String createAttendanceSummary(SwmAttendanceSummarySaveReqVO createReqVO) {
@@ -60,7 +69,45 @@ public class SwmAttendanceSummaryServiceImpl implements SwmAttendanceSummaryServ
 
     @Override
     public PageResult<SwmAttendanceSummaryDO> getAttendanceSummaryPage(SwmAttendanceSummaryPageReqVO pageReqVO) {
-        return swmAttendanceSummaryMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        PageResult<SwmAttendanceSummaryDO> pageResult = swmAttendanceSummaryMapper.selectPage(pageReqVO,
+                new LambdaQueryWrapperX<SwmAttendanceSummaryDO>()
+                        .eqIfPresent(SwmAttendanceSummaryDO::getEmployeeId, pageReqVO.getEmployeeId())
+                        .likeIfPresent(SwmAttendanceSummaryDO::getEmployeeName, pageReqVO.getEmployeeName())
+                        .likeIfPresent(SwmAttendanceSummaryDO::getIdentityCard, pageReqVO.getIdentityCard())
+                        .eqIfPresent(SwmAttendanceSummaryDO::getDepartment, pageReqVO.getDepartment())
+                        .eqIfPresent(SwmAttendanceSummaryDO::getTeam, pageReqVO.getTeam())
+                        .eqIfPresent(SwmAttendanceSummaryDO::getJobType, pageReqVO.getJobType())
+                        .eqIfPresent(SwmAttendanceSummaryDO::getMonth, pageReqVO.getMonth())
+                        .orderByDesc(SwmAttendanceSummaryDO::getMonth));
+        fillPersonInfo(pageResult.getList());
+        return pageResult;
+    }
+
+    /**
+     * 月考勤列表展示人员手机号，汇总表没有该字段，按身份证号从人员表回填。
+     */
+    private void fillPersonInfo(List<SwmAttendanceSummaryDO> summaryList) {
+        if (summaryList == null || summaryList.isEmpty()) {
+            return;
+        }
+        List<String> idCards = summaryList.stream()
+                .map(SwmAttendanceSummaryDO::getIdentityCard)
+                .filter(idCard -> idCard != null && !idCard.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
+        if (idCards.isEmpty()) {
+            return;
+        }
+        Map<String, SwmPersonDO> personMap = swmPersonMapper.selectList(
+                        new LambdaQueryWrapper<SwmPersonDO>().in(SwmPersonDO::getIdentityCard, idCards))
+                .stream()
+                .collect(Collectors.toMap(SwmPersonDO::getIdentityCard, Function.identity(), (first, second) -> first));
+        summaryList.forEach(summary -> {
+            SwmPersonDO person = personMap.get(summary.getIdentityCard());
+            if (person != null) {
+                summary.setPhoneNumber(person.getPhoneNumber());
+            }
+        });
     }
 
     @Override

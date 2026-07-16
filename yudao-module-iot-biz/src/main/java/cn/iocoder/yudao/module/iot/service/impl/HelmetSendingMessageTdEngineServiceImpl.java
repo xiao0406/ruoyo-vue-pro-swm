@@ -1,27 +1,26 @@
 package cn.iocoder.yudao.module.iot.service.impl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import cn.hutool.json.JSONObject;
 import cn.iocoder.yudao.module.iot.service.HelmetSendingMessageTdEngineService;
 import cn.iocoder.yudao.module.iot.util.R;
-import cn.hutool.json.JSONObject;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.Map;
 
 /**
- * 安全帽发送消息 TDengine 服务实现
+ * Helmet sending-message TDengine writer.
  */
 @Service
 @Validated
 public class HelmetSendingMessageTdEngineServiceImpl implements HelmetSendingMessageTdEngineService {
-private static final Logger log = LoggerFactory.getLogger(HelmetSendingMessageTdEngineServiceImpl.class);
+
+    @Resource
+    private TdengineJsonPayloadWriter payloadWriter;
 
     @Override
     public R<JSONObject> saveHelmetSendingMessageData(String deviceId, Map<String, Object> data) {
-        // TODO: 实现保存安全帽发送消息数据到 TDengine
-        log.warn("saveHelmetSendingMessageData 尚未实现, deviceId={}", deviceId);
-        return R.ok(new JSONObject());
+        return payloadWriter.savePayload("helmet_sending_message", deviceId, "default", data);
     }
 }

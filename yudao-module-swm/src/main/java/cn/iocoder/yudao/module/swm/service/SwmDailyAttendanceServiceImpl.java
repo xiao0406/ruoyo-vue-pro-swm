@@ -8,8 +8,10 @@ import cn.iocoder.yudao.module.swm.controller.admin.attendance.vo.SwmDailyAttend
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmDailyAttendanceMapper;
+import cn.iocoder.yudao.module.swm.dal.mysql.SwmOrganizationTreeMapper;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmPersonMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,9 @@ import org.springframework.validation.annotation.Validated;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.swm.enums.ErrorCodeConstants.ATTENDANCE_NOT_EXISTS;
@@ -35,6 +40,8 @@ public class SwmDailyAttendanceServiceImpl implements SwmDailyAttendanceService 
 
     @Resource
     private SwmPersonMapper swmPersonMapper;
+    @Resource
+    private SwmOrganizationTreeMapper organizationTreeMapper;
 
     @Override
     public String createDailyAttendance(SwmDailyAttendanceSaveReqVO createReqVO) {
@@ -63,7 +70,80 @@ public class SwmDailyAttendanceServiceImpl implements SwmDailyAttendanceService 
 
     @Override
     public PageResult<SwmDailyAttendanceDO> getDailyAttendancePage(SwmDailyAttendancePageReqVO pageReqVO) {
-        return swmDailyAttendanceMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        PageResult<SwmDailyAttendanceDO> pageResult = swmDailyAttendanceMapper.selectPage(pageReqVO,
+                new LambdaQueryWrapperX<SwmDailyAttendanceDO>()
+                        .eqIfPresent(SwmDailyAttendanceDO::getEmployeeId, pageReqVO.getEmployeeId())
+                        .likeIfPresent(SwmDailyAttendanceDO::getEmployeeName, pageReqVO.getEmployeeName())
+                        .likeIfPresent(SwmDailyAttendanceDO::getIdentityCard, pageReqVO.getIdentityCard())
+                        .likeIfPresent(SwmDailyAttendanceDO::getDeviceId, pageReqVO.getDeviceId())
+                        .eqIfPresent(SwmDailyAttendanceDO::getPersonType, pageReqVO.getPersonType())
+                        .betweenIfPresent(SwmDailyAttendanceDO::getAttendanceDate,
+                                pageReqVO.getBeginAttendanceDate(), pageReqVO.getEndAttendanceDate())
+                        .eqIfPresent(SwmDailyAttendanceDO::getClasses, pageReqVO.getClasses())
+                        .eqIfPresent(SwmDailyAttendanceDO::getAttendanceNormal, pageReqVO.getAttendanceNormal())
+                        .orderByDesc(SwmDailyAttendanceDO::getAttendanceDate));
+        fillPersonInfo(pageResult.getList());
+        return pageResult;
+    }
+
+    /**
+     * 迁移后的日/周考勤页面仍展示人员组织信息，这些字段不在日考勤表中。
+     * 这里按身份证回填 swm_person 的人员字段，避免前端表格组织列为空。
+     */
+    private void fillPersonInfo(List<SwmDailyAttendanceDO> attendanceList) {
+        if (attendanceList == null || attendanceList.isEmpty()) {
+            return;
+        }
+        List<String> idCards = attendanceList.stream()
+                .map(SwmDailyAttendanceDO::getIdentityCard)
+                .filter(StrUtil::isNotBlank)
+                .distinct()
+                .collect(Collectors.toList());
+        if (idCards.isEmpty()) {
+            return;
+        }
+        Map<String, SwmPersonDO> personMap = swmPersonMapper.selectList(
+                        new LambdaQueryWrapper<SwmPersonDO>().in(SwmPersonDO::getIdentityCard, idCards))
+                .stream()
+                .collect(Collectors.toMap(SwmPersonDO::getIdentityCard, Function.identity(), (first, second) -> first));
+        attendanceList.forEach(attendance -> {
+            SwmPersonDO person = personMap.get(attendance.getIdentityCard());
+            if (person == null) {
+                return;
+            }
+            attendance.setCompany(person.getCompany());
+            attendance.setDepartment(person.getDepartment());
+            attendance.setProdLine(person.getProdLine());
+            attendance.setTeam(person.getTeam());
+            attendance.setPhoneNumber(person.getPhoneNumber());
+            attendance.setJobType(person.getJobType());
+            attendance.setPersonType(person.getPersonType());
+            attendance.setPowerOnStatus(person.getPowerOnStatus());
+        });
+        fillOrganizationNames(attendanceList);
+    }
+
+    private void fillOrganizationNames(List<SwmDailyAttendanceDO> attendanceList) {
+        List<String> ids = attendanceList.stream()
+                .flatMap(item -> java.util.stream.Stream.of(item.getCompany(), item.getDepartment(), item.getProdLine(), item.getTeam()))
+                .filter(StrUtil::isNotBlank)
+                .distinct()
+                .collect(Collectors.toList());
+        if (ids.isEmpty()) {
+            return;
+        }
+        Map<String, String> nameMap = organizationTreeMapper.getOrganizationNames(ids).stream()
+                .filter(item -> item.get("value") != null && item.get("label") != null)
+                .collect(Collectors.toMap(
+                        item -> String.valueOf(item.get("value")),
+                        item -> String.valueOf(item.get("label")),
+                        (first, second) -> first));
+        attendanceList.forEach(item -> {
+            item.setCompany(nameMap.getOrDefault(item.getCompany(), item.getCompany()));
+            item.setDepartment(nameMap.getOrDefault(item.getDepartment(), item.getDepartment()));
+            item.setProdLine(nameMap.getOrDefault(item.getProdLine(), item.getProdLine()));
+            item.setTeam(nameMap.getOrDefault(item.getTeam(), item.getTeam()));
+        });
     }
 
     @Override

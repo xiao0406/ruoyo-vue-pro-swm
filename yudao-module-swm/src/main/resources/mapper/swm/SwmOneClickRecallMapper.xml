@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmOneClickRecallMapper">
 	
-	<!-- 查询数据 -->
+	<!-- 閺屻儴顕楅弫鐗堝祦 -->
 	<select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmOneClickRecallDO">
 		SELECT 
 		FROM 
@@ -12,14 +12,14 @@
 		ORDER BY 
 	</select>
 
-	<!-- 根据节点类型和节点列表查询人员信息 -->
+	<!-- 閺嶈宓侀懞鍌滃仯缁鐎烽崪宀冨Ν閻愮懓鍨悰銊︾叀鐠囶澀姹夐崨妯逛繆閹?-->
 	<select id="findPersonnelByNodes" resultType="java.util.Map">
 		SELECT DISTINCT
 		a.id AS "id",
 		a.name AS "name",
 		a.person_type AS "personType",
 		a.gender AS "gender",
-		-- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
+		-- 娴ｈ法鏁OALESCE閸戣姤鏆熼敍灞肩喘閸忓牅濞囬悽銊ュ彠閼辨棁銆冮弫鐗堝祦閿涘奔璐熺粚鐑樻娴ｈ法鏁wm_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ嫭鏆熼幑顕嗙礄闂団偓鐟曚胶鐐曠拠鎴礆
 		COALESCE(o.office_name, backup_o.office_name) AS "company",
 		COALESCE(p.position_name, backup_p.position_name) AS "department",
 		COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
@@ -41,14 +41,14 @@
 		a.remarks AS "remarks",
 		a.status AS "status"
 		FROM swm_person a
-		-- 原有的关联查询（通过fms_worker关联）
+		-- 閸樼喐婀侀惃鍕彠閼辨梹鐓＄拠顫礄闁俺绻僨ms_worker閸忓疇浠堥敍?
 		LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
-		LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+		LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
 		LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
 		LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
 		LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-		-- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
-		LEFT JOIN system_dept backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
+		-- 婢跺洨鏁ら崗瀹犱粓閺屻儴顕楅敍鍫㈡纯閹恒儰濞囬悽鈺痺m_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ嚘D鏉╂稖顢戠紙鏄忕槯閿?
+		LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
 		LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
 		LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
 		LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
@@ -80,7 +80,7 @@
 		ORDER BY a.update_date DESC
 	</select>
 
-	<!-- 根据身份证列表查询设备信息 -->
+	<!-- 閺嶈宓侀煬顐″敜鐠囦礁鍨悰銊︾叀鐠囥垼顔曟径鍥︿繆閹?-->
 	<select id="findDevicesByIdentityCards" resultType="java.util.Map">
 		SELECT DISTINCT
 		hd.device_id AS "deviceId",
@@ -98,14 +98,14 @@
 		AND sp.status = '0'
 	</select>
 
-	<!-- 根据节点类型和节点列表查询人员信息 (使用OR组合条件) -->
+	<!-- 閺嶈宓侀懞鍌滃仯缁鐎烽崪宀冨Ν閻愮懓鍨悰銊︾叀鐠囶澀姹夐崨妯逛繆閹?(娴ｈ法鏁R缂佸嫬鎮庨弶鈥叉) -->
 	<select id="findPersonnelByNodesWithOr" resultType="java.util.Map">
 		SELECT DISTINCT
 		a.id AS "id",
 		a.name AS "name",
 		a.person_type AS "personType",
 		a.gender AS "gender",
-		-- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
+		-- 娴ｈ法鏁OALESCE閸戣姤鏆熼敍灞肩喘閸忓牅濞囬悽銊ュ彠閼辨棁銆冮弫鐗堝祦閿涘奔璐熺粚鐑樻娴ｈ法鏁wm_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ嫭鏆熼幑顕嗙礄闂団偓鐟曚胶鐐曠拠鎴礆
 		COALESCE(o.office_name, backup_o.office_name) AS "company",
 		COALESCE(p.position_name, backup_p.position_name) AS "department",
 		COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
@@ -127,14 +127,14 @@
 		a.remarks AS "remarks",
 		a.status AS "status"
 		FROM swm_person a
-		-- 原有的关联查询（通过fms_worker关联）
+		-- 閸樼喐婀侀惃鍕彠閼辨梹鐓＄拠顫礄闁俺绻僨ms_worker閸忓疇浠堥敍?
 		LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
-		LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+		LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
 		LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
 		LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
 		LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-		-- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
-		LEFT JOIN system_dept backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
+		-- 婢跺洨鏁ら崗瀹犱粓閺屻儴顕楅敍鍫㈡纯閹恒儰濞囬悽鈺痺m_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ嚘D鏉╂稖顢戠紙鏄忕槯閿?
+		LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
 		LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
 		LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
 		LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
@@ -159,7 +159,7 @@
 		ORDER BY a.update_date DESC
 	</select>
 
-	<!-- 根据设备ID列表查询人员信息 -->
+	<!-- 閺嶈宓佺拋鎯ь槵ID閸掓銆冮弻銉嚄娴滃搫鎲虫穱鈩冧紖 -->
 	<select id="findPersonnelByDeviceIds" resultType="java.util.Map">
 		SELECT DISTINCT
 		hd.device_id AS "deviceId",
@@ -180,7 +180,7 @@
 		ORDER BY sp.name
 	</select>
 
-	<!-- 查询所有应该接收全体推送的目标人员 -->
+	<!-- 閺屻儴顕楅幍鈧張澶婄安鐠囥儲甯撮弨璺哄弿娴ｆ挻甯归柅浣烘畱閻╊喗鐖ｆ禍鍝勬喅 -->
 	<select id="findAllTargetPersonnelForBroadcast" resultType="java.util.Map">
 		SELECT DISTINCT
 			hd.device_id AS "deviceId",
@@ -191,10 +191,10 @@
 			hd.status AS "deviceStatus"
 		FROM swm_person sp
 				 LEFT JOIN swm_helmet_device hd ON sp.identity_card = hd.assigned_person
-		WHERE sp.personnel_status = '1'    -- 在职人员
-		  AND sp.status = '0'              -- 有效状态
-		  AND hd.device_id IS NOT NULL     -- 有设备分配
-		  AND hd.status = '0'              -- 设备有效
+		WHERE sp.personnel_status = '1'    -- 閸︺劏浜存禍鍝勬喅
+		  AND sp.status = '0'              -- 閺堝鏅ラ悩鑸碘偓?
+		  AND hd.device_id IS NOT NULL     -- 閺堝顔曟径鍥у瀻闁?
+		  AND hd.status = '0'              -- 鐠佹儳顦張澶嬫櫏
 		ORDER BY sp.name
 	</select>
 

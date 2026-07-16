@@ -4,17 +4,19 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 告警配置枚举
+ * Alarm configuration types shared by SWM and IOT.
  */
 @Getter
 @AllArgsConstructor
 public enum AlarmConfigEnum {
 
-    YJ("YJ", "预警"),
-    DL("DL", "跌落"),
-    TM("TM", "脱帽"),
-    SOS("SOS", "求救"),
-    UNBONNET("UNBONNET", "未戴帽");
+    YJ("YJ", "warning"),
+    DL("DL", "fall"),
+    TM("TM", "helmet_off"),
+    SOS("SOS", "sos"),
+    UNBONNET("UNBONNET", "unbonnet"),
+    CSJ("CSJ", "long_static"),
+    WX("WX", "hazard_source");
 
     private final String code;
     private final String name;

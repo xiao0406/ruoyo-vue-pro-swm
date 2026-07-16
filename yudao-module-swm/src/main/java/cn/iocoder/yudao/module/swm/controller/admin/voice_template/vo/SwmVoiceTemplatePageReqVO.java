@@ -21,4 +21,7 @@ public class SwmVoiceTemplatePageReqVO extends PageParam {
     @Schema(description = "语言")
     private String language;
 
+    @Schema(description = "应用状态（0启用，1禁用）")
+    private String status;
+
 }

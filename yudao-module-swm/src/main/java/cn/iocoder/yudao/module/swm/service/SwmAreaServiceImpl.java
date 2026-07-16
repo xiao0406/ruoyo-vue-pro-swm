@@ -60,7 +60,13 @@ public class SwmAreaServiceImpl implements SwmAreaService {
 
     @Override
     public PageResult<SwmAreaDO> getAreaPage(SwmAreaPageReqVO pageReqVO) {
-        return swmAreaMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmAreaMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmAreaDO>()
+                        .likeIfPresent(SwmAreaDO::getAreaName, pageReqVO.getAreaName())
+                        .eqIfPresent(SwmAreaDO::getAreaType, pageReqVO.getAreaType())
+                        .eqIfPresent(SwmAreaDO::getWorkShop, pageReqVO.getWorkShop())
+                        .eqIfPresent(SwmAreaDO::getIsScreenShow, pageReqVO.getIsScreenShow())
+                        .orderByDesc(SwmAreaDO::getCreateTime));
     }
 
     @Override

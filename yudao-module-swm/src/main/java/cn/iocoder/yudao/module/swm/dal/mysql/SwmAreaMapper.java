@@ -15,3 +15,4 @@ public interface SwmAreaMapper extends BaseMapperX<SwmAreaDO> {
 
     List<AreaTrajectoryVO> findAddressList();
 }
+

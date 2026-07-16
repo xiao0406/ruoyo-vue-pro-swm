@@ -30,4 +30,7 @@ public interface HelmetDeviceCacheService {
      */
     void evictDeviceCache(String deviceCode);
 
+    default void updateMacPersonMappingWithPersonId(String mac, String personId) {
+    }
+
 }

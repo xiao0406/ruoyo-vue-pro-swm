@@ -17,8 +17,7 @@ public class SwmPersonSaveReqVO {
     @NotBlank(message = "姓名不能为空")
     private String name;
 
-    @Schema(description = "人员编码", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "人员编码不能为空")
+    @Schema(description = "人员编码")
     private String personNumber;
 
     @Schema(description = "年龄")

@@ -25,8 +25,9 @@ public class SwmDifyServiceImpl implements SwmDifyService {
     @Override
     public SwmDifyDO getEntity(LocalDateTime startTime, LocalDateTime endTime) {
         return mapper.selectOne(new LambdaQueryWrapper<SwmDifyDO>()
-                .ge(startTime != null, SwmDifyDO::getCreateTime, startTime)
-                .le(endTime != null, SwmDifyDO::getCreateTime, endTime)
+                .ge(startTime != null, SwmDifyDO::getDate, startTime)
+                .le(endTime != null, SwmDifyDO::getDate, endTime)
+                .orderByDesc(SwmDifyDO::getDate)
                 .last("LIMIT 1"));
     }
 

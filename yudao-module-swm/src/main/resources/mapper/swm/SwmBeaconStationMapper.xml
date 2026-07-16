@@ -3,8 +3,8 @@
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmBeaconStationMapper">
     
     <!-- 
-        注意：基本的CRUD操作已由实体类注解自动处理
-        此文件中只保留特殊查询方法
+        娉ㄦ剰锛氬熀鏈殑CRUD鎿嶄綔宸茬敱瀹炰綋绫绘敞瑙ｈ嚜鍔ㄥ鐞?
+        姝ゆ枃浠朵腑鍙繚鐣欑壒娈婃煡璇㈡柟娉?
     -->
 
     <sql id="swmBeaconStationQueryColumns">
@@ -37,50 +37,50 @@
         a.update_date AS "updateDate",
         a.remarks AS "remarks",
         a.status AS "status",
-        a.corp_code AS "corpCode",
-        a.corp_name AS "corpName"
+        a.tenant_id AS "tenantId",
+        a.tenant_name AS "tenantName"
     </sql>
 
-    <!-- 获取单条信标，并补齐建筑/楼层名称 -->
+    <!-- 鑾峰彇鍗曟潯淇℃爣锛屽苟琛ラ綈寤虹瓚/妤煎眰鍚嶇О -->
     <select id="get" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT
             <include refid="swmBeaconStationQueryColumns"/>
         FROM swm_beacon_station a
         LEFT JOIN swm_site_map_management building_node
             ON building_node.id = a.building_id
-            <if test="corpCode != null and corpCode != ''">
-                AND building_node.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND building_node.tenant_id = #{tenantId}
             </if>
         LEFT JOIN swm_site_map_management floor_node
             ON floor_node.id = a.floor_id
-            <if test="corpCode != null and corpCode != ''">
-                AND floor_node.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND floor_node.tenant_id = #{tenantId}
             </if>
         WHERE a.id = #{id}
-        <if test="corpCode != null and corpCode != ''">
-            AND a.corp_code = #{corpCode}
+        <if test="tenantId != null and tenantId != ''">
+            AND a.tenant_id = #{tenantId}
         </if>
     </select>
 
-    <!-- 查询信标列表，并按建筑名称、楼层ID过滤 -->
+    <!-- 鏌ヨ淇℃爣鍒楄〃锛屽苟鎸夊缓绛戝悕绉般€佹ゼ灞侷D杩囨护 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT
             <include refid="swmBeaconStationQueryColumns"/>
         FROM swm_beacon_station a
         LEFT JOIN swm_site_map_management building_node
             ON building_node.id = a.building_id
-            <if test="corpCode != null and corpCode != ''">
-                AND building_node.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND building_node.tenant_id = #{tenantId}
             </if>
         LEFT JOIN swm_site_map_management floor_node
             ON floor_node.id = a.floor_id
-            <if test="corpCode != null and corpCode != ''">
-                AND floor_node.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND floor_node.tenant_id = #{tenantId}
             </if>
         <where>
             a.status = '0'
-            <if test="corpCode != null and corpCode != ''">
-                AND a.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND a.tenant_id = #{tenantId}
             </if>
             <if test="beaconId != null and beaconId != ''">
                 AND a.beacon_id LIKE CONCAT('%', #{beaconId}, '%')
@@ -116,7 +116,7 @@
         ORDER BY 
     </select>
 
-    <!-- 根据信标编号查询基站 -->
+    <!-- 鏍规嵁淇℃爣缂栧彿鏌ヨ鍩虹珯 -->
     <select id="getByBeaconId" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT 
             *
@@ -125,7 +125,7 @@
         LIMIT 1
     </select>
     
-    <!-- 根据信标编号列表批量查询基站 -->
+    <!-- 鏍规嵁淇℃爣缂栧彿鍒楄〃鎵归噺鏌ヨ鍩虹珯 -->
     <select id="findByBeaconIds" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT 
             *
@@ -136,18 +136,18 @@
         </foreach>
     </select>
     
-    <!-- 检查是否存在相同信标编号且状态为正常的记录（用于重复性校验） -->
+    <!-- 妫€鏌ユ槸鍚﹀瓨鍦ㄧ浉鍚屼俊鏍囩紪鍙蜂笖鐘舵€佷负姝ｅ父鐨勮褰曪紙鐢ㄤ簬閲嶅鎬ф牎楠岋級 -->
     <select id="countByBeaconIdAndStatus" resultType="int">
         SELECT COUNT(1)
         FROM swm_beacon_station a
         WHERE a.beacon_id = #{beaconId}
-        AND a.status = '0' <!-- 正常状态 -->
+        AND a.status = '0' <!-- 姝ｅ父鐘舵€?-->
         <if test="id != null and id != ''">
-            AND a.id != #{id} <!-- 排除当前记录ID，用于编辑时校验 -->
+            AND a.id != #{id} <!-- 鎺掗櫎褰撳墠璁板綍ID锛岀敤浜庣紪杈戞椂鏍￠獙 -->
         </if>
     </select>
     
-    <!-- 查询指定位置的基站列表 -->
+    <!-- 鏌ヨ鎸囧畾浣嶇疆鐨勫熀绔欏垪琛?-->
     <select id="findByLocation" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT 
             *
@@ -156,22 +156,22 @@
         ORDER BY a.update_date DESC
     </select>
     
-    <!-- 查询在线状态的基站列表 -->
+    <!-- 鏌ヨ鍦ㄧ嚎鐘舵€佺殑鍩虹珯鍒楄〃 -->
     <select id="findOnlineBeacons" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT 
             *
         FROM swm_beacon_station a
         WHERE a.beacon_status = '1' <!-- BeaconStatusEnum.ONLINE -->
-        AND a.status = '0' <!-- 正常状态 -->
+        AND a.status = '0' <!-- 姝ｅ父鐘舵€?-->
         ORDER BY a.update_date DESC
     </select>
     
-    <!-- 根据GPS坐标范围查询基站列表 -->
+    <!-- 鏍规嵁GPS鍧愭爣鑼冨洿鏌ヨ鍩虹珯鍒楄〃 -->
     <select id="findByGpsRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT 
             *
         FROM swm_beacon_station a
-        WHERE a.status = '0' <!-- 正常状态 -->
+        WHERE a.status = '0' <!-- 姝ｅ父鐘舵€?-->
         <if test="minLongitude != null">
             AND a.gps_longitude >= #{minLongitude}
         </if>
@@ -187,12 +187,12 @@
         ORDER BY a.update_date DESC
     </select>
     
-    <!-- 根据图纸像素坐标范围查询基站列表 -->
+    <!-- 鏍规嵁鍥剧焊鍍忕礌鍧愭爣鑼冨洿鏌ヨ鍩虹珯鍒楄〃 -->
     <select id="findByPixelRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT 
             *
         FROM swm_beacon_station a
-        WHERE a.status = '0' <!-- 正常状态 -->
+        WHERE a.status = '0' <!-- 姝ｅ父鐘舵€?-->
         <if test="minX != null">
             AND a.pixel_x >= #{minX}
         </if>
@@ -208,35 +208,35 @@
         ORDER BY a.update_date DESC
     </select>
     
-    <!-- 根据区域查询基站列表 -->
+    <!-- 鏍规嵁鍖哄煙鏌ヨ鍩虹珯鍒楄〃 -->
     <select id="findByArea" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT 
             *
         FROM swm_beacon_station a
         WHERE a.area = #{area}
-        AND a.status = '0' <!-- 正常状态 -->
+        AND a.status = '0' <!-- 姝ｅ父鐘舵€?-->
         ORDER BY a.update_date DESC
     </select>
     
-    <!-- 获取所有区域列表 -->
+    <!-- 鑾峰彇鎵€鏈夊尯鍩熷垪琛?-->
     <select id="findAllAreas" resultType="java.lang.String">
         SELECT DISTINCT a.area
         FROM swm_beacon_station a
         WHERE a.area IS NOT NULL 
         AND a.area != ''
-        AND a.status = '0' <!-- 正常状态 -->
+        AND a.status = '0' <!-- 姝ｅ父鐘舵€?-->
         ORDER BY a.area ASC
     </select>
 
-    <!-- 获取当前信标列表实际使用到的区域ID -->
+    <!-- 鑾峰彇褰撳墠淇℃爣鍒楄〃瀹為檯浣跨敤鍒扮殑鍖哄煙ID -->
     <select id="findAreaOptionsFromBeacon" resultType="java.lang.String">
-        <!-- 这里复用列表的数据范围条件，保证和当前信标列表口径一致。 -->
+        <!-- 杩欓噷澶嶇敤鍒楄〃鐨勬暟鎹寖鍥存潯浠讹紝淇濊瘉鍜屽綋鍓嶄俊鏍囧垪琛ㄥ彛寰勪竴鑷淬€?-->
         SELECT DISTINCT TRIM(a.area)
         FROM swm_beacon_station a
         <where>
             a.status = '0'
-            <if test="corpCode != null and corpCode != ''">
-                AND a.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND a.tenant_id = #{tenantId}
             </if>
             AND a.area IS NOT NULL
             AND TRIM(a.area) != ''
@@ -244,7 +244,7 @@
         ORDER BY TRIM(a.area) ASC
     </select>
 
-    <!-- 根据区域ID列表批量查询区域名称 -->
+    <!-- 鏍规嵁鍖哄煙ID鍒楄〃鎵归噺鏌ヨ鍖哄煙鍚嶇О -->
     <select id="findAreaNameMappings" resultType="java.util.HashMap">
         SELECT
             a.id AS "value",
@@ -254,19 +254,19 @@
         <foreach collection="areaIds" item="areaId" open="(" separator="," close=")">
             #{areaId}
         </foreach>
-        <if test="corpCode != null and corpCode != ''">
-            AND a.corp_code = #{corpCode}
+        <if test="tenantId != null and tenantId != ''">
+            AND a.tenant_id = #{tenantId}
         </if>
     </select>
 
-    <!-- 获取当前信标列表实际使用到的楼层ID -->
+    <!-- 鑾峰彇褰撳墠淇℃爣鍒楄〃瀹為檯浣跨敤鍒扮殑妤煎眰ID -->
     <select id="findFloorOptionsFromBeacon" resultType="java.lang.String">
         SELECT DISTINCT TRIM(a.floor_id)
         FROM swm_beacon_station a
         <where>
             a.status = '0'
-            <if test="corpCode != null and corpCode != ''">
-                AND a.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND a.tenant_id = #{tenantId}
             </if>
             AND a.floor_id IS NOT NULL
             AND TRIM(a.floor_id) != ''
@@ -274,7 +274,7 @@
         ORDER BY TRIM(a.floor_id) ASC
     </select>
 
-    <!-- 根据楼层ID列表批量查询楼层名称 -->
+    <!-- 鏍规嵁妤煎眰ID鍒楄〃鎵归噺鏌ヨ妤煎眰鍚嶇О -->
     <select id="findFloorNameMappings" resultType="java.util.HashMap">
         SELECT
             a.id AS "value",
@@ -285,30 +285,30 @@
         <foreach collection="floorIds" item="floorId" open="(" separator="," close=")">
             #{floorId}
         </foreach>
-        <if test="corpCode != null and corpCode != ''">
-            AND a.corp_code = #{corpCode}
+        <if test="tenantId != null and tenantId != ''">
+            AND a.tenant_id = #{tenantId}
         </if>
     </select>
 
-    <!-- 根据精确的像素坐标查找信标 -->
+    <!-- 鏍规嵁绮剧‘鐨勫儚绱犲潗鏍囨煡鎵句俊鏍?-->
     <select id="findByPixelCoordinates" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT 
             *
         FROM swm_beacon_station a
         WHERE a.pixel_x = #{pixelX}
         AND a.pixel_y = #{pixelY}
-        AND a.status = '0' <!-- 正常状态 -->
+        AND a.status = '0' <!-- 姝ｅ父鐘舵€?-->
         ORDER BY a.update_date DESC
     </select>
     
-    <!-- 清空指定区域下所有信标的区域和颜色字段 -->
+    <!-- 娓呯┖鎸囧畾鍖哄煙涓嬫墍鏈変俊鏍囩殑鍖哄煙鍜岄鑹插瓧娈?-->
     <update id="clearAreaAndColorByArea">
         UPDATE swm_beacon_station 
         SET area = NULL, beacon_color = NULL, update_by = #{updateBy}, update_date = #{updateDate}
         WHERE area = #{area} AND status = '0'
     </update>
     
-    <!-- 批量清空指定信标的区域和颜色字段 -->
+    <!-- 鎵归噺娓呯┖鎸囧畾淇℃爣鐨勫尯鍩熷拰棰滆壊瀛楁 -->
     <update id="clearAreaAndColorByIds">
         UPDATE swm_beacon_station
         SET area = NULL, beacon_color = NULL, update_by = #{updateBy}, update_date = #{updateDate}
@@ -334,7 +334,7 @@
         </foreach>
     </update>
 
-    <!-- 查询没有区域ID的信标列表 -->
+    <!-- 鏌ヨ娌℃湁鍖哄煙ID鐨勪俊鏍囧垪琛?-->
     <select id="findBeaconsWithoutArea" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT
             *
@@ -344,28 +344,28 @@
         ORDER BY a.update_date DESC
     </select>
 
-    <!-- 查询危险源类型的信标列表 -->
+    <!-- 鏌ヨ鍗遍櫓婧愮被鍨嬬殑淇℃爣鍒楄〃 -->
     <select id="findDangerousSourceBeacons" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT
             *
         FROM swm_beacon_station a
         WHERE a.status = '0' 
-        AND a.beacon_type = '3'  <!-- 危险源类型 -->
+        AND a.beacon_type = '3'  <!-- 鍗遍櫓婧愮被鍨?-->
         ORDER BY a.update_date DESC
     </select>
 
-    <!-- 查询可用的危险源类型信标列表（排除已被使用的） -->
+    <!-- 鏌ヨ鍙敤鐨勫嵄闄╂簮绫诲瀷淇℃爣鍒楄〃锛堟帓闄ゅ凡琚娇鐢ㄧ殑锛?-->
     <select id="findAvailableDangerousSourceBeacons" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO">
         SELECT
             *
         FROM swm_beacon_station a
         WHERE a.status = '0' 
-        AND a.beacon_type = '3'  <!-- 危险源类型 -->
+        AND a.beacon_type = '3'  <!-- 鍗遍櫓婧愮被鍨?-->
         AND NOT EXISTS (
             SELECT 1 FROM swm_hazard_source h
             WHERE h.status = '0'
             <if test="excludeHazardSourceId != null and excludeHazardSourceId != ''">
-                AND h.id != #{excludeHazardSourceId}  <!-- 排除当前编辑的记录 -->
+                AND h.id != #{excludeHazardSourceId}  <!-- 鎺掗櫎褰撳墠缂栬緫鐨勮褰?-->
             </if>
             AND (
                 h.beacon_identifier = a.beacon_id

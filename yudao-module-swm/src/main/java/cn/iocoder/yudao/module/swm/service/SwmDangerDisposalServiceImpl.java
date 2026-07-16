@@ -59,7 +59,12 @@ public class SwmDangerDisposalServiceImpl implements SwmDangerDisposalService {
 
     @Override
     public PageResult<SwmDangerDisposalDO> getDangerDisposalPage(SwmDangerDisposalPageReqVO pageReqVO) {
-        return swmDangerDisposalMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmDangerDisposalMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmDangerDisposalDO>()
+                        .likeIfPresent(SwmDangerDisposalDO::getDangerName, pageReqVO.getDangerName())
+                        .likeIfPresent(SwmDangerDisposalDO::getLocation, pageReqVO.getLocation())
+                        .eqIfPresent(SwmDangerDisposalDO::getDisposalStatus, pageReqVO.getDisposalStatus())
+                        .orderByDesc(SwmDangerDisposalDO::getDisposalTime));
     }
 
     private void validateDangerDisposalExists(String id) {

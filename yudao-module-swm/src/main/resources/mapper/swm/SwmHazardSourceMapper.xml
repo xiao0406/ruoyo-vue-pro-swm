@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHazardSourceMapper">
 
-    <!-- 获取单条数据 -->
+    <!-- 鑾峰彇鍗曟潯鏁版嵁 -->
     <select id="get" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHazardSourceDO">
         SELECT
             a.*
@@ -10,7 +10,7 @@
         WHERE a.id = #{id}
     </select>
 
-    <!-- 查询数据列表 -->
+    <!-- 鏌ヨ鏁版嵁鍒楄〃 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHazardSourceDO">
         SELECT
             a.*
@@ -38,7 +38,7 @@
                     )
                 )
             </if>
-            <!-- 支持多信标搜索的额外条件 -->
+            <!-- 鏀寔澶氫俊鏍囨悳绱㈢殑棰濆鏉′欢 -->
             <if test="beaconIdentifierSearchList != null and beaconIdentifierSearchList.size() > 0">
                 <foreach collection="beaconIdentifierSearchList" item="searchTerm" separator="">
                     AND (
@@ -69,7 +69,7 @@
         ORDER BY a.create_date DESC
     </select>
 
-    <!-- 根据状态统计数量 -->
+    <!-- 鏍规嵁鐘舵€佺粺璁℃暟閲?-->
     <select id="countByStatusAndMonth" resultType="int">
         SELECT COUNT(*)
         FROM swm_hazard_source
@@ -79,7 +79,7 @@
         AND status = '0';
     </select>
 
-    <!-- 按危险源类别统计数量 -->
+    <!-- 鎸夊嵄闄╂簮绫诲埆缁熻鏁伴噺 -->
     <select id="countByCategoryAndMonth" resultType="map">
         SELECT
             hazard_category AS category,
@@ -91,7 +91,7 @@
         GROUP BY hazard_category
     </select>
 
-    <!-- 获取危险源类别排名前10 -->
+    <!-- 鑾峰彇鍗遍櫓婧愮被鍒帓鍚嶅墠10 -->
     <select id="getTop10Categories" resultType="map">
         SELECT
             hazard_category AS category,
@@ -130,7 +130,7 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 按日期范围分组统计 -->
+    <!-- 鎸夋棩鏈熻寖鍥村垎缁勭粺璁?-->
     <select id="countByDateRangeGroupByDay" resultType="map">
         SELECT
             DATE_FORMAT(registration_time, '%Y-%m-%d') as date,
@@ -142,7 +142,7 @@
         ORDER BY date
     </select>
 
-    <!-- 按类别和日期范围分组统计 -->
+    <!-- 鎸夌被鍒拰鏃ユ湡鑼冨洿鍒嗙粍缁熻 -->
     <select id="countCategoryTrendByDateRange" resultType="map">
         SELECT
         hazard_category as category,
@@ -171,7 +171,7 @@
         ORDER BY count DESC
     </select>
 
-    <!-- 按日期范围和状态统计 -->
+    <!-- 鎸夋棩鏈熻寖鍥村拰鐘舵€佺粺璁?-->
     <select id="countByDateRange" resultType="int">
         SELECT COUNT(*)
         FROM swm_hazard_source
@@ -185,7 +185,7 @@
         </if>
     </select>
 
-    <!-- 统计未制定巡检计划的数量 -->
+    <!-- 缁熻鏈埗瀹氬贰妫€璁″垝鐨勬暟閲?-->
     <select id="countNoInspectionPlan" resultType="int">
         SELECT COUNT(*)
         FROM swm_hazard_source
@@ -198,3 +198,4 @@
         SELECT COUNT(*) FROM swm_hazard_source WHERE status = '0'
     </select>
 </mapper>
+

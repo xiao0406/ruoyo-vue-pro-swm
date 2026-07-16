@@ -1,7 +1,7 @@
 package cn.iocoder.yudao.module.iot.mqtt.processor.zhongtai;
 
 import cn.hutool.json.JSONObject;
-import cn.iocoder.yudao.module.iot.cache.DeviceCorpMappingCache;
+import cn.iocoder.yudao.module.iot.cache.DeviceTenantMappingCache;
 import cn.iocoder.yudao.module.iot.cache.service.RedisService;
 import cn.iocoder.yudao.module.iot.mqtt.constant.MqttConstants;
 import cn.iocoder.yudao.module.iot.mqtt.handler.HelmetAttendanceHandler;
@@ -59,7 +59,7 @@ public class ZhongtaiMessageDispatcherProcessor implements MqttMessageProcessor 
     private DeviceGpsLocationHandler deviceGpsLocationHandler;
 
     @Resource
-    private DeviceCorpMappingCache deviceCorpMappingCache;
+    private DeviceTenantMappingCache deviceTenantMappingCache;
 
     @Resource
     private RedisService redisService;
@@ -85,7 +85,7 @@ public class ZhongtaiMessageDispatcherProcessor implements MqttMessageProcessor 
 
                     // 1. 校验设备
                     TcpMessageData messageData = new TcpMessageData();
-                    if (!MqttConstants.verifyDeviceExists(topicCopy, messageData, redisService, deviceCorpMappingCache)) {
+                    if (!MqttConstants.verifyDeviceExists(topicCopy, messageData, redisService, deviceTenantMappingCache)) {
                         return;
                     }
 

@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHiddenDangerMapper">
 	
-	<!-- 查询条件 -->
+	<!-- 鏌ヨ鏉′欢 -->
 	<sql id="swmHiddenDangerColumns">
 		a.id AS "id",
 		a.danger_name AS "dangerName",
@@ -19,12 +19,12 @@
 		b.plan_name AS "inspectionPlanName"
 	</sql>
 	
-	<!-- 查询条件 -->
+	<!-- 鏌ヨ鏉′欢 -->
 	<sql id="swmHiddenDangerJoins">
 		LEFT JOIN swm_inspection_plan b ON b.id = a.inspection_plan_id
 	</sql>
 	
-	<!-- 查询数据（包含关联查询） -->
+	<!-- 鏌ヨ鏁版嵁锛堝寘鍚叧鑱旀煡璇級 -->
 	<select id="findListWithPlanName" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHiddenDangerDO">
 		SELECT 
 			<include refid="swmHiddenDangerColumns"/>

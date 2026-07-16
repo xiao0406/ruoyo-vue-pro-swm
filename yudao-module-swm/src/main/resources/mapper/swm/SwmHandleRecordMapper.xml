@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHandleRecordMapper">
 
-    <!-- 查询数据 -->
+    <!-- 鏌ヨ鏁版嵁 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHandleRecordDO">
         SELECT
             a.id, a.create_by AS createBy, a.create_date AS createDate,
@@ -18,7 +18,7 @@
         LEFT JOIN swm_warning_management b ON a.warning_id = b.id
         <where>
             a.status = '0'
-            <!-- 自定义条件 -->
+            <!-- 鑷畾涔夋潯浠?-->
             <if test="recordName != null and recordName != ''">
                 AND a.record_name LIKE concat('%', #{recordName}, '%')
             </if>
@@ -72,3 +72,4 @@
         limit #{limit}
     </select>
 </mapper>
+

@@ -34,7 +34,11 @@ public class SwmJobLogServiceImpl implements SwmJobLogService {
 
     @Override
     public PageResult<SwmJobLogDO> getJobLogPage(SwmJobLogPageReqVO pageReqVO) {
-        return swmJobLogMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmJobLogMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmJobLogDO>()
+                        .likeIfPresent(SwmJobLogDO::getJobName, pageReqVO.getJobName())
+                        .eqIfPresent(SwmJobLogDO::getExecuteStatus, pageReqVO.getExecuteStatus())
+                        .orderByDesc(SwmJobLogDO::getStartTime));
     }
 
     @Override

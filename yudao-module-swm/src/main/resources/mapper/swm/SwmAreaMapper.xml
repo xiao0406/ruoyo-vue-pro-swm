@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmAreaMapper">
     
-    <!-- 查询数据 -->
+    <!-- 鏌ヨ鏁版嵁 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmAreaDO">
         SELECT 
         FROM 

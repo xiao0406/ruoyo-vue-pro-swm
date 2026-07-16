@@ -19,3 +19,4 @@ public interface SwmAlarmConfigDetailMapper extends BaseMapperX<SwmAlarmConfigDe
 
     SwmAlarmConfigDO getByAlarmKey(@Param("alarmKey") String alarmKey);
 }
+

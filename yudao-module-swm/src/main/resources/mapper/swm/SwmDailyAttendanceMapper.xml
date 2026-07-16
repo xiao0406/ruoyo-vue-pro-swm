@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmDailyAttendanceMapper">
 
-    <!-- 基础结果映射 -->
+    <!-- 閸╄櫣顢呯紒鎾寸亯閺勭姴鐨?-->
     <resultMap id="swmDailyAttendanceResult" type="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         <id property="id" column="id"/>
         <result property="employeeId" column="employee_id"/>
@@ -28,7 +28,7 @@
         <result property="dailyAchievementRate" column="daily_achievement_rate"/>
         <result property="attendanceNormal" column="attendance_normal"/>
         <result property="currentPosition" column="current_position"/>
-        <!-- 包含DataEntity的基础字段 -->
+        <!-- 閸栧懎鎯圖ataEntity閻ㄥ嫬鐔€绾偓鐎涙顔?-->
         <result property="createBy" column="create_by"/>
         <result property="createDate" column="create_date"/>
         <result property="updateBy" column="update_by"/>
@@ -54,7 +54,7 @@
         <result property="idleHours" column="idle_hours_total"/>
     </resultMap>
 
-    <!-- 查询数据 -->
+    <!-- 閺屻儴顕楅弫鐗堝祦 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT  
         ,jso.office_name AS company,
@@ -66,11 +66,11 @@
         LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
-        LEFT JOIN system_dept jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
         <where>
             
             and  a.`status` = '0'
-            <!-- 自定义条件 -->
+            <!-- 閼奉亜鐣炬稊澶嬫蒋娴?-->
             <if test="employeeId != null and employeeId != ''">
                 AND a.employee_id = #{employeeId}
             </if>
@@ -154,7 +154,7 @@
 
     </select>
 
-    <!-- 根据员工ID和日期查询考勤记录 -->
+    <!-- 閺嶈宓侀崨妯轰紣ID閸滃本妫╅張鐔哥叀鐠囥垼鈧啫瀚熺拋鏉跨秿 -->
     <select id="findByEmployeeIdAndDate" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
             a.id AS "id",
@@ -193,7 +193,7 @@
         </where>
     </select>
 
-    <!-- 根据员工姓名和日期查询考勤记录 -->
+    <!-- 閺嶈宓侀崨妯轰紣婵挸鎮曢崪灞炬）閺堢喐鐓＄拠銏ｂ偓鍐ㄥ珶鐠佹澘缍?-->
     <select id="findByEmployeeAndDate" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
             a.id AS "id",
@@ -230,7 +230,7 @@
         </where>
     </select>
 
-    <!-- 根据员工ID和日期范围查询考勤记录 -->
+    <!-- 閺嶈宓侀崨妯轰紣ID閸滃本妫╅張鐔诲瘱閸ュ瓨鐓＄拠銏ｂ偓鍐ㄥ珶鐠佹澘缍?-->
     <select id="findByEmployeeIdAndDateRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
             a.id AS "id",
@@ -268,7 +268,7 @@
         ORDER BY a.attendance_date ASC
     </select>
 
-    <!-- 根据员工姓名和日期范围查询考勤记录 -->
+    <!-- 閺嶈宓侀崨妯轰紣婵挸鎮曢崪灞炬）閺堢喕瀵栭崶瀛樼叀鐠囥垼鈧啫瀚熺拋鏉跨秿 -->
     <select id="findByEmployeeAndDateRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
             a.id AS "id",
@@ -302,14 +302,14 @@
         ORDER BY a.attendance_date ASC
     </select>
 
-    <!-- 根据日期查询所有考勤记录 -->
+    <!-- 閺嶈宓侀弮銉︽埂閺屻儴顕楅幍鈧張澶庘偓鍐ㄥ珶鐠佹澘缍?-->
     <select id="findByDate" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
         a.id AS id,
         a.employee_id AS employeeId,
         a.employee_name AS employeeName,
         a.identity_card AS identityCard,
-        -- a.person_type AS personType,  <!-- 已注释掉 -->
+        -- a.person_type AS personType,  <!-- 瀹稿弶鏁為柌濠冨竴 -->
         a.attendance_date AS attendanceDate,
         a.work_time_range AS workTimeRange,
         a.clock_in_time AS clockInTime,
@@ -345,7 +345,7 @@
         ORDER BY a.employee_name ASC
     </select>
 
-    <!-- 根据员工ID和月份查询考勤记录 -->
+    <!-- 閺嶈宓侀崨妯轰紣ID閸滃本婀€娴犺姤鐓＄拠銏ｂ偓鍐ㄥ珶鐠佹澘缍?-->
     <select id="findByEmployeeIdAndMonth" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
             a.id AS "id",
@@ -385,7 +385,7 @@
         ORDER BY a.attendance_date ASC
     </select>
 
-    <!-- 根据员工姓名和月份查询考勤记录 -->
+    <!-- 閺嶈宓侀崨妯轰紣婵挸鎮曢崪灞炬箑娴犺姤鐓＄拠銏ｂ偓鍐ㄥ珶鐠佹澘缍?-->
     <select id="findByEmployeeAndMonth" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
             a.id AS "id",
@@ -424,7 +424,7 @@
         ORDER BY a.attendance_date ASC
     </select>
 
-    <!-- 按月查询日考勤记录 -->
+    <!-- 閹稿婀€閺屻儴顕楅弮銉ㄢ偓鍐ㄥ珶鐠佹澘缍?-->
     <select id="findByMonth" resultMap="swmDailyAttendanceResult">
         SELECT
         a.id,
@@ -472,7 +472,7 @@
         a.attendance_date DESC, a.update_date DESC
     </select>
 
-    <!-- 自定义更新方法，确保包含打卡时间字段 -->
+    <!-- 閼奉亜鐣炬稊澶嬫纯閺傜増鏌熷▔鏇礉绾喕绻氶崠鍛儓閹垫挸宕遍弮鍫曟？鐎涙顔?-->
     <update id="updateWithClockTime">
         UPDATE `swm_daily_attendance` SET
             `employee_id` = #{employeeId},
@@ -554,7 +554,7 @@
         </foreach>
     </update>
 
-    <!-- 单条更新考勤记录（仅更新非空字段），替代 updateBatch 的多语句 SQL -->
+    <!-- 閸楁洘娼弴瀛樻煀閼板啫瀚熺拋鏉跨秿閿涘牅绮庨弴瀛樻煀闂堢偟鈹栫€涙顔岄敍澶涚礉閺囧じ鍞?updateBatch 閻ㄥ嫬顦跨拠顓炲綖 SQL -->
     <update id="updateAttendanceRecord">
         UPDATE swm_daily_attendance
         <set>
@@ -590,7 +590,7 @@
         WHERE id = #{item.id}
     </update>
 
-    <!-- 根据身份证和日期查询考勤记录 -->
+    <!-- 閺嶈宓侀煬顐″敜鐠囦礁鎷伴弮銉︽埂閺屻儴顕楅懓鍐ㄥ珶鐠佹澘缍?-->
     <select id="findByIdentityCardAndDate" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
             a.id AS "id",
@@ -625,11 +625,11 @@
         FROM swm_daily_attendance a
         WHERE a.identity_card = #{identityCard}
           AND DATE(a.attendance_date) = DATE(#{attendanceDate})
-        AND a.corp_code = #{corpCode}
+        AND a.tenant_id = #{tenantId}
         LIMIT 1
     </select>
 
-    <!-- 根据身份证号和月份查询考勤记录 -->
+    <!-- 閺嶈宓侀煬顐″敜鐠囦礁褰块崪灞炬箑娴犺姤鐓＄拠銏ｂ偓鍐ㄥ珶鐠佹澘缍?-->
     <select id="findByIdentityCardAndMonth" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
             a.id AS "id",
@@ -669,7 +669,7 @@
         ORDER BY a.attendance_date ASC
     </select>
 
-    <!-- 按月查询月考勤记录 -->
+    <!-- 閹稿婀€閺屻儴顕楅張鍫ｂ偓鍐ㄥ珶鐠佹澘缍?-->
     <select id="findStatisticsByMonth" resultMap="swmMonthlyAttendanceResult">
         SELECT
             sda.employee_id AS employee_id,
@@ -698,7 +698,7 @@
             sda.employee_id, sda.employee_name
     </select>
 
-    <!-- 按月查询月考勤记录分页处理 -->
+    <!-- 閹稿婀€閺屻儴顕楅張鍫ｂ偓鍐ㄥ珶鐠佹澘缍嶉崚鍡涖€夋径鍕倞 -->
     <select id="findStatisticsByMonthWithPage" resultMap="swmMonthlyAttendanceResult">
         SELECT
             sda.employee_id AS employee_id,
@@ -734,7 +734,7 @@
         LIMIT #{pageNum}, #{pageSize}
     </select>
 
-    <!-- 按月查询月考勤记录总条数 -->
+    <!-- 閹稿婀€閺屻儴顕楅張鍫ｂ偓鍐ㄥ珶鐠佹澘缍嶉幀缁樻蒋閺?-->
     <select id="findStatisticsTotalByMonth" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM (
@@ -757,7 +757,7 @@
         ) AS t
     </select>
 
-    <!-- 指定日期的出勤工种分布 -->
+    <!-- 閹稿洤鐣鹃弮銉︽埂閻ㄥ嫬鍤崟銈呬紣缁夊秴鍨庣敮?-->
     <select id="statisticsPersonJobType" resultType="Map">
         SELECT
             job_type as jobType,
@@ -772,7 +772,7 @@
         GROUP BY b.job_type
     </select>
 
-    <!-- 指定日期，车间的出勤人数统计 -->
+    <!-- 閹稿洤鐣鹃弮銉︽埂閿涘矁婧呴梻瀵告畱閸戝搫瀚熸禍鐑樻殶缂佺喕顓?-->
     <select id="countAttendanceByWorkshop" resultType="java.lang.Long">
         SELECT
             COUNT(1) as count
@@ -788,7 +788,7 @@
           AND b.personnel_status = '1' and b.status = '0'
     </select>
 
-    <!-- 指定日期，班组的出勤人数统计 -->
+    <!-- 閹稿洤鐣鹃弮銉︽埂閿涘瞼褰紒鍕畱閸戝搫瀚熸禍鐑樻殶缂佺喕顓?-->
     <select id="countAttendanceByTeam" resultType="java.lang.Long">
         SELECT
             COUNT(1) as count
@@ -806,7 +806,7 @@
           AND b.personnel_status = '1' and b.status = '0'
     </select>
 
-    <!-- 指定日期的出勤人数列表 -->
+    <!-- 閹稿洤鐣鹃弮銉︽埂閻ㄥ嫬鍤崟銈勬眽閺佹澘鍨悰?-->
     <select id="attendanceList" resultType="cn.iocoder.yudao.module.swm.controller.admin.dashboard.vo.DashboardPersonVO">
         SELECT
             b.name,
@@ -823,7 +823,7 @@
           and a.attendance_date = #{date}
           and a.clock_in_time is not null
     </select>
-    <!-- 指定日期的出勤人数列表 -->
+    <!-- 閹稿洤鐣鹃弮銉︽埂閻ㄥ嫬鍤崟銈勬眽閺佹澘鍨悰?-->
 <!--    <select id="attendanceList" resultType="Map">-->
 <!--        SELECT-->
 <!--            b.name,-->
@@ -840,7 +840,7 @@
 <!--        and a.clock_in_time is not null-->
 <!--    </select>-->
 
-    <!-- 根据员工姓名和日期范围查询考勤记录 -->
+    <!-- 閺嶈宓侀崨妯轰紣婵挸鎮曢崪灞炬）閺堢喕瀵栭崶瀛樼叀鐠囥垼鈧啫瀚熺拋鏉跨秿 -->
     <select id="findByDateRange" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmDailyAttendanceDO">
         SELECT
             a.id AS "id",
@@ -998,7 +998,7 @@
             ((attendance_date = #{yestDay} and classes = '3')
           or  attendance_date = #{nowDate})
           and #{random} = #{random}
-        and corp_code = #{corpCode}
+        and tenant_id = #{tenantId}
     </select>
     <select id="getAllTeamNumber"
             resultType="cn.iocoder.yudao.module.swm.controller.admin.dashboard.vo.AttendanceAnalysisVO">
@@ -1122,7 +1122,7 @@
             resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$NoAttendancePerson">
         SELECT
             sp.NAME AS employeeName,
-            IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
+            IFNULL(fwg.work_group_name, '閺堫亜鍨庨柊宥囧疆缂?) AS teamName,
             sp.phone_number AS phoneNumber,
             DATEDIFF(CURDATE(), IFNULL(last_att.last_clock_date, sp.create_date)) AS absentDays,
             sp.id
@@ -1176,14 +1176,14 @@
         a.clock_out_date
     </select>
 
-    <!-- 迟到人员（含车间信息） -->
+    <!-- 鏉╃喎鍩屾禍鍝勬喅閿涘牆鎯堟潪锕傛？娣団剝浼呴敍?-->
     <select id="beLatePersonWithDept"
             resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$NoAttendancePerson">
         SELECT
             sp.NAME AS employeeName,
             a.clock_in_date AS clockInDate,
-            IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
-            IFNULL(fpa.position_name, '未分配车间') AS departmentName
+            IFNULL(fwg.work_group_name, '閺堫亜鍨庨柊宥囧疆缂?) AS teamName,
+            IFNULL(fpa.position_name, '閺堫亜鍨庨柊宥堟簠闂?) AS departmentName
         FROM
             swm_daily_attendance a
                 INNER JOIN swm_person sp ON a.employee_id = sp.id
@@ -1198,14 +1198,14 @@
         ORDER BY a.clock_in_date
     </select>
 
-    <!-- 早退人员（含车间信息） -->
+    <!-- 閺冣晠鈧偓娴滃搫鎲抽敍鍫濇儓鏉烇箓妫挎穱鈩冧紖閿?-->
     <select id="leaveEarlyPersonWithDept"
             resultType="cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto$NoAttendancePerson">
         SELECT
             sp.NAME AS employeeName,
             a.clock_out_date AS clockOutDate,
-            IFNULL(fwg.work_group_name, '未分配班组') AS teamName,
-            IFNULL(fpa.position_name, '未分配车间') AS departmentName
+            IFNULL(fwg.work_group_name, '閺堫亜鍨庨柊宥囧疆缂?) AS teamName,
+            IFNULL(fpa.position_name, '閺堫亜鍨庨柊宥堟簠闂?) AS departmentName
         FROM
             swm_daily_attendance a
                 INNER JOIN swm_person sp ON a.employee_id = sp.id
@@ -1299,3 +1299,4 @@
             absentDays DESC
     </select>
 </mapper>
+

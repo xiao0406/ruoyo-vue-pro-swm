@@ -143,6 +143,19 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>8.5.7</version>
+            <exclusions>
+                <!-- Keep the POI/FastExcel compatible version managed by the platform. -->
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-compress</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- FastExcel/POI 5.4 requires the newer ZipArchiveOutputStream API. -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.27.1</version>
         </dependency>
         <!-- Commons Collections -->
         <dependency>

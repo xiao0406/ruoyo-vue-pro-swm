@@ -1,10 +1,8 @@
 package cn.iocoder.yudao.module.iot.tcp.processor;
 
-import cn.iocoder.yudao.module.swm.service.SwmHelmetDeviceService;
-import cn.iocoder.yudao.module.swm.service.SwmHelmetDeviceConfigService;
-import cn.iocoder.yudao.module.swm.service.HelmetDeviceCacheService;
-import cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO;
-import cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceConfigDO;
+import cn.iocoder.yudao.module.iot.tcp.service.IotHelmetDeviceCacheService;
+import cn.iocoder.yudao.module.iot.tcp.service.IotHelmetDeviceConfigService;
+import cn.iocoder.yudao.module.iot.tcp.service.IotHelmetDeviceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import jakarta.annotation.Resource;
@@ -26,13 +24,13 @@ public class ParameterResponseTcpProcessor {
     private static final Logger logger = LoggerFactory.getLogger(ParameterResponseTcpProcessor.class);
 
     @Resource
-    private SwmHelmetDeviceService swmHelmetDeviceService;
+    private IotHelmetDeviceService swmHelmetDeviceService;
 
     @Resource
-    private SwmHelmetDeviceConfigService swmHelmetDeviceConfigService;
+    private IotHelmetDeviceConfigService swmHelmetDeviceConfigService;
 
     @Resource
-    private HelmetDeviceCacheService helmetDeviceCacheService;
+    private IotHelmetDeviceCacheService helmetDeviceCacheService;
 
     /**
      * PSA应答消息的正则表达式
@@ -216,7 +214,7 @@ public class ParameterResponseTcpProcessor {
             }
 
             // 查询设备是否存在
-            SwmHelmetDevice device = swmHelmetDeviceService.getByDeviceId(deviceId);
+            cn.iocoder.yudao.module.iot.tcp.service.SwmHelmetDevice device = swmHelmetDeviceService.getByDeviceId(deviceId);
             if (device == null) {
                 logger.warn("设备不存在: 设备号={}", deviceId);
                 return;

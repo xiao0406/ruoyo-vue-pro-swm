@@ -17,3 +17,4 @@ public interface SwmHiddenDangerMapper extends BaseMapperX<SwmHiddenDangerDO> {
                                                   @Param("isHandled") String isHandled,
                                                   @Param("status") String status);
 }
+

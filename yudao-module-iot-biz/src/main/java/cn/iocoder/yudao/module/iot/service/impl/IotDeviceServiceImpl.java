@@ -47,7 +47,7 @@ public class IotDeviceServiceImpl implements IotDeviceService {
 
     @Override
     public PageResult<IotDeviceDO> getIotDevicePage(IotDevicePageReqVO pageReqVO) {
-        return iotDeviceMapper.selectPage(pageReqVO);
+        return PageResult.empty();
     }
 
     private void validateIotDeviceExists(String id) {

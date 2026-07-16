@@ -4,6 +4,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Resource;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +37,23 @@ public class RedisService {
         return redisTemplate.opsForSet().members(key);
     }
 
+    public long sSet(String key, Object value) {
+        Long added = redisTemplate.opsForSet().add(key, value);
+        return added != null ? added : 0;
+    }
+
+    public Object get(String key) {
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    public void set(String key, Object value) {
+        redisTemplate.opsForValue().set(key, value);
+    }
+
+    public void set(String key, Object value, long timeout) {
+        redisTemplate.opsForValue().set(key, value, timeout, TimeUnit.SECONDS);
+    }
+
     /**
      * 获取hash值
      *
@@ -47,6 +65,10 @@ public class RedisService {
         return redisTemplate.opsForHash().get(key, field);
     }
 
+    public Map<Object, Object> hmget(String key) {
+        return redisTemplate.opsForHash().entries(key);
+    }
+
     /**
      * 设置hash值
      *
@@ -56,6 +78,20 @@ public class RedisService {
      */
     public void hset(String key, String field, Object value) {
         redisTemplate.opsForHash().put(key, field, value);
+    }
+
+    public void hset(String key, String field, Object value, long timeout) {
+        redisTemplate.opsForHash().put(key, field, value);
+        expire(key, timeout, TimeUnit.SECONDS);
+    }
+
+    public boolean setNxValue(String key, String value, long timeout) {
+        Boolean success = redisTemplate.opsForValue().setIfAbsent(key, value, timeout, TimeUnit.SECONDS);
+        return Boolean.TRUE.equals(success);
+    }
+
+    public void hdel(String key, String field) {
+        redisTemplate.opsForHash().delete(key, field);
     }
 
     /**
@@ -85,6 +121,10 @@ public class RedisService {
      */
     public void expire(String key, long timeout, TimeUnit unit) {
         redisTemplate.expire(key, timeout, unit);
+    }
+
+    public void expire(String key, long timeout) {
+        expire(key, timeout, TimeUnit.SECONDS);
     }
 
     /**

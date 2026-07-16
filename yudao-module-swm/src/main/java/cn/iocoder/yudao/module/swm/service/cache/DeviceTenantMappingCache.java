@@ -15,12 +15,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 设备 → 租户映射缓存
  * <p>
- * 旧名 DeviceCorpMappingCache，已将 corpCode 替换为 tenantId。
- * TDengine 库名由 {@link cn.iocoder.yudao.module.swm.enums.CorpDbEnum#getDbNameByTenantId(Long)} 解析。
+ * 旧名 DeviceTenantMappingCache，已将 tenantId 替换为 tenantId。
+ * TDengine 库名由 {@link cn.iocoder.yudao.module.swm.enums.TenantDbEnum#getDbNameByTenantId(Long)} 解析。
  */
 @Slf4j
 @Component
-public class DeviceCorpMappingCache {
+public class DeviceTenantMappingCache {
 
     /**
      * deviceId -> tenantId
@@ -63,6 +63,11 @@ public class DeviceCorpMappingCache {
         tenantId = device.getTenantId();
         deviceTenantMap.put(deviceId, tenantId);
         return tenantId;
+    }
+
+    public String getDbName(String deviceId) {
+        Long tenantId = getTenantIdByDeviceId(deviceId);
+        return tenantId == null ? null : cn.iocoder.yudao.module.swm.enums.TenantDbEnum.getDbNameByTenantId(tenantId);
     }
 
 }

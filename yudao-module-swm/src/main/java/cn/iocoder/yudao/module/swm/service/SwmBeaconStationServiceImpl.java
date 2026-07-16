@@ -6,10 +6,13 @@ import cn.iocoder.yudao.module.swm.controller.admin.beacon.vo.SwmBeaconStationPa
 import cn.iocoder.yudao.module.swm.controller.admin.beacon.vo.SwmBeaconStationSaveReqVO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmBeaconStationMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.swm.enums.ErrorCodeConstants.BEACON_STATION_NOT_EXISTS;
@@ -59,13 +62,39 @@ public class SwmBeaconStationServiceImpl implements SwmBeaconStationService {
 
     @Override
     public PageResult<SwmBeaconStationDO> getBeaconStationPage(SwmBeaconStationPageReqVO pageReqVO) {
-        return swmBeaconStationMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmBeaconStationMapper.selectPage(pageReqVO, buildQueryWrapper(pageReqVO));
+    }
+
+    @Override
+    public List<SwmBeaconStationDO> getBeaconStationList(SwmBeaconStationPageReqVO reqVO) {
+        return swmBeaconStationMapper.selectList(buildQueryWrapper(reqVO));
     }
 
     private void validateBeaconStationExists(String id) {
         if (swmBeaconStationMapper.selectById(id) == null) {
             throw exception(BEACON_STATION_NOT_EXISTS);
         }
+    }
+
+    private LambdaQueryWrapper<SwmBeaconStationDO> buildQueryWrapper(SwmBeaconStationPageReqVO reqVO) {
+        LambdaQueryWrapper<SwmBeaconStationDO> wrapper = new LambdaQueryWrapper<>();
+        if (reqVO == null) {
+            return wrapper.orderByDesc(SwmBeaconStationDO::getCreateTime);
+        }
+        wrapper.like(hasText(reqVO.getBeaconId()), SwmBeaconStationDO::getBeaconId, reqVO.getBeaconId())
+                .like(hasText(reqVO.getDeviceName()), SwmBeaconStationDO::getDeviceName, reqVO.getDeviceName())
+                .eq(hasText(reqVO.getBeaconType()), SwmBeaconStationDO::getBeaconType, reqVO.getBeaconType())
+                .eq(hasText(reqVO.getArea()), SwmBeaconStationDO::getArea, reqVO.getArea())
+                .like(hasText(reqVO.getLocation()), SwmBeaconStationDO::getLocation, reqVO.getLocation())
+                .eq(hasText(reqVO.getBeaconStatus()), SwmBeaconStationDO::getBeaconStatus, reqVO.getBeaconStatus())
+                .eq(hasText(reqVO.getDeployStatus()), SwmBeaconStationDO::getDeployStatus, reqVO.getDeployStatus())
+                .like(hasText(reqVO.getBuilding()), SwmBeaconStationDO::getBuilding, reqVO.getBuilding())
+                .orderByDesc(SwmBeaconStationDO::getCreateTime);
+        return wrapper;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
 }

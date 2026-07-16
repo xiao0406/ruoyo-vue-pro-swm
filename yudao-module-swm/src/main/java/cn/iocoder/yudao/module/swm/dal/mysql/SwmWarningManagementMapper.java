@@ -109,3 +109,4 @@ public interface SwmWarningManagementMapper extends BaseMapperX<SwmWarningManage
     List<Map<String, Object>> countHandledGroupByWarningContent(@Param("beginDate") Date beginDate,
                                                                  @Param("endDate") Date endDate);
 }
+

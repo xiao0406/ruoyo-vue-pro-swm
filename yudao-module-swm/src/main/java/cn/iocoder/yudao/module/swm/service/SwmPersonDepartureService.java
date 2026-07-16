@@ -6,6 +6,8 @@ import cn.iocoder.yudao.module.swm.controller.admin.persondeparture.vo.SwmPerson
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDepartureDO;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 /**
  * 人员退场 Service 接口
  */
@@ -48,5 +50,7 @@ public interface SwmPersonDepartureService {
      * @return 人员退场分页
      */
     PageResult<SwmPersonDepartureDO> getPersonDeparturePage(SwmPersonDeparturePageReqVO pageReqVO);
+
+    List<SwmPersonDepartureDO> findListByIdentityCard(String identityCard);
 
 }

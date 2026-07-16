@@ -4,7 +4,7 @@ import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import cn.iocoder.yudao.module.swm.enums.SwmRedisKeyConstants;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmHelmetDeviceMapper;
-import cn.iocoder.yudao.module.swm.service.cache.DeviceCorpMappingCache;
+import cn.iocoder.yudao.module.swm.service.cache.DeviceTenantMappingCache;
 import cn.iocoder.yudao.module.system.dal.dataobject.tenant.TenantDO;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.module.system.service.tenant.TenantService;
@@ -27,7 +27,7 @@ import java.util.*;
  */
 @Slf4j
 @Component
-public class DeviceCorpTask {
+public class DeviceTenantTask {
 
     @Resource
     private SwmHelmetDeviceMapper swmHelmetDeviceMapper;
@@ -36,11 +36,11 @@ public class DeviceCorpTask {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Resource
-    private DeviceCorpMappingCache deviceCorpMappingCache;
+    private DeviceTenantMappingCache deviceTenantMappingCache;
 
-    @XxlJob("deviceCorpMapping")
+    @XxlJob("deviceTenantMapping")
     @Transactional(rollbackFor = Exception.class)
-    public void deviceCorpMapping() {
+    public void deviceTenantMapping() {
         List<TenantDO> tenantList = tenantService.getTenantListByStatus(CommonStatusEnum.ENABLE.getStatus());
         if (CollectionUtils.isEmpty(tenantList)) {
             XxlJobHelper.log("没有租户信息");
@@ -70,7 +70,7 @@ public class DeviceCorpTask {
         }
 
         // 先写入临时 key，再原子替换
-        String tempKey = SwmRedisKeyConstants.GlobalKey.DEVICE_TO_CORP + "_TMP";
+        String tempKey = SwmRedisKeyConstants.GlobalKey.DEVICE_TO_TENANT + "_TMP";
         Map<String, String> map = new HashMap<>();
         for (SwmHelmetDeviceDO d : deviceListAll) {
             String tenantIdStr = d.getTenantId() != null ? d.getTenantId().toString() : null;
@@ -80,12 +80,12 @@ public class DeviceCorpTask {
 
         stringRedisTemplate.execute((RedisCallback<Object>) connection -> {
             byte[] temp = tempKey.getBytes(StandardCharsets.UTF_8);
-            byte[] real = SwmRedisKeyConstants.GlobalKey.DEVICE_TO_CORP.getBytes(StandardCharsets.UTF_8);
+            byte[] real = SwmRedisKeyConstants.GlobalKey.DEVICE_TO_TENANT.getBytes(StandardCharsets.UTF_8);
             connection.rename(temp, real);
             return null;
         });
 
         XxlJobHelper.log("设备租户映射关系生成完成，设备数量：{}", deviceListAll.size());
-        deviceCorpMappingCache.refreshCache();
+        deviceTenantMappingCache.refreshCache();
     }
 }

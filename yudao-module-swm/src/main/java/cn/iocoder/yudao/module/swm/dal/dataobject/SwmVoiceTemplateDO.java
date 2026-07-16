@@ -22,4 +22,10 @@ public class SwmVoiceTemplateDO extends SwmBaseDO {
     private String pushMethod;
     private String pushFrequency;
     private String templateId;
+
+    /**
+     * Business enable status: 0 enabled, 1 disabled.
+     * The inherited status column remains reserved for JeeSite logical deletion.
+     */
+    private String enableStatus;
 }

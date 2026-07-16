@@ -6,6 +6,8 @@ import cn.iocoder.yudao.module.swm.controller.admin.worktype.vo.SwmWorkTypeSaveR
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmWorkTypeDO;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 /**
  * 工种管理 Service 接口
  */
@@ -48,5 +50,7 @@ public interface SwmWorkTypeService {
      * @return 工种分页
      */
     PageResult<SwmWorkTypeDO> getWorkTypePage(SwmWorkTypePageReqVO pageReqVO);
+
+    List<SwmWorkTypeDO> getActiveWorkTypes();
 
 }

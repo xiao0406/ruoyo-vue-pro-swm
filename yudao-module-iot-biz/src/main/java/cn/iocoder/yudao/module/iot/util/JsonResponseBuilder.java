@@ -128,4 +128,29 @@ public class JsonResponseBuilder {
         return response.toString();
     }
 
+    public static String buildServerPushSetSosHeightCommand(String deviceId, String height) {
+        JSONObject response = new JSONObject();
+        response.set("cmd", "server_push_set_sos_height");
+        response.set("deviceId", deviceId);
+        response.set("height", height);
+        return response.toString();
+    }
+
+    public static String buildGetLocalVideoListCommand(String deviceId, String startTime, String endTime) {
+        JSONObject response = new JSONObject();
+        response.set("cmd", "get_local_video_list");
+        response.set("deviceId", deviceId);
+        response.set("startTime", startTime);
+        response.set("endTime", endTime);
+        return response.toString();
+    }
+
+    public static String buildServerPushUploadCommand(String deviceId, java.util.List<String> fileNames) {
+        JSONObject response = new JSONObject();
+        response.set("cmd", "server_push_upload");
+        response.set("deviceId", deviceId);
+        response.set("fileNames", fileNames);
+        return response.toString();
+    }
+
 }

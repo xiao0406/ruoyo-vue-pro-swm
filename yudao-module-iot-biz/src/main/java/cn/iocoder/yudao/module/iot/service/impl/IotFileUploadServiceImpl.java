@@ -47,7 +47,7 @@ public class IotFileUploadServiceImpl implements IotFileUploadService {
 
     @Override
     public PageResult<IotFileUploadDO> getIotFileUploadPage(IotFileUploadPageReqVO pageReqVO) {
-        return iotFileUploadMapper.selectPage(pageReqVO);
+        return PageResult.empty();
     }
 
     private void validateExists(String id) {

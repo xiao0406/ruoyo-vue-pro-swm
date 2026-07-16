@@ -316,6 +316,7 @@ yudao:
       - /admin-api/system/user/profile/**
       - /admin-api/system/auth/**
     ignore-tables:
+      - js_sys_office # Legacy JeeSite office dictionary, no RuoYi tenant_id column.
     ignore-caches:
       - user_role_ids
       - permission_menu_ids

@@ -6,10 +6,14 @@ import cn.iocoder.yudao.module.swm.controller.admin.dictdata.vo.SwmDictDataPageR
 import cn.iocoder.yudao.module.swm.controller.admin.dictdata.vo.SwmDictDataSaveReqVO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmDictDataDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmDictDataMapper;
+import cn.hutool.core.util.IdUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.swm.enums.ErrorCodeConstants.COMMON_OPTIONS_NOT_EXISTS;
@@ -29,6 +33,8 @@ public class SwmDictDataServiceImpl implements SwmDictDataService {
     public String createDictData(SwmDictDataSaveReqVO createReqVO) {
         // 插入字典数据
         SwmDictDataDO dictData = BeanUtils.toBean(createReqVO, SwmDictDataDO.class);
+        dictData.setId(isBlank(createReqVO.getDictCode()) ? IdUtil.simpleUUID() : createReqVO.getDictCode());
+        dictData.setDictCode(dictData.getId());
         swmDictDataMapper.insert(dictData);
         return dictData.getId();
     }
@@ -54,18 +60,45 @@ public class SwmDictDataServiceImpl implements SwmDictDataService {
 
     @Override
     public SwmDictDataDO getDictData(String id) {
-        return swmDictDataMapper.selectById(id);
+        return fillDictCode(swmDictDataMapper.selectById(id));
     }
 
     @Override
     public PageResult<SwmDictDataDO> getDictDataPage(SwmDictDataPageReqVO pageReqVO) {
-        return swmDictDataMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        LambdaQueryWrapper<SwmDictDataDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(!isBlank(pageReqVO.getDictType()), SwmDictDataDO::getDictType, pageReqVO.getDictType());
+        wrapper.like(!isBlank(pageReqVO.getDictLabel()), SwmDictDataDO::getDictLabel, pageReqVO.getDictLabel());
+        wrapper.eq(!isBlank(pageReqVO.getIsSys()), SwmDictDataDO::getIsSys, pageReqVO.getIsSys());
+        wrapper.orderByAsc(SwmDictDataDO::getDictValue);
+        PageResult<SwmDictDataDO> pageResult = swmDictDataMapper.selectPage(pageReqVO, wrapper);
+        pageResult.getList().forEach(this::fillDictCode);
+        return pageResult;
+    }
+
+    @Override
+    public List<SwmDictDataDO> getDictDataList(String dictType) {
+        List<SwmDictDataDO> list = swmDictDataMapper.selectList(new LambdaQueryWrapper<SwmDictDataDO>()
+                .eq(SwmDictDataDO::getDictType, dictType)
+                .orderByAsc(SwmDictDataDO::getDictValue));
+        list.forEach(this::fillDictCode);
+        return list;
     }
 
     private void validateDictDataExists(String id) {
         if (swmDictDataMapper.selectById(id) == null) {
             throw exception(COMMON_OPTIONS_NOT_EXISTS);
         }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private SwmDictDataDO fillDictCode(SwmDictDataDO dictData) {
+        if (dictData != null) {
+            dictData.setDictCode(dictData.getId());
+        }
+        return dictData;
     }
 
 }

@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmPersonScheduleMapper">
     
-    <!-- 查询条件 -->
+    <!-- 閺屻儴顕楅弶鈥叉 -->
     <sql id="personScheduleWhere">
         WHERE 1=1
         <if test="personName != null and personName != ''">
@@ -17,7 +17,7 @@
         <if test="idCard != null and idCard != ''">
             AND a.id_card = #{idCard}
         </if>
-        <!-- 新增四级查询条件 Author: Shawn Date: 2025/01/27 -->
+        <!-- 閺傛澘顤冮崶娑氶獓閺屻儴顕楅弶鈥叉 Author: Shawn Date: 2025/01/27 -->
         <if test="organization != null and organization != ''">
             AND (o.office_name LIKE CONCAT('%', #{organization}, '%') OR backup_o.office_name LIKE CONCAT('%', #{organization}, '%'))
         </if>
@@ -31,7 +31,7 @@
             AND (wg.work_group_name LIKE CONCAT('%', #{workGroupName}, '%') OR backup_wg.work_group_name LIKE CONCAT('%', #{workGroupName}, '%'))
         </if>
     </sql>
-    <!-- 自定义查询（示例） -->
+    <!-- 閼奉亜鐣炬稊澶嬬叀鐠囶澁绱欑粈杞扮伐閿?-->
     <select id="findByIdCard" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonScheduleDO">
         SELECT 
             a.id,
@@ -52,12 +52,12 @@
         ORDER BY a.update_date DESC
     </select>
     
-    <!-- 根据身份证号获取班组名称 -->
+    <!-- 閺嶈宓侀煬顐″敜鐠囦礁褰块懢宄板絿閻濐厾绮嶉崥宥囆?-->
     <select id="getWorkGroupNameByIdCard" resultType="String">
         SELECT
             COALESCE(wg.work_group_name, backup_wg.work_group_name) AS work_group_name
         FROM swm_person sp
-        -- 关联最新的 fms_worker 记录（使用 EXISTS 优化性能）
+        -- 閸忓疇浠堥張鈧弬鎵畱 fms_worker 鐠佹澘缍嶉敍鍫滃▏閻?EXISTS 娴兼ê瀵查幀褑鍏橀敍?
         LEFT JOIN fms_worker w ON sp.identity_card = w.identity_code COLLATE utf8mb4_general_ci
             AND NOT EXISTS (
                 SELECT 1
@@ -66,14 +66,14 @@
                 AND fw2.create_date &gt; w.create_date
             )
         LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id
-        -- 备用关联（通过swm_person表中保存的team字段关联）
+        -- 婢跺洨鏁ら崗瀹犱粓閿涘牓鈧俺绻僺wm_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ墖eam鐎涙顔岄崗瀹犱粓閿?
         LEFT JOIN fms_work_group backup_wg ON sp.team = backup_wg.id COLLATE utf8mb4_general_ci
         WHERE sp.identity_card = #{idCard}
         AND sp.status = '0'
         LIMIT 1
     </select>
     
-    <!-- 根据身份证号和月份查询排班记录 -->
+    <!-- 閺嶈宓侀煬顐″敜鐠囦礁褰块崪灞炬箑娴犺姤鐓＄拠銏″笓閻濐叀顔囪ぐ?-->
     <select id="findByIdCardAndMonth" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonScheduleDO">
         SELECT 
             a.id,
@@ -94,11 +94,11 @@
             AND a.month = #{month}
         </if>
         AND a.status = '0'
-        AND (1=1 OR a.corp_code IS NOT NULL)
+        AND (1=1 OR a.tenant_id IS NOT NULL)
         ORDER BY a.update_date DESC
     </select>
 
-    <!-- 获取所有班组列表 -->
+    <!-- 閼惧嘲褰囬幍鈧張澶屽疆缂佸嫬鍨悰?-->
     <select id="findWorkGroupList" resultType="java.util.Map">
         SELECT
             id,
@@ -108,13 +108,13 @@
         ORDER BY work_group_name
     </select>
     
-    <!-- 批量获取班组名称 -->
+    <!-- 閹靛綊鍣洪懢宄板絿閻濐厾绮嶉崥宥囆?-->
     <select id="batchGetWorkGroupNameByIdCards" resultType="java.util.Map">
         SELECT DISTINCT
             sp.identity_card AS "key",
             COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "value"
         FROM swm_person sp
-        -- 关联最新的 fms_worker 记录（使用 EXISTS 优化性能）
+        -- 閸忓疇浠堥張鈧弬鎵畱 fms_worker 鐠佹澘缍嶉敍鍫滃▏閻?EXISTS 娴兼ê瀵查幀褑鍏橀敍?
         LEFT JOIN fms_worker w ON sp.identity_card = w.identity_code COLLATE utf8mb4_general_ci
             AND NOT EXISTS (
                 SELECT 1
@@ -123,7 +123,7 @@
                 AND fw2.create_date &gt; w.create_date
             )
         LEFT JOIN fms_work_group wg ON w.work_group_id = wg.id
-        -- 备用关联（通过swm_person表中保存的team字段关联）
+        -- 婢跺洨鏁ら崗瀹犱粓閿涘牓鈧俺绻僺wm_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ墖eam鐎涙顔岄崗瀹犱粓閿?
         LEFT JOIN fms_work_group backup_wg ON sp.team = backup_wg.id COLLATE utf8mb4_general_ci
         WHERE sp.identity_card IN
         <foreach collection="list" item="idCard" open="(" separator="," close=")">
@@ -132,7 +132,7 @@
         AND sp.status = '0'
     </select>
     
-    <!-- 根据年份和月份获取不重复身份证的排班人数 -->
+    <!-- 閺嶈宓侀獮缈犲敜閸滃本婀€娴犲€熷箯閸欐牔绗夐柌宥咁槻闊偂鍞ょ拠浣烘畱閹烘帞褰禍鐑樻殶 -->
     <select id="countDistinctPersonByYearAndMonth" resultType="int">
         SELECT 
             COUNT(DISTINCT id_card)
@@ -143,7 +143,7 @@
             AND status = '0'
     </select>
     
-    <!-- 重写findList方法，添加组织架构关联查询 Author: Shawn Date: 2025/01/27 -->
+    <!-- 闁插秴鍟揻indList閺傝纭堕敍灞惧潑閸旂姷绮嶇紒鍥ㄧ仸閺嬪嫬鍙ч懕鏃€鐓＄拠?Author: Shawn Date: 2025/01/27 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonScheduleDO">
         SELECT 
             a.id AS "id",
@@ -168,7 +168,7 @@
         LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON sp.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
-        LEFT JOIN system_dept jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
         <where>
             a.status = '0' and sp.status = '0'
             <if test="personName != null and personName != ''">
@@ -183,7 +183,7 @@
             <if test="idCard != null and idCard != ''">
                 AND a.id_card = #{idCard}
             </if>
-            <!-- 新增四级查询条件 -->
+            <!-- 閺傛澘顤冮崶娑氶獓閺屻儴顕楅弶鈥叉 -->
             <if test="organization != null and organization != ''">
                 AND jso.office_name LIKE CONCAT('%', #{organization}, '%')
             </if>
@@ -197,7 +197,7 @@
                 AND wg.work_group_name LIKE CONCAT('%', #{workGroupName}, '%')
             </if>
         </where>
-        ORDER BY 
+        ORDER BY a.update_date DESC
     </select>
     <select id="scheduleList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonScheduleDO">
         SELECT
@@ -211,13 +211,13 @@
             <if test="month != null and month != ''">
                 AND a.month = #{month}
             </if>
-            <if test="corpCode != null and corpCode != ''">
-                AND a.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND a.tenant_id = #{tenantId}
             </if>
-            <!-- 新增随机条件，恒成立 -->
+            <!-- 閺傛澘顤冮梾蹇旀簚閺夆€叉閿涘本浜介幋鎰彌 -->
             AND #{random} = #{random}
         </where>
-        ORDER BY 
+        ORDER BY a.id
     </select>
     <select id="findIdCardsByIds" resultType="java.lang.String">
         SELECT a.id_card FROM swm_person_schedule a
@@ -256,7 +256,7 @@
         </foreach>
     </update>
 
-    <!-- 批量修改班次：根据employee_id批量更新classes字段 -->
+    <!-- 閹靛綊鍣烘穱顔芥暭閻濐厽顐奸敍姘壌閹圭敡mployee_id閹靛綊鍣洪弴瀛樻煀classes鐎涙顔?-->
     <update id="batchUpdateClasses">
         UPDATE swm_person_schedule
         SET
@@ -270,7 +270,7 @@
     </update>
 
 
-    <select id="findListByCorpCode" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonScheduleDO">
+    <select id="findListByTenantId" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonScheduleDO">
         SELECT
             a.id,
             sp.name as personName,
@@ -284,10 +284,11 @@
                 LEFT JOIN swm_person sp on a.id_card = sp.identity_card
         <where>
             a.status = '0' and sp.status = '0'
-            <if test="corpCode != null and corpCode != ''">
-                AND a.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND a.tenant_id = #{tenantId}
             </if>
         </where>
     </select>
 
 </mapper>
+

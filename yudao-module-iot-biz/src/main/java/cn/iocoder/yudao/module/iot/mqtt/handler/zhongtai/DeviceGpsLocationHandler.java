@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.iot.mqtt.handler.zhongtai;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import cn.hutool.core.util.ObjectUtil;
-import cn.iocoder.yudao.module.iot.cache.DeviceCorpMappingCache;
+import cn.iocoder.yudao.module.iot.cache.DeviceTenantMappingCache;
 import cn.iocoder.yudao.module.iot.cache.service.RedisService;
 import cn.iocoder.yudao.module.iot.mqtt.constant.MqttConstants;
 import cn.iocoder.yudao.module.iot.mqtt.handler.MqttBusinessHandler;
@@ -41,7 +41,7 @@ public class DeviceGpsLocationHandler implements MqttBusinessHandler {
     @Resource
     private RedisService redisService;
     @Resource
-    private DeviceCorpMappingCache deviceCorpMappingCache;
+    private DeviceTenantMappingCache deviceTenantMappingCache;
     @Resource
     private AlarmZeroTcpProcessor alarmZeroTcpProcessor;
 
@@ -65,7 +65,7 @@ public class DeviceGpsLocationHandler implements MqttBusinessHandler {
             DeviceGpsPosition gpsPosition = null;
 
             // 1.先校验设备是否入库
-            if (!MqttConstants.verifyDeviceExists(topic, messageData, redisService, deviceCorpMappingCache)){
+            if (!MqttConstants.verifyDeviceExists(topic, messageData, redisService, deviceTenantMappingCache)){
                 return;
             }
             String deviceId = messageData.getDeviceId();
@@ -97,7 +97,7 @@ public class DeviceGpsLocationHandler implements MqttBusinessHandler {
             //5.设置数据
             messageData.setScanTimestamp(now);
             //拿到电量
-            Integer batteryLevel = MqttConstants.getBatteryLevel(deviceId, redisService, deviceCorpMappingCache);
+            Integer batteryLevel = MqttConstants.getBatteryLevel(deviceId, redisService, deviceTenantMappingCache);
             messageData.setBatteryLevel(batteryLevel);
             messageData.setZTDevice( true);
             messageData.setGpsUtcTimestamp( now);

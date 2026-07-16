@@ -34,4 +34,12 @@ public interface TDengineService {
      */
     @Deprecated
     CommonResult<JSONObject> executeTDengineSQLByXXJOB(String sql, Long tenantIdStr);
+
+    default cn.iocoder.yudao.module.swm.util.R<JSONObject> executeTDengineSQLByDeviceId(String sql, String deviceId) {
+        CommonResult<JSONObject> result = executeByCurrentTenant(sql);
+        if (result.isSuccess()) {
+            return cn.iocoder.yudao.module.swm.util.R.ok(result.getData());
+        }
+        return cn.iocoder.yudao.module.swm.util.R.fail(result.getCode(), result.getMsg());
+    }
 }

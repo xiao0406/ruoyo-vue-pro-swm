@@ -8,3 +8,4 @@ import org.apache.ibatis.annotations.Mapper;
 public interface SwmSafetyHelmetOrderMapper extends BaseMapperX<SwmSafetyHelmetOrderDO> {
 
 }
+

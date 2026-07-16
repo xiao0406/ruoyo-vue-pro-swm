@@ -6,6 +6,8 @@ import cn.iocoder.yudao.module.swm.controller.admin.beacon.vo.SwmBeaconStationSa
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmBeaconStationDO;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 /**
  * 信标站点 Service 接口
  */
@@ -48,5 +50,13 @@ public interface SwmBeaconStationService {
      * @return 信标站点分页
      */
     PageResult<SwmBeaconStationDO> getBeaconStationPage(SwmBeaconStationPageReqVO pageReqVO);
+
+    /**
+     * 获取信标站点全量列表，用于地图、下拉框等不分页场景。
+     *
+     * @param reqVO 查询条件
+     * @return 信标站点列表
+     */
+    List<SwmBeaconStationDO> getBeaconStationList(SwmBeaconStationPageReqVO reqVO);
 
 }

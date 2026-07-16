@@ -1,0 +1,357 @@
+[
+  {
+    "page": "慧眼安盾驾驶舱",
+    "route": "/1937484785394728960",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/api/public/swm/monitorDeviceInfo/officeDeviceList",
+      "GET /js/swm/organizationTree/getNodes",
+      "GET /js/swm/swmArea/listAll",
+      "GET /js/swm/swmHelmetSubitem/findByParentId",
+      "GET /js/swm/swmSiteMapManagement/getEnabledMap",
+      "GET /js/swm/swmVoiceTemplate/findStatusZero",
+      "POST /js/swm/personTrack/getMqttPersonPositions",
+      "POST /js/swm/swmDictData/listData"
+    ]
+  },
+  {
+    "page": "异常状态报警记录",
+    "route": "/swm/warning/WarningList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmPerson/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "GET /js/swm/warningManagement/listData"
+    ]
+  },
+  {
+    "page": "报警处置记录",
+    "route": "/swm/warningRecord/WarningRecordList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/handleRecord/listData",
+      "GET /js/swm/swmPerson/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "危险区域闯入提示",
+    "route": "/swm/hazardSource/HazardSourceList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "POST /js/swm/swmHazardSource/listData"
+    ]
+  },
+  {
+    "page": "应急召回",
+    "route": "/swm/oneKeyRecall/oneKeyRecall",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "语音模板管理",
+    "route": "/swm/voiceTemplate/index",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmVoiceTemplate/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "应急呼叫",
+    "route": "/swm/sos/SosList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmPerson/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "GET /js/swm/warningManagement/sosListData"
+    ]
+  },
+  {
+    "page": "隐患列表",
+    "route": "/swm/hiddenDanger/HiddenDangerList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "POST /js/swm/hiddenDanger/listData"
+    ]
+  },
+  {
+    "page": "隐患处置列表",
+    "route": "/swm/dangerDisposal/DangerDisposalList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/dangerDisposal/list",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "巡检计划",
+    "route": "/swm/inspectionPlan/index",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmInspectionPlan/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "巡检任务",
+    "route": "/swm/inspectionList/index",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmInspectionList/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "安全教育",
+    "route": "/swm/safetyEducation/list",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/organizationTree/getNodes",
+      "GET /js/swm/safetyEducation/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "安全教育视频",
+    "route": "/swm/safetyVideos/list",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "POST /js/swm/swmSafetyFileManage/pageList"
+    ]
+  },
+  {
+    "page": "视频培训记录",
+    "route": "/swm/swmSafetyPersonTraining/list",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/organizationTree/getNodes",
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "POST /js/swm/swmSafetyPersonTraining/pageList"
+    ]
+  },
+  {
+    "page": "人员登记",
+    "route": "/swm/personnel/PersonList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/organizationTree/getNodes",
+      "GET /js/swm/swmPerson/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "POST /js/swm/swmDictData/listData"
+    ]
+  },
+  {
+    "page": "人员看板",
+    "route": "/swm/personnelBoard/PersonnelBoardList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/organizationTree/getNodes",
+      "GET /js/swm/personnelBoard/listData",
+      "GET /js/swm/swmSiteMapManagement/getEnabledMap",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "排班管理",
+    "route": "/swm/Attendance/AttendanceList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/organizationTree/getNodes",
+      "GET /js/swm/personSchedule/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "日考勤记录",
+    "route": "/swm/dailyAttendance/index",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/organizationTree/getNodes",
+      "GET /js/swm/swmDailyAttendance/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "周考勤记录",
+    "route": "/swm/weekly/index",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmDailyAttendance/weeklyListData",
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "POST /js/swm/swmDictData/listData"
+    ]
+  },
+  {
+    "page": "月考勤记录",
+    "route": "/swm/monthlyAttendance/index",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmDailyAttendance/monthlyListData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "行动轨迹",
+    "route": "/swm/persontrack/personTrack",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/organizationTree/getNodes",
+      "GET /js/swm/personTrack/getPersonPositions",
+      "GET /js/swm/swmHelmetSubitem/findByParentId",
+      "GET /js/swm/swmSiteMapManagement/getEnabledMap",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "AI日报",
+    "route": "/swm/swmDify/list",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "POST /js/swm/swmDify/pageList"
+    ]
+  },
+  {
+    "page": "安全帽管理",
+    "route": "/swm/helmetdevice/list",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmHelmetDevice/list",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "信标管理",
+    "route": "/swm/beacon/BeaconList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmArea/getAreaOptions",
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "POST /js/swm/swmBeaconStation/listData"
+    ]
+  },
+  {
+    "page": "信标标注",
+    "route": "/swm/beaconMap/beaconBase",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmArea/listAll",
+      "GET /js/swm/swmBeaconStation/listAll",
+      "GET /js/swm/swmSiteMapManagement/getEnabledMap",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "监控设备管理",
+    "route": "/swm/monitoringEquipment/monitoringEquipmentManagement",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/warningManagement/getPopupWarnings",
+      "POST /js/swm/api/public/swm/monitorDeviceInfo/listData"
+    ]
+  },
+  {
+    "page": "报警灯管理",
+    "route": "/swm/alarmLight/index",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/alarmConfig/list",
+      "GET /js/swm/swmAlarmLight/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "颜色配置",
+    "route": "/swm/colorConfig/index",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/swmHelmetSubitem/findByParentId",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "场地底图管理",
+    "route": "/swm/siteMapManagement/index",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/common/options/companies",
+      "GET /js/swm/swmSiteMapManagement/listData",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "预警报警配置",
+    "route": "/swm/alarmConfig/AlarmConfigList",
+    "loaded": true,
+    "endpoints": [
+      "GET /js/swm/alarmConfig/list",
+      "GET /js/swm/warningManagement/getPopupWarnings"
+    ]
+  },
+  {
+    "page": "视频管理",
+    "route": "/swm/videoManagement/index",
+    "loaded": true,
+    "endpoints": []
+  },
+  {
+    "page": "设备上传日志",
+    "route": "/swm/rawMessageLog/index",
+    "loaded": false,
+    "endpoints": []
+  },
+  {
+    "page": "轨迹日志",
+    "route": "/swm/externalCoordinateData/index",
+    "loaded": false,
+    "endpoints": []
+  },
+  {
+    "page": "区域日志",
+    "route": "/swm/areaFenceData/index",
+    "loaded": false,
+    "endpoints": []
+  },
+  {
+    "page": "设备下发日志",
+    "route": "/swm/tcpDeviceCommandLog/index",
+    "loaded": false,
+    "endpoints": []
+  },
+  {
+    "page": "发送算法日志",
+    "route": "/swm/helmetLocation/index",
+    "loaded": false,
+    "endpoints": []
+  },
+  {
+    "page": "车间档案",
+    "route": "/swm/swmWorkshop/list",
+    "loaded": false,
+    "endpoints": []
+  },
+  {
+    "page": "产线档案",
+    "route": "/swm/swmProdLine/list",
+    "loaded": false,
+    "endpoints": []
+  },
+  {
+    "page": "班组档案",
+    "route": "/swm/swmWorkGroup/list",
+    "loaded": false,
+    "endpoints": []
+  },
+  {
+    "page": "字典数据",
+    "route": "/swm/dictData/list",
+    "loaded": false,
+    "endpoints": []
+  }
+]

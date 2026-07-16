@@ -22,3 +22,4 @@ public interface SwmPersonnelBoardMapper extends BaseMapperX<SwmPersonnelBoardDO
                                         @Param("timeType") String timeType,
                                         @Param("timeValue") String timeValue);
 }
+

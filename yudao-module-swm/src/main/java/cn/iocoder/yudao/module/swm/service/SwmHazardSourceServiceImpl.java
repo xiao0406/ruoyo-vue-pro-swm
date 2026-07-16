@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.swm.controller.admin.hazard.vo.SwmHazardSourcePag
 import cn.iocoder.yudao.module.swm.controller.admin.hazard.vo.SwmHazardSourceSaveReqVO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmHazardSourceDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmHazardSourceMapper;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -49,7 +50,14 @@ public class SwmHazardSourceServiceImpl implements SwmHazardSourceService {
 
     @Override
     public PageResult<SwmHazardSourceDO> getHazardSourcePage(SwmHazardSourcePageReqVO pageReqVO) {
-        return hazardSourceMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return hazardSourceMapper.selectPage(pageReqVO,
+                new LambdaQueryWrapperX<SwmHazardSourceDO>()
+                        .likeIfPresent(SwmHazardSourceDO::getHazardName, pageReqVO.getHazardName())
+                        .eqIfPresent(SwmHazardSourceDO::getHazardCategory, pageReqVO.getHazardCategory())
+                        .eqIfPresent(SwmHazardSourceDO::getHazardStatus, pageReqVO.getHazardStatus())
+                        .likeIfPresent(SwmHazardSourceDO::getLocation, pageReqVO.getLocation())
+                        .likeIfPresent(SwmHazardSourceDO::getResponsiblePerson, pageReqVO.getResponsiblePerson())
+                        .orderByDesc(SwmHazardSourceDO::getCreateTime));
     }
 
     private void validateHazardSourceExists(String id) {

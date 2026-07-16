@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHelmetConfigMapper">
 	
-	<!-- 查询数据 -->
+	<!-- 鏌ヨ鏁版嵁 -->
 	<select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetConfigDO">
 		SELECT 
 		FROM 
@@ -12,10 +12,10 @@
 		ORDER BY 
 	</select>
 	
-	<!-- 获取车间数据 -->
+	<!-- 鑾峰彇杞﹂棿鏁版嵁 -->
 	<!-- author: Shawn -->
 	<!-- date: 2025/06/24 -->
-	<!-- description: 查询fms_position_archive表中type='CJ'的车间数据 -->
+	<!-- description: 鏌ヨfms_position_archive琛ㄤ腑type='CJ'鐨勮溅闂存暟鎹?-->
 	<select id="getWorkshopData" resultType="java.util.Map">
 		SELECT 
 			id, 
@@ -27,38 +27,38 @@
 		  AND status = '0'
 	</select>
 	
-	<!-- 获取车间-产线-班组数据 -->
+	<!-- 鑾峰彇杞﹂棿-浜х嚎-鐝粍鏁版嵁 -->
 	<!-- author: Shawn -->
 	<!-- date: 2025/06/24 -->
-	<!-- description: 根据用户要求的SQL查询车间-产线-班组数据，将workshop_name、line_name、work_group_name拼接作为名称 -->
+	<!-- description: 鏍规嵁鐢ㄦ埛瑕佹眰鐨凷QL鏌ヨ杞﹂棿-浜х嚎-鐝粍鏁版嵁锛屽皢workshop_name銆乴ine_name銆亀ork_group_name鎷兼帴浣滀负鍚嶇О -->
 	<select id="getWorkshopLineGroupData" resultType="java.util.Map">
 		SELECT
-		    pa.position_name AS workshop_name, -- 从车间表获取车间名称
-		    pl.prod_line_name AS line_name,     -- 从产线表获取产线名称
-		    wg.work_group_name, -- 获取班组表的所有字段信息
+		    pa.position_name AS workshop_name, -- 浠庤溅闂磋〃鑾峰彇杞﹂棿鍚嶇О
+		    pl.prod_line_name AS line_name,     -- 浠庝骇绾胯〃鑾峰彇浜х嚎鍚嶇О
+		    wg.work_group_name, -- 鑾峰彇鐝粍琛ㄧ殑鎵€鏈夊瓧娈典俊鎭?
 		    wg.id,
-		    CONCAT(pa.position_name, '-', pl.prod_line_name, '-', wg.work_group_name) AS title -- 拼接名称
+		    CONCAT(pa.position_name, '-', pl.prod_line_name, '-', wg.work_group_name) AS title -- 鎷兼帴鍚嶇О
 		FROM
-		    -- 基础表：车间归档表，并设置别名为 pa
+		    -- 鍩虹琛細杞﹂棿褰掓。琛紝骞惰缃埆鍚嶄负 pa
 		    fms_position_archive pa
 		JOIN
-		    -- 连接产线表 (pl)，关联条件是 车间id = 产线中的work_shop_id
+		    -- 杩炴帴浜х嚎琛?(pl)锛屽叧鑱旀潯浠舵槸 杞﹂棿id = 浜х嚎涓殑work_shop_id
 		    fms_prod_line pl ON pa.id = pl.work_shop_id
 		JOIN
-		    -- 连接班组表 (wg)，关联条件是 产线id = 班组中的prod_line_id
+		    -- 杩炴帴鐝粍琛?(wg)锛屽叧鑱旀潯浠舵槸 浜х嚎id = 鐝粍涓殑prod_line_id
 		    fms_work_group wg ON pl.id = wg.prod_line_id
 		WHERE
-		    -- 设置 fms_position_archive 表的筛选条件
-		    -- 您可以根据需要修改这些值
+		    -- 璁剧疆 fms_position_archive 琛ㄧ殑绛涢€夋潯浠?
+		    -- 鎮ㄥ彲浠ユ牴鎹渶瑕佷慨鏀硅繖浜涘€?
 		    pa.type = 'CJ'
 		    AND pa.region = '0001A110000000002ZWA'
 		    AND pa.status = '0'
 	</select>
 	
-	<!-- 获取人员类型字典数据 -->
+	<!-- 鑾峰彇浜哄憳绫诲瀷瀛楀吀鏁版嵁 -->
 	<!-- author: Shawn -->
 	<!-- date: 2025/06/24 -->
-	<!-- description: 获取字典类型为person_type_enum的字典数据，用于"按人员类型展示"的颜色配置 -->
+	<!-- description: 鑾峰彇瀛楀吀绫诲瀷涓簆erson_type_enum鐨勫瓧鍏告暟鎹紝鐢ㄤ簬"鎸変汉鍛樼被鍨嬪睍绀?鐨勯鑹查厤缃?-->
 	<select id="getPersonTypeEnumData" resultType="java.util.Map">
 		SELECT 
 		    dict_value AS id,
@@ -68,10 +68,10 @@
 		  AND status = '0'
 	</select>
 	
-	<!-- 获取工种数据 -->
+	<!-- 鑾峰彇宸ョ鏁版嵁 -->
 	<!-- author: Shawn -->
 	<!-- date: 2025/06/24 -->
-	<!-- description: 获取 swm_work_type 表中的工种数据，用于"按工种展示"的颜色配置 -->
+	<!-- description: 鑾峰彇 swm_work_type 琛ㄤ腑鐨勫伐绉嶆暟鎹紝鐢ㄤ簬"鎸夊伐绉嶅睍绀?鐨勯鑹查厤缃?-->
 	<select id="getWorkTypeEnumData" resultType="java.util.Map">
 		SELECT 
 		    dict_label AS id,

@@ -18,6 +18,21 @@ public class SwmPersonnelBoardPageReqVO extends PageParam {
     @Schema(description = "组织")
     private String organization;
 
+    @Schema(description = "车间")
+    private String workshop;
+
+    @Schema(description = "产线")
+    private String process;
+
+    @Schema(description = "班组")
+    private String team;
+
+    @Schema(description = "Time type")
+    private String timeType;
+
+    @Schema(description = "Time value")
+    private String timeValue;
+
     @Schema(description = "工作状态")
     private String workStatus;
 

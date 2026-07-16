@@ -1,8 +1,11 @@
 package cn.iocoder.yudao.module.swm.dal.dataobject;
+
 import lombok.Data;
+
 @Data
 public class QueryParamDTO {
-    private String corpCode;
+
+    private Long tenantId;
     private String deviceId;
     private String deviceCode;
     private String column;

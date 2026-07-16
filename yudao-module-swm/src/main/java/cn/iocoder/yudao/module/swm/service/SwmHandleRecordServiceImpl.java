@@ -6,6 +6,9 @@ import cn.iocoder.yudao.module.swm.controller.admin.handle_record.vo.SwmHandleRe
 import cn.iocoder.yudao.module.swm.controller.admin.handle_record.vo.SwmHandleRecordSaveReqVO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmHandleRecordDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmHandleRecordMapper;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO;
+import cn.iocoder.yudao.module.swm.dal.mysql.SwmWarningManagementMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,10 +28,21 @@ public class SwmHandleRecordServiceImpl implements SwmHandleRecordService {
     @Resource
     private SwmHandleRecordMapper swmHandleRecordMapper;
 
+    @Resource
+    private SwmWarningManagementMapper swmWarningManagementMapper;
+
     @Override
     public String createHandleRecord(SwmHandleRecordSaveReqVO createReqVO) {
         SwmHandleRecordDO handleRecord = BeanUtils.toBean(createReqVO, SwmHandleRecordDO.class);
+        if (handleRecord.getHandleStatus() == null || handleRecord.getHandleStatus().isBlank()) {
+            handleRecord.setHandleStatus("0");
+        }
+        if ((handleRecord.getWarningRecord() == null || handleRecord.getWarningRecord().isBlank())
+                && handleRecord.getRecordName() != null) {
+            handleRecord.setWarningRecord(handleRecord.getRecordName());
+        }
         swmHandleRecordMapper.insert(handleRecord);
+        syncWarning(handleRecord);
         return handleRecord.getId();
     }
 
@@ -37,6 +51,7 @@ public class SwmHandleRecordServiceImpl implements SwmHandleRecordService {
         validateHandleRecordExists(updateReqVO.getId());
         SwmHandleRecordDO updateObj = BeanUtils.toBean(updateReqVO, SwmHandleRecordDO.class);
         swmHandleRecordMapper.updateById(updateObj);
+        syncWarning(updateObj);
     }
 
     @Override
@@ -52,7 +67,27 @@ public class SwmHandleRecordServiceImpl implements SwmHandleRecordService {
 
     @Override
     public PageResult<SwmHandleRecordDO> getHandleRecordPage(SwmHandleRecordPageReqVO pageReqVO) {
-        return swmHandleRecordMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmHandleRecordMapper.selectPage(pageReqVO,
+                new LambdaQueryWrapperX<SwmHandleRecordDO>()
+                        .likeIfPresent(SwmHandleRecordDO::getRecordName, pageReqVO.getRecordName())
+                        .eqIfPresent(SwmHandleRecordDO::getWarningId, pageReqVO.getWarningId())
+                        .eqIfPresent(SwmHandleRecordDO::getHandleStatus, pageReqVO.getHandleStatus())
+                        .orderByDesc(SwmHandleRecordDO::getCreateTime));
+    }
+
+    /** Keep the warning row consistent with the disposal record, as the JeeSite save flow did. */
+    private void syncWarning(SwmHandleRecordDO handleRecord) {
+        if (handleRecord.getWarningId() == null || handleRecord.getWarningId().isBlank()) {
+            return;
+        }
+        SwmWarningManagementDO warning = new SwmWarningManagementDO();
+        warning.setId(handleRecord.getWarningId());
+        warning.setHandler(handleRecord.getHandler());
+        warning.setHandleTime(handleRecord.getHandleTime());
+        warning.setHandleProcess(handleRecord.getHandleProcess());
+        warning.setHandleStatus(handleRecord.getHandleStatus());
+        warning.setAttachment(handleRecord.getAttachment());
+        swmWarningManagementMapper.updateById(warning);
     }
 
     private void validateHandleRecordExists(String id) {

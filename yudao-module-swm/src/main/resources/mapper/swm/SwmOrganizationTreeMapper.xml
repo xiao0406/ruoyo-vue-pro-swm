@@ -1,81 +1,217 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmOrganizationTreeMapper">
-    
-    <!-- 结果映射 -->
+
     <resultMap id="treeNodeResultMap" type="cn.iocoder.yudao.module.swm.dal.dataobject.TreeNode">
         <id property="id" column="id"/>
         <result property="parentId" column="parent_id"/>
         <result property="title" column="title"/>
         <result property="idCard" column="id_card"/>
+        <result property="personId" column="person_id"/>
     </resultMap>
-    
-    <!-- 获取厂间节点 - 这是组织树的最高级节点 -->
+
+    <!-- SWM business data still stores the company as the legacy office code. -->
+    <sql id="companySource">
+        SELECT CAST(region AS CHAR) COLLATE utf8mb4_general_ci AS company_code
+        FROM fms_position_archive
+        WHERE region IS NOT NULL
+          AND region != ''
+          AND status = '0'
+        UNION ALL
+        SELECT CAST(company AS CHAR) COLLATE utf8mb4_general_ci AS company_code
+        FROM swm_person
+        WHERE company IS NOT NULL
+          AND company != ''
+    </sql>
+
     <select id="getOfficeNodes" resultMap="treeNodeResultMap">
-        SELECT 
-            office_code AS id,
-            '0' AS parent_id, 
-            office_name AS title
-        FROM system_dept
-        WHERE extend_s4 IS NOT NULL 
-        AND zip_code IS NOT NULL 
-        AND status = '0'
+        SELECT
+            t.company_code AS id,
+            '0' AS parent_id,
+            COALESCE(MAX(NULLIF(o.office_name, '')), t.company_code) AS title
+        FROM (
+            <include refid="companySource"/>
+        ) t
+        LEFT JOIN js_sys_office o ON t.company_code = o.office_code COLLATE utf8mb4_general_ci
+            AND o.zip_code IS NOT NULL
+            AND o.status = '0'
+        GROUP BY t.company_code
+        ORDER BY title
     </select>
-    
-    <!-- 获取车间节点 -->
+
     <select id="getWorkshopNodes" resultMap="treeNodeResultMap">
-        SELECT 
+        SELECT
             id,
             #{officeId} AS parent_id,
             position_name AS title
         FROM fms_position_archive
         WHERE type = 'CJ'
-        AND region = #{officeId}
-        AND status = '0'
+          AND region = #{officeId}
+          AND status = '0'
+        ORDER BY position_name
     </select>
-    
-    <!-- 获取产线节点 -->
+
     <select id="getProdLineNodes" resultMap="treeNodeResultMap">
-        SELECT 
+        SELECT
             id,
             work_shop_id AS parent_id,
             prod_line_name AS title
         FROM fms_prod_line
         WHERE work_shop_id = #{workshopId}
+        ORDER BY prod_line_name
     </select>
-    
-    <!-- 获取班组节点 -->
+
     <select id="getWorkGroupNodes" resultMap="treeNodeResultMap">
-        SELECT 
+        SELECT
             id,
             prod_line_id AS parent_id,
             work_group_name AS title
         FROM fms_work_group
         WHERE prod_line_id = #{prodLineId}
+        ORDER BY work_group_name
     </select>
-    
-    <!-- 获取员工节点 -->
+
     <select id="getWorkerNodes" resultMap="treeNodeResultMap">
-        SELECT
+        SELECT DISTINCT
             sp.id,
             #{workGroupId} AS parent_id,
             sp.name AS title,
             sp.identity_card AS id_card,
-            sp.id AS personId
+            sp.id AS person_id
         FROM swm_person sp
         LEFT JOIN fms_worker fw ON sp.identity_card COLLATE utf8mb4_general_ci = fw.identity_code COLLATE utf8mb4_general_ci
         <where>
             (fw.work_group_id = #{workGroupId} OR sp.team = #{workGroupId})
             AND sp.identity_card IS NOT NULL
-            AND sp.status = '0'
-            AND sp.personnel_status = '1'
-            <if test="personTypeList != null and personTypeList.size >0">
+            AND sp.identity_card != ''
+            AND (sp.status IS NULL OR sp.status = '' OR sp.status = '0')
+            AND (sp.personnel_status IS NULL OR sp.personnel_status = '' OR sp.personnel_status = '1')
+            <if test="personTypeList != null and personTypeList.size > 0">
                 AND sp.person_type IN
                 <foreach collection="personTypeList" item="personType" open="(" separator="," close=")">
                     #{personType}
                 </foreach>
             </if>
         </where>
+        ORDER BY sp.name
     </select>
-    
-</mapper> 
+
+    <select id="getCompanyOptions" resultType="java.util.Map">
+        SELECT
+            t.company_code AS value,
+            COALESCE(MAX(NULLIF(o.office_name, '')), t.company_code) AS label
+        FROM (
+            <include refid="companySource"/>
+        ) t
+        LEFT JOIN js_sys_office o ON t.company_code = o.office_code COLLATE utf8mb4_general_ci
+            AND o.zip_code IS NOT NULL
+            AND o.status = '0'
+        GROUP BY t.company_code
+        ORDER BY label
+    </select>
+
+    <select id="getDepartmentOptions" resultType="java.util.Map">
+        SELECT
+            MIN(id) AS value,
+            position_name AS label
+        FROM fms_position_archive
+        WHERE type = 'CJ'
+          AND status = '0'
+        GROUP BY position_name
+        ORDER BY label
+    </select>
+
+    <select id="getProdLineOptions" resultType="java.util.Map">
+        SELECT
+            MIN(id) AS value,
+            prod_line_name AS label
+        FROM fms_prod_line
+        GROUP BY prod_line_name
+        ORDER BY label
+    </select>
+
+    <select id="getWorkGroupOptions" resultType="java.util.Map">
+        SELECT
+            MIN(id) AS value,
+            work_group_name AS label
+        FROM fms_work_group
+        GROUP BY work_group_name
+        ORDER BY label
+    </select>
+
+    <select id="getPersonsByNodeType" resultType="java.util.Map">
+        SELECT DISTINCT
+            sp.id,
+            sp.name,
+            sp.identity_card AS identityCard
+        FROM swm_person sp
+        LEFT JOIN fms_worker fw ON sp.identity_card COLLATE utf8mb4_general_ci = fw.identity_code COLLATE utf8mb4_general_ci
+        <where>
+            sp.identity_card IS NOT NULL
+            AND sp.identity_card != ''
+            AND (sp.status IS NULL OR sp.status = '' OR sp.status = '0')
+            AND (sp.personnel_status IS NULL OR sp.personnel_status = '' OR sp.personnel_status = '1')
+            <choose>
+                <when test="nodeType == 'office'">
+                    AND sp.company = #{id}
+                </when>
+                <when test="nodeType == 'workshop'">
+                    AND sp.department = #{id}
+                </when>
+                <when test="nodeType == 'prodLine'">
+                    AND sp.prod_line = #{id}
+                </when>
+                <when test="nodeType == 'workGroup'">
+                    AND (sp.team = #{id} OR fw.work_group_id = #{id})
+                </when>
+                <otherwise>
+                    AND 1 = 0
+                </otherwise>
+            </choose>
+        </where>
+        ORDER BY sp.name
+    </select>
+
+    <select id="getOrganizationNames" resultType="java.util.Map">
+        SELECT value, MAX(label) AS label
+        FROM (
+            SELECT
+                CAST(o.office_code AS CHAR) COLLATE utf8mb4_general_ci AS value,
+                COALESCE(NULLIF(o.office_name, ''), o.office_code) AS label
+            FROM js_sys_office o
+            WHERE o.office_code IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+            UNION ALL
+            SELECT
+                CAST(p.id AS CHAR) COLLATE utf8mb4_general_ci AS value,
+                p.position_name AS label
+            FROM fms_position_archive p
+            WHERE p.id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+            UNION ALL
+            SELECT
+                CAST(pl.id AS CHAR) COLLATE utf8mb4_general_ci AS value,
+                pl.prod_line_name AS label
+            FROM fms_prod_line pl
+            WHERE pl.id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+            UNION ALL
+            SELECT
+                CAST(wg.id AS CHAR) COLLATE utf8mb4_general_ci AS value,
+                wg.work_group_name AS label
+            FROM fms_work_group wg
+            WHERE wg.id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        ) t
+        GROUP BY value
+    </select>
+
+</mapper>

@@ -6,7 +6,6 @@ import cn.hutool.json.JSONObject;
 import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cn.iocoder.yudao.module.swm.dal.dataobject.SwmOneClickRecallDO;
 import cn.iocoder.yudao.module.iot.dal.dataobject.OneKeyRecallDO;
 import cn.iocoder.yudao.module.iot.mqtt.handler.zhongtai.DeviceSoSAlarmHandler;
 import cn.iocoder.yudao.module.iot.service.OneKeyRecallService;

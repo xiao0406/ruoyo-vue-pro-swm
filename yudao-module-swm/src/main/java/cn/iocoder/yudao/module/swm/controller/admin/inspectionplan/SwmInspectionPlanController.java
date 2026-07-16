@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.swm.controller.admin.inspectionplan.vo.*;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmInspectionPlanDO;
+import cn.iocoder.yudao.module.swm.enums.SwmEnums;
 import cn.iocoder.yudao.module.swm.service.SwmInspectionPlanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,6 +15,8 @@ import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -62,5 +65,19 @@ public class SwmInspectionPlanController {
     @PreAuthorize("@ss.hasPermission('swm:inspection-plan:query')")
     public CommonResult<PageResult<SwmInspectionPlanRespVO>> getPage(@Valid SwmInspectionPlanPageReqVO pageReqVO) {
         return success(BeanUtils.toBean(service.getSwmInspectionPlanPage(pageReqVO), SwmInspectionPlanRespVO.class));
+    }
+
+    @PostMapping("/open")
+    @Operation(summary = "启用巡检计划")
+    @PreAuthorize("@ss.hasPermission('swm:inspection-plan:update')")
+    public CommonResult<Boolean> open(@RequestBody Map<String, String> data) {
+        return success(service.updateStatus(data.get("id"), SwmEnums.PlanStatusEnum.OPEN.getValue()));
+    }
+
+    @PostMapping("/pause")
+    @Operation(summary = "暂停巡检计划")
+    @PreAuthorize("@ss.hasPermission('swm:inspection-plan:update')")
+    public CommonResult<Boolean> pause(@RequestBody Map<String, String> data) {
+        return success(service.updateStatus(data.get("id"), SwmEnums.PlanStatusEnum.PAUSE.getValue()));
     }
 }

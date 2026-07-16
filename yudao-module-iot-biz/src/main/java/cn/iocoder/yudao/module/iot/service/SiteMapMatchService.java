@@ -14,6 +14,9 @@ public interface SiteMapMatchService {
         private String areaName;
         private Double x;
         private Double y;
+        private Double calcPixelX;
+        private Double calcPixelY;
+        private String mapName;
 
         public boolean isMatched() { return matched; }
         public void setMatched(boolean matched) { this.matched = matched; }
@@ -25,10 +28,22 @@ public interface SiteMapMatchService {
         public void setX(Double x) { this.x = x; }
         public Double getY() { return y; }
         public void setY(Double y) { this.y = y; }
+        public Double getCalcPixelX() { return calcPixelX != null ? calcPixelX : x; }
+        public void setCalcPixelX(Double calcPixelX) { this.calcPixelX = calcPixelX; }
+        public Double getCalcPixelY() { return calcPixelY != null ? calcPixelY : y; }
+        public void setCalcPixelY(Double calcPixelY) { this.calcPixelY = calcPixelY; }
+        public String getMapName() { return mapName; }
+        public void setMapName(String mapName) { this.mapName = mapName; }
     }
 
     /**
      * 根据像素坐标匹配站点地图位置
      */
-    MapPixelMatchResult matchPixel(String mapId, Double x, Double y);
+    default MapPixelMatchResult matchPixel(String mapId, Double x, Double y) {
+        return new MapPixelMatchResult();
+    }
+
+    default MapPixelMatchResult matchAndProjectAndLogWithResult(Object messageData) {
+        return new MapPixelMatchResult();
+    }
 }

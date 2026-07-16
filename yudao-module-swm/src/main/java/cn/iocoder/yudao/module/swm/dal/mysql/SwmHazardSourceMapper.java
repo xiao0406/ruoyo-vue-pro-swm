@@ -57,3 +57,4 @@ public interface SwmHazardSourceMapper extends BaseMapperX<SwmHazardSourceDO> {
 
     int countAll();
 }
+

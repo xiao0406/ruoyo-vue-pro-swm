@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmInspectionListMapper">
 
-    <!-- 查询字段 -->
+    <!-- 鏌ヨ瀛楁 -->
     <sql id="swmInspectionListColumns">
         a.id AS "id",
         a.plan_id AS "planId",
@@ -23,13 +23,13 @@
         a.status AS "status"
     </sql>
 
-    <!-- 查询连接表 -->
+    <!-- 鏌ヨ杩炴帴琛?-->
     <sql id="swmInspectionListJoins">
         LEFT JOIN swm_person p ON p.id = a.inspector_id
         LEFT JOIN swm_inspection_plan plan ON plan.id = a.plan_id
     </sql>
 
-    <!-- 根据id查询巡检列表 -->
+    <!-- 鏍规嵁id鏌ヨ宸℃鍒楄〃 -->
     <select id="get" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmInspectionListDO" >
         SELECT
             <include refid="swmInspectionListColumns"/>
@@ -38,7 +38,7 @@
         WHERE a.id = #{id}
     </select>
 
-    <!-- 查询巡检列表 -->
+    <!-- 鏌ヨ宸℃鍒楄〃 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmInspectionListDO" >
         SELECT
             <include refid="swmInspectionListColumns"/>
@@ -98,7 +98,7 @@
         order by a.start_time desc limit #{limit}
     </select>
     
-    <!-- 根据计划ID列表查询巡检记录 -->
+    <!-- 鏍规嵁璁″垝ID鍒楄〃鏌ヨ宸℃璁板綍 -->
     <select id="findByPlanIds" resultType="java.util.HashMap">
         SELECT 
             a.id AS "id",
@@ -106,10 +106,10 @@
             a.plan_name AS "planName",
             a.inspection_type AS "inspectionType",
             (CASE a.inspection_type
-                WHEN '1' THEN '日常巡检'
-                WHEN '2' THEN '专项巡检'
-                WHEN '3' THEN '临时巡检'
-                WHEN '4' THEN '月度巡检'
+                WHEN '1' THEN '鏃ュ父宸℃'
+                WHEN '2' THEN '涓撻」宸℃'
+                WHEN '3' THEN '涓存椂宸℃'
+                WHEN '4' THEN '鏈堝害宸℃'
                 ELSE a.inspection_type
             END) AS "inspectionTypeText",
             a.inspector_id AS "inspectorId",
@@ -119,10 +119,10 @@
             a.end_time AS "endTime",
             a.inspection_list_status AS "inspectionListStatus",
             (CASE a.inspection_list_status
-                WHEN '0' THEN '待处理'
-                WHEN '1' THEN '进行中'
-                WHEN '2' THEN '已完成'
-                WHEN '3' THEN '已取消'
+                WHEN '0' THEN '寰呭鐞?
+                WHEN '1' THEN '杩涜涓?
+                WHEN '2' THEN '宸插畬鎴?
+                WHEN '3' THEN '宸插彇娑?
                 ELSE a.inspection_list_status
             END) AS "inspectionListStatusText",
             a.attachment_path AS "attachmentPath",
@@ -140,7 +140,7 @@
         ORDER BY a.start_time DESC
     </select>
     
-    <!-- 检查指定计划在指定日期是否已有任务（防重复生成） -->
+    <!-- 妫€鏌ユ寚瀹氳鍒掑湪鎸囧畾鏃ユ湡鏄惁宸叉湁浠诲姟锛堥槻閲嶅鐢熸垚锛?-->
     <select id="countByPlanIdAndDate" resultType="int">
         SELECT COUNT(1) 
         FROM swm_inspection_list a
@@ -149,3 +149,4 @@
         AND DATE_FORMAT(a.start_time, '%Y-%m-%d') = #{dateStr}
     </select>
 </mapper>
+

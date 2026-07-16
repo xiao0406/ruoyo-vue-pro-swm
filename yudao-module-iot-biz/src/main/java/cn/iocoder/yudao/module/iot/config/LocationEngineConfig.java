@@ -2,7 +2,7 @@ package cn.iocoder.yudao.module.iot.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.iocoder.yudao.module.iot.cache.DeviceCorpMappingCache;
+import cn.iocoder.yudao.module.iot.cache.DeviceTenantMappingCache;
 import org.apache.commons.lang3.StringUtils;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,7 +49,7 @@ private static final Logger log = LoggerFactory.getLogger(LocationEngineConfig.c
     private int historyQueryTimeout;
 
     @Resource
-    private DeviceCorpMappingCache deviceCorpMappingCache;
+    private DeviceTenantMappingCache deviceTenantMappingCache;
 
     /**
      * 配置初始化和验证

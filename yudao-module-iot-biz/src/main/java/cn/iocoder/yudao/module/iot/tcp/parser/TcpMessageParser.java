@@ -1,6 +1,6 @@
 package cn.iocoder.yudao.module.iot.tcp.parser;
 
-import cn.iocoder.yudao.module.swm.service.cache.DeviceCorpMappingCache;
+import cn.iocoder.yudao.module.iot.cache.DeviceTenantMappingCache;
 import cn.iocoder.yudao.module.iot.tcp.model.TcpMessageData;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public class TcpMessageParser {
 
     private static final String GPS_UTC_PATTERN = "ddMMyy-HHmmss";
     @Resource
-    private DeviceCorpMappingCache deviceCorpMappingCache;
+    private DeviceTenantMappingCache deviceTenantMappingCache;
 
     private static final Logger logger = LoggerFactory.getLogger(TcpMessageParser.class);
 
@@ -340,7 +340,7 @@ public class TcpMessageParser {
         if (deviceId == null){
             return;
         }
-        String dbName = deviceCorpMappingCache.getDbName(deviceId);
+        String dbName = deviceTenantMappingCache.getDbName(deviceId);
         messageData.setDbName(dbName);
         logger.debug("绑定设备库信息: 设备ID={}, 库名={}", deviceId, dbName);
     }

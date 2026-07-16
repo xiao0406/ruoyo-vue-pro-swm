@@ -59,7 +59,12 @@ public class SwmAlarmLightServiceImpl implements SwmAlarmLightService {
 
     @Override
     public PageResult<SwmAlarmLightDO> getAlarmLightPage(SwmAlarmLightPageReqVO pageReqVO) {
-        return swmAlarmLightMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmAlarmLightMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmAlarmLightDO>()
+                        .likeIfPresent(SwmAlarmLightDO::getLightName, pageReqVO.getLightName())
+                        .likeIfPresent(SwmAlarmLightDO::getSnCode, pageReqVO.getSnCode())
+                        .eqIfPresent(SwmAlarmLightDO::getEnableAlarm, pageReqVO.getEnableAlarm())
+                        .orderByDesc(SwmAlarmLightDO::getCreateTime));
     }
 
     private void validateAlarmLightExists(String id) {

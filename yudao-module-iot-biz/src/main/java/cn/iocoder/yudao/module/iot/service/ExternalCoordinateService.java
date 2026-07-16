@@ -1,15 +1,22 @@
 package cn.iocoder.yudao.module.iot.service;
 
+import cn.iocoder.yudao.module.iot.dal.dataobject.IotCoordinateRequestDO;
+import cn.iocoder.yudao.module.iot.util.R;
+
+import java.util.Map;
+
 /**
- * 外部坐标服务接口
+ * External coordinate service boundary.
  */
 public interface ExternalCoordinateService {
 
     /**
-     * 获取外部坐标数据
-     *
-     * @param args 参数
-     * @return 坐标结果
+     * Resolve external coordinate data.
      */
     Object getExternalCoordinate(Object... args);
+
+    /**
+     * Persist or expose coordinate request data through the migrated RuoYi boundary.
+     */
+    R<Map<String, Object>> saveCoordinateData(IotCoordinateRequestDO coordinateRequest);
 }

@@ -35,7 +35,7 @@ public interface SwmHelmetDeviceMapper extends BaseMapperX<SwmHelmetDeviceDO> {
                                                              @Param("assignedPerson") String assignedPerson,
                                                              @Param("personName") String personName);
 
-    List<SwmHelmetDeviceDO> findDeviceCorpMapping(@Param("corpCode") String corpCode,
+    List<SwmHelmetDeviceDO> findDeviceTenantMapping(@Param("tenantId") Long tenantId,
                                                     @Param("random") Integer random);
 
     List<SwmHelmetDeviceDO> findListInit(@Param("random") Integer random);
@@ -54,3 +54,4 @@ public interface SwmHelmetDeviceMapper extends BaseMapperX<SwmHelmetDeviceDO> {
                       @Param("powerOnStatus") String powerOnStatus,
                       @Param("deviceOnlist") List<String> deviceOnlist);
 }
+

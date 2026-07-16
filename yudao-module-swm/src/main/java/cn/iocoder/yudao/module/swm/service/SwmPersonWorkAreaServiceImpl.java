@@ -60,7 +60,12 @@ public class SwmPersonWorkAreaServiceImpl implements SwmPersonWorkAreaService {
 
     @Override
     public PageResult<SwmPersonWorkAreaDO> getPersonWorkAreaPage(SwmPersonWorkAreaPageReqVO pageReqVO) {
-        return swmPersonWorkAreaMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmPersonWorkAreaMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmPersonWorkAreaDO>()
+                        .likeIfPresent(SwmPersonWorkAreaDO::getIdentityCard, pageReqVO.getIdentityCard())
+                        .likeIfPresent(SwmPersonWorkAreaDO::getPersonName, pageReqVO.getPersonName())
+                        .eqIfPresent(SwmPersonWorkAreaDO::getAreaId, pageReqVO.getAreaId())
+                        .orderByDesc(SwmPersonWorkAreaDO::getCreateTime));
     }
 
     @Override

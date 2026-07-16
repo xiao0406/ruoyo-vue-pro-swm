@@ -59,7 +59,12 @@ public class SwmAlarmConfigServiceImpl implements SwmAlarmConfigService {
 
     @Override
     public PageResult<SwmAlarmConfigDO> getAlarmConfigPage(SwmAlarmConfigPageReqVO pageReqVO) {
-        return swmAlarmConfigMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmAlarmConfigMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmAlarmConfigDO>()
+                        .likeIfPresent(SwmAlarmConfigDO::getAlarmName, pageReqVO.getAlarmName())
+                        .likeIfPresent(SwmAlarmConfigDO::getAlarmKey, pageReqVO.getAlarmKey())
+                        .eqIfPresent(SwmAlarmConfigDO::getEnableAlarm, pageReqVO.getEnableAlarm())
+                        .orderByDesc(SwmAlarmConfigDO::getCreateTime));
     }
 
     private void validateAlarmConfigExists(String id) {

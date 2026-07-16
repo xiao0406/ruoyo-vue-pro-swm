@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmSafetyEducationMapper">
     
-    <!-- 查询数据 -->
+    <!-- 鏌ヨ鏁版嵁 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmSafetyEducationDO">
         SELECT 
         FROM 
@@ -12,7 +12,7 @@
         ORDER BY 
     </select>
     
-    <!-- 查询所有记录，不带默认的状态过滤 -->
+    <!-- 鏌ヨ鎵€鏈夎褰曪紝涓嶅甫榛樿鐨勭姸鎬佽繃婊?-->
     <select id="findAllWithoutStatusFilter" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmSafetyEducationDO">
         SELECT 
             a.`id` AS "id", 
@@ -35,7 +35,7 @@
             a.update_time DESC
     </select>
     
-    <!-- 根据自定义条件查询安全教育记录 -->
+    <!-- 鏍规嵁鑷畾涔夋潯浠舵煡璇㈠畨鍏ㄦ暀鑲茶褰?-->
     <select id="findByCustomConditions" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmSafetyEducationDO">
         SELECT 
             a.`id` AS "id", 
@@ -56,22 +56,22 @@
         <where>
             a.`status` = 0
             
-            <!-- 主题模糊查询 -->
+            <!-- 涓婚妯＄硦鏌ヨ -->
             <if test="theme != null and theme != ''">
                 AND a.`theme` LIKE CONCAT('%', #{theme}, '%')
             </if>
             
-            <!-- 安全教育类型精确匹配 -->
+            <!-- 瀹夊叏鏁欒偛绫诲瀷绮剧‘鍖归厤 -->
             <if test="safetyEducationType != null and safetyEducationType != ''">
                 AND a.`safety_education_type` = #{safetyEducationType}
             </if>
             
-            <!-- 参与类型精确匹配 -->
+            <!-- 鍙備笌绫诲瀷绮剧‘鍖归厤 -->
             <if test="participationType != null and participationType != ''">
                 AND a.`participation_type` = #{participationType}
             </if>
             
-            <!-- 状态精确匹配 -->
+            <!-- 鐘舵€佺簿纭尮閰?-->
             <if test="safetyStatus != null and safetyStatus != ''">
                 AND a.`safety_status` = #{safetyStatus}
             </if>
@@ -80,7 +80,7 @@
             a.update_time DESC
     </select>
 
-    <!-- 根据身份证号查询该人员参与的所有安全教育记录 -->
+    <!-- 鏍规嵁韬唤璇佸彿鏌ヨ璇ヤ汉鍛樺弬涓庣殑鎵€鏈夊畨鍏ㄦ暀鑲茶褰?-->
     <select id="findByIdentityCard" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmSafetyEducationDO">
         SELECT
             a.`id` AS "id",
@@ -101,12 +101,12 @@
         WHERE
             a.`status` = 0
             AND EXISTS (
-                <!-- 通过子查询找到该身份证对应的所有人员ID -->
+                <!-- 閫氳繃瀛愭煡璇㈡壘鍒拌韬唤璇佸搴旂殑鎵€鏈変汉鍛業D -->
                 SELECT 1 FROM `swm_person` p
                 WHERE p.`identity_card` = #{identityCard}
                 AND p.`status` = '0'
                 AND (
-                    <!-- 方式1: 检查JSON格式并使用JSON_CONTAINS查找人员ID -->
+                    <!-- 鏂瑰紡1: 妫€鏌SON鏍煎紡骞朵娇鐢↗SON_CONTAINS鏌ユ壘浜哄憳ID -->
                     (
                         a.`participants` IS NOT NULL
                         AND a.`participants` != ''
@@ -114,14 +114,14 @@
                         AND JSON_CONTAINS(a.`participants`, JSON_QUOTE(p.`id`))
                     )
                     OR
-                    <!-- 方式2: 逗号分隔格式查找 -->
+                    <!-- 鏂瑰紡2: 閫楀彿鍒嗛殧鏍煎紡鏌ユ壘 -->
                     (
                         a.`participants` IS NOT NULL
                         AND a.`participants` != ''
                         AND FIND_IN_SET(p.`id`, a.`participants`) > 0
                     )
                     OR
-                    <!-- 方式3: 直接包含查找（兼容其他格式） -->
+                    <!-- 鏂瑰紡3: 鐩存帴鍖呭惈鏌ユ壘锛堝吋瀹瑰叾浠栨牸寮忥級 -->
                     (
                         a.`participants` IS NOT NULL
                         AND a.`participants` != ''

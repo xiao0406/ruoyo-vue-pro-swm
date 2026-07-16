@@ -36,6 +36,10 @@ public class SwmPersonnelBoardDO extends SwmBaseDO {
     private Integer attendanceCount;
     private BigDecimal workingHours;
     private BigDecimal idleHours;
+    /**
+     * 当前 swm_personnel_board 表没有 id_card 字段，保留该属性仅用于接口兼容。
+     */
+    @TableField(exist = false)
     private String idCard;
 
     // ===== 非数据库字段 =====

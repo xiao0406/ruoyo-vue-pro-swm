@@ -7,6 +7,9 @@ import cn.iocoder.yudao.module.swm.controller.admin.personnelboard.vo.SwmPersonn
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonnelBoardDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmPersonnelBoardMapper;
 import jakarta.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -59,7 +62,38 @@ public class SwmPersonnelBoardServiceImpl implements SwmPersonnelBoardService {
 
     @Override
     public PageResult<SwmPersonnelBoardDO> getPersonnelBoardPage(SwmPersonnelBoardPageReqVO pageReqVO) {
-        return swmPersonnelBoardMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        List<SwmPersonnelBoardDO> allList = swmPersonnelBoardMapper.findList(
+                pageReqVO.getName(),
+                pageReqVO.getOrganization(),
+                pageReqVO.getWorkshop(),
+                pageReqVO.getProcess(),
+                pageReqVO.getTeam(),
+                null,
+                pageReqVO.getPersonnelStatus(),
+                pageReqVO.getTimeType(),
+                pageReqVO.getTimeValue());
+        List<SwmPersonnelBoardDO> filteredList = filterByWorkStatus(allList, pageReqVO.getWorkStatus());
+        return buildPageResult(filteredList, pageReqVO.getPageNo(), pageReqVO.getPageSize());
+    }
+
+    private List<SwmPersonnelBoardDO> filterByWorkStatus(List<SwmPersonnelBoardDO> list, String workStatus) {
+        if (workStatus == null || workStatus.isBlank() || list == null || list.isEmpty()) {
+            return list;
+        }
+        return list.stream()
+                .filter(item -> workStatus.equals(item.getWorkStatus()))
+                .collect(Collectors.toList());
+    }
+
+    private PageResult<SwmPersonnelBoardDO> buildPageResult(List<SwmPersonnelBoardDO> list, Integer pageNo, Integer pageSize) {
+        if (list == null || list.isEmpty()) {
+            return PageResult.empty();
+        }
+        int currentPageNo = pageNo == null || pageNo < 1 ? 1 : pageNo;
+        int currentPageSize = pageSize == null || pageSize < 1 ? 20 : pageSize;
+        int fromIndex = Math.min((currentPageNo - 1) * currentPageSize, list.size());
+        int toIndex = Math.min(fromIndex + currentPageSize, list.size());
+        return new PageResult<>(new ArrayList<>(list.subList(fromIndex, toIndex)), (long) list.size());
     }
 
     private void validatePersonnelBoardExists(String id) {

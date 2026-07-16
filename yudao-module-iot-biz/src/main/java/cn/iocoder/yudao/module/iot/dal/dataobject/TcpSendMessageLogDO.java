@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.iot.dal.dataobject;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import cn.iocoder.yudao.module.swm.dal.dataobject.SwmBaseDO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -14,7 +13,7 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @TableName("iot_tcp_send_message_log")
-public class TcpSendMessageLogDO extends SwmBaseDO {
+public class TcpSendMessageLogDO extends IotBaseDO {
     private String deviceId;
     private String sendMessage;
     /** 发送状态（枚举 IotEnums.TcpSendStatusEnum） */

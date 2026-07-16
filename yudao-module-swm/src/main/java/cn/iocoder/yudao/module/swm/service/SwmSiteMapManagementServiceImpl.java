@@ -59,7 +59,13 @@ public class SwmSiteMapManagementServiceImpl implements SwmSiteMapManagementServ
 
     @Override
     public PageResult<SwmSiteMapManagementDO> getSiteMapManagementPage(SwmSiteMapManagementPageReqVO pageReqVO) {
-        return swmSiteMapManagementMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmSiteMapManagementMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmSiteMapManagementDO>()
+                        .likeIfPresent(SwmSiteMapManagementDO::getMapName, pageReqVO.getMapName())
+                        .eqIfPresent(SwmSiteMapManagementDO::getProjectId, pageReqVO.getProjectId())
+                        .eqIfPresent(SwmSiteMapManagementDO::getMapType, pageReqVO.getMapType())
+                        .eqIfPresent(SwmSiteMapManagementDO::getParentId, pageReqVO.getParentId())
+                        .orderByDesc(SwmSiteMapManagementDO::getCreateTime));
     }
 
     private void validateSiteMapManagementExists(String id) {

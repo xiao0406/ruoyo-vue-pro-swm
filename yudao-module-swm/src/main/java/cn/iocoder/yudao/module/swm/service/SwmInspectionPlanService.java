@@ -18,4 +18,6 @@ public interface SwmInspectionPlanService {
      * 根据条件查询巡检计划列表
      */
     List<SwmInspectionPlanDO> findList(SwmInspectionPlanDO queryPlan);
+
+    boolean updateStatus(String id, String status);
 }

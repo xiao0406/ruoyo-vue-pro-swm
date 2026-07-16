@@ -59,7 +59,15 @@ public class SwmMonitorDeviceInfoServiceImpl implements SwmMonitorDeviceInfoServ
 
     @Override
     public PageResult<SwmMonitorDeviceInfoDO> getMonitorDeviceInfoPage(SwmMonitorDeviceInfoPageReqVO pageReqVO) {
-        return swmMonitorDeviceInfoMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmMonitorDeviceInfoMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmMonitorDeviceInfoDO>()
+                        .eqIfPresent(SwmMonitorDeviceInfoDO::getRecType, pageReqVO.getRecType())
+                        .eqIfPresent(SwmMonitorDeviceInfoDO::getParentId, pageReqVO.getParentId())
+                        .likeIfPresent(SwmMonitorDeviceInfoDO::getName, pageReqVO.getName())
+                        .likeIfPresent(SwmMonitorDeviceInfoDO::getCode, pageReqVO.getCode())
+                        .eqIfPresent(SwmMonitorDeviceInfoDO::getDeviceType, pageReqVO.getDeviceType())
+                        .likeIfPresent(SwmMonitorDeviceInfoDO::getIp, pageReqVO.getIp())
+                        .orderByDesc(SwmMonitorDeviceInfoDO::getCreateTime));
     }
 
     private void validateMonitorDeviceInfoExists(String id) {

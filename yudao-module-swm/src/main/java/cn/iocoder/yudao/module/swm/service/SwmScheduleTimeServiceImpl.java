@@ -60,7 +60,11 @@ public class SwmScheduleTimeServiceImpl implements SwmScheduleTimeService {
 
     @Override
     public PageResult<SwmScheduleTimeDO> getScheduleTimePage(SwmScheduleTimePageReqVO pageReqVO) {
-        return swmScheduleTimeMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmScheduleTimeMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmScheduleTimeDO>()
+                        .eqIfPresent(SwmScheduleTimeDO::getShiftType, pageReqVO.getShiftType())
+                        .eqIfPresent(SwmScheduleTimeDO::getRestDays, pageReqVO.getRestDays())
+                        .orderByDesc(SwmScheduleTimeDO::getCreateTime));
     }
 
     @Override

@@ -20,3 +20,4 @@ public interface SwmAlarmLightMapper extends BaseMapperX<SwmAlarmLightDO> {
 
     List<SwmAlarmLightDO> findAllList(@Param("STATUS_NORMAL") String STATUS_NORMAL);
 }
+

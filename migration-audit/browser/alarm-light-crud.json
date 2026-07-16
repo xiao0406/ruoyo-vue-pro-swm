@@ -1,0 +1,154 @@
+{
+  "success": true,
+  "marker": "CODEX验收报警灯_1784162932759",
+  "created": {
+    "code": 0,
+    "msg": "",
+    "data": "2077556078610903042"
+  },
+  "events": [
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "postData": null
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":{\"total\":5,\"list\":[{\"id\":\"2077554864989040641\",\"lightName\":\"CODEX验收报警灯_1784162643252_已编辑\",\"snCode\":\"DEX1784162653250\",\"enableAlarm\":\"1\",\"createTime\":1784162654000,\"updateTime\":1784162656000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077554168113819649\",\"lightName\":\"CODEX验收报警灯_1784162476660_已编辑\",\"snCode\":\"DEX1784162487086\",\"enableAlarm\":\"1\",\"createTime\":1784162487000,\"updateTime\":1784162490000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077553337696153602\",\"lightName\":\"CODEX验收报警灯_1784162272336_已编辑\",\"snCode\":\"DEX1784162289041\",\"enableAlarm\":\"1\",\"createTime\":1784162289000,\"updateTime\":1784162292000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"1946523248614334464\",\"lightName\":\"办公室报警灯\",\"snCode\":\"8673390756931540\",\"enableAlarm\":\"1\",\"createTime\":1752922282000,\"updateTime\":1752922282000,\"creator\":\"ZJGG_adminZJGG\",\"updater\":\"ZJGG_adminZJGG\",\"status\":\"0\",\"remarks\":\"\"},{\"id\":\"2012045370385334272\",\"lightName\":\"展示板预警灯\",\"snCode\":\"8673390759655860\",\"enableAlarm\":\"1\",\"createTime\":null,\"updateTime\":null,\"creator\":null,\"updater\":null,\"status\":\"0\",\"remarks\":\"\"}]}}"
+    },
+    {
+      "method": "POST",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/create",
+      "postData": "{\"lightName\":\"CODEX验收报警灯_1784162932759\",\"snCode\":\"DEX1784162942622\",\"enableAlarm\":\"1\",\"remarks\":\"Codex 浏览器 CRUD 验收数据，可删除\"}"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "postData": null
+    },
+    {
+      "method": "POST",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/create",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":\"2077556078610903042\"}"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":{\"total\":6,\"list\":[{\"id\":\"2077556078610903042\",\"lightName\":\"CODEX验收报警灯_1784162932759\",\"snCode\":\"DEX1784162942622\",\"enableAlarm\":\"1\",\"createTime\":1784162943000,\"updateTime\":1784162943000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077554864989040641\",\"lightName\":\"CODEX验收报警灯_1784162643252_已编辑\",\"snCode\":\"DEX1784162653250\",\"enableAlarm\":\"1\",\"createTime\":1784162654000,\"updateTime\":1784162656000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077554168113819649\",\"lightName\":\"CODEX验收报警灯_1784162476660_已编辑\",\"snCode\":\"DEX1784162487086\",\"enableAlarm\":\"1\",\"createTime\":1784162487000,\"updateTime\":1784162490000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077553337696153602\",\"lightName\":\"CODEX验收报警灯_1784162272336_已编辑\",\"snCode\":\"DEX1784162289041\",\"enableAlarm\":\"1\",\"createTime\":1784162289000,\"updateTime\":1784162292000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"1946523248614334464\",\"lightName\":\"办公室报警灯\",\"snCode\":\"8673390756931540\",\"enableAlarm\":\"1\",\"createTime\":1752922282000,\"updateTime\":1752922282000,\"creator\":\"ZJGG_adminZJGG\",\"updater\":\"ZJGG_adminZJGG\",\"status\":\"0\",\"remarks\":\"\"},{\"id\":\"2012045370385334272\",\"lightName\":\"展示板预警灯\",\"snCode\":\"8673390759655860\",\"enableAlarm\":\"1\",\"createTime\":null,\"updateTime\":null,\"creator\":null,\"updater\":null,\"status\":\"0\",\"remarks\":\"\"}]}}"
+    },
+    {
+      "method": "PUT",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/update",
+      "postData": "{\"lightName\":\"CODEX验收报警灯_1784162932759_已编辑\",\"snCode\":\"DEX1784162942622\",\"enableAlarm\":\"1\",\"remarks\":null,\"id\":\"2077556078610903042\",\"createTime\":1784162943000,\"updateTime\":1784162943000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\"}"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "postData": null
+    },
+    {
+      "method": "PUT",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/update",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":true}"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":{\"total\":6,\"list\":[{\"id\":\"2077556078610903042\",\"lightName\":\"CODEX验收报警灯_1784162932759_已编辑\",\"snCode\":\"DEX1784162942622\",\"enableAlarm\":\"1\",\"createTime\":1784162943000,\"updateTime\":1784162946000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077554864989040641\",\"lightName\":\"CODEX验收报警灯_1784162643252_已编辑\",\"snCode\":\"DEX1784162653250\",\"enableAlarm\":\"1\",\"createTime\":1784162654000,\"updateTime\":1784162656000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077554168113819649\",\"lightName\":\"CODEX验收报警灯_1784162476660_已编辑\",\"snCode\":\"DEX1784162487086\",\"enableAlarm\":\"1\",\"createTime\":1784162487000,\"updateTime\":1784162490000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077553337696153602\",\"lightName\":\"CODEX验收报警灯_1784162272336_已编辑\",\"snCode\":\"DEX1784162289041\",\"enableAlarm\":\"1\",\"createTime\":1784162289000,\"updateTime\":1784162292000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"1946523248614334464\",\"lightName\":\"办公室报警灯\",\"snCode\":\"8673390756931540\",\"enableAlarm\":\"1\",\"createTime\":1752922282000,\"updateTime\":1752922282000,\"creator\":\"ZJGG_adminZJGG\",\"updater\":\"ZJGG_adminZJGG\",\"status\":\"0\",\"remarks\":\"\"},{\"id\":\"2012045370385334272\",\"lightName\":\"展示板预警灯\",\"snCode\":\"8673390759655860\",\"enableAlarm\":\"1\",\"createTime\":null,\"updateTime\":null,\"creator\":null,\"updater\":null,\"status\":\"0\",\"remarks\":\"\"}]}}"
+    },
+    {
+      "method": "DELETE",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/delete?id=2077556078610903042",
+      "postData": null
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "postData": null
+    },
+    {
+      "method": "DELETE",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/delete?id=2077556078610903042",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":true}"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":{\"total\":5,\"list\":[{\"id\":\"2077554864989040641\",\"lightName\":\"CODEX验收报警灯_1784162643252_已编辑\",\"snCode\":\"DEX1784162653250\",\"enableAlarm\":\"1\",\"createTime\":1784162654000,\"updateTime\":1784162656000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077554168113819649\",\"lightName\":\"CODEX验收报警灯_1784162476660_已编辑\",\"snCode\":\"DEX1784162487086\",\"enableAlarm\":\"1\",\"createTime\":1784162487000,\"updateTime\":1784162490000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077553337696153602\",\"lightName\":\"CODEX验收报警灯_1784162272336_已编辑\",\"snCode\":\"DEX1784162289041\",\"enableAlarm\":\"1\",\"createTime\":1784162289000,\"updateTime\":1784162292000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"1946523248614334464\",\"lightName\":\"办公室报警灯\",\"snCode\":\"8673390756931540\",\"enableAlarm\":\"1\",\"createTime\":1752922282000,\"updateTime\":1752922282000,\"creator\":\"ZJGG_adminZJGG\",\"updater\":\"ZJGG_adminZJGG\",\"status\":\"0\",\"remarks\":\"\"},{\"id\":\"2012045370385334272\",\"lightName\":\"展示板预警灯\",\"snCode\":\"8673390759655860\",\"enableAlarm\":\"1\",\"createTime\":null,\"updateTime\":null,\"creator\":null,\"updater\":null,\"status\":\"0\",\"remarks\":\"\"}]}}"
+    },
+    {
+      "method": "DELETE",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/delete?id=2077554864989040641",
+      "postData": null
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "postData": null
+    },
+    {
+      "method": "DELETE",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/delete?id=2077554864989040641",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":true}"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":{\"total\":4,\"list\":[{\"id\":\"2077554168113819649\",\"lightName\":\"CODEX验收报警灯_1784162476660_已编辑\",\"snCode\":\"DEX1784162487086\",\"enableAlarm\":\"1\",\"createTime\":1784162487000,\"updateTime\":1784162490000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"2077553337696153602\",\"lightName\":\"CODEX验收报警灯_1784162272336_已编辑\",\"snCode\":\"DEX1784162289041\",\"enableAlarm\":\"1\",\"createTime\":1784162289000,\"updateTime\":1784162292000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"1946523248614334464\",\"lightName\":\"办公室报警灯\",\"snCode\":\"8673390756931540\",\"enableAlarm\":\"1\",\"createTime\":1752922282000,\"updateTime\":1752922282000,\"creator\":\"ZJGG_adminZJGG\",\"updater\":\"ZJGG_adminZJGG\",\"status\":\"0\",\"remarks\":\"\"},{\"id\":\"2012045370385334272\",\"lightName\":\"展示板预警灯\",\"snCode\":\"8673390759655860\",\"enableAlarm\":\"1\",\"createTime\":null,\"updateTime\":null,\"creator\":null,\"updater\":null,\"status\":\"0\",\"remarks\":\"\"}]}}"
+    },
+    {
+      "method": "DELETE",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/delete?id=2077554168113819649",
+      "postData": null
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "postData": null
+    },
+    {
+      "method": "DELETE",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/delete?id=2077554168113819649",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":true}"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":{\"total\":3,\"list\":[{\"id\":\"2077553337696153602\",\"lightName\":\"CODEX验收报警灯_1784162272336_已编辑\",\"snCode\":\"DEX1784162289041\",\"enableAlarm\":\"1\",\"createTime\":1784162289000,\"updateTime\":1784162292000,\"creator\":\"1\",\"updater\":\"1\",\"status\":\"0\",\"remarks\":null},{\"id\":\"1946523248614334464\",\"lightName\":\"办公室报警灯\",\"snCode\":\"8673390756931540\",\"enableAlarm\":\"1\",\"createTime\":1752922282000,\"updateTime\":1752922282000,\"creator\":\"ZJGG_adminZJGG\",\"updater\":\"ZJGG_adminZJGG\",\"status\":\"0\",\"remarks\":\"\"},{\"id\":\"2012045370385334272\",\"lightName\":\"展示板预警灯\",\"snCode\":\"8673390759655860\",\"enableAlarm\":\"1\",\"createTime\":null,\"updateTime\":null,\"creator\":null,\"updater\":null,\"status\":\"0\",\"remarks\":\"\"}]}}"
+    },
+    {
+      "method": "DELETE",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/delete?id=2077553337696153602",
+      "postData": null
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "postData": null
+    },
+    {
+      "method": "DELETE",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/delete?id=2077553337696153602",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":true}"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8990/admin-api/swm/alarm-light/page?pageNo=1&pageSize=20",
+      "status": 200,
+      "body": "{\"code\":0,\"msg\":\"\",\"data\":{\"total\":2,\"list\":[{\"id\":\"1946523248614334464\",\"lightName\":\"办公室报警灯\",\"snCode\":\"8673390756931540\",\"enableAlarm\":\"1\",\"createTime\":1752922282000,\"updateTime\":1752922282000,\"creator\":\"ZJGG_adminZJGG\",\"updater\":\"ZJGG_adminZJGG\",\"status\":\"0\",\"remarks\":\"\"},{\"id\":\"2012045370385334272\",\"lightName\":\"展示板预警灯\",\"snCode\":\"8673390759655860\",\"enableAlarm\":\"1\",\"createTime\":null,\"updateTime\":null,\"creator\":null,\"updater\":null,\"status\":\"0\",\"remarks\":\"\"}]}}"
+    }
+  ]
+}

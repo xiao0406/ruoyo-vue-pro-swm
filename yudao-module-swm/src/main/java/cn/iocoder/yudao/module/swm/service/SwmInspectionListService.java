@@ -26,4 +26,8 @@ public interface SwmInspectionListService {
      * 获取指定计划的最后一次巡检任务（按创建时间倒序）
      */
     SwmInspectionListDO getLastTaskByPlanId(String planId);
+
+    SwmInspectionListDO startTask(String id);
+
+    SwmInspectionListDO completeTask(SwmInspectionListSaveReqVO reqVO);
 }

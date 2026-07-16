@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.swm.service;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.swm.controller.admin.worktype.vo.SwmWorkTypePageReqVO;
 import cn.iocoder.yudao.module.swm.controller.admin.worktype.vo.SwmWorkTypeSaveReqVO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmWorkTypeDO;
@@ -10,6 +11,8 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.swm.enums.ErrorCodeConstants.WORK_TYPE_NOT_EXISTS;
@@ -59,7 +62,17 @@ public class SwmWorkTypeServiceImpl implements SwmWorkTypeService {
 
     @Override
     public PageResult<SwmWorkTypeDO> getWorkTypePage(SwmWorkTypePageReqVO pageReqVO) {
-        return swmWorkTypeMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmWorkTypeMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmWorkTypeDO>()
+                        .likeIfPresent(SwmWorkTypeDO::getWorkType, pageReqVO.getWorkType())
+                        .likeIfPresent(SwmWorkTypeDO::getWorkTypeCode, pageReqVO.getWorkTypeCode())
+                        .orderByDesc(SwmWorkTypeDO::getCreateTime));
+    }
+
+    @Override
+    public List<SwmWorkTypeDO> getActiveWorkTypes() {
+        return swmWorkTypeMapper.selectList(new LambdaQueryWrapperX<SwmWorkTypeDO>()
+                .orderByAsc(SwmWorkTypeDO::getWorkType));
     }
 
     private void validateWorkTypeExists(String id) {

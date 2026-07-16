@@ -25,3 +25,4 @@ public interface SwmOneClickRecallMapper extends BaseMapperX<SwmOneClickRecallDO
 
     List<Map<String, Object>> findAllTargetPersonnelForBroadcastByPersonType(@Param("personTypeList") List<String> personTypeList);
 }
+

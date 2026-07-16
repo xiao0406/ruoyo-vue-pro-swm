@@ -21,3 +21,4 @@ public interface SwmSafetyEducationMapper extends BaseMapperX<SwmSafetyEducation
 
     List<SwmSafetyEducationDO> findByIdentityCard(@Param("identityCard") String identityCard);
 }
+

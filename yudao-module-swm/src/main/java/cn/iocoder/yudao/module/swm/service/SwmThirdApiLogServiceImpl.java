@@ -34,7 +34,13 @@ public class SwmThirdApiLogServiceImpl implements SwmThirdApiLogService {
 
     @Override
     public PageResult<SwmThirdApiLogDO> getThirdApiLogPage(SwmThirdApiLogPageReqVO pageReqVO) {
-        return swmThirdApiLogMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmThirdApiLogMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmThirdApiLogDO>()
+                        .eqIfPresent(SwmThirdApiLogDO::getBusinessType, pageReqVO.getBusinessType())
+                        .likeIfPresent(SwmThirdApiLogDO::getRequestUrl, pageReqVO.getRequestUrl())
+                        .eqIfPresent(SwmThirdApiLogDO::getHttpMethod, pageReqVO.getHttpMethod())
+                        .eqIfPresent(SwmThirdApiLogDO::getExecuteStatus, pageReqVO.getExecuteStatus())
+                        .orderByDesc(SwmThirdApiLogDO::getRequestTime));
     }
 
     @Override

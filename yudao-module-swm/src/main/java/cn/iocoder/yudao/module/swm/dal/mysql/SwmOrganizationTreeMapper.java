@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface SwmOrganizationTreeMapper {
@@ -19,4 +20,18 @@ public interface SwmOrganizationTreeMapper {
 
     List<TreeNode> getWorkerNodes(@Param("workGroupId") String workGroupId,
                                    @Param("personTypeList") List<String> personTypeList);
+
+    List<Map<String, Object>> getCompanyOptions();
+
+    List<Map<String, Object>> getDepartmentOptions();
+
+    List<Map<String, Object>> getProdLineOptions();
+
+    List<Map<String, Object>> getWorkGroupOptions();
+
+    List<Map<String, Object>> getPersonsByNodeType(@Param("nodeType") String nodeType,
+                                                   @Param("id") String id);
+
+    List<Map<String, Object>> getOrganizationNames(@Param("ids") List<String> ids);
 }
+

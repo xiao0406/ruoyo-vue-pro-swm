@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmSafetyPersonTrainingMapper">
 	<update id="appUpdate">
@@ -6,7 +6,7 @@
 		<set>
 			<if test="progress != null and progress != ''">progress=#{progress},</if>
 			<if test="completeDate != null ">complete_date=#{completeDate},</if>
-			<if test="completeStatus != null and jobType != ''">complete_status=#{completeStatus},</if>
+			<if test="completeStatus != null and completeStatus != ''">complete_status=#{completeStatus},</if>
 			update_date=now()
 		</set>
 		WHERE id = #{id}
@@ -31,9 +31,10 @@
 		LEFT JOIN fms_position_archive pa ON sp.department = pa.id COLLATE utf8mb4_general_ci
 		LEFT JOIN fms_prod_line pl ON sp.prod_line = pl.id COLLATE utf8mb4_general_ci
 		LEFT JOIN fms_work_group wg ON sp.team = wg.id COLLATE utf8mb4_general_ci
-		LEFT JOIN system_dept jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
+		LEFT JOIN js_sys_office jso ON sp.company = jso.office_code COLLATE utf8mb4_general_ci
 		<where>
-			
+			AND a.status = '0'
+			<if test="tenantId != null">AND a.tenant_id = #{tenantId}</if>
 			 <if test="personName != null and personName != ''">
 				AND sp.name LIKE concat('%',#{personName},'%')
 			</if>
@@ -56,7 +57,7 @@
 				AND jso.office_name LIKE CONCAT('%', #{company}, '%')
 			</if>
 		</where>
-		ORDER BY 
+		ORDER BY a.create_date DESC
 	</select>
 	<select id="appPageList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmSafetyPersonTrainingDO">
 		SELECT
@@ -95,7 +96,7 @@
 				AND a.id = #{id}
 			</if>
 		</where>
-		ORDER BY 
+		ORDER BY a.create_date DESC
 	</select>
 	<select id="findListByIdCard" resultType="java.lang.String">
 		SELECT

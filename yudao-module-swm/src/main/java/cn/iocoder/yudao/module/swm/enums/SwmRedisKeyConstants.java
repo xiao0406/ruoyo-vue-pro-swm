@@ -15,7 +15,7 @@ public interface SwmRedisKeyConstants {
      * 全局 Redis Key（设备-人员映射等）
      */
     interface GlobalKey {
-        String DEVICE_TO_CORP = "swm:device_to_corp";
+        String DEVICE_TO_TENANT = "swm:device_to_tenant";
         String DEVICE_PERSON_MAP = "swm:device_person_map";
         String PERSON_DEVICE_MAP = "swm:person_device_map";
         String ACTIVE_PERSON_CACHE_KEY = "swm:active_person_cache";

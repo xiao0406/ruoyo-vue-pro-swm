@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.swm.controller.admin.safetyhelmetorder.vo.SwmSafe
 import cn.iocoder.yudao.module.swm.controller.admin.safetyhelmetorder.vo.SwmSafetyHelmetOrderSaveReqVO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmSafetyHelmetOrderDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmSafetyHelmetOrderMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -59,7 +60,17 @@ public class SwmSafetyHelmetOrderServiceImpl implements SwmSafetyHelmetOrderServ
 
     @Override
     public PageResult<SwmSafetyHelmetOrderDO> getSafetyHelmetOrderPage(SwmSafetyHelmetOrderPageReqVO pageReqVO) {
-        return swmSafetyHelmetOrderMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        LambdaQueryWrapper<SwmSafetyHelmetOrderDO> wrapper = new LambdaQueryWrapper<SwmSafetyHelmetOrderDO>()
+                .eq(pageReqVO.getPersonId() != null && !pageReqVO.getPersonId().isBlank(),
+                        SwmSafetyHelmetOrderDO::getPersonId, pageReqVO.getPersonId())
+                .like(pageReqVO.getDeviceId() != null && !pageReqVO.getDeviceId().isBlank(),
+                        SwmSafetyHelmetOrderDO::getDeviceId, pageReqVO.getDeviceId())
+                .eq(pageReqVO.getOrderStatus() != null && !pageReqVO.getOrderStatus().isBlank(),
+                        SwmSafetyHelmetOrderDO::getOrderStatus, pageReqVO.getOrderStatus())
+                .eq(pageReqVO.getHelmetModel() != null && !pageReqVO.getHelmetModel().isBlank(),
+                        SwmSafetyHelmetOrderDO::getHelmetModel, pageReqVO.getHelmetModel())
+                .orderByDesc(SwmSafetyHelmetOrderDO::getCreateTime);
+        return swmSafetyHelmetOrderMapper.selectPage(pageReqVO, wrapper);
     }
 
     private void validateSafetyHelmetOrderExists(String id) {

@@ -9,16 +9,22 @@ import cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmDashboardDto;
 import cn.iocoder.yudao.module.swm.dal.dataobject.dto.SwmMonthlyAttendance;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 每日考勤 Mapper
+ * 姣忔棩鑰冨嫟 Mapper
  */
 @Mapper
 public interface SwmDailyAttendanceMapper extends BaseMapperX<SwmDailyAttendanceDO> {
+
+    /** 同步班次调整到当天日考勤，保留旧系统导入后的联动行为。 */
+    @Update("UPDATE swm_daily_attendance SET classes = #{classes}, update_date = NOW() " +
+            "WHERE identity_card = #{idCard} AND attendance_date = CURRENT_DATE AND status = '0'")
+    int updateTodayClasses(@Param("idCard") String idCard, @Param("classes") String classes);
 
     List<SwmDailyAttendanceDO> findList(@Param("employeeId") String employeeId,
             @Param("employeeName") String employeeName, @Param("attendanceDate") Date attendanceDate,
@@ -156,3 +162,4 @@ public interface SwmDailyAttendanceMapper extends BaseMapperX<SwmDailyAttendance
 
     void updateAttendanceRecord(@Param("item") SwmDailyAttendanceDO item);
 }
+

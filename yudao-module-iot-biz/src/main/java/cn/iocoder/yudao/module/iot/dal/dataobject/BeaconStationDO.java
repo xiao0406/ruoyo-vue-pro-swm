@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.iot.dal.dataobject;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import cn.iocoder.yudao.module.swm.dal.dataobject.SwmBaseDO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -14,7 +13,7 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @TableName("iot_beacon_station")
-public class BeaconStationDO extends SwmBaseDO {
+public class BeaconStationDO extends IotBaseDO {
     /** 信标编号 */
     private String beaconId;
     /** 信标类型 */

@@ -7,7 +7,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import cn.iocoder.yudao.module.swm.controller.admin.helmet.vo.SwmHelmetDevicePageReqVO;
 import cn.iocoder.yudao.module.swm.enums.TdengineSuperTableConstants;
-import cn.iocoder.yudao.module.swm.api.enums.CorpDbEnum;
+import cn.iocoder.yudao.module.swm.api.enums.TenantDbEnum;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO;
 import cn.iocoder.yudao.module.swm.dal.tdengine.TdengineRestClient;
 import cn.iocoder.yudao.module.swm.service.SwmHelmetDeviceService;
@@ -28,7 +28,7 @@ import java.util.*;
  * 清理 TDengine 表数据定时任务
  * <p>
  * 租户遍历使用 TenantUtils.execute(tenantId, ...)，
- * TDengine 库名通过 CorpDbEnum.getDbNameByTenantId 解析。
+ * TDengine 库名通过 TenantDbEnum.getDbNameByTenantId 解析。
  */
 @Slf4j
 @Component
@@ -54,7 +54,7 @@ public class ClearTdengineTableDataTask {
         Date date = new Date();
         DateTime startDate = DateUtil.offsetHour(date, -24);
 
-        for (CorpDbEnum value : CorpDbEnum.values()) {
+        for (TenantDbEnum value : TenantDbEnum.values()) {
             String dbName = value.getDbName();
             String sql = "DELETE FROM " + dbName + "." + SWM_WARNING_MANAGEMENT_SUPER_TABLE_TODAY
                     + " WHERE create_date < '" + startDate + "'";
@@ -91,7 +91,7 @@ public class ClearTdengineTableDataTask {
                         pageReqVO.setPageNo(1);
                         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
                         PageResult<SwmHelmetDeviceDO> pageResult = deviceService.getHelmetDevicePage(pageReqVO);
-                        String dbName = CorpDbEnum.getDbNameByTenantId(tenantId);
+                        String dbName = TenantDbEnum.getDbNameByTenantId(tenantId);
                         for (SwmHelmetDeviceDO helmetDevice : pageResult.getList()) {
                             String deviceId = helmetDevice.getDeviceId();
                             String idcard = helmetDevice.getAssignedPerson();
@@ -143,7 +143,7 @@ public class ClearTdengineTableDataTask {
                         pageReqVO.setPageNo(1);
                         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
                         PageResult<SwmHelmetDeviceDO> pageResult = deviceService.getHelmetDevicePage(pageReqVO);
-                        String dbName = CorpDbEnum.getDbNameByTenantId(tenantId);
+                        String dbName = TenantDbEnum.getDbNameByTenantId(tenantId);
                         for (SwmHelmetDeviceDO helmetDevice : pageResult.getList()) {
                             String deviceId = helmetDevice.getDeviceId();
                             String idcard = helmetDevice.getAssignedPerson();

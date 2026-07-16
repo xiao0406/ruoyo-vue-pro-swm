@@ -18,4 +18,8 @@ public interface SwmHelmetDeviceConfigService {
      */
     void refreshCache();
 
+    default <T extends cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceConfigDO> T getByDeviceId(String deviceId) {
+        return null;
+    }
+
 }

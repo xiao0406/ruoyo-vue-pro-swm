@@ -15,11 +15,12 @@ public class IotDeviceDao {
 
     private final IotDeviceMapper iotDeviceMapper;
 
-    public void updateSessionId(String deviceId, String sessionId) {
+    public int updateSessionId(String deviceId, String sessionId) {
         iotDeviceMapper.updateSessionIdByDeviceId(deviceId, sessionId);
+        return 1;
     }
 
-    public void insertDevice(IotDeviceDO device) {
-        iotDeviceMapper.insert(device);
+    public int insertDevice(IotDeviceDO device) {
+        return iotDeviceMapper.insert(device);
     }
 }

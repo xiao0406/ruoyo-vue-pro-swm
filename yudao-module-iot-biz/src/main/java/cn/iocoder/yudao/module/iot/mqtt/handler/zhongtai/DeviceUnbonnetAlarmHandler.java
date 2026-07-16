@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.iot.mqtt.handler.zhongtai;
 
 import cn.hutool.json.JSONUtil;
 import cn.hutool.core.util.ObjectUtil;
-import cn.iocoder.yudao.module.iot.cache.DeviceCorpMappingCache;
+import cn.iocoder.yudao.module.iot.cache.DeviceTenantMappingCache;
 import cn.iocoder.yudao.module.iot.cache.service.RedisService;
 import cn.iocoder.yudao.module.swm.api.constant.SwmRedisKeyConstants;
 import cn.iocoder.yudao.module.iot.enums.AlarmConfigEnum;
@@ -44,7 +44,7 @@ public class DeviceUnbonnetAlarmHandler implements MqttBusinessHandler {
     private static final ConcurrentHashMap<String, Long> unbonnetAlarmMap = new ConcurrentHashMap<>();
 
     @Resource
-    private DeviceCorpMappingCache deviceCorpMappingCache;
+    private DeviceTenantMappingCache deviceTenantMappingCache;
 
     @Resource
     private RedisService redisService;
@@ -87,7 +87,7 @@ public class DeviceUnbonnetAlarmHandler implements MqttBusinessHandler {
             logger.info("{}开始处理 脱帽中泰告警消息，topic={}, payload={}", LOG_PREFIX, topic, payload);
 
             // 1.先校验设备是否入库
-            if (!MqttConstants.verifyDeviceExists(topic, messageData, redisService, deviceCorpMappingCache)){
+            if (!MqttConstants.verifyDeviceExists(topic, messageData, redisService, deviceTenantMappingCache)){
                 return;
             }
             String deviceId = messageData.getDeviceId();
@@ -125,7 +125,7 @@ public class DeviceUnbonnetAlarmHandler implements MqttBusinessHandler {
             messageData.setScanTimestamp(alarmDTO.getTime());
 
             //3.检查是否需要报警
-            boolean alarm = MqttConstants.isAlarm(AlarmConfigEnum.TM.getCode(), deviceId,redisService, deviceCorpMappingCache);
+            boolean alarm = MqttConstants.isAlarm(AlarmConfigEnum.TM.getCode(), deviceId,redisService, deviceTenantMappingCache);
             if (alarm){
                 //这里设置中泰设备标识
                 messageData.setZTDevice(true);

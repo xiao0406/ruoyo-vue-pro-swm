@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.swm.dal.dataobject;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
@@ -18,7 +19,7 @@ import java.time.LocalDateTime;
  * 1. 审计字段名映射：create_by/create_date/update_by/update_date
  * 2. 逻辑删除：使用 status 字段（'0'=正常, '1'=删除）
  * 3. 租户：继承 TenantBaseDO 的 tenantId 字段（数据库列 tenant_id）
- *    原 JeeSite 的 corp_code/corp_name 通过 SQL 迁移脚本转换为 tenant_id
+ *    legacy enterprise fields are migrated to tenant_id
  *
  * @author swm
  */
@@ -31,7 +32,7 @@ public class SwmBaseDO extends TenantBaseDO {
      * 主键 ID
      * JeeSite 使用 varchar(64)，部分为雪花 ID、部分为 UUID
      */
-    @TableId
+    @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
     /**

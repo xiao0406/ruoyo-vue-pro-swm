@@ -12,6 +12,12 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class SwmMonitorDeviceInfoPageReqVO extends PageParam {
 
+    @Schema(description = "Record type")
+    private String recType;
+
+    @Schema(description = "Parent organization or device ID")
+    private String parentId;
+
     @Schema(description = "设备名称")
     private String name;
 

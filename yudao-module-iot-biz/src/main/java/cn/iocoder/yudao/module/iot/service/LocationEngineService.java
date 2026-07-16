@@ -37,6 +37,11 @@ public interface LocationEngineService {
      */
     Map<String, Object> callLocationEngine(String deviceId, List<Map<String, Object>> beaconDataList, Long scanTimestamp, String rawMessage);
 
+    default ExternalWriteResult saveLocationToExternalTableForTcp(String deviceId, Map<String, Object> helmetData,
+                                                                  Long businessTimestamp) {
+        return ExternalWriteResult.notWritten("not implemented");
+    }
+
     /**
      * 获取当前配置的引擎类型
      */

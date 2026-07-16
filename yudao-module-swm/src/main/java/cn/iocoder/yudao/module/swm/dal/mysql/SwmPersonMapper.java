@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 人员管理 Mapper
+ * 浜哄憳绠＄悊 Mapper
  */
 @Mapper
 public interface SwmPersonMapper extends BaseMapperX<SwmPersonDO> {
@@ -27,7 +27,7 @@ public interface SwmPersonMapper extends BaseMapperX<SwmPersonDO> {
             @Param("helmetReturned") String helmetReturned, @Param("departureType") String departureType,
             @Param("isExternalPersonnel") String isExternalPersonnel, @Param("powerOnStatus") String powerOnStatus,
             @Param("todayOnSiteIdCards") List<String> todayOnSiteIdCards, @Param("random") Integer random,
-            @Param("corpCode") String corpCode);
+            @Param("tenantId") Long tenantId);
 
     SwmPersonDO findDepartedByIdentityCard(@Param("identityCard") String identityCard,
             @Param("personnelStatus") String personnelStatus);
@@ -63,23 +63,23 @@ public interface SwmPersonMapper extends BaseMapperX<SwmPersonDO> {
     List<DashboardPersonVO> findManageTodayList(@Param("personTypeList") List<String> personTypeList);
 
     List<SwmPersonDO> peronsList(@Param("personnelStatus") String personnelStatus,
-            @Param("status") String status, @Param("corpCode") String corpCode,
+            @Param("status") String status, @Param("tenantId") Long tenantId,
             @Param("random") Integer random);
 
     List<SwmPersonDO> findListByJobTypeList(@Param("jobtypeList") List<String> jobtypeList);
 
-    List<FmsPositionArchiveDO> selectByNames(@Param("corpCode") String corpCode,
+    List<FmsPositionArchiveDO> selectByNames(@Param("tenantId") Long tenantId,
             @Param("departments") List<String> departments);
 
-    List<FmsProdLineDO> selectProdLineByNames(@Param("corpCode") String corpCode,
+    List<FmsProdLineDO> selectProdLineByNames(@Param("tenantId") Long tenantId,
             @Param("productionLines") List<String> productionLines);
 
-    List<FmsWorkGroupDO> selectWorkGroupByNames(@Param("corpCode") String corpCode,
+    List<FmsWorkGroupDO> selectWorkGroupByNames(@Param("tenantId") Long tenantId,
             @Param("teams") List<String> teams);
 
     List<SwmPersonDO> findListByPersonNames(@Param("personNames") List<String> personNames);
 
-    List<SwmPersonDO> findListWithoutCorpCode(@Param("status") String status,
+    List<SwmPersonDO> findListWithoutTenantId(@Param("status") String status,
             @Param("personnelStatus") String personnelStatus);
 
     void updateBatch(@Param("list") List<SwmPersonDO> list);
@@ -88,3 +88,4 @@ public interface SwmPersonMapper extends BaseMapperX<SwmPersonDO> {
 
     void updateBatchUrgentPerson(@Param("updateList") List<SwmPersonDO> updateList);
 }
+

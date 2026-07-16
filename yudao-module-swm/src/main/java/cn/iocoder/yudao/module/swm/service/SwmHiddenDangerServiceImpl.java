@@ -59,7 +59,12 @@ public class SwmHiddenDangerServiceImpl implements SwmHiddenDangerService {
 
     @Override
     public PageResult<SwmHiddenDangerDO> getHiddenDangerPage(SwmHiddenDangerPageReqVO pageReqVO) {
-        return swmHiddenDangerMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmHiddenDangerMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmHiddenDangerDO>()
+                        .likeIfPresent(SwmHiddenDangerDO::getDangerName, pageReqVO.getDangerName())
+                        .likeIfPresent(SwmHiddenDangerDO::getLocation, pageReqVO.getLocation())
+                        .eqIfPresent(SwmHiddenDangerDO::getIsHandled, pageReqVO.getIsHandled())
+                        .orderByDesc(SwmHiddenDangerDO::getCreateTime));
     }
 
     private void validateHiddenDangerExists(String id) {

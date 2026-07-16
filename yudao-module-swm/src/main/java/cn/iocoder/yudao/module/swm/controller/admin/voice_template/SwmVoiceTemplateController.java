@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - 语音模板")
@@ -60,7 +62,7 @@ public class SwmVoiceTemplateController {
     @PreAuthorize("@ss.hasPermission('swm:voice-template:query')")
     public CommonResult<SwmVoiceTemplateRespVO> getSwmVoiceTemplate(@RequestParam("id") String id) {
         SwmVoiceTemplateDO voiceTemplate = voiceTemplateService.getVoiceTemplate(id);
-        return success(BeanUtils.toBean(voiceTemplate, SwmVoiceTemplateRespVO.class));
+        return success(convertResponse(voiceTemplate));
     }
 
     @GetMapping("/page")
@@ -68,7 +70,34 @@ public class SwmVoiceTemplateController {
     @PreAuthorize("@ss.hasPermission('swm:voice-template:query')")
     public CommonResult<PageResult<SwmVoiceTemplateRespVO>> getSwmVoiceTemplatePage(@Valid SwmVoiceTemplatePageReqVO pageReqVO) {
         PageResult<SwmVoiceTemplateDO> pageResult = voiceTemplateService.getVoiceTemplatePage(pageReqVO);
-        return success(BeanUtils.toBean(pageResult, SwmVoiceTemplateRespVO.class));
+        return success(new PageResult<>(pageResult.getList().stream()
+                .map(this::convertResponse).toList(), pageResult.getTotal()));
+    }
+
+    @PostMapping("/update-status")
+    @Operation(summary = "Update voice template status")
+    @PreAuthorize("@ss.hasPermission('swm:voice-template:update')")
+    public CommonResult<Boolean> updateStatus(@RequestParam("id") String id,
+                                              @RequestParam("status") String status) {
+        voiceTemplateService.updateStatus(id, status);
+        return success(true);
+    }
+
+    @GetMapping("/active-list")
+    @Operation(summary = "List active voice templates")
+    @PreAuthorize("@ss.hasPermission('swm:voice-template:query')")
+    public CommonResult<List<SwmVoiceTemplateRespVO>> getActiveVoiceTemplates() {
+        List<SwmVoiceTemplateDO> list = voiceTemplateService.getActiveVoiceTemplates();
+        return success(list.stream().map(this::convertResponse).toList());
+    }
+
+    private SwmVoiceTemplateRespVO convertResponse(SwmVoiceTemplateDO source) {
+        if (source == null) {
+            return null;
+        }
+        SwmVoiceTemplateRespVO response = BeanUtils.toBean(source, SwmVoiceTemplateRespVO.class);
+        response.setStatus(source.getEnableStatus());
+        return response;
     }
 
 }

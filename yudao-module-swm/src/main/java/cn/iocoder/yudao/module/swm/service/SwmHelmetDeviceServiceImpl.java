@@ -6,7 +6,11 @@ import cn.iocoder.yudao.module.swm.controller.admin.helmet.vo.SwmHelmetDevicePag
 import cn.iocoder.yudao.module.swm.controller.admin.helmet.vo.SwmHelmetDeviceSaveReqVO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmHelmetDeviceMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -59,7 +63,58 @@ public class SwmHelmetDeviceServiceImpl implements SwmHelmetDeviceService {
 
     @Override
     public PageResult<SwmHelmetDeviceDO> getHelmetDevicePage(SwmHelmetDevicePageReqVO pageReqVO) {
-        return swmHelmetDeviceMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmHelmetDeviceMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmHelmetDeviceDO>()
+                        .likeIfPresent(SwmHelmetDeviceDO::getDeviceId, pageReqVO.getDeviceId())
+                        .eqIfPresent(SwmHelmetDeviceDO::getHelmetType, pageReqVO.getHelmetType())
+                        .likeIfPresent(SwmHelmetDeviceDO::getAssignedPerson, pageReqVO.getAssignedPerson())
+                        .likeIfPresent(SwmHelmetDeviceDO::getPersonName, pageReqVO.getPersonName())
+                        .eqIfPresent(SwmHelmetDeviceDO::getAssignedWorkshop, pageReqVO.getAssignedWorkshop())
+                        .eqIfPresent(SwmHelmetDeviceDO::getAssignedProcess, pageReqVO.getAssignedProcess())
+                        .eqIfPresent(SwmHelmetDeviceDO::getUsageStatus, pageReqVO.getUsageStatus())
+                        .eqIfPresent(SwmHelmetDeviceDO::getDeviceSource, pageReqVO.getDeviceSource())
+                        .orderByDesc(SwmHelmetDeviceDO::getCreateTime));
+    }
+
+    @Override
+    public SwmHelmetDeviceDO getByDeviceId(String deviceId) {
+        if (deviceId == null || deviceId.isBlank()) {
+            return null;
+        }
+        return swmHelmetDeviceMapper.selectOne(new LambdaQueryWrapper<SwmHelmetDeviceDO>()
+                .eq(SwmHelmetDeviceDO::getDeviceId, deviceId)
+                .last("LIMIT 1"));
+    }
+
+    @Override
+    public List<SwmHelmetDeviceDO> findAvailableHelmets(String keyword) {
+        return swmHelmetDeviceMapper.findAvailableHelmets(keyword);
+    }
+
+    @Override
+    public boolean assignPerson(String deviceId, String personId, String personName, String binder) {
+        if (deviceId == null || deviceId.isBlank()) {
+            return false;
+        }
+        String assignedPerson = binder == null || binder.isBlank() ? personId : binder;
+        return swmHelmetDeviceMapper.update(null, new LambdaUpdateWrapper<SwmHelmetDeviceDO>()
+                .eq(SwmHelmetDeviceDO::getDeviceId, deviceId)
+                .set(SwmHelmetDeviceDO::getAssignedPerson, assignedPerson)
+                .set(SwmHelmetDeviceDO::getPersonName, personName)
+                .set(SwmHelmetDeviceDO::getBindTime, LocalDateTime.now())
+                .set(SwmHelmetDeviceDO::getUnbindTime, null)) > 0;
+    }
+
+    @Override
+    public boolean unassignPerson(String deviceId) {
+        if (deviceId == null || deviceId.isBlank()) {
+            return false;
+        }
+        return swmHelmetDeviceMapper.update(null, new LambdaUpdateWrapper<SwmHelmetDeviceDO>()
+                .eq(SwmHelmetDeviceDO::getDeviceId, deviceId)
+                .set(SwmHelmetDeviceDO::getAssignedPerson, null)
+                .set(SwmHelmetDeviceDO::getPersonName, null)
+                .set(SwmHelmetDeviceDO::getUnbindTime, LocalDateTime.now())) > 0;
     }
 
     private void validateHelmetDeviceExists(String id) {

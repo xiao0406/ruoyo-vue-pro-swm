@@ -34,7 +34,12 @@ public class SwmPersonScheduleLogServiceImpl implements SwmPersonScheduleLogServ
 
     @Override
     public PageResult<SwmPersonScheduleLogDO> getPersonScheduleLogPage(SwmPersonScheduleLogPageReqVO pageReqVO) {
-        return swmPersonScheduleLogMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmPersonScheduleLogMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmPersonScheduleLogDO>()
+                        .likeIfPresent(SwmPersonScheduleLogDO::getOperateUser, pageReqVO.getOperateUser())
+                        .eqIfPresent(SwmPersonScheduleLogDO::getPersonId, pageReqVO.getPersonId())
+                        .eqIfPresent(SwmPersonScheduleLogDO::getTargetClasses, pageReqVO.getTargetClasses())
+                        .orderByDesc(SwmPersonScheduleLogDO::getOperateTime));
     }
 
 }

@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmWarningManagementMapper">
 
-    <!-- 查询数据 -->
+    <!-- 鏌ヨ鏁版嵁 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT 
         FROM 
@@ -15,7 +15,7 @@
         ORDER BY 
     </select>
 
-    <!-- 查询所有记录，不带默认的状态过滤 -->
+    <!-- 鏌ヨ鎵€鏈夎褰曪紝涓嶅甫榛樿鐨勭姸鎬佽繃婊?-->
     <select id="findAllWithoutStatusFilter" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT
             a.`id` AS "id",
@@ -44,7 +44,7 @@
             a.warning_time DESC
     </select>
 
-    <!-- 向MySQL数据库插入预警处置记录 -->
+    <!-- 鍚慚ySQL鏁版嵁搴撴彃鍏ラ璀﹀缃褰?-->
     <insert id="insertToMySql">
         INSERT INTO swm_warning_management (
             id, create_by, create_date, update_by, update_date, remarks, status,
@@ -59,7 +59,7 @@
         )
     </insert>
 
-    <!-- 根据ID集合批量查询MySQL数据库中的预警记录 -->
+    <!-- 鏍规嵁ID闆嗗悎鎵归噺鏌ヨMySQL鏁版嵁搴撲腑鐨勯璀﹁褰?-->
     <select id="findInMySqlByIds" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT
             a.id, a.create_by AS createBy, a.create_date AS createDate,
@@ -81,7 +81,7 @@
             </foreach>
     </select>
 
-    <!-- 根据ID和身份证号查询MySQL数据库中的预警记录 -->
+    <!-- 鏍规嵁ID鍜岃韩浠借瘉鍙锋煡璇ySQL鏁版嵁搴撲腑鐨勯璀﹁褰?-->
     <select id="findInMySqlByIdAndIdCard" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT
             a.id, a.create_by AS createBy, a.create_date AS createDate,
@@ -105,7 +105,7 @@
         LIMIT 1
     </select>
 
-    <!-- 在MySQL中按条件查询已处置的预警数据 -->
+    <!-- 鍦∕ySQL涓寜鏉′欢鏌ヨ宸插缃殑棰勮鏁版嵁 -->
     <select id="findProcessedInMySql" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT
             a.id, a.create_by AS createBy, a.create_date AS createDate,
@@ -131,17 +131,17 @@
             <if test="warningContent != null and warningContent != ''">
                 AND a.warning_content = #{warningContent}
             </if>
-            <!-- 排除一键SOS预警 -->
+            <!-- 鎺掗櫎涓€閿甋OS棰勮 -->
             <if test="excludeSOS == true">
-                AND a.warning_content  != '一键SOS'
+                AND a.warning_content  != '涓€閿甋OS'
             </if>
-            <!-- 排除考勤打卡预警 -->
+            <!-- 鎺掗櫎鑰冨嫟鎵撳崱棰勮 -->
             <if test="excludeAttendance == true">
-                AND a.warning_content != '考勤打卡'
+                AND a.warning_content != '鑰冨嫟鎵撳崱'
             </if>
-            <!-- 排除进入大门预警 -->
+            <!-- 鎺掗櫎杩涘叆澶ч棬棰勮 -->
             <if test="excludeGateEntry == true">
-                AND a.warning_content != '进入大门'
+                AND a.warning_content != '杩涘叆澶ч棬'
             </if>
         <if test="warningContentList != null and warningContentList.size >0">
             AND a.warning_content in
@@ -153,7 +153,7 @@
             a.warning_time DESC
     </select>
 
-    <!-- 查询所有已处置记录的ID -->
+    <!-- 鏌ヨ鎵€鏈夊凡澶勭疆璁板綍鐨処D -->
     <select id="findAllProcessedIds" resultType="String">
         SELECT
             a.id
@@ -163,7 +163,7 @@
             a.handle_status = '1'
     </select>
 
-    <!-- 获取所有已处置的记录（handle_status为1） -->
+    <!-- 鑾峰彇鎵€鏈夊凡澶勭疆鐨勮褰曪紙handle_status涓?锛?-->
     <select id="findAllProcessedWarnings" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT
             a.id, a.create_by AS createBy, a.create_date AS createDate,
@@ -182,7 +182,7 @@
             a.handle_status = '1'
     </select>
 
-    <!-- 查询近7天(包含今天)的预警，排除一键SOS -->
+    <!-- 鏌ヨ杩?澶?鍖呭惈浠婂ぉ)鐨勯璀︼紝鎺掗櫎涓€閿甋OS -->
     <select id="listPast7DaysWarning" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
@@ -199,10 +199,10 @@
         WHERE warning_time &gt;= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
         AND status = '0'
-        AND warning_content  != '一键SOS'
+        AND warning_content  != '涓€閿甋OS'
     </select>
 
-    <!-- 获取今日的预警，排除一键SOS -->
+    <!-- 鑾峰彇浠婃棩鐨勯璀︼紝鎺掗櫎涓€閿甋OS -->
     <select id="listTodayWarning" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
@@ -219,12 +219,12 @@
         WHERE warning_time &gt;= CURDATE()
         AND warning_time &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
         AND status = '0'
-        AND warning_content  != '一键SOS'
-        AND warning_content != '考勤打卡'
-        AND warning_content != '进入大门'
+        AND warning_content  != '涓€閿甋OS'
+        AND warning_content != '鑰冨嫟鎵撳崱'
+        AND warning_content != '杩涘叆澶ч棬'
     </select>
 
-    <!-- 获取当月的预警，排除一键SOS -->
+    <!-- 鑾峰彇褰撴湀鐨勯璀︼紝鎺掗櫎涓€閿甋OS -->
     <select id="listCurrentMonthWarning" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
@@ -241,12 +241,12 @@
         WHERE warning_time &gt;= DATE_FORMAT(CURDATE(), '%Y-%m-01')
         AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
         AND status = '0'
-        AND warning_content  != '一键SOS'
-        AND warning_content != '考勤打卡'
-        AND warning_content != '进入大门'
+        AND warning_content  != '涓€閿甋OS'
+        AND warning_content != '鑰冨嫟鎵撳崱'
+        AND warning_content != '杩涘叆澶ч棬'
     </select>
 
-    <!-- 获取当月已处理的预警，排除一键SOS -->
+    <!-- 鑾峰彇褰撴湀宸插鐞嗙殑棰勮锛屾帓闄や竴閿甋OS -->
     <select id="listCurrentMonthHandledWarning" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
         SELECT
             id, create_by AS createBy, create_date AS createDate,
@@ -264,12 +264,12 @@
         AND warning_time &lt; DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
         AND handle_status = '1'
         AND status = '0'
-        AND warning_content  != '一键SOS'
-        AND warning_content != '考勤打卡'
-        AND warning_content != '进入大门'
+        AND warning_content  != '涓€閿甋OS'
+        AND warning_content != '鑰冨嫟鎵撳崱'
+        AND warning_content != '杩涘叆澶ч棬'
     </select>
 
-    <!-- 根据身份证号列表批量查询班组名称 -->
+    <!-- 鏍规嵁韬唤璇佸彿鍒楄〃鎵归噺鏌ヨ鐝粍鍚嶇О -->
     <select id="findWorkGroupNamesByIdCards" resultType="java.util.Map">
         SELECT
             w.identity_code AS idCard,
@@ -285,7 +285,7 @@
             </foreach>
     </select>
 
-    <!-- 按日期范围分组统计 -->
+    <!-- 鎸夋棩鏈熻寖鍥村垎缁勭粺璁?-->
     <select id="countByDateRangeGroupByDay" resultType="map">
         SELECT DATE_FORMAT(warning_time, '%Y-%m-%d') as date,
                COUNT(*)                              as count
@@ -293,14 +293,15 @@
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
-                   ELSE warning_content != '危险源报警'
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '鍗遍櫓婧愭姤璀?
+                   ELSE warning_content != '鍗遍櫓婧愭姤璀?
             END)
         GROUP BY DATE(warning_time)
         ORDER BY date
     </select>
 
-    <!--    查询TOP N危险源类别-->
+    <!--    鏌ヨTOP N鍗遍櫓婧愮被鍒?->
+    -->
     <select id="findTopCategories" resultType="map">
         SELECT
         hazard_category AS category,
@@ -308,13 +309,13 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content = '危险源报警'
+          AND warning_content = '鍗遍櫓婧愭姤璀?
         GROUP BY hazard_category
         ORDER BY count DESC
         LIMIT #{limit}
     </select>
 
-    <!--    查询TOP N预警内容-->
+    <!--    鏌ヨTOP N棰勮鍐呭-->
     <select id="findTopWarningContent" resultType="map">
         SELECT
             warning_content AS warningContent,
@@ -322,16 +323,16 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content != '危险源报警'
-          AND warning_content != '一键SOS'
-          AND warning_content != '考勤打卡'
-          AND warning_content != '进入大门'
+          AND warning_content != '鍗遍櫓婧愭姤璀?
+          AND warning_content != '涓€閿甋OS'
+          AND warning_content != '鑰冨嫟鎵撳崱'
+          AND warning_content != '杩涘叆澶ч棬'
         GROUP BY warning_content
         ORDER BY count DESC
         LIMIT #{limit}
     </select>
 
-    <!-- 查询TOP N违规人员 -->
+    <!-- 鏌ヨTOP N杩濊浜哄憳 -->
     <select id="findViolationPersonTop10" resultType="map">
         SELECT
         a.person_name AS "personName",
@@ -341,7 +342,7 @@
         swm_warning_management a
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content = '危险源报警'
+          AND warning_content = '鍗遍櫓婧愭姤璀?
         GROUP BY
         a.person_name
         ORDER BY
@@ -349,7 +350,7 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 按类别和日期范围分组统计 -->
+    <!-- 鎸夌被鍒拰鏃ユ湡鑼冨洿鍒嗙粍缁熻 -->
     <select id="countHazardCategoryCategoryTrendByDateRange" resultType="map">
         SELECT
             hazard_category as category,
@@ -358,13 +359,13 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content = '危险源报警'
+          AND warning_content = '鍗遍櫓婧愭姤璀?
           AND hazard_category is not null
         GROUP BY hazard_category, DATE(warning_time)
         ORDER BY date, category
     </select>
 
-    <!-- 按告警内容和日期范围分组统计 -->
+    <!-- 鎸夊憡璀﹀唴瀹瑰拰鏃ユ湡鑼冨洿鍒嗙粍缁熻 -->
     <select id="countHazardCategoryCategoryTrendByDateRange" resultType="map">
         SELECT
             hazard_category as category,
@@ -373,7 +374,7 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content = '危险源报警'
+          AND warning_content = '鍗遍櫓婧愭姤璀?
           AND hazard_category is not null
         GROUP BY hazard_category, DATE(warning_time)
         ORDER BY date, category
@@ -387,47 +388,47 @@
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
-          AND warning_content != '危险源报警'
-          AND warning_content != '一键SOS'
-          AND warning_content != '考勤打卡'
-          AND warning_content != '进入大门'
+          AND warning_content != '鍗遍櫓婧愭姤璀?
+          AND warning_content != '涓€閿甋OS'
+          AND warning_content != '鑰冨嫟鎵撳崱'
+          AND warning_content != '杩涘叆澶ч棬'
           AND warning_content is not null
         GROUP BY warning_content, DATE(warning_time)
         ORDER BY date, category
     </select>
 
-    <!-- 按时间范围统计数量 -->
+    <!-- 鎸夋椂闂磋寖鍥寸粺璁℃暟閲?-->
     <select id="countByDateRange" resultType="long">
         SELECT COUNT(*)
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
-                   ELSE warning_content != '危险源报警'
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '鍗遍櫓婧愭姤璀?
+                   ELSE warning_content != '鍗遍櫓婧愭姤璀?
             END)
     </select>
 
-    <!-- 按预警内容统计总数 -->
+    <!-- 鎸夐璀﹀唴瀹圭粺璁℃€绘暟 -->
     <select id="countTotal" resultType="long">
         SELECT COUNT(*)
         FROM swm_warning_management
         WHERE status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
-                   ELSE warning_content != '危险源报警'
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '鍗遍櫓婧愭姤璀?
+                   ELSE warning_content != '鍗遍櫓婧愭姤璀?
             END)
     </select>
 
-    <!-- 统计不同违规人员数量 -->
+    <!-- 缁熻涓嶅悓杩濊浜哄憳鏁伴噺 -->
     <select id="countDistinctPersonByWarningContentAndDateRange" resultType="long">
         SELECT COUNT(DISTINCT person_name)
         FROM swm_warning_management
         WHERE DATE(warning_time) BETWEEN #{beginDate,jdbcType=DATE} AND #{endDate,jdbcType=DATE}
           AND status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
-                   ELSE warning_content != '危险源报警'
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '鍗遍櫓婧愭姤璀?
+                   ELSE warning_content != '鍗遍櫓婧愭姤璀?
             END)
     </select>
 
@@ -451,19 +452,19 @@
         FROM swm_warning_management a
         WHERE a.status = '0'
           AND (CASE
-                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '危险源报警'
-                   ELSE warning_content != '危险源报警'
+                   WHEN #{isHazardSourceAlarm,jdbcType=BOOLEAN} = TRUE THEN warning_content = '鍗遍櫓婧愭姤璀?
+                   ELSE warning_content != '鍗遍櫓婧愭姤璀?
             END)
         order by a.warning_time desc
         limit #{limit}
     </select>
 
-    <!-- 处置效率TOP N统计 -->
+    <!-- 澶勭疆鏁堢巼TOP N缁熻 -->
     <select id="findHandleEfficiencyTop10" resultType="map">
         SELECT a.handler                          AS "handler",
                ROUND(AVG(a.disposal_duration), 2) AS "avgHandleMinutes"
         FROM swm_warning_management a
-        WHERE a.warning_content != '危险源报警'
+        WHERE a.warning_content != '鍗遍櫓婧愭姤璀?
           AND a.handle_status = '1'
           AND a.handler IS NOT NULL
           AND a.disposal_duration IS NOT NULL
@@ -488,19 +489,19 @@
         WHERE warning_time <![CDATA[ >= ]]> DATE_FORMAT(CURDATE(), '%Y-%m-%d 00:00:00')
         AND warning_time <![CDATA[ <= ]]> DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 DAY), '%Y-%m-%d 00:00:00')
         AND status = '0'
-          AND warning_content != '危险源报警'
-          AND warning_content != '一键SOS'
-          AND warning_content != '考勤打卡'
-        AND warning_content != '进入大门'
+          AND warning_content != '鍗遍櫓婧愭姤璀?
+          AND warning_content != '涓€閿甋OS'
+          AND warning_content != '鑰冨嫟鎵撳崱'
+        AND warning_content != '杩涘叆澶ч棬'
     </select>
     
-    <!-- 统计当日已处理的预警数（排除考勤打卡和进入大门） -->
+    <!-- 缁熻褰撴棩宸插鐞嗙殑棰勮鏁帮紙鎺掗櫎鑰冨嫟鎵撳崱鍜岃繘鍏ュぇ闂級 -->
     <select id="countTodayHandledWarnings" resultType="long">
         SELECT COUNT(*)
         FROM swm_warning_management
         WHERE DATE(handle_time) = CURDATE()
         AND handle_status = '1'
-        AND warning_content NOT IN ('考勤打卡', '进入大门')
+        AND warning_content NOT IN ('鑰冨嫟鎵撳崱', '杩涘叆澶ч棬')
         AND status = '0'
     </select>
     <select id="getWarningManagementList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmWarningManagementDO">
@@ -534,7 +535,7 @@
             id_card
     </select>
 
-    <!-- 按报警类型分组统计已处置的预警数量 -->
+    <!-- 鎸夋姤璀︾被鍨嬪垎缁勭粺璁″凡澶勭疆鐨勯璀︽暟閲?-->
     <select id="countHandledGroupByWarningContent" resultType="map">
         SELECT
             warning_content AS warningContent,
@@ -542,9 +543,10 @@
         FROM swm_warning_management
         WHERE handle_status = '1'
           AND status = '0'
-          AND warning_content NOT IN ('一键SOS', '考勤打卡', '进入大门')
+          AND warning_content NOT IN ('涓€閿甋OS', '鑰冨嫟鎵撳崱', '杩涘叆澶ч棬')
           AND handle_time BETWEEN #{beginDate} AND #{endDate}
         GROUP BY warning_content
         ORDER BY count DESC
     </select>
 </mapper>
+

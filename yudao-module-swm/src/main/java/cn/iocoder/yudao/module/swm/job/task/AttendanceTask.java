@@ -981,7 +981,7 @@ public class AttendanceTask {
 //                scheduleTimeList = swmScheduleTimeService.findList(scheduleTimeQuery);
                 scheduleTimeListOld = swmScheduleTimeService.findListSingle(scheduleTimeQuery);
                 for (SwmScheduleTimeDO time : scheduleTimeListOld) {
-                    // 租户过滤由 MyBatis-Plus 自动处理，无需手动比较 corpCode
+                    // 租户过滤由 MyBatis-Plus 自动处理，无需手动比较 tenantId
                     scheduleTimeList.add(time);
                 }
 
@@ -2798,7 +2798,7 @@ public class AttendanceTask {
         query.setStatus("0");
         List<SwmPersonDO> persons = swmPersonService.findList(query);
         for (SwmPersonDO p : persons) {
-            XxlJobHelper.log("【刚查出来】name={}, dbCorpCode={}， dbCorpCode={}", p.getName(), p.getTenantId());
+            XxlJobHelper.log("【刚查出来】name={}, dbTenantId={}， dbTenantId={}", p.getName(), p.getTenantId());
         }
 
         Long tenantId = TenantContextHolder.getTenantId();

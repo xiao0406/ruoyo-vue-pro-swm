@@ -12,4 +12,8 @@ public interface TcpToHelmetDataConverter {
      * 将TCP蓝牙信标数据转换为WebSocket格式
      */
     List<Map<String, Object>> convertBeaconData(List<Map<String, Object>> tcpBeaconData);
+
+    default Map<String, Object> convert(Object messageData, Map<String, Object> extraData) {
+        return extraData == null ? new java.util.HashMap<>() : new java.util.HashMap<>(extraData);
+    }
 }

@@ -18,6 +18,10 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - 人员退场")
@@ -69,6 +73,19 @@ public class SwmPersonDepartureController {
     public CommonResult<PageResult<SwmPersonDepartureRespVO>> getSwmPersonDeparturePage(@Valid SwmPersonDeparturePageReqVO pageReqVO) {
         PageResult<SwmPersonDepartureDO> pageResult = personDepartureService.getPersonDeparturePage(pageReqVO);
         return success(BeanUtils.toBean(pageResult, SwmPersonDepartureRespVO.class));
+    }
+
+    @GetMapping("/find-list-by-identity-card")
+    @Operation(summary = "Find departure records by identity card")
+    @PreAuthorize("@ss.hasPermission('swm:person:query')")
+    public CommonResult<Map<String, Object>> findListByIdentityCard(@RequestParam("identityCard") String identityCard) {
+        List<SwmPersonDepartureDO> list = personDepartureService.findListByIdentityCard(identityCard);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("hasRecord", !list.isEmpty());
+        result.put("data", BeanUtils.toBean(list, SwmPersonDepartureRespVO.class));
+        result.put("total", list.size());
+        return success(result);
     }
 
 }

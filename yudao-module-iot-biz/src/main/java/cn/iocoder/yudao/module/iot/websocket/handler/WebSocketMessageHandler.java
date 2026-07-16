@@ -2,6 +2,9 @@ package cn.iocoder.yudao.module.iot.websocket.handler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.iocoder.yudao.module.iot.service.RawMessageTdEngineService;
+import cn.iocoder.yudao.module.iot.service.UnknownMessageTdEngineService;
+import cn.iocoder.yudao.module.iot.util.R;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import jakarta.annotation.Resource;
@@ -40,10 +43,10 @@ public class WebSocketMessageHandler implements WebSocketHandler {
     private final Map<String, WebSocketMessageProcessor> messageProcessors = new HashMap<>();
 
     @Resource
-    private cn.iocoder.yudao.module.swm.service.UnknownMessageTdEngineService unknownMessageTdEngineService;
+    private UnknownMessageTdEngineService unknownMessageTdEngineService;
 
     @Resource
-    private cn.iocoder.yudao.module.swm.service.RawMessageTdEngineService rawMessageTdEngineService;
+    private RawMessageTdEngineService rawMessageTdEngineService;
 
     @Resource
     private cn.iocoder.yudao.module.iot.websocket.processor.CaLoginProcessor caLoginProcessor;
@@ -256,10 +259,10 @@ public class WebSocketMessageHandler implements WebSocketHandler {
 
         try {
             // 保存未知消息到时序数据库
-            cn.iocoder.yudao.module.swm.util.R<cn.hutool.json.JSONObject> result = unknownMessageTdEngineService
+            R<cn.hutool.json.JSONObject> result = unknownMessageTdEngineService
                     .saveUnknownMessageData(deviceId, sessionId, messageContent);
 
-            if (result.getCode() != cn.iocoder.yudao.module.swm.util.R.SUCCESS) {
+            if (result.getCode() != R.SUCCESS) {
                 logger.error("保存未知消息到时序数据库失败, sessionId: {}, deviceId: {}, 错误: {}",
                         sessionId, deviceId, result.getMsg());
             } else {

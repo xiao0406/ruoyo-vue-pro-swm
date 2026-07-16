@@ -1,9 +1,6 @@
 package cn.iocoder.yudao.module.iot.dal.dataobject;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import cn.iocoder.yudao.module.swm.dal.dataobject.SwmBaseDO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -16,7 +13,7 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @TableName("iot_device")
-public class IotDeviceDO extends SwmBaseDO {
+public class IotDeviceDO extends IotBaseDO {
     private String deviceId;
     private String deviceName;
     private String deviceType;

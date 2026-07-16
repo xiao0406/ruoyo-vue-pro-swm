@@ -3,11 +3,11 @@
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHelmetDeviceMapper">
     
     <!-- 
-        注意：基本的CRUD操作已由实体类注解自动处理
-        此文件中只保留特殊查询方法
+        娉ㄦ剰锛氬熀鏈殑CRUD鎿嶄綔宸茬敱瀹炰綋绫绘敞瑙ｈ嚜鍔ㄥ鐞?
+        姝ゆ枃浠朵腑鍙繚鐣欑壒娈婃煡璇㈡柟娉?
     -->
     
-    <!-- 查询可用的安全帽列表（未绑定人员的） -->
+    <!-- 鏌ヨ鍙敤鐨勫畨鍏ㄥ附鍒楄〃锛堟湭缁戝畾浜哄憳鐨勶級 -->
     <select id="findAvailableHelmets" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
         SELECT
             a.id,
@@ -56,7 +56,7 @@
         ORDER BY a.update_date DESC
     </select>
     
-    <!-- 根据头盔编号查询设备 -->
+    <!-- 鏍规嵁澶寸洈缂栧彿鏌ヨ璁惧 -->
     <select id="getByDeviceId" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
         SELECT
             a.*
@@ -66,7 +66,7 @@
         LIMIT 1
     </select>
     
-    <!-- 强制清空设备绑定信息（将assigned_person等字段设置为null） -->
+    <!-- 寮哄埗娓呯┖璁惧缁戝畾淇℃伅锛堝皢assigned_person绛夊瓧娈佃缃负null锛?-->
     <update id="clearDeviceAssignment">
         UPDATE swm_helmet_device 
         SET 
@@ -83,8 +83,8 @@
         AND status = '0'
     </update>
     
-    <!-- 带有人员关联信息的列表查询，用于替代实体类默认查询 -->
-    <!-- 注意：JeeSite框架会自动在SQL末尾添加LIMIT子句，无需手动添加 -->
+    <!-- 甯︽湁浜哄憳鍏宠仈淇℃伅鐨勫垪琛ㄦ煡璇紝鐢ㄤ簬鏇夸唬瀹炰綋绫婚粯璁ゆ煡璇?-->
+    <!-- 娉ㄦ剰锛欽eeSite妗嗘灦浼氳嚜鍔ㄥ湪SQL鏈熬娣诲姞LIMIT瀛愬彞锛屾棤闇€鎵嬪姩娣诲姞 -->
     <select id="findHelmetDeviceListWithRelations" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
         SELECT
             a.id,
@@ -148,16 +148,16 @@
                 AND a.device_color LIKE CONCAT('%', #{deviceColor}, '%')
             </if>
 
-            <!-- 只有在 powerOnStatus 不为空时才加条件 -->
+            <!-- 鍙湁鍦?powerOnStatus 涓嶄负绌烘椂鎵嶅姞鏉′欢 -->
             <if test="powerOnStatus != null and powerOnStatus != ''">
-                <!-- 假如 status = 0，则使用 IN -->
+                <!-- 鍋囧 status = 0锛屽垯浣跨敤 IN -->
                 <if test="powerOnStatus == '0'.toString() ">
                     AND a.device_id IN
                     <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
                         #{id}
                     </foreach>
                 </if>
-                <!-- 否则 NOT IN -->
+                <!-- 鍚﹀垯 NOT IN -->
                 <if test="powerOnStatus == '1'.toString() ">
                     AND a.device_id NOT IN
                     <foreach collection="deviceOnlist" item="id" open="(" separator="," close=")">
@@ -172,7 +172,7 @@
         ORDER BY a.update_date DESC
     </select>
     
-    <!-- 带有人员关联信息的计数查询，用于替代框架默认的计数查询 -->
+    <!-- 甯︽湁浜哄憳鍏宠仈淇℃伅鐨勮鏁版煡璇紝鐢ㄤ簬鏇夸唬妗嗘灦榛樿鐨勮鏁版煡璇?-->
     <select id="findHelmetDeviceCountWithRelations" resultType="Long">
         SELECT COALESCE(COUNT(DISTINCT a.id), 0)
         FROM swm_helmet_device a
@@ -196,7 +196,7 @@
         </where>
     </select>
 
-    <!-- 根据设备ID列表查询设备详情（带人员关联信息） -->
+    <!-- 鏍规嵁璁惧ID鍒楄〃鏌ヨ璁惧璇︽儏锛堝甫浜哄憳鍏宠仈淇℃伅锛?-->
     <select id="findHelmetDeviceListByDeviceIds" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
         SELECT
             a.id,
@@ -266,13 +266,13 @@
         </where>
         ORDER BY a.update_date DESC
     </select>
-    <select id="findDeviceCorpMapping" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
+    <select id="findDeviceTenantMapping" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
         SELECT
-            device_id, corp_code,assigned_person
+            device_id, tenant_id,assigned_person
         FROM
             swm_helmet_device a
         where `status` = '0'
-          AND corp_code = #{corpCode}
+          AND tenant_id = #{tenantId}
           AND #{random} = #{random}
     </select>
     <select id="findListInit" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
@@ -284,7 +284,7 @@
             </if>
         </where>
     </select>
-    <!-- 批量根据设备ID（主键id）查询安全帽设备列表 -->
+    <!-- 鎵归噺鏍规嵁璁惧ID锛堜富閿甶d锛夋煡璇㈠畨鍏ㄥ附璁惧鍒楄〃 -->
     <select id="findHelmetDeviceListByIds" parameterType="java.util.List" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceDO">
         SELECT
         a.*
@@ -332,7 +332,7 @@
                 AND a.device_color LIKE CONCAT('%', #{deviceColor}, '%')
             </if>
 
-            <!-- 开机状态条件 -->
+            <!-- 寮€鏈虹姸鎬佹潯浠?-->
             <if test="powerOnStatus != null and powerOnStatus != ''">
                 <if test="powerOnStatus == '0'.toString() ">
                     AND a.device_id IN

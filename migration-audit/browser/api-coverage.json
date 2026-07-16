@@ -1,0 +1,2967 @@
+{
+  "frontendCalls": [
+    {
+      "url": "/swm/alarm-light/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/alarmLight.ts",
+      "line": 45
+    },
+    {
+      "url": "/swm/alarm-light/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/alarmLight.ts",
+      "line": 52
+    },
+    {
+      "url": "/swm/alarm-light/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/alarmLight.ts",
+      "line": 59
+    },
+    {
+      "url": "/swm/alarm-light/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/alarmLight.ts",
+      "line": 60
+    },
+    {
+      "url": "/swm/alarm-light/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/alarmLight.ts",
+      "line": 65
+    },
+    {
+      "url": "/swm/alarm-light/config-list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/alarmLight.ts",
+      "line": 73
+    },
+    {
+      "url": "/swm/alarm-light/delete-config",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/alarmLight.ts",
+      "line": 87
+    },
+    {
+      "url": "/swm/alarm-config/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/alarmLight.ts",
+      "line": 95
+    },
+    {
+      "url": "/swm/voice-template/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/alarmLight.ts",
+      "line": 103
+    },
+    {
+      "url": "/swm/swmArea/listAll",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/area.ts",
+      "line": 25
+    },
+    {
+      "url": "/swm/areaFenceData/listData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/areaFenceData.ts",
+      "line": 30
+    },
+    {
+      "url": "/swm/areaFenceData/exportData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/areaFenceData.ts",
+      "line": 37
+    },
+    {
+      "url": "/swm/swmAttendanceSummary/listData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/attendanceEfficiency.ts",
+      "line": 20
+    },
+    {
+      "url": "/swm/swmAttendanceSummary/listData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/attendanceSummary.ts",
+      "line": 43
+    },
+    {
+      "url": "/swm/swmAttendanceSummary/exportData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/attendanceSummary.ts",
+      "line": 54
+    },
+    {
+      "url": "/swm/person-work-area/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/beacon.ts",
+      "line": 155
+    },
+    {
+      "url": "/swm/beacon-station/location-for-map",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/beacon.ts",
+      "line": 162
+    },
+    {
+      "url": "/swm/common/options/companies",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/commonOptions.ts",
+      "line": 11
+    },
+    {
+      "url": "/swm/common/options/departments",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/commonOptions.ts",
+      "line": 18
+    },
+    {
+      "url": "/swm/common/options/prodLines",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/commonOptions.ts",
+      "line": 25
+    },
+    {
+      "url": "/swm/common/options/workGroups",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/commonOptions.ts",
+      "line": 32
+    },
+    {
+      "url": "/swm/daily-attendance/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dailyAttendance.ts",
+      "line": 6
+    },
+    {
+      "url": "/swm/daily-attendance/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dailyAttendance.ts",
+      "line": 11
+    },
+    {
+      "url": "/swm/daily-attendance/export-excel",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dailyAttendance.ts",
+      "line": 16
+    },
+    {
+      "url": "/swm/swmDailyAttendance/findAttendanceRange",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dailyAttendance.ts",
+      "line": 21
+    },
+    {
+      "url": "/swm/danger-disposal/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dangerDisposal.ts",
+      "line": 32
+    },
+    {
+      "url": "/swm/danger-disposal/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dangerDisposal.ts",
+      "line": 36
+    },
+    {
+      "url": "/swm/danger-disposal/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dangerDisposal.ts",
+      "line": 41
+    },
+    {
+      "url": "/swm/danger-disposal/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dangerDisposal.ts",
+      "line": 42
+    },
+    {
+      "url": "/swm/danger-disposal/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dangerDisposal.ts",
+      "line": 46
+    },
+    {
+      "url": "/swm/danger-disposal/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dangerDisposal.ts",
+      "line": 50
+    },
+    {
+      "url": "/swm/dashboard2/hourWorkingCount24",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 24
+    },
+    {
+      "url": "/swm/dashboard2/hourNightWorkingCount",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 27
+    },
+    {
+      "url": "/swm/common/options/companies",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 59
+    },
+    {
+      "url": "/swm/common/options/departments",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 63
+    },
+    {
+      "url": "/swm/common/options/prodLines",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 67
+    },
+    {
+      "url": "/swm/common/options/workGroups",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 71
+    },
+    {
+      "url": "/swm/common/options/workTypes",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 75
+    },
+    {
+      "url": "/swm/swmHazardSource/hazardSourceStatistics",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 79
+    },
+    {
+      "url": "/swm/swmHazardSource/hazardSourceCounts",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 83
+    },
+    {
+      "url": "/swm/swmInspectionList/latestInspectionRecord",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 88
+    },
+    {
+      "url": "/swm/warningManagement/hazardWarningStatistics",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 92
+    },
+    {
+      "url": "/swm/warningManagement/hazardSourceCounts",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 96
+    },
+    {
+      "url": "/swm/warningManagement/latestHazardSourceRecord",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 100
+    },
+    {
+      "url": "/swm/warningManagement/nonHazardWarningStatistics",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 104
+    },
+    {
+      "url": "/swm/warningManagement/nonHazardSourceCounts",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 108
+    },
+    {
+      "url": "/swm/handleRecord/latestHandleRecord",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 112
+    },
+    {
+      "url": "/swm/dashboard2/labor",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 117
+    },
+    {
+      "url": "/swm/dashboard2/personnel",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 124
+    },
+    {
+      "url": "/swm/dashboard2/workshop/attendance/analysis",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 130
+    },
+    {
+      "url": "/swm/dashboard2/team/attendance/analysis",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 136
+    },
+    {
+      "url": "/swm/dashboard2/team/attendance/analysisNew",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 141
+    },
+    {
+      "url": "/swm/dashboard2/worker/list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 147
+    },
+    {
+      "url": "/swm/dashboard2/attendance/list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 153
+    },
+    {
+      "url": "/swm/dashboard2/working/list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 159
+    },
+    {
+      "url": "/swm/dashboard2/abnormalAttendance/list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 165
+    },
+    {
+      "url": "/swm/dashboard2/beLatePerson",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 172
+    },
+    {
+      "url": "/swm/dashboard2/leaveEarlyPerson",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 179
+    },
+    {
+      "url": "/swm/dashboard2/noAttendancePerson",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 186
+    },
+    {
+      "url": "/swm/dashboard2/personIdleHoursRanking",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 193
+    },
+    {
+      "url": "/swm/dashboard2/personManagementOnDuty",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 200
+    },
+    {
+      "url": "/swm/dashboard2/departmentAttendanceAnalysis",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 207
+    },
+    {
+      "url": "/swm/dashboard2/teamAttendanceAnalysis",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 214
+    },
+    {
+      "url": "/swm/dashboard2/attendance/manageList",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 221
+    },
+    {
+      "url": "/swm/dashboard2/attendance/workList",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 228
+    },
+    {
+      "url": "/swm/dashboard2/noAttendancePersonExport",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dataScreen.ts",
+      "line": 235
+    },
+    {
+      "url": "/swm/dict-data/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictData.ts",
+      "line": 45
+    },
+    {
+      "url": "/swm/swmDictData/form",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictData.ts",
+      "line": 58
+    },
+    {
+      "url": "/swm/swmDictData/createNextNode",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictData.ts",
+      "line": 61
+    },
+    {
+      "url": "/swm/swmDictData/save",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictData.ts",
+      "line": 64
+    },
+    {
+      "url": "/swm/swmDictData/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictData.ts",
+      "line": 67
+    },
+    {
+      "url": "/swm/swmDictType/list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictType.ts",
+      "line": 19
+    },
+    {
+      "url": "/swm/swmDictType/listData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictType.ts",
+      "line": 22
+    },
+    {
+      "url": "/swm/swmDictType/form",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictType.ts",
+      "line": 25
+    },
+    {
+      "url": "/swm/swmDictType/save",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictType.ts",
+      "line": 28
+    },
+    {
+      "url": "/swm/swmDictType/checkDictType",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictType.ts",
+      "line": 32
+    },
+    {
+      "url": "/swm/swmDictType/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictType.ts",
+      "line": 37
+    },
+    {
+      "url": "/swm/swmDictType/treeData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/dictType.ts",
+      "line": 40
+    },
+    {
+      "url": "/swm/externalCoordinateData/listData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/externalCoordinateData.ts",
+      "line": 46
+    },
+    {
+      "url": "/swm/externalCoordinateData/exportData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/externalCoordinateData.ts",
+      "line": 53
+    },
+    {
+      "url": "/swm/beacon-color-config/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/helmetConfig.ts",
+      "line": 87
+    },
+    {
+      "url": "/swm/swmMediaFile/listAll",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/mediaFile.ts",
+      "line": 7
+    },
+    {
+      "url": "/swm/dashboard/overview",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 7
+    },
+    {
+      "url": "/swm/dashboard/warningRecordsForPast7Days",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 13
+    },
+    {
+      "url": "/swm/dashboard/warningRecordsForPast7DaysNew",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 16
+    },
+    {
+      "url": "/swm/voice-template/active-list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 22
+    },
+    {
+      "url": "/swm/personTrack/getPersonTrajectoryByDateTime",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 68
+    },
+    {
+      "url": "/swm/personTrack/getAreaFenceDataByIdCardByDateTime",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 80
+    },
+    {
+      "url": "/swm/personTrack/getMqttDevicePositionTrajectory",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 88
+    },
+    {
+      "url": "/swm/monitor-device/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 97
+    },
+    {
+      "url": "/swm/dashboard/attendance/dashboard",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 116
+    },
+    {
+      "url": "/swm/area/save-with-beacons",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/newDataScree.ts",
+      "line": 133
+    },
+    {
+      "url": "/swm/organizationTree/getNodes",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/organizationTree.ts",
+      "line": 31
+    },
+    {
+      "url": "/swm/organizationTree/getNodes",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/organizationTree.ts",
+      "line": 41
+    },
+    {
+      "url": "/swm/person/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 45
+    },
+    {
+      "url": "/swm/person/export-excel",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 53
+    },
+    {
+      "url": "/swm/person/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 66
+    },
+    {
+      "url": "/swm/person/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 79
+    },
+    {
+      "url": "/swm/person/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 90
+    },
+    {
+      "url": "/swm/person/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 94
+    },
+    {
+      "url": "/swm/person/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 104
+    },
+    {
+      "url": "/swm/person/delete-list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 114
+    },
+    {
+      "url": "/swm/person/import-template",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 125
+    },
+    {
+      "url": "/swm/person/import-template-enhanced",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 138
+    },
+    {
+      "url": "/swm/person/import-excel",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 151
+    },
+    {
+      "url": "/swm/person/import-excel-enhanced",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 167
+    },
+    {
+      "url": "/swm/person/batch-save",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 182
+    },
+    {
+      "url": "/swm/person/enum-options",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 192
+    },
+    {
+      "url": "/swm/person/handle-departure",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 201
+    },
+    {
+      "url": "/swm/person/find-departed-by-identity-card",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 214
+    },
+    {
+      "url": "/swm/work-type/active-list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 224
+    },
+    {
+      "url": "/swm/person/departure-detail",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 233
+    },
+    {
+      "url": "/swm/person/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 244
+    },
+    {
+      "url": "/swm/person/clear-safety-helmet",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 258
+    },
+    {
+      "url": "/swm/person/all",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 272
+    },
+    {
+      "url": "/swm/safety-helmet-order/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 281
+    },
+    {
+      "url": "/swm/person/check-identity-card",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 298
+    },
+    {
+      "url": "/swm/person/active-cache",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 309
+    },
+    {
+      "url": "/swm/person/active-with-id-card-cache",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 319
+    },
+    {
+      "url": "/swm/person/find-by-department-condition",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 329
+    },
+    {
+      "url": "/swm/person/search",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 348
+    },
+    {
+      "url": "/swm/person/batch-complete-safety-education",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 365
+    },
+    {
+      "url": "/swm/person/safety-education-by-identity-card",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/person.ts",
+      "line": 380
+    },
+    {
+      "url": "/swm/person-departure/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personDeparture.ts",
+      "line": 44
+    },
+    {
+      "url": "/swm/person-departure/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personDeparture.ts",
+      "line": 54
+    },
+    {
+      "url": "/swm/person-departure/find-list-by-identity-card",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personDeparture.ts",
+      "line": 64
+    },
+    {
+      "url": "/swm/personnel-board/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personnelBoard.ts",
+      "line": 53
+    },
+    {
+      "url": "/swm/personnelBoard/export",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personnelBoard.ts",
+      "line": 64
+    },
+    {
+      "url": "/swm/swmAttendanceSummary/attendanceDetails",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personnelBoard.ts",
+      "line": 76
+    },
+    {
+      "url": "/swm/safetyHelmetOrder/findByPersonId",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personnelBoard.ts",
+      "line": 86
+    },
+    {
+      "url": "/swm/personTrack/getOrgTree",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 103
+    },
+    {
+      "url": "/swm/personTrack/getPersonPositions",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 127
+    },
+    {
+      "url": "/swm/personTrack/getPersonPositionsNew",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 133
+    },
+    {
+      "url": "/swm/personTrack/getMqttPersonPositions",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 140
+    },
+    {
+      "url": "/swm/personTrack/searchPerson",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 156
+    },
+    {
+      "url": "/swm/personTrack/getPersonTrajectory",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 187
+    },
+    {
+      "url": "/swm/personTrack/getAreaFenceDataByIdCard",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 215
+    },
+    {
+      "url": "/swm/swmPerson/getActivePersonFromCache",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 238
+    },
+    {
+      "url": "/swm/swmSiteMapManagement/getEnabledMap",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 253
+    },
+    {
+      "url": "/swm/swmSiteMapManagement/getEnabledMap",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/personTrack.ts",
+      "line": 267
+    },
+    {
+      "url": "/swm/fmsProdLine/pageList",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/prodLine.ts",
+      "line": 24
+    },
+    {
+      "url": "/swm/fmsProdLine/save",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/prodLine.ts",
+      "line": 29
+    },
+    {
+      "url": "/swm/fmsProdLine/getCode",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/prodLine.ts",
+      "line": 35
+    },
+    {
+      "url": "/swm/fmsPositionArchive/pageList",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/prodLine.ts",
+      "line": 41
+    },
+    {
+      "url": "/swm/fmsPositionArchive/save",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/prodLine.ts",
+      "line": 46
+    },
+    {
+      "url": "/swm/fmsWorkGroup/pageList",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/prodLine.ts",
+      "line": 52
+    },
+    {
+      "url": "/swm/fmsWorkGroup/save",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/prodLine.ts",
+      "line": 57
+    },
+    {
+      "url": "/swm/swmRawMessageLog/listData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/rawMessageLog.ts",
+      "line": 39
+    },
+    {
+      "url": "/swm/swmRawMessageLog/exportData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/rawMessageLog.ts",
+      "line": 49
+    },
+    {
+      "url": "/swm/safetyEducation/list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 40
+    },
+    {
+      "url": "/swm/safety-education/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 50
+    },
+    {
+      "url": "/swm/safety-education/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 60
+    },
+    {
+      "url": "/swm/safety-education/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 71
+    },
+    {
+      "url": "/swm/safety-education/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 72
+    },
+    {
+      "url": "/swm/safety-education/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 80
+    },
+    {
+      "url": "/swm/safetyEducation/complete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 89
+    },
+    {
+      "url": "/swm/safetyEducation/upload",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 100
+    },
+    {
+      "url": "/swm/safetyEducation/download",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 120
+    },
+    {
+      "url": "/swm/safetyEducation/fileList",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 133
+    },
+    {
+      "url": "/swm/safetyEducation/enumOptions",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyEducation.ts",
+      "line": 143
+    },
+    {
+      "url": "/swm/media-file/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyVideos.ts",
+      "line": 41
+    },
+    {
+      "url": "/swm/media-file/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyVideos.ts",
+      "line": 49
+    },
+    {
+      "url": "/swm/media-file/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyVideos.ts",
+      "line": 56
+    },
+    {
+      "url": "/swm/media-file/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyVideos.ts",
+      "line": 57
+    },
+    {
+      "url": "/swm/media-file/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyVideos.ts",
+      "line": 61
+    },
+    {
+      "url": "/swm/work-type/active-list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/safetyVideos.ts",
+      "line": 64
+    },
+    {
+      "url": "/swm/schedule-time/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/scheduleTime.ts",
+      "line": 39
+    },
+    {
+      "url": "/swm/schedule-time/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/scheduleTime.ts",
+      "line": 49
+    },
+    {
+      "url": "/swm/schedule-time/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/scheduleTime.ts",
+      "line": 59
+    },
+    {
+      "url": "/swm/schedule-time/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/scheduleTime.ts",
+      "line": 60
+    },
+    {
+      "url": "/swm/scheduleTime/saveAll",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/scheduleTime.ts",
+      "line": 69
+    },
+    {
+      "url": "/swm/schedule-time/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/scheduleTime.ts",
+      "line": 81
+    },
+    {
+      "url": "/swm/scheduleTime/deleteAll",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/scheduleTime.ts",
+      "line": 89
+    },
+    {
+      "url": "/swm/scheduleTime/getAllScheduleTime",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/scheduleTime.ts",
+      "line": 99
+    },
+    {
+      "url": "/swm/warningManagement/sosListData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/sos.ts",
+      "line": 15
+    },
+    {
+      "url": "/swm/warningManagement/form",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/sos.ts",
+      "line": 25
+    },
+    {
+      "url": "/swm/warningManagement/sendSOSAlarm",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/sos.ts",
+      "line": 35
+    },
+    {
+      "url": "/swm/warningManagement/sosExport",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/sos.ts",
+      "line": 46
+    },
+    {
+      "url": "/swm/person-schedule/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 44
+    },
+    {
+      "url": "/swm/person-schedule/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 54
+    },
+    {
+      "url": "/swm/person-schedule/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 64
+    },
+    {
+      "url": "/swm/person-schedule/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 65
+    },
+    {
+      "url": "/swm/personSchedule/batchSave",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 73
+    },
+    {
+      "url": "/swm/person-schedule/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 85
+    },
+    {
+      "url": "/swm/personSchedule/deleteAll",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 93
+    },
+    {
+      "url": "/swm/personSchedule/monthStats",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 103
+    },
+    {
+      "url": "/swm/personSchedule/export",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 114
+    },
+    {
+      "url": "/swm/personSchedule/import",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 128
+    },
+    {
+      "url": "/swm/personSchedule/importTemplate",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 144
+    },
+    {
+      "url": "/swm/personSchedule/getWorkGroups",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 156
+    },
+    {
+      "url": "/swm/personSchedule/batchUpdateClasses",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 163
+    },
+    {
+      "url": "/swm/personSchedule/getPersonIdList",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 171
+    },
+    {
+      "url": "/swm/personScheduleLog/get/*",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffSchedule.ts",
+      "line": 179
+    },
+    {
+      "url": "/swm/staffScheduling/getPersonsByNodeType",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffScheduling.ts",
+      "line": 27
+    },
+    {
+      "url": "/swm/staffScheduling/batchGetPersonsByNodeTypes",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/staffScheduling.ts",
+      "line": 42
+    },
+    {
+      "url": "/swm/swmDify/list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmDify.ts",
+      "line": 16
+    },
+    {
+      "url": "/swm/swmDify/pageList",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmDify.ts",
+      "line": 19
+    },
+    {
+      "url": "/swm/swmDify/form",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmDify.ts",
+      "line": 22
+    },
+    {
+      "url": "/swm/fileUpload/preview",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmDify.ts",
+      "line": 27
+    },
+    {
+      "url": "/swm/swmDify/save",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmDify.ts",
+      "line": 37
+    },
+    {
+      "url": "/swm/swmDify/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmDify.ts",
+      "line": 40
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmSafetyPersonTraining.ts",
+      "line": 14
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/pageList",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmSafetyPersonTraining.ts",
+      "line": 17
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/form",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmSafetyPersonTraining.ts",
+      "line": 20
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/save",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmSafetyPersonTraining.ts",
+      "line": 23
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/delete",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/swmSafetyPersonTraining.ts",
+      "line": 26
+    },
+    {
+      "url": "/swm/swmTcpDeviceCommandLog/listData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/tcpDeviceCommandLog.ts",
+      "line": 40
+    },
+    {
+      "url": "/swm/swmTcpDeviceCommandLog/exportData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/tcpDeviceCommandLog.ts",
+      "line": 50
+    },
+    {
+      "url": "/swm/warning/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warning.ts",
+      "line": 53
+    },
+    {
+      "url": "/swm/warning/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warning.ts",
+      "line": 63
+    },
+    {
+      "url": "/swm/warning/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warning.ts",
+      "line": 73
+    },
+    {
+      "url": "/swm/warning/export-excel",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warning.ts",
+      "line": 84
+    },
+    {
+      "url": "/swm/warning/enum-options",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warning.ts",
+      "line": 97
+    },
+    {
+      "url": "/swm/warning/popup-warnings",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warning.ts",
+      "line": 107
+    },
+    {
+      "url": "/swm/warning/confirm",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warning.ts",
+      "line": 123
+    },
+    {
+      "url": "/swm/handle-record/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warningRecord.ts",
+      "line": 65
+    },
+    {
+      "url": "/swm/handle-record/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warningRecord.ts",
+      "line": 75
+    },
+    {
+      "url": "/swm/handle-record/unhandled-warnings",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warningRecord.ts",
+      "line": 98
+    },
+    {
+      "url": "/swm/handle-record/export-excel",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/warningRecord.ts",
+      "line": 119
+    },
+    {
+      "url": "/swm/daily-attendance/weekly-list",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/weekly.ts",
+      "line": 6
+    },
+    {
+      "url": "/swm/daily-attendance/export-weekly",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/api/swm/weekly.ts",
+      "line": 11
+    },
+    {
+      "url": "/swm/swmAttendanceSummary/listData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/checkAttendance/AttendanceList.vue",
+      "line": 69
+    },
+    {
+      "url": "/swm/swmAttendanceSummary/exportData",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/checkAttendance/AttendanceList.vue",
+      "line": 77
+    },
+    {
+      "url": "/swm/daily-attendance/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/monthlyAttendance/components/EditModal.vue",
+      "line": 87
+    },
+    {
+      "url": "/swm/daily-attendance/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/monthlyAttendance/components/EditModal.vue",
+      "line": 225
+    },
+    {
+      "url": "/swm/daily-attendance/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/monthlyAttendance/components/EditModal.vue",
+      "line": 226
+    },
+    {
+      "url": "/swm/attendance-summary/page",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/monthlyAttendance/index.vue",
+      "line": 106
+    },
+    {
+      "url": "/swm/one-click-recall/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/oneKeyRecall/oneKeyRecall.data.ts",
+      "line": 287
+    },
+    {
+      "url": "/swm/daily-attendance/get",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/weekly/components/EditModal.vue",
+      "line": 87
+    },
+    {
+      "url": "/swm/daily-attendance/update",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/weekly/components/EditModal.vue",
+      "line": 225
+    },
+    {
+      "url": "/swm/daily-attendance/create",
+      "file": "yudao-ui/yudao-ui-admin-vue3/src/views/swm/weekly/components/EditModal.vue",
+      "line": 226
+    }
+  ],
+  "backendRoutes": [
+    {
+      "url": "/swm/alarm-config/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm/SwmAlarmConfigController.java"
+    },
+    {
+      "url": "/swm/alarm-config/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm/SwmAlarmConfigController.java"
+    },
+    {
+      "url": "/swm/alarm-config/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm/SwmAlarmConfigController.java"
+    },
+    {
+      "url": "/swm/alarm-config/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm/SwmAlarmConfigController.java"
+    },
+    {
+      "url": "/swm/alarm-config/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm/SwmAlarmConfigController.java"
+    },
+    {
+      "url": "/swm/alarm-config-detail/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_detail/SwmAlarmConfigDetailController.java"
+    },
+    {
+      "url": "/swm/alarm-config-detail/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_detail/SwmAlarmConfigDetailController.java"
+    },
+    {
+      "url": "/swm/alarm-config-detail/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_detail/SwmAlarmConfigDetailController.java"
+    },
+    {
+      "url": "/swm/alarm-config-detail/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_detail/SwmAlarmConfigDetailController.java"
+    },
+    {
+      "url": "/swm/alarm-config-detail/get-by-main-id",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_detail/SwmAlarmConfigDetailController.java"
+    },
+    {
+      "url": "/swm/alarm-config-detail/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_detail/SwmAlarmConfigDetailController.java"
+    },
+    {
+      "url": "/swm/alarm-light/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_light/SwmAlarmLightController.java"
+    },
+    {
+      "url": "/swm/alarm-light/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_light/SwmAlarmLightController.java"
+    },
+    {
+      "url": "/swm/alarm-light/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_light/SwmAlarmLightController.java"
+    },
+    {
+      "url": "/swm/alarm-light/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_light/SwmAlarmLightController.java"
+    },
+    {
+      "url": "/swm/alarm-light/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/alarm_light/SwmAlarmLightController.java"
+    },
+    {
+      "url": "/swm/area/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/area/SwmAreaController.java"
+    },
+    {
+      "url": "/swm/area/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/area/SwmAreaController.java"
+    },
+    {
+      "url": "/swm/area/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/area/SwmAreaController.java"
+    },
+    {
+      "url": "/swm/area/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/area/SwmAreaController.java"
+    },
+    {
+      "url": "/swm/area/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/area/SwmAreaController.java"
+    },
+    {
+      "url": "/swm/area/save-with-beacons",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/area/SwmAreaController.java"
+    },
+    {
+      "url": "/swm/area/beacon-coordinates",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/area/SwmAreaController.java"
+    },
+    {
+      "url": "/swm/area/check-beacon-conflicts",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/area/SwmAreaController.java"
+    },
+    {
+      "url": "/swm/area/update-beacon-colors",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/area/SwmAreaController.java"
+    },
+    {
+      "url": "/swm/daily-attendance/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendance/SwmDailyAttendanceController.java"
+    },
+    {
+      "url": "/swm/daily-attendance/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendance/SwmDailyAttendanceController.java"
+    },
+    {
+      "url": "/swm/daily-attendance/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendance/SwmDailyAttendanceController.java"
+    },
+    {
+      "url": "/swm/daily-attendance/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendance/SwmDailyAttendanceController.java"
+    },
+    {
+      "url": "/swm/daily-attendance/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendance/SwmDailyAttendanceController.java"
+    },
+    {
+      "url": "/swm/daily-attendance/weekly-list",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendance/SwmDailyAttendanceController.java"
+    },
+    {
+      "url": "/swm/daily-attendance/export-excel",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendance/SwmDailyAttendanceController.java"
+    },
+    {
+      "url": "/swm/daily-attendance/export-weekly",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendance/SwmDailyAttendanceController.java"
+    },
+    {
+      "url": "/swm/attendance-summary/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendanceSummary/SwmAttendanceSummaryController.java"
+    },
+    {
+      "url": "/swm/attendance-summary/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendanceSummary/SwmAttendanceSummaryController.java"
+    },
+    {
+      "url": "/swm/attendance-summary/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendanceSummary/SwmAttendanceSummaryController.java"
+    },
+    {
+      "url": "/swm/attendance-summary/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendanceSummary/SwmAttendanceSummaryController.java"
+    },
+    {
+      "url": "/swm/attendance-summary/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/attendanceSummary/SwmAttendanceSummaryController.java"
+    },
+    {
+      "url": "/swm/beacon-station/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beacon/SwmBeaconStationController.java"
+    },
+    {
+      "url": "/swm/beacon-station/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beacon/SwmBeaconStationController.java"
+    },
+    {
+      "url": "/swm/beacon-station/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beacon/SwmBeaconStationController.java"
+    },
+    {
+      "url": "/swm/beacon-station/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beacon/SwmBeaconStationController.java"
+    },
+    {
+      "url": "/swm/beacon-station/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beacon/SwmBeaconStationController.java"
+    },
+    {
+      "url": "/swm/beacon-station/list-all",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beacon/SwmBeaconStationController.java"
+    },
+    {
+      "url": "/swm/beacon-station/location-for-map",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beacon/SwmBeaconStationController.java"
+    },
+    {
+      "url": "/swm/beacon-color-config/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beaconcolor/SwmBeaconColorConfigController.java"
+    },
+    {
+      "url": "/swm/beacon-color-config/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beaconcolor/SwmBeaconColorConfigController.java"
+    },
+    {
+      "url": "/swm/beacon-color-config/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beaconcolor/SwmBeaconColorConfigController.java"
+    },
+    {
+      "url": "/swm/beacon-color-config/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beaconcolor/SwmBeaconColorConfigController.java"
+    },
+    {
+      "url": "/swm/beacon-color-config/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/beaconcolor/SwmBeaconColorConfigController.java"
+    },
+    {
+      "url": "/swm/danger-disposal/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/danger_disposal/SwmDangerDisposalController.java"
+    },
+    {
+      "url": "/swm/danger-disposal/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/danger_disposal/SwmDangerDisposalController.java"
+    },
+    {
+      "url": "/swm/danger-disposal/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/danger_disposal/SwmDangerDisposalController.java"
+    },
+    {
+      "url": "/swm/danger-disposal/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/danger_disposal/SwmDangerDisposalController.java"
+    },
+    {
+      "url": "/swm/danger-disposal/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/danger_disposal/SwmDangerDisposalController.java"
+    },
+    {
+      "url": "/swm/dict-data/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dictdata/SwmDictDataController.java"
+    },
+    {
+      "url": "/swm/dict-data/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dictdata/SwmDictDataController.java"
+    },
+    {
+      "url": "/swm/dict-data/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dictdata/SwmDictDataController.java"
+    },
+    {
+      "url": "/swm/dict-data/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dictdata/SwmDictDataController.java"
+    },
+    {
+      "url": "/swm/dict-data/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dictdata/SwmDictDataController.java"
+    },
+    {
+      "url": "/swm/dict-type/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dicttype/SwmDictTypeController.java"
+    },
+    {
+      "url": "/swm/dict-type/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dicttype/SwmDictTypeController.java"
+    },
+    {
+      "url": "/swm/dict-type/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dicttype/SwmDictTypeController.java"
+    },
+    {
+      "url": "/swm/dict-type/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dicttype/SwmDictTypeController.java"
+    },
+    {
+      "url": "/swm/dict-type/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/dicttype/SwmDictTypeController.java"
+    },
+    {
+      "url": "/swm/handle-record/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/handle_record/SwmHandleRecordController.java"
+    },
+    {
+      "url": "/swm/handle-record/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/handle_record/SwmHandleRecordController.java"
+    },
+    {
+      "url": "/swm/handle-record/update",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/handle_record/SwmHandleRecordController.java"
+    },
+    {
+      "url": "/swm/handle-record/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/handle_record/SwmHandleRecordController.java"
+    },
+    {
+      "url": "/swm/handle-record/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/handle_record/SwmHandleRecordController.java"
+    },
+    {
+      "url": "/swm/handle-record/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/handle_record/SwmHandleRecordController.java"
+    },
+    {
+      "url": "/swm/handle-record/unhandled-warnings",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/handle_record/SwmHandleRecordController.java"
+    },
+    {
+      "url": "/swm/handle-record/export-excel",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/handle_record/SwmHandleRecordController.java"
+    },
+    {
+      "url": "/swm/hazard-source/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hazard/SwmHazardSourceController.java"
+    },
+    {
+      "url": "/swm/hazard-source/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hazard/SwmHazardSourceController.java"
+    },
+    {
+      "url": "/swm/hazard-source/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hazard/SwmHazardSourceController.java"
+    },
+    {
+      "url": "/swm/hazard-source/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hazard/SwmHazardSourceController.java"
+    },
+    {
+      "url": "/swm/hazard-source/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hazard/SwmHazardSourceController.java"
+    },
+    {
+      "url": "/swm/hazard-source/temp-save",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hazard/SwmHazardSourceController.java"
+    },
+    {
+      "url": "/swm/hazard-source/find-by-beacon",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hazard/SwmHazardSourceController.java"
+    },
+    {
+      "url": "/swm/hazard-source/inspection-records",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hazard/SwmHazardSourceController.java"
+    },
+    {
+      "url": "/swm/hazard-source/not-patrolled-list",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hazard/SwmHazardSourceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/export-excel",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/getByDeviceId",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/findAvailableHelmets",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/deleteAll",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/updateBattery",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/saveDeviceConfig",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/getDeviceConfig",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/assignPerson",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/unassignPerson",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/batchChargeReminder",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/findByAssignedPerson",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/findByWorkshop",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/findByProcess",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/findByTeam",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/helmet-device/getHelmetUsageRecords",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/helmet/SwmHelmetDeviceController.java"
+    },
+    {
+      "url": "/swm/hidden-danger/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hidden_danger/SwmHiddenDangerController.java"
+    },
+    {
+      "url": "/swm/hidden-danger/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hidden_danger/SwmHiddenDangerController.java"
+    },
+    {
+      "url": "/swm/hidden-danger/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hidden_danger/SwmHiddenDangerController.java"
+    },
+    {
+      "url": "/swm/hidden-danger/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hidden_danger/SwmHiddenDangerController.java"
+    },
+    {
+      "url": "/swm/hidden-danger/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/hidden_danger/SwmHiddenDangerController.java"
+    },
+    {
+      "url": "/swm/inspection-list/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionlist/SwmInspectionListController.java"
+    },
+    {
+      "url": "/swm/inspection-list/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionlist/SwmInspectionListController.java"
+    },
+    {
+      "url": "/swm/inspection-list/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionlist/SwmInspectionListController.java"
+    },
+    {
+      "url": "/swm/inspection-list/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionlist/SwmInspectionListController.java"
+    },
+    {
+      "url": "/swm/inspection-list/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionlist/SwmInspectionListController.java"
+    },
+    {
+      "url": "/swm/inspection-list/start-task",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionlist/SwmInspectionListController.java"
+    },
+    {
+      "url": "/swm/inspection-list/complete-task",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionlist/SwmInspectionListController.java"
+    },
+    {
+      "url": "/swm/inspection-list/files",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionlist/SwmInspectionListController.java"
+    },
+    {
+      "url": "/swm/inspection-plan/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionplan/SwmInspectionPlanController.java"
+    },
+    {
+      "url": "/swm/inspection-plan/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionplan/SwmInspectionPlanController.java"
+    },
+    {
+      "url": "/swm/inspection-plan/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionplan/SwmInspectionPlanController.java"
+    },
+    {
+      "url": "/swm/inspection-plan/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionplan/SwmInspectionPlanController.java"
+    },
+    {
+      "url": "/swm/inspection-plan/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionplan/SwmInspectionPlanController.java"
+    },
+    {
+      "url": "/swm/inspection-plan/open",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionplan/SwmInspectionPlanController.java"
+    },
+    {
+      "url": "/swm/inspection-plan/pause",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/inspectionplan/SwmInspectionPlanController.java"
+    },
+    {
+      "url": "/swm/job-log/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/joblog/SwmJobLogController.java"
+    },
+    {
+      "url": "/swm/job-log/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/joblog/SwmJobLogController.java"
+    },
+    {
+      "url": "/swm/safetyEducation/listData",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmSiteMapManagement/getEnabledMap",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmArea/listAll",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmArea/saveAreaWithBeaconIds",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/common/options/companies",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/common/options/departments",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/common/options/prodLines",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/common/options/workGroups",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/common/options/workTypes",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/staffScheduling/getPersonsByNodeType",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/staffScheduling/batchGetPersonsByNodeTypes",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/warningManagement/sosListData",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/warningManagement/form",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/warningManagement/sendSOSAlarm",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/warningManagement/sosExport",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/dashboard/**",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/dashboard2/**",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHazardSource/hazardSourceStatistics",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHazardSource/hazardSourceCounts",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmInspectionList/latestInspectionRecord",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/warningManagement/hazardWarningStatistics",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/warningManagement/hazardSourceCounts",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/warningManagement/latestHazardSourceRecord",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/warningManagement/nonHazardWarningStatistics",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/warningManagement/nonHazardSourceCounts",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/handleRecord/latestHandleRecord",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/getOrgTree",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/getPersonPositions",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/getPersonPositionsNew",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/getMqttPersonPositions",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/searchPerson",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/getPersonTrajectory",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/getAreaFenceDataByIdCard",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/getPersonTrajectoryByDateTime",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/getAreaFenceDataByIdCardByDateTime",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personTrack/getMqttDevicePositionTrajectory",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmPerson/getActivePersonFromCache",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/fmsProdLine/pageList",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/fmsPositionArchive/pageList",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/fmsWorkGroup/pageList",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/fmsProdLine/save",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/fmsPositionArchive/save",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/fmsWorkGroup/save",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/fmsProdLine/getCode",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personnelBoard/export",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDailyAttendance/findAttendanceRange",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmMediaFile/listAll",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetSubitem/findByParentId",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmAttendanceSummary/attendanceDetails",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/safetyHelmetOrder/findByPersonId",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmAttendanceSummary/listData",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmAttendanceSummary/exportData",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmPersonDeparture/findListByIdentityCard",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personScheduleLog/get/{id}",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personSchedule/batchSave",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personSchedule/batchUpdateClasses",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personSchedule/getPersonIdList",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personSchedule/getWorkGroups",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personSchedule/monthStats",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personSchedule/deleteAll",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personSchedule/export",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personSchedule/import",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/personSchedule/importTemplate",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/alarm-light/config-list",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/alarm-light/create-config",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/alarm-light/update-config",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/alarm-light/delete-config",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetConfig/listData",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetConfig/getDetail",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetConfig/getWorkshopData",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetConfig/getWorkshopLineGroupData",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetConfig/getPersonTypeEnumData",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetConfig/getWorkTypeEnumData",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmBeaconColorConfig/listData",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmBeaconColorConfig/getDetail",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/fileUpload/preview",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetConfig/save",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetConfig/delete",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetSubitem/save",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmBeaconColorConfig/save",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmBeaconColorConfig/delete",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmHelmetDeviceConfig/saveConfig",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/scheduleTime/saveAll",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/scheduleTime/deleteAll",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/scheduleTime/getAllScheduleTime",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/safetyEducation/list",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/safetyEducation/complete",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/safetyEducation/upload",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/safetyEducation/download",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/safetyEducation/fileList",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/safetyEducation/enumOptions",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmRawMessageLog/listData",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/externalCoordinateData/listData",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/areaFenceData/listData",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmTcpDeviceCommandLog/listData",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmRawMessageLog/exportData",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/externalCoordinateData/exportData",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/areaFenceData/exportData",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmTcpDeviceCommandLog/exportData",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictType/list",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictType/listData",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictType/form",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictType/save",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictType/delete",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictType/checkDictType",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictType/treeData",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictData/list",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictData/listData",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictData/form",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictData/createNextNode",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictData/save",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictData/delete",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDictData/treeData",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyCompatController.java"
+    },
+    {
+      "url": "/swm/swmDify/pageList",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/swmDify/list",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/swmDify/form",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/swmDify/save",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/swmDify/delete",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/pageList",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/list",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/form",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/save",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/swmSafetyPersonTraining/delete",
+      "method": "REQUEST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/legacy/SwmLegacyReportController.java"
+    },
+    {
+      "url": "/swm/media-file/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/mediafile/SwmMediaFileController.java"
+    },
+    {
+      "url": "/swm/media-file/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/mediafile/SwmMediaFileController.java"
+    },
+    {
+      "url": "/swm/media-file/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/mediafile/SwmMediaFileController.java"
+    },
+    {
+      "url": "/swm/media-file/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/mediafile/SwmMediaFileController.java"
+    },
+    {
+      "url": "/swm/media-file/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/mediafile/SwmMediaFileController.java"
+    },
+    {
+      "url": "/swm/monitor-device/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/monitordevice/SwmMonitorDeviceInfoController.java"
+    },
+    {
+      "url": "/swm/monitor-device/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/monitordevice/SwmMonitorDeviceInfoController.java"
+    },
+    {
+      "url": "/swm/monitor-device/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/monitordevice/SwmMonitorDeviceInfoController.java"
+    },
+    {
+      "url": "/swm/monitor-device/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/monitordevice/SwmMonitorDeviceInfoController.java"
+    },
+    {
+      "url": "/swm/monitor-device/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/monitordevice/SwmMonitorDeviceInfoController.java"
+    },
+    {
+      "url": "/swm/one-click-recall/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/one_click_recall/SwmOneClickRecallController.java"
+    },
+    {
+      "url": "/swm/one-click-recall/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/one_click_recall/SwmOneClickRecallController.java"
+    },
+    {
+      "url": "/swm/one-click-recall/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/one_click_recall/SwmOneClickRecallController.java"
+    },
+    {
+      "url": "/swm/one-click-recall/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/one_click_recall/SwmOneClickRecallController.java"
+    },
+    {
+      "url": "/swm/one-click-recall/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/one_click_recall/SwmOneClickRecallController.java"
+    },
+    {
+      "url": "/swm/organizationTree/getNodes",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/organization/SwmOrganizationTreeController.java"
+    },
+    {
+      "url": "/swm/person/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/export-excel",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/import-template",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/import-template-enhanced",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/import-excel",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/import-excel-enhanced",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/batch-save",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/enum-options",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/delete-list",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/check-identity-card",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/handle-departure",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/find-departed-by-identity-card",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/departure-detail",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/clear-safety-helmet",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/all",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/active-cache",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/active-with-id-card-cache",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/batch-complete-safety-education",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/safety-education-by-identity-card",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/find-by-department-condition",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person/search",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/person/SwmPersonController.java"
+    },
+    {
+      "url": "/swm/person-departure/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/persondeparture/SwmPersonDepartureController.java"
+    },
+    {
+      "url": "/swm/person-departure/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/persondeparture/SwmPersonDepartureController.java"
+    },
+    {
+      "url": "/swm/person-departure/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/persondeparture/SwmPersonDepartureController.java"
+    },
+    {
+      "url": "/swm/person-departure/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/persondeparture/SwmPersonDepartureController.java"
+    },
+    {
+      "url": "/swm/person-departure/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/persondeparture/SwmPersonDepartureController.java"
+    },
+    {
+      "url": "/swm/person-departure/find-list-by-identity-card",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/persondeparture/SwmPersonDepartureController.java"
+    },
+    {
+      "url": "/swm/personnel-board/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personnelboard/SwmPersonnelBoardController.java"
+    },
+    {
+      "url": "/swm/personnel-board/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personnelboard/SwmPersonnelBoardController.java"
+    },
+    {
+      "url": "/swm/personnel-board/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personnelboard/SwmPersonnelBoardController.java"
+    },
+    {
+      "url": "/swm/personnel-board/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personnelboard/SwmPersonnelBoardController.java"
+    },
+    {
+      "url": "/swm/personnel-board/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personnelboard/SwmPersonnelBoardController.java"
+    },
+    {
+      "url": "/swm/person-schedule/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-schedule/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-schedule/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-schedule/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-schedule/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-schedule/batchSave",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-schedule/batchUpdateClasses",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-schedule/getPersonIdList",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-schedule/getWorkGroups",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-schedule/monthStats",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personSchedule/SwmPersonScheduleController.java"
+    },
+    {
+      "url": "/swm/person-work-area/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personworkarea/SwmPersonWorkAreaController.java"
+    },
+    {
+      "url": "/swm/person-work-area/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personworkarea/SwmPersonWorkAreaController.java"
+    },
+    {
+      "url": "/swm/person-work-area/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personworkarea/SwmPersonWorkAreaController.java"
+    },
+    {
+      "url": "/swm/person-work-area/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personworkarea/SwmPersonWorkAreaController.java"
+    },
+    {
+      "url": "/swm/person-work-area/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/personworkarea/SwmPersonWorkAreaController.java"
+    },
+    {
+      "url": "/swm/safety-education/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyeducation/SwmSafetyEducationController.java"
+    },
+    {
+      "url": "/swm/safety-education/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyeducation/SwmSafetyEducationController.java"
+    },
+    {
+      "url": "/swm/safety-education/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyeducation/SwmSafetyEducationController.java"
+    },
+    {
+      "url": "/swm/safety-education/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyeducation/SwmSafetyEducationController.java"
+    },
+    {
+      "url": "/swm/safety-education/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyeducation/SwmSafetyEducationController.java"
+    },
+    {
+      "url": "/swm/safety-helmet-order/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyhelmetorder/SwmSafetyHelmetOrderController.java"
+    },
+    {
+      "url": "/swm/safety-helmet-order/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyhelmetorder/SwmSafetyHelmetOrderController.java"
+    },
+    {
+      "url": "/swm/safety-helmet-order/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyhelmetorder/SwmSafetyHelmetOrderController.java"
+    },
+    {
+      "url": "/swm/safety-helmet-order/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyhelmetorder/SwmSafetyHelmetOrderController.java"
+    },
+    {
+      "url": "/swm/safety-helmet-order/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/safetyhelmetorder/SwmSafetyHelmetOrderController.java"
+    },
+    {
+      "url": "/swm/schedule-log/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/schedulelog/SwmPersonScheduleLogController.java"
+    },
+    {
+      "url": "/swm/schedule-log/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/schedulelog/SwmPersonScheduleLogController.java"
+    },
+    {
+      "url": "/swm/schedule-time/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/scheduleTime/SwmScheduleTimeController.java"
+    },
+    {
+      "url": "/swm/schedule-time/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/scheduleTime/SwmScheduleTimeController.java"
+    },
+    {
+      "url": "/swm/schedule-time/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/scheduleTime/SwmScheduleTimeController.java"
+    },
+    {
+      "url": "/swm/schedule-time/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/scheduleTime/SwmScheduleTimeController.java"
+    },
+    {
+      "url": "/swm/schedule-time/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/scheduleTime/SwmScheduleTimeController.java"
+    },
+    {
+      "url": "/swm/site-map/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/sitemap/SwmSiteMapManagementController.java"
+    },
+    {
+      "url": "/swm/site-map/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/sitemap/SwmSiteMapManagementController.java"
+    },
+    {
+      "url": "/swm/site-map/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/sitemap/SwmSiteMapManagementController.java"
+    },
+    {
+      "url": "/swm/site-map/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/sitemap/SwmSiteMapManagementController.java"
+    },
+    {
+      "url": "/swm/site-map/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/sitemap/SwmSiteMapManagementController.java"
+    },
+    {
+      "url": "/swm/third-api-log/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/thirdapilog/SwmThirdApiLogController.java"
+    },
+    {
+      "url": "/swm/third-api-log/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/thirdapilog/SwmThirdApiLogController.java"
+    },
+    {
+      "url": "/swm/voice-template/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/voice_template/SwmVoiceTemplateController.java"
+    },
+    {
+      "url": "/swm/voice-template/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/voice_template/SwmVoiceTemplateController.java"
+    },
+    {
+      "url": "/swm/voice-template/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/voice_template/SwmVoiceTemplateController.java"
+    },
+    {
+      "url": "/swm/voice-template/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/voice_template/SwmVoiceTemplateController.java"
+    },
+    {
+      "url": "/swm/voice-template/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/voice_template/SwmVoiceTemplateController.java"
+    },
+    {
+      "url": "/swm/voice-template/update-status",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/voice_template/SwmVoiceTemplateController.java"
+    },
+    {
+      "url": "/swm/voice-template/active-list",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/voice_template/SwmVoiceTemplateController.java"
+    },
+    {
+      "url": "/swm/warning/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/warning/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/warning/update",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/warning/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/warning/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/warning/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/warning/enum-options",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/warning/popup-warnings",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/warning/confirm",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/warning/export-excel",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/warning/SwmWarningManagementController.java"
+    },
+    {
+      "url": "/swm/work-type/create",
+      "method": "POST",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/worktype/SwmWorkTypeController.java"
+    },
+    {
+      "url": "/swm/work-type/update",
+      "method": "PUT",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/worktype/SwmWorkTypeController.java"
+    },
+    {
+      "url": "/swm/work-type/delete",
+      "method": "DELETE",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/worktype/SwmWorkTypeController.java"
+    },
+    {
+      "url": "/swm/work-type/get",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/worktype/SwmWorkTypeController.java"
+    },
+    {
+      "url": "/swm/work-type/page",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/worktype/SwmWorkTypeController.java"
+    },
+    {
+      "url": "/swm/work-type/active-list",
+      "method": "GET",
+      "file": "yudao-module-swm/src/main/java/cn/iocoder/yudao/module/swm/controller/admin/worktype/SwmWorkTypeController.java"
+    }
+  ],
+  "missing": []
+}

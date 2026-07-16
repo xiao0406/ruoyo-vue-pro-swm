@@ -6,7 +6,9 @@ import cn.iocoder.yudao.module.swm.controller.admin.persondeparture.vo.SwmPerson
 import cn.iocoder.yudao.module.swm.controller.admin.persondeparture.vo.SwmPersonDepartureSaveReqVO;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDepartureDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmPersonDepartureMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -59,7 +61,24 @@ public class SwmPersonDepartureServiceImpl implements SwmPersonDepartureService 
 
     @Override
     public PageResult<SwmPersonDepartureDO> getPersonDeparturePage(SwmPersonDeparturePageReqVO pageReqVO) {
-        return swmPersonDepartureMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmPersonDepartureMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmPersonDepartureDO>()
+                        .likeIfPresent(SwmPersonDepartureDO::getName, pageReqVO.getName())
+                        .likeIfPresent(SwmPersonDepartureDO::getIdentityCard, pageReqVO.getIdentityCard())
+                        .eqIfPresent(SwmPersonDepartureDO::getDepartureType, pageReqVO.getDepartureType())
+                        .betweenIfPresent(SwmPersonDepartureDO::getDepartureDate,
+                                pageReqVO.getDepartureDateStart(), pageReqVO.getDepartureDateEnd())
+                        .orderByDesc(SwmPersonDepartureDO::getDepartureDate));
+    }
+
+    @Override
+    public List<SwmPersonDepartureDO> findListByIdentityCard(String identityCard) {
+        if (identityCard == null || identityCard.isBlank()) {
+            return List.of();
+        }
+        return swmPersonDepartureMapper.selectList(new LambdaQueryWrapper<SwmPersonDepartureDO>()
+                .eq(SwmPersonDepartureDO::getIdentityCard, identityCard)
+                .orderByDesc(SwmPersonDepartureDO::getDepartureDate));
     }
 
     private void validatePersonDepartureExists(String id) {

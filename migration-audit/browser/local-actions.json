@@ -1,0 +1,2107 @@
+[
+  {
+    "title": "驾驶舱",
+    "route": "/swm/screen-new",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\nSWM\n/\n驾驶舱\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n驾驶舱\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统"
+    ],
+    "actions": [
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/screen-new",
+        "afterUrl": "http://localhost:83/swm/screen-new",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2983.687ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    5 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163014741,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "异常状态报警记录",
+    "route": "/swm/safety/warning-list",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n异常状态报警记录\n1\n请输入菜单内容\n芋道源码\n首页\n异常状态报警记录\n报警单号\n人员姓名\n报警性质\n请选择报警性质\n报警类型\n请选择报警类型\n处置状态\n请选择处置状态\n位置\n区域\n查 询\n重 置\n异常状态报警记录\n报警单号\t人员姓名\t报警性质\t报警类型\t报警时间\t危险区域类别\t位置\t区域\t处置状态\t处置时长(分钟)\t报警说明\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/warning-list",
+        "afterUrl": "http://localhost:83/swm/safety/warning-list",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/warning-list",
+        "afterUrl": "http://localhost:83/swm/safety/warning-list",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163019695,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "查看",
+        "beforeUrl": "http://localhost:83/swm/safety/warning-list",
+        "afterUrl": "http://localhost:83/swm/safety/warning-list",
+        "overlayText": "报警详情\n人员姓名\n研究院访客01\n报警性质\n2\n报警类型\n跌落报警\n报警时间\n2026-03-05 13:44:56\n报警记录\n安全帽跌落(撞击)报警记录\n报警时间\n2026-03-05 13:44:56\n处理人\n---\n处理时间\n---\n位置\n---\n区域\n---\n预警说明\n研究院访客01于13点44分在发生跌落报警\n附件\n无附件",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/warning-list",
+        "afterUrl": "http://localhost:83/swm/safety/warning-list",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2991.4900000000016ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "报警处置记录",
+    "route": "/swm/safety/warning-record",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n报警处置记录\n1\n请输入菜单内容\n芋道源码\n首页\n报警处置记录\n报警单号\n记录名称\n报警记录\n报警类型\n请选择报警类型\n处置人\n处置状态\n全部\n处置时间\n查 询\n重 置\n报警处置记录\n报警单号\t处置记录名称\t报警记录\t报警类型\t报警时间\t处置人\t处置方案\t处置时间\t状态\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/warning-record",
+        "afterUrl": "http://localhost:83/swm/safety/warning-record",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/warning-record",
+        "afterUrl": "http://localhost:83/swm/safety/warning-record",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "查看",
+        "beforeUrl": "http://localhost:83/swm/safety/warning-record",
+        "afterUrl": "http://localhost:83/swm/safety/warning-record",
+        "overlayText": "处置记录详情\n报警记录\n颜诗应触发脱帽报警\n报警时间\n1770017909000\n触发原因\n---\n处置人\n简政\n处置时间\n1770018265000\n处置过程\n测试处置\n附件\n该记录没有附件",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/warning-record",
+        "afterUrl": "http://localhost:83/swm/safety/warning-record",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2990.628999999997ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "危险区域闯入提示",
+    "route": "/swm/safety/hazard-source",
+    "bodyText": "芋道管理系统",
+    "labels": [],
+    "actions": []
+  },
+  {
+    "title": "应急召回",
+    "route": "/swm/safety/one-key-recall",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n应急召回\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n应急召回\n请选择语音模板\n应急召回\n推送方式\n定位模块推送\n短信推送\n推送频次\n仅一次\n循环推送\n语音文字\n撤离方案\n全体撤离\n按车间撤离\n按产线撤离\n按班组撤离\n按人员撤离\n按人员类型撤离\n推 送\n🚫\n全体撤离模式\n当前为全体撤离方案，无需选择具体人员\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "推 送"
+    ],
+    "actions": [
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/one-key-recall",
+        "afterUrl": "http://localhost:83/swm/safety/one-key-recall",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2990.7400000000052ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163037691,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "语音模板管理",
+    "route": "/swm/safety/voice-template",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n语音模板管理\n1\n请输入菜单内容\n芋道源码\n首页\n语音模板管理\n语音模板管理\n新增\n模板名称\t模板类型\t推送方式\t推送频次\t语音文字\t应用状态\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "新增"
+    ],
+    "actions": [
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/safety/voice-template",
+        "afterUrl": "http://localhost:83/swm/safety/voice-template",
+        "overlayText": "新增语音模板\n模板名称\n模板类型\n请选择模板类型\n推送方式\n定位模块推送\n短信推送\n推送频次\n仅一次\n语音文字\n状态\n启用\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "编辑",
+        "beforeUrl": "http://localhost:83/swm/safety/voice-template",
+        "afterUrl": "http://localhost:83/swm/safety/voice-template",
+        "overlayText": "编辑语音模板\n模板名称\n模板类型\n安全报警\n推送方式\n定位模块推送\n短信推送\n推送频次\n仅一次\n语音文字\n状态\n启用\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/voice-template",
+        "afterUrl": "http://localhost:83/swm/safety/voice-template",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2991.722999999998ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "应急呼叫",
+    "route": "/swm/safety/sos",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n应急呼叫\n1\n请输入菜单内容\n芋道源码\n首页\n应急呼叫\n人员姓名\n处置状态\n请选择处置状态\n查 询\n重 置\n应急呼叫\n人员姓名\t报警内容\t报警时间\t触发地点\t处置状态\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/sos",
+        "afterUrl": "http://localhost:83/swm/safety/sos",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/sos",
+        "afterUrl": "http://localhost:83/swm/safety/sos",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/sos",
+        "afterUrl": "http://localhost:83/swm/safety/sos",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2991.650999999998ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163050089,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "安全教育",
+    "route": "/swm/safety/safety-education",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n安全教育\n1\n请输入菜单内容\n芋道源码\n首页\n安全教育\n主题\n安全教育类型\n参与类型\n状态\n查 询\n重 置\n安全教育\n 新增\n序号\t\n主题\n\t\n安全教育类型\n\t\n参与类型\n\t\n开始时间\n\t\n参与对象\n\t状态\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-education",
+        "afterUrl": "http://localhost:83/swm/safety/safety-education",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-education",
+        "afterUrl": "http://localhost:83/swm/safety/safety-education",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-education",
+        "afterUrl": "http://localhost:83/swm/safety/safety-education",
+        "overlayText": "新增安全教育\n主题\n安全教育类型\n请选择安全教育类型\n开始时间\n参与类型\n请选择参与类型\n参与对象\n内容描述\n附件\n取 消\n确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-education",
+        "afterUrl": "http://localhost:83/swm/safety/safety-education",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2991.347999999998ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163057739,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "隐患列表",
+    "route": "/swm/safety/hidden-danger",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n隐患列表\n1\n请输入菜单内容\n芋道源码\n首页\n隐患列表\n隐患名称\n隐患位置\n查 询\n重 置\n隐患列表\n新建隐患\n序号\t隐患名称\t隐患位置\t关联巡检计划\t是否布设信标\t是否已处置\t创建时间\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "afterUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "afterUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "afterUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "overlayText": "新建隐患信息\n隐患名称\n隐患位置\n关联巡检计划\n请选择关联巡检计划\n是否布设信标\n0\n是否已处置\n0\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "编辑",
+        "beforeUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "afterUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "overlayText": "编辑隐患信息\n隐患名称\n隐患位置\n关联巡检计划\n1936752554623430656\n是否布设信标\n0\n是否已处置\n0\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163065665,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "查看",
+        "beforeUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "afterUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "overlayText": "查看隐患信息\n隐患名称\n隐患位置\n关联巡检计划\n1936752554623430656\n是否布设信标\n0\n是否已处置\n0\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "afterUrl": "http://localhost:83/swm/safety/hidden-danger",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2990.547999999995ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "隐患处置列表",
+    "route": "/swm/safety/danger-disposal",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n隐患处置列表\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n隐患处置列表\n隐患名称\n查 询\n重 置\n隐患处置列表\n搴忓彿\t闅愭偅鍚嶇О\t闅愭偅浣嶇疆\t澶勭疆鏃堕棿\t澶勭疆浜哄憳\t澶勭疆鏂规硶\t澶勭疆鐘舵€?\t澶勭疆鍐呭\t鍒涘缓鏃堕棿\t鎿嶄綔\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/danger-disposal",
+        "afterUrl": "http://localhost:83/swm/safety/danger-disposal",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/danger-disposal",
+        "afterUrl": "http://localhost:83/swm/safety/danger-disposal",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/danger-disposal",
+        "afterUrl": "http://localhost:83/swm/safety/danger-disposal",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2989.274999999994ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163075787,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "巡检计划",
+    "route": "/swm/safety/inspection-plan",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n巡检计划\n1\n请输入菜单内容\n芋道源码\n首页\n巡检计划\n巡检计划编号\n巡检频次(天数)\n巡检类型\n请选择巡检类型\n计划状态\n请选择计划状态\n查 询\n重 置\n巡检计划\n新增\n巡检计划编号\t计划名称\t巡检频次（天数）\t巡检类型\t巡检负责人\t关联风险\t首次巡检时间\t计划状态\t创建时间\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "afterUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "afterUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "afterUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "overlayText": "新增巡检计划\n巡检计划编号\n计划名称\n巡检频次（天数）\n巡检类型\n请选择巡检类型\n巡检负责人\n请选择巡检负责人\n首次巡检时间\n计划状态\n开启\n备注信息\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "编辑",
+        "beforeUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "afterUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "overlayText": "编辑巡检计划\n巡检计划编号\n计划名称\n巡检频次（天数）\n巡检类型\n3\n关联风险\n请选择未加入巡检的风险\n巡检负责人\n1958833365503033344\n首次巡检时间\n计划状态\n暂停\n备注信息\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163082397,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "afterUrl": "http://localhost:83/swm/safety/inspection-plan",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2990.846000000005ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "巡检任务",
+    "route": "/swm/safety/inspection-list",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n巡检任务\n1\n请输入菜单内容\n芋道源码\n首页\n巡检任务\n巡检计划编号\n巡检人\n请选择巡检人\n查 询\n重 置\n巡检任务\n巡检计划编号\t巡检计划名称\t巡检类型\t巡检人\t开始时间\t结束时间\t状态\t附件\t备注\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/inspection-list",
+        "afterUrl": "http://localhost:83/swm/safety/inspection-list",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/inspection-list",
+        "afterUrl": "http://localhost:83/swm/safety/inspection-list",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "查看",
+        "beforeUrl": "http://localhost:83/swm/safety/inspection-list",
+        "afterUrl": "http://localhost:83/swm/safety/inspection-list",
+        "overlayText": "查看巡检任务\n计划名称\n巡检类型\n请选择巡检类型\n巡检人\n开始时间\n结束时间\n状态\n请选择状态\n附件上传\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/inspection-list",
+        "afterUrl": "http://localhost:83/swm/safety/inspection-list",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2990.0130000000063ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "安全教育视频",
+    "route": "/swm/safety/safety-videos",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n安全教育视频\n1\n请输入菜单内容\n芋道源码\n首页\n安全教育视频\n视频标题\n推送日期\n查 询\n重 置\n安全教育视频\n 新增\n视频封面\t\n视频标题\n\t\n视频分类\n\t\n目标工种\n\t\n视频时长（秒）\n\t\n推送日期\n\t\n推送状态\n\t\n更新时间\n\t\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-videos",
+        "afterUrl": "http://localhost:83/swm/safety/safety-videos",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-videos",
+        "afterUrl": "http://localhost:83/swm/safety/safety-videos",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-videos",
+        "afterUrl": "http://localhost:83/swm/safety/safety-videos",
+        "overlayText": "视频标题\n视频分类\n请选择视频分类\n是否全部\n是\n否\n目标工种\n请选择目标工种\n推送日期\n教育视频\n视频封面\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163098122,
+            "message": "Warning: [ant-design-vue: Modal] `visible` will be removed in next major version, please use `open` instead."
+          },
+          {
+            "at": 1784163098137,
+            "message": "Warning: [ant-design-vue: Upload] `remove` props is deprecated. Please use `remove` event."
+          }
+        ]
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-videos",
+        "afterUrl": "http://localhost:83/swm/safety/safety-videos",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2990.69200000001ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163100280,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "视频培训记录",
+    "route": "/swm/safety/safety-person-training",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\n异常状态报警记录\n报警处置记录\n危险区域闯入提示\n应急召回\n语音模板管理\n应急呼叫\n安全教育\n隐患列表\n隐患处置列表\n巡检计划\n巡检任务\n安全教育视频\n视频培训记录\nAI日报\n人员管理\n配置管理\nSWM\n/\n安全管理\n/\n视频培训记录\n1\n请输入菜单内容\n芋道源码\n首页\n视频培训记录\n视频标题\n推送日期\n人员姓名\n所属单位\n请选择单位\n所属车间\n请选择车间\n所属产线\n请选择产线\n所属班组\n请选择班组\n完成状态\n查 询\n重 置\n视频培训记录\n视频标题\t推送日期\t视频分类\t目标工种\t所属单位\t所属车间\t所属产线\t班组\t人员姓名\t完成状态\t完成时间\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-person-training",
+        "afterUrl": "http://localhost:83/swm/safety/safety-person-training",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-person-training",
+        "afterUrl": "http://localhost:83/swm/safety/safety-person-training",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/safety/safety-person-training",
+        "afterUrl": "http://localhost:83/swm/safety/safety-person-training",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2990.900999999998ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163106994,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "AI日报",
+    "route": "/swm/ai-report",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\nSWM\n/\nAI日报\n芋道源码\n请输入菜单内容\n芋道源码\n首页\nAI日报\n日期\n查 询\n重 置\nAI日报\n请求时间\n\t\n项目名称\n\t\n制造单位\n\t\n安全合规指数\n\t\n人员活动指数\n\t\n更新时间\n\t\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/ai-report",
+        "afterUrl": "http://localhost:83/swm/ai-report",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/ai-report",
+        "afterUrl": "http://localhost:83/swm/ai-report",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/ai-report",
+        "afterUrl": "http://localhost:83/swm/ai-report",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2990.2629999999917ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163114033,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "人员登记",
+    "route": "/swm/personnel/person-list",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n人员登记\n人员看板\n排班管理\n日考勤记录\n周考勤记录\n月考勤记录\n行动轨迹\n配置管理\nSWM\n/\n人员管理\n/\n人员登记\n1\n请输入菜单内容\n芋道源码\n首页\n人员登记\n人员编码\n姓名\n身份证号码\n手机号码\n所属单位\n请选择单位\n所属车间\n请选择车间\n所属产线\n请选择产线\n所属班组\n请选择班组\n人员类型\n请选择人员类型\n人员状态\n请选择人员状态\n安全教育\n请选择是否完成安全教育\n离职类型\n请选择离职类型\n安全帽状态\n请选择安全帽状态\n安全帽编码\n查 询\n重 置\n人员登记\n 新增\n 批量导入\n 批量删除\n 导出\n\t人员编码\t姓名\t性别\t手机号码\t是否厂内员工\t人员类型\t入场安全教育\t所属单位\t所属车间\t所属产线\t所属班组\t所属工种\t身份证号码\t安全帽编码\t安全帽状态\t人员状态\t离职类型\t离职原因\t是否归还安全帽\t操作\n\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-list",
+        "afterUrl": "http://localhost:83/swm/personnel/person-list",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-list",
+        "afterUrl": "http://localhost:83/swm/personnel/person-list",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-list",
+        "afterUrl": "http://localhost:83/swm/personnel/person-list",
+        "overlayText": "新增人员\n人员编码\n工人姓名\n性别\n男\n年龄\n血型\n身份证号码\n手机号码\n紧急联系人\n紧急联系人电话\n人员类型\n0\n所属单位\n请选择所属单位\n所属工种\n请选择所属工种\n所属车间\n请选择所属车间\n所属产线\n请选择所属产线\n所属班组\n请选择所属班组\n入场安全教育\n未完成\n是否厂内员工\n1\n人员状态\n在职\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "编辑",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-list",
+        "afterUrl": "http://localhost:83/swm/personnel/person-list",
+        "overlayText": "编辑人员\n人员编码\n工人姓名\n性别\n男\n年龄\n血型\n身份证号码\n手机号码\n紧急联系人\n紧急联系人电话\n人员类型\n1\n所属单位\n中建钢构广东有限公司\n所属工种\n管理人员（工厂）\n入场安全教育\n已完成\n是否厂内员工\n1\n人员状态\n在职\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163121641,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "配置",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-list",
+        "afterUrl": "http://localhost:83/swm/personnel/person-list",
+        "overlayText": "绑定安全帽\n工人姓名：\n访客02\n人员类型：\n1\n当前已绑定的安全帽\n设备号：\n3015884001\n类型：\n3\n选择安全帽\n安全帽列表\n\t编号\t类型\n\n\nNo data\n\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163122656,
+            "message": "Warning: [ant-design-vue: Table] `column.slots` is deprecated. Please use `v-slot:headerCell` `v-slot:bodyCell` instead."
+          }
+        ]
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-list",
+        "afterUrl": "http://localhost:83/swm/personnel/person-list",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2989.671000000002ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "离职",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-list",
+        "afterUrl": "http://localhost:83/swm/personnel/person-list",
+        "overlayText": "处理离职\n姓名\n是否归还安全帽\n是\n否\n离职类型\n正常离职\n异常离职\n离职原因\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "导入",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-list",
+        "afterUrl": "http://localhost:83/swm/personnel/person-list",
+        "overlayText": "批量导入人员\n 选择文件请选择Excel文件\n 下载模板请先下载模板，按格式填写数据后再导入\n模板包含所有组织架构选项数据\n支持级联关系验证，确保数据准确性\n提示：仅允许导入\"xls\"或\"xlsx\"格式文件！\n数据字段说明：\n必填字段：\n- 姓名：工人姓名，必填\n- 人员类型：0-工人，1-管理者，必填\n- 性别：男或女，必填\n- 身份证号码：18位身份证号码，必填\n- 手机号码：11位手机号码，必填\n- 是否场内员工：是/否 或 1/0，必填\n组织架构字段：\n 当\"是否场内员工\"选择\"是\"时，以下字段必填：\n- 所属单位：从模板中的单位选项中选择\n- 所属车间：从模板中的车间选项中选择\n- 所属产线：从模板中的产线选项中选择\n- 所属班组：从模板中的班组选项中选择\n- 所属工种：从模板中的工种选项中选择\n 当\"是否场内员工\"选择\"否\"时，组织架构字段可以不填写，即使填写了也会被忽略\n可选字段：\n- 备注：其他备注信息\n- 安全帽编码：填写现有设备编号，如 4015869001；留空时不自动绑定安全帽\n导入规则说明：\n- 系统会自动检查身份证号码是否重复\n- 如果存在相同身份证的在职人员，导入将会失败\n- 新导入的人员\"入场安全教育\"状态默认为\"未开始\"\n- 新导入的人员\"人员状态\"默认为\"在职\"\n- 系统会验证组织架构字段的级联关系（单位→车间→产线→班组）\n- 非厂内员工的组织架构字段会被自动清空\n取 消导 入",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163128178,
+            "message": "Warning: [ant-design-vue: Upload] `remove` props is deprecated. Please use `remove` event."
+          }
+        ]
+      },
+      {
+        "name": "导出",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-list",
+        "afterUrl": "http://localhost:83/swm/personnel/person-list",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "人员看板",
+    "route": "/swm/personnel/personnel-board",
+    "bodyText": "芋道管理系统",
+    "labels": [],
+    "actions": [
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/personnel/personnel-board",
+        "afterUrl": "http://localhost:83/swm/personnel/personnel-board",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/personnel/personnel-board",
+        "afterUrl": "http://localhost:83/swm/personnel/personnel-board",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2991.0419999999867ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    5 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163134847,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "排班管理",
+    "route": "/swm/personnel/attendance-schedule",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n人员登记\n人员看板\n排班管理\n日考勤记录\n周考勤记录\n月考勤记录\n行动轨迹\n配置管理\nSWM\n/\n人员管理\n/\n排班管理\n1\n请输入菜单内容\n芋道源码\n首页\n排班管理\n人员\n所属单位\n请选择单位\n所属车间\n请选择车间\n所属产线\n请选择产线\n所属班组\n请选择班组\n查 询\n重 置\n排班管理全选人员全不选\n排班时间管理\n人员排班\n班次调整\n\t所属单位\t所属车间\t所属产线\t班组\t人员\t班次\t创建时间\t\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "afterUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "afterUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "编辑",
+        "beforeUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "afterUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "overlayText": "编辑排班\n人员姓名\n班组\n月份\n班次\n请选择班次\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163140496,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "配置",
+        "beforeUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "afterUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "overlayText": "排班时间管理\n早班\n上午\n至\n休息时长(h):\n休息日:\n周六\n周日\n下午\n至\n晚班\n晚班\n至\n休息时长(h):\n休息日:\n周六\n周日\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163141007,
+            "message": "Warning: [ant-design-vue: Form.Item] FormItem can only collect one field item, you haved set `ATimePicker`, `ATimePicker`, `AInputNumber`, `ASelect`, `ATimePicker`, `ATimePicker` 6 field items.\n        You can set not need to be collected fields into `a-form-item-rest`"
+          },
+          {
+            "at": 1784163141012,
+            "message": "Warning: [ant-design-vue: Form.Item] FormItem can only collect one field item, you haved set `ATimePicker`, `ATimePicker`, `AInputNumber`, `ASelect` 4 field items.\n        You can set not need to be collected fields into `a-form-item-rest`"
+          }
+        ]
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "afterUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "overlayText": "排班记录\n操作描述\n\n\nNo data\n\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "人员排班",
+        "beforeUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "afterUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "班次调整",
+        "beforeUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "afterUrl": "http://localhost:83/swm/personnel/attendance-schedule",
+        "overlayText": "班次调整\n\n点击或拖拽文件到此区域上传\n\n仅支持 .xls,.xlsx 文件，单次上传一个文件\n\n下载导入模板\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "日考勤记录",
+    "route": "/swm/personnel/daily-attendance",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n人员登记\n人员看板\n排班管理\n日考勤记录\n周考勤记录\n月考勤记录\n行动轨迹\n配置管理\nSWM\n/\n人员管理\n/\n日考勤记录\n1\n请输入菜单内容\n芋道源码\n首页\n日考勤记录\n员工姓名\n考勤日期\n所属单位\n请选择所属单位\n所属车间\n请选择所属车间\n所属产线\n请选择所属产线\n所属班组\n请选择所属班组\n开机状态\n请选择开机状态\n班次\n请选择班次\n查 询\n重 置\n日考勤记录\n 导出 Excel\n姓名\t所属单位\t所属车间\t所属产线\t所属班组\t\n考勤日期\n\t应考勤时间范围\t班次\t\n上班打卡时间\n\t\n中午下班时间\n\t\n下午上班时间\n\t\n下班打卡时间\n\t应考勤时长(h)\t有效考勤时长(h)\t\n怠工时长(h)\n\t\n工作区考勤时长(h)\n\t考勤状态\t开机状态\t\n\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/personnel/daily-attendance",
+        "afterUrl": "http://localhost:83/swm/personnel/daily-attendance",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/personnel/daily-attendance",
+        "afterUrl": "http://localhost:83/swm/personnel/daily-attendance",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163148270,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148274,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148278,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148282,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148286,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148290,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148294,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148298,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148302,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148306,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148311,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148315,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148319,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148323,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148327,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148330,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148334,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148336,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148339,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148341,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148414,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148416,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148418,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148420,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148422,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148424,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148425,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148428,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148429,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148431,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148433,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148434,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148437,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148438,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148440,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148443,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148444,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148446,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148448,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148450,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148679,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148681,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148683,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148684,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148686,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148688,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148690,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148691,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148693,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148694,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148696,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148698,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148700,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148702,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148703,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148706,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148708,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148709,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148711,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          },
+          {
+            "at": 1784163148713,
+            "message": "Warning: `columns.customRender` return cell props is deprecated with perf issue, please use `customCell` instead."
+          }
+        ]
+      },
+      {
+        "name": "查看",
+        "beforeUrl": "http://localhost:83/swm/personnel/daily-attendance",
+        "afterUrl": "http://localhost:83/swm/personnel/daily-attendance",
+        "overlayText": "员工姓名\n员工ID\n考勤状态\n2\n班次\n1\n考勤日期\n应考勤时间范围\n上班打卡时间\n下班打卡时间\n应考勤时长(h)\n实际考勤时长(h)\n怠工时长(h)\n实际工作时长(h)\n今日工效\n今日达成率\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163149727,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/personnel/daily-attendance",
+        "afterUrl": "http://localhost:83/swm/personnel/daily-attendance",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2990.728999999992ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "周考勤记录",
+    "route": "/swm/personnel/weekly-attendance",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n人员登记\n人员看板\n排班管理\n日考勤记录\n周考勤记录\n月考勤记录\n行动轨迹\n配置管理\nSWM\n/\n人员管理\n/\n周考勤记录\n1\n请输入菜单内容\n芋道源码\n首页\n周考勤记录\n员工姓名\n开始时间\n结束时间\n人员类型\n请选择人员类型\n查 询\n重 置\n周考勤记录\n 导出\n姓名\t手机号码\t班组\t\n工种\n\t\n出勤天数(天)\n\t周出勤率\t有效考勤天数(天)\t\n本周有效考勤时长(h)\n\t\n本周怠工时长(h)\n\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/personnel/weekly-attendance",
+        "afterUrl": "http://localhost:83/swm/personnel/weekly-attendance",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/personnel/weekly-attendance",
+        "afterUrl": "http://localhost:83/swm/personnel/weekly-attendance",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/personnel/weekly-attendance",
+        "afterUrl": "http://localhost:83/swm/personnel/weekly-attendance",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2983.1749999999884ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163159130,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "导出",
+        "beforeUrl": "http://localhost:83/swm/personnel/weekly-attendance",
+        "afterUrl": "http://localhost:83/swm/personnel/weekly-attendance",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "月考勤记录",
+    "route": "/swm/personnel/monthly-attendance",
+    "bodyText": "芋道管理系统",
+    "labels": [],
+    "actions": []
+  },
+  {
+    "title": "行动轨迹",
+    "route": "/swm/personnel/person-track",
+    "bodyText": "芋道管理系统",
+    "labels": [],
+    "actions": [
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/personnel/person-track",
+        "afterUrl": "http://localhost:83/swm/personnel/person-track",
+        "overlayText": "",
+        "clickError": "locator.scrollIntoViewIfNeeded: Timeout 2989.9739999999874ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    6 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "颜色配置",
+    "route": "/swm/config/color-config",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n颜色配置\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n颜色配置\n颜色配置\n安全帽颜色配置\n信标颜色配置\n安全帽颜色配置\n名称\t子项数量\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统"
+    ],
+    "actions": [
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/color-config",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "站点地图管理",
+    "route": "/swm/config/site-map",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n站点地图管理\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n站点地图管理\n场地底图管理\n搜 索\n重 置\n新 增\n底图名称\t所属项目\t底图尺寸\t图纸像素\t场地坐标(米)\t比例尺\t路径\t状态\t操作\n广东厂底图透明版1126\t中建钢构广东有限公司\t10000×4081像素\tX:10000, Y:4081\tX:0, Y:0\t\thttp://10.50.103.188:9000/swm/common/00992aaa-5d1c-4d05-a9b4-d361f745fcc0.png\t启用\t\n共 1 条数据\n1\n20 / page\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "搜 索",
+      "重 置",
+      "新 增",
+      "1"
+    ],
+    "actions": [
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/site-map",
+        "afterUrl": "http://localhost:83/swm/config/site-map",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/site-map",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "报警配置",
+    "route": "/swm/config/alarm-config",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n报警配置\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n报警配置\n报警配置\n新增\n报警名称\tkey\t是否报警\t是否弹框确认\t是否中建通推送消息\t操作\n应急呼叫\t7\t是\t否\t是\t\n编辑\n中间通推送\n删 除\n\n危险区域闯入提示\t8\t是\t否\t否\t\n编辑\n中间通推送\n删 除\n\n长时间静止报警\t6\t否\t否\t否\t\n编辑\n中间通推送\n删 除\n\n跌落报警\t4\t是\t是\t否\t\n编辑\n中间通推送\n删 除\n\n脱帽报警\t1\t是\t否\t否\t\n编辑\n中间通推送\n删 除\n1\n20 / page\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "编辑",
+      "中间通推送",
+      "删 除",
+      "1"
+    ],
+    "actions": [
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/config/alarm-config",
+        "afterUrl": "http://localhost:83/swm/config/alarm-config",
+        "overlayText": "新增报警配置\n报警名称\nkey\n是否报警\n是\n否\n是否推送中建通\n是\n否\n是否弹框确认\n是\n否\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "编辑",
+        "beforeUrl": "http://localhost:83/swm/config/alarm-config",
+        "afterUrl": "http://localhost:83/swm/config/alarm-config",
+        "overlayText": "编辑报警配置\n报警名称\nkey\n是否报警\n是\n否\n是否推送中建通\n是\n否\n是否弹框确认\n是\n否\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/alarm-config",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "视频管理",
+    "route": "/swm/config/video-management",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n视频管理\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n视频管理\n视频/图片库\n年月\n搜索\n已发现: 5\n整改中: 0\n已整改: 0\n危险区域top10\n危险区域统计\n未制定巡检计划的危险区域\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统"
+    ],
+    "actions": [
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/video-management",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "监控设备管理",
+    "route": "/swm/config/monitoring-equipment",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n监控设备管理\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n监控设备管理\n监控设备名称\n监控设备类型\n请选择监控设备类型\n查 询\n重 置\n监控设备管理\n 新增分组\n 新增监控设备\n\t机构\t监控类型\t监控设备编号\t监控设备名称\t监控点唯一标识\tIP\t端口\t设备管理用户\t设备管理用户密码\t设备资源路径\t直播通道\t码流\t加载路径\t直播流获取路径\t\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/monitoring-equipment",
+        "afterUrl": "http://localhost:83/swm/config/monitoring-equipment",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/monitoring-equipment",
+        "afterUrl": "http://localhost:83/swm/config/monitoring-equipment",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增分组",
+        "beforeUrl": "http://localhost:83/swm/config/monitoring-equipment",
+        "afterUrl": "http://localhost:83/swm/config/monitoring-equipment",
+        "overlayText": "分组名称\n机构\n请选择机构\n排序\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163189527,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "新增监控设备",
+        "beforeUrl": "http://localhost:83/swm/config/monitoring-equipment",
+        "afterUrl": "http://localhost:83/swm/config/monitoring-equipment",
+        "overlayText": "机构\n请选择机构\n监控设备类型\n请选择监控设备类型\n监控设备编号\n监控设备名称\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/monitoring-equipment",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "原始消息日志",
+    "route": "/swm/config/raw-message-log",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n原始消息日志\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n原始消息日志\n设备ID\n请输入设备ID，支持多个（回车或逗号分隔）\n时间范围\n时间排序\n降序（最新在前）\n查 询\n重 置\n设备上传原始消息日志\n导出当前页\n序号\ttime\tsession_id\tmessage_time\tmessage_content\toriginal_length\tis_truncated\tdevice_id\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/raw-message-log",
+        "afterUrl": "http://localhost:83/swm/config/raw-message-log",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/raw-message-log",
+        "afterUrl": "http://localhost:83/swm/config/raw-message-log",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/raw-message-log",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163196823,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "外部坐标数据",
+    "route": "/swm/config/external-coordinate-data",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n外部坐标数据\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n外部坐标数据\n设备号\n请输入设备号，支持多个\n身份证\n请输入身份证号，支持多个\n时间范围\n时间排序\n降序（最新在前）\n查 询\n重 置\n外部坐标数据\n导出当前页\n序号\ttime\telder_id\tid_card\taddress\tmap_id\tx\ty\torg_cd\ttime_str\ttype\tapp_id\twarning_id\toriginal_x\toriginal_y\tscale_x\tscale_y\tnearest_beacon\tused_beacons\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/external-coordinate-data",
+        "afterUrl": "http://localhost:83/swm/config/external-coordinate-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/external-coordinate-data",
+        "afterUrl": "http://localhost:83/swm/config/external-coordinate-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/external-coordinate-data",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "区域围栏数据",
+    "route": "/swm/config/area-fence-data",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n区域围栏数据\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n区域围栏数据\n设备号\n请输入设备号，支持多个\n身份证\n请输入身份证号，支持多个\n时间范围\n时间排序\n降序（最新在前）\n查 询\n重 置\n区域围栏数据\n导出当前页\n序号\ttime\tdevice_id\tid_card\tx\ty\tarea_name\tarea_id\tarea_type\tremarks\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/area-fence-data",
+        "afterUrl": "http://localhost:83/swm/config/area-fence-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/area-fence-data",
+        "afterUrl": "http://localhost:83/swm/config/area-fence-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/area-fence-data",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163207820,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "TCP设备指令日志",
+    "route": "/swm/config/tcp-device-command-log",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\nTCP设备指令日志\n芋道源码\n请输入菜单内容\n芋道源码\n首页\nTCP设备指令日志\n设备ID\n请输入设备ID，支持多个（回车或逗号分隔）\n身份证号\n请输入身份证号，支持多个（回车或逗号分隔）\n时间范围\n时间排序\n降序（最新在前）\n查 询\n重 置\n下发指令到设备日志\n下发指令\n导出当前页\n序号\ttime\tsend_message\tsend_status\terror_message\tidentity_card\tperson_name\tdevice_id\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/tcp-device-command-log",
+        "afterUrl": "http://localhost:83/swm/config/tcp-device-command-log",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/tcp-device-command-log",
+        "afterUrl": "http://localhost:83/swm/config/tcp-device-command-log",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/tcp-device-command-log",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "车间管理",
+    "route": "/swm/config/swm-workshop",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n车间管理\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n车间管理\n制造单位\n查 询\n重 置\n车间管理\n新增\n制造单位\t车间名称\t更新时间\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/swm-workshop",
+        "afterUrl": "http://localhost:83/swm/config/swm-workshop",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/swm-workshop",
+        "afterUrl": "http://localhost:83/swm/config/swm-workshop",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/config/swm-workshop",
+        "afterUrl": "http://localhost:83/swm/config/swm-workshop",
+        "overlayText": "新增车间档案\n所属单位\n请选择单位\n车间名称\n取 消\n确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/swm-workshop",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "产线管理",
+    "route": "/swm/config/swm-prod-line",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n产线管理\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n产线管理\n产线名称\n产线编码\n制造单位\n所属车间\n请选择所属车间\n查 询\n重 置\n产线管理\n 新增\n产线名称\t制造单位\t产线编码\t所属车间\t更新人\t更新时间\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/swm-prod-line",
+        "afterUrl": "http://localhost:83/swm/config/swm-prod-line",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/swm-prod-line",
+        "afterUrl": "http://localhost:83/swm/config/swm-prod-line",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/config/swm-prod-line",
+        "afterUrl": "http://localhost:83/swm/config/swm-prod-line",
+        "overlayText": "新增生产线档案\n所属单位\n请选择单位\n所属车间\n请选择所属车间\n产线名称\n产线编码\n取 消\n确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/swm-prod-line",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163225704,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "班组管理",
+    "route": "/swm/config/swm-work-group",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n班组管理\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n班组管理\n产线名称\n班组名称\n制造单位\n所属车间\n请选择所属车间\n查 询\n重 置\n班组管理\n 新增\n班组名称\t产线名称\t制造单位\t班组编码\t所属车间\t更新人\t更新时间\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/swm-work-group",
+        "afterUrl": "http://localhost:83/swm/config/swm-work-group",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163229717,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/swm-work-group",
+        "afterUrl": "http://localhost:83/swm/config/swm-work-group",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/config/swm-work-group",
+        "afterUrl": "http://localhost:83/swm/config/swm-work-group",
+        "overlayText": "新增班组档案\n所属单位\n请选择单位\n所属车间\n请选择所属车间\n所属产线\n请选择所属产线\n班组名称\n班组编码\n取 消\n确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/swm-work-group",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "安全帽设备",
+    "route": "/swm/config/helmet-device",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n安全帽设备\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n安全帽设备\n设备编号\n设备类型\n请选择设备类型\n安全帽状态\n请选择安全帽状态\n电量\n请选择电量\n人员姓名\n查 询\n重 置\n安全帽设备\n 新增\n 提醒充电\n 参数设置\n 导出\n导入\n\t设备编号\t设备类型\t安全帽状态\t电量\tIP\tMAC地址\t人员姓名\t手机号码\t所属车间\t所属班组\t运动状态\t操作\n\n\t3015884001\t3\t\t-\t\t549169A5AE49\t访客02\t13140175179\t\t\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1009816006\t1\t\t-\t\t5A8C91CC258A\t访客1\t18775183013\t\t\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869057\t3\t\t69%\t\tFEEC89A07106\t\t\t\t\t\t\n编辑\n参数配置\n使用记录\n删 除\n\n\n\t1015869046\t3\t\t63%\t\tBED00D5A6FB4\t许承军\t18666975641\t1745710598073368576\te3fa3ae6bbac11f0b42f000c29a89b40\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869034\t3\t\t59%\t\tB9073437D496\t文建\t13594475445\t1745710598073368576\t1935285084863008768\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869037\t3\t\t66%\t\t7E802E991FA0\t辜光明\t13420231368\t1745710598073368576\t1935285084863008768\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869042\t3\t\t62%\t\tA2B5C1E9E11B\t韦庆荣\t15172975655\t1745710598073368576\t1978015073244241920\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869048\t3\t\t68%\t\t9B000E82A6C0\t\t\t\t\t\t\n编辑\n参数配置\n使用记录\n删 除\n\n\n\t1015869038\t3\t\t67%\t\tFC79DB6FF6A8\t胡剑\t13229151585\t1745710598073368576\t1978015073244241920\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869055\t3\t\t54%\t\t5D2428D09749\t原汝超\t13126386872\t17750732355353313\t17750853342652661\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869056\t3\t\t50%\t\t5DA81D05976A\t王营辉\t13267906597\t17750732355353313\t17750853342652661\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869067\t3\t\t62%\t\t0605D2BDC837\t曹德政\t13926899007\t1745710598073368576\te3fa3ae6bbac11f0b42f000c29a89b40\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869049\t3\t\t64%\t\t2C3E4D9E62EA\t班晓洋\t13403100474\t1745710598073368576\te3fa3ae6bbac11f0b42f000c29a89b40\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869051\t3\t\t55%\t\t3D46B023818A\t韩红仓\t15686202517\t1745710598073368576\te3fa3ae6bbac11f0b42f000c29a89b40\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869031\t3\t\t66%\t\t6E543D8B1B95\t贾利卫\t13246190782\t1745710598073368576\t1935285084863008768\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869028\t3\t\t63%\t\t6A5000285A94\t李强\t18933537203\t\t\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869027\t3\t\t66%\t\t026C942A2E96\t邹利兵\t13112696810\t1745710598073368576\t1935285084863008768\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869052\t3\t\t66%\t\t92ADF4F8ED1D\t唐英彬\t13574656755\t1745710598073368576\te3fa3ae6bbac11f0b42f000c29a89b40\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869068\t3\t\t62%\t\t465EAADCDF4C\t唐国成\t13928410392\t1745710598073368576\te3fa3ae6bbac11f0b42f000c29a89b40\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n\n\n\t1015869033\t3\t\t63%\t\t9B91F518AF52\t胡磊\t18922294150\t1745710598073368576\t1935285084863008768\t\t\n编辑\n参数配置\n解绑安全帽\n使用记录\n1\n2\n3\n4\n5\n•••\n62\n20 / page\nGo to\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置",
+      "编辑",
+      "参数配置",
+      "解绑安全帽",
+      "使用记录",
+      "删 除",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "•••",
+      "62"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/helmet-device",
+        "afterUrl": "http://localhost:83/swm/config/helmet-device",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/helmet-device",
+        "afterUrl": "http://localhost:83/swm/config/helmet-device",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/config/helmet-device",
+        "afterUrl": "http://localhost:83/swm/config/helmet-device",
+        "overlayText": "新增设备\n设备编号\n设备类型\n请选择设备类型\nMAC地址\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163237863,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "编辑",
+        "beforeUrl": "http://localhost:83/swm/config/helmet-device",
+        "afterUrl": "http://localhost:83/swm/config/helmet-device",
+        "overlayText": "编辑设备\n设备编号\n设备类型\n3\nMAC地址\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "配置",
+        "beforeUrl": "http://localhost:83/swm/config/helmet-device",
+        "afterUrl": "http://localhost:83/swm/config/helmet-device",
+        "overlayText": "设备参数配置\n设备编号\n服务器IP\n蓝牙扫描窗口\n秒\n端口Port\n每组时长\n秒\n普通信标CS\n特殊信标CS\n定位模式\n请选择定位模式\n深度休眠时长\n分钟\n蓝牙扫描持续时间窗口\n0.1秒\n发送间隔\n秒\n风险重新触发间隔\n秒\n休眠唤醒时间\n秒\n脱帽报警时间间隔\n秒\n接收信标（名称）",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/helmet-device",
+        "afterUrl": "http://localhost:83/swm/config/helmet-device",
+        "overlayText": "使用记录\n使用记录\n人员名称\t身份证号\t绑定时间\t解绑时间\t绑定时长\t使用状态\n\n\nNo data",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "导入",
+        "beforeUrl": "http://localhost:83/swm/config/helmet-device",
+        "afterUrl": "http://localhost:83/swm/config/helmet-device",
+        "overlayText": "安全帽管理\n\n点击或拖拽文件到此区域上传\n\n仅支持 .xls,.xlsx 文件，单次上传一个文件\n\n下载导入模板\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "导出",
+        "beforeUrl": "http://localhost:83/swm/config/helmet-device",
+        "afterUrl": "http://localhost:83/swm/config/helmet-device",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [
+          {
+            "at": 1784163243996,
+            "status": 200,
+            "method": "GET",
+            "url": "http://localhost:8990/admin-api/swm/helmet-device/export-excel",
+            "body": "{\"code\":500,\"msg\":\"系统异常\",\"data\":null}"
+          }
+        ],
+        "runtimeErrors": [
+          {
+            "at": 1784163243938,
+            "message": "导出失败 Error: 系统异常\n    at http://localhost:83/src/config/axios/service.ts?t=1784162907759:174:25\n    at async Axios$1.request (http://localhost:83/.vite-cache/deps/axios.js?v=ef4d4cc8:2776:11)\n    at async Object.download (http://localhost:83/src/config/axios/index.ts?t=1784162907759:67:15)\n    at async handleExport (http://localhost:83/src/views/swm/helmetdevice/list.vue?t=1784162907759:302:18)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "信标管理",
+    "route": "/swm/config/beacon",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n信标管理\n1\n请输入菜单内容\n芋道源码\n首页\n信标管理\n信标类型\n请选择信标类型\nMAC地址\n设备名称\n信标状态\n请选择信标状态\n部署状态\n请选择部署状态\n所在位置\n所属区域\n请选择所属区域\n查 询\n重 置\n信标管理\n 新增\n批量管理\n信标标注\n导入\n更新信标到算法\n\tMAC地址\tMajor\tMinor\t设备名称\t信标类型\t所在位置\t所属区域\t信标颜色\t图纸像素X坐标\t图纸像素Y坐标\t实际地址X坐标\t实际地址Y坐标\t信标状态\t部署状态\t操作\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/beacon",
+        "afterUrl": "http://localhost:83/swm/config/beacon",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/beacon",
+        "afterUrl": "http://localhost:83/swm/config/beacon",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/config/beacon",
+        "afterUrl": "http://localhost:83/swm/config/beacon",
+        "overlayText": "新增信标\n信标类型\n1\nMAC地址\nMajor\nMinor\n设备名称\n信标颜色\n所在位置\n所属区域\n请选择所属区域\n图纸像素X坐标\n图纸像素Y坐标\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "编辑",
+        "beforeUrl": "http://localhost:83/swm/config/beacon",
+        "afterUrl": "http://localhost:83/swm/config/beacon",
+        "overlayText": "编辑信标\n信标类型\nMAC地址\nMajor\nMinor\n设备名称\n信标颜色\n所在位置\n所属区域\n请选择所属区域\n图纸像素X坐标\n图纸像素Y坐标\n实际地址X坐标\n实际地址Y坐标\n信标状态\n部署状态\n请选择部署状态\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163249773,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/beacon",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "信标地图",
+    "route": "/swm/config/beacon-map",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n信标地图\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n信标地图\n常规信标\n电子围栏\n风险信标\n考勤信标\n生产区域提示\n刷 新\n新增信标\n新增区域\n返回\n1\n区域名称:\n车间办公室\n大屏是否展示:\n否\n颜色:\n无\n信标列表:\n展示区域\n编 辑\n删 除\n2\n区域名称:\n车间办公室 卫生间\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n3\n区域名称:\n教育区域\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n4\n区域名称:\n箱型十字产线\n大屏是否展示:\n是\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n5\n区域名称:\nH型钢产线\n大屏是否展示:\n是\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n6\n区域名称:\n箱型圆管产线\n大屏是否展示:\n是\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n7\n区域名称:\n新业务产线\n大屏是否展示:\n是\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n8\n区域名称:\n下料产线\n大屏是否展示:\n是\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n9\n区域名称:\n桥梁车间\n大屏是否展示:\n是\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n10\n区域名称:\n桥梁车间 吸烟亭\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n11\n区域名称:\n油漆产线\n大屏是否展示:\n是\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n12\n区域名称:\n调漆室\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n13\n区域名称:\n二期油漆库房\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n14\n区域名称:\n气站\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n15\n区域名称:\n卷管生产车间\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n16\n区域名称:\n一期油漆库房\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n17\n区域名称:\n板材堆场\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n18\n区域名称:\n空气压缩站\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n19\n区域名称:\n开水房\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n20\n区域名称:\n二期油漆库房 卫生间\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n21\n区域名称:\n新业务产线西 卫生间\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n22\n区域名称:\n新业务产线东 吸烟亭\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n23\n区域名称:\n北外墙\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n24\n区域名称:\n东外墙\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n25\n区域名称:\n设备仓库\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\n26\n区域名称:\n成品堆场\n大屏是否展示:\n否\n颜色:\n信标列表:\n展示区域\n编 辑\n删 除\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "刷 新",
+      "新增信标",
+      "新增区域",
+      "返回",
+      "展示区域",
+      "编 辑",
+      "删 除"
+    ],
+    "actions": [
+      {
+        "name": "新增信标",
+        "beforeUrl": "http://localhost:83/swm/config/beacon-map",
+        "afterUrl": "http://localhost:83/swm/config/beacon-map",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增区域",
+        "beforeUrl": "http://localhost:83/swm/config/beacon-map",
+        "afterUrl": "http://localhost:83/swm/config/beacon-map",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/beacon-map",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": [
+          {
+            "at": 1784163256115,
+            "message": "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "报警灯",
+    "route": "/swm/config/alarm-light",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n报警灯\n芋道源码\n请输入菜单内容\n芋道源码\n首页\n报警灯\n报警灯名称\nSN码\n是否报警\n请选择是否报警\n报警类型\n请选择报警类型\n查 询\n重 置\n报警灯管理\n新增报警灯\n报警灯名称\tSN码\t是否报警\t报警类型\t创建时间\t备注\t操作\n\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\t\n \n\n办公室报警灯\t8673390756931540\t是\t暂无配置\t\t\t\n配置\n编辑\n删 除\n\n展示板预警灯\t8673390759655860\t是\t暂无配置\t\t\t\n配置\n编辑\n删 除\n1\n20 / page\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置",
+      "配置",
+      "编辑",
+      "删 除",
+      "1"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/alarm-light",
+        "afterUrl": "http://localhost:83/swm/config/alarm-light",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/alarm-light",
+        "afterUrl": "http://localhost:83/swm/config/alarm-light",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/config/alarm-light",
+        "afterUrl": "http://localhost:83/swm/config/alarm-light",
+        "overlayText": "新增报警灯\n报警灯名称\nSN码\n是否报警\n是\n否\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "编辑",
+        "beforeUrl": "http://localhost:83/swm/config/alarm-light",
+        "afterUrl": "http://localhost:83/swm/config/alarm-light",
+        "overlayText": "编辑报警灯\n报警灯名称\nSN码\n是否报警\n是\n否\n备注\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "配置",
+        "beforeUrl": "http://localhost:83/swm/config/alarm-light",
+        "afterUrl": "http://localhost:83/swm/config/alarm-light",
+        "overlayText": "配置报警灯 [办公室报警灯] (0个配置)\n报警配置 (0个)\n 添加配置\n取 消确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/alarm-light",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  },
+  {
+    "title": "字典类型",
+    "route": "/swm/config/dict-type",
+    "bodyText": "芋道管理系统",
+    "labels": [],
+    "actions": []
+  },
+  {
+    "title": "字典数据",
+    "route": "/swm/config/dict-data",
+    "bodyText": "芋道管理系统\n首页\n作者动态\nBoot 开发文档\n系统管理\n基础设施\nSWM\n驾驶舱\n安全管理\nAI日报\n人员管理\n配置管理\n颜色配置\n站点地图管理\n报警配置\n视频管理\n监控设备管理\n原始消息日志\n外部坐标数据\n区域围栏数据\nTCP设备指令日志\n车间管理\n产线管理\n班组管理\n安全帽设备\n信标管理\n信标地图\n报警灯\n字典类型\n字典数据\nSWM\n/\n配置管理\n/\n字典数据\n1\n请输入菜单内容\n芋道源码\n首页\n字典选项\n选项标签\n选项键值\n系统内置\n请选择系统内置\n状态\n请选择状态\n查 询\n重 置\n字典选项（ ）\n 展开\n 折叠\n 新增\n选项标签\t选项键值\t排序号\t系统内置\tCSS类名\tCSS样式\t更新时间\t备注信息\t状态\t\n\n\nNo data\n\nCopyright ©2026 芋道管理系统",
+    "labels": [
+      "芋道管理系统",
+      "查 询",
+      "重 置"
+    ],
+    "actions": [
+      {
+        "name": "查询",
+        "beforeUrl": "http://localhost:83/swm/config/dict-data",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "重置",
+        "beforeUrl": "http://localhost:83/swm/config/dict-data",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "新增",
+        "beforeUrl": "http://localhost:83/swm/config/dict-data",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "新增选项\n上级选项\n请选择上级选项\n选项标签\n选项键值\n排序号\n系统内置\n选项描述\n选项图标\nCSS类名\nCSS样式\n备注信息\n取 消\n确 定",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      },
+      {
+        "name": "记录",
+        "beforeUrl": "http://localhost:83/swm/config/dict-data",
+        "afterUrl": "http://localhost:83/swm/config/dict-data",
+        "overlayText": "",
+        "clickError": "",
+        "failures": [],
+        "runtimeErrors": []
+      }
+    ]
+  }
+]

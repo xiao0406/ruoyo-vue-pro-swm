@@ -54,7 +54,7 @@ public interface SwmPersonService {
     /**
      * 根据条件查询人员列表
      *
-     * @param query 查询条件（personnelStatus/status/corpCode/random 等）
+     * @param query 查询条件（personnelStatus/status/tenantId/random 等）
      * @return 人员列表
      */
     List<SwmPersonDO> findList(SwmPersonDO query);
@@ -67,6 +67,8 @@ public interface SwmPersonService {
      */
     SwmPersonDO getByIdentityCard(String identityCard);
 
+    boolean clearSafetyHelmet(String id);
+
     /**
      * 根据工种列表查询人员
      *
@@ -74,5 +76,11 @@ public interface SwmPersonService {
      * @return 人员列表
      */
     List<SwmPersonDO> findListByJobTypeList(List<String> jobTypeList);
+
+    List<SwmPersonDO> findByDepartmentCondition(String departmentCondition);
+
+    List<SwmPersonDO> search(String keyword, String searchType);
+
+    void completeSafetyEducation(List<String> personIds);
 
 }

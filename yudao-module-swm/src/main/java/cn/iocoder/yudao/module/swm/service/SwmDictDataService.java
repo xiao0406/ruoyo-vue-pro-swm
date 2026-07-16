@@ -6,6 +6,8 @@ import cn.iocoder.yudao.module.swm.controller.admin.dictdata.vo.SwmDictDataSaveR
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmDictDataDO;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 /**
  * 字典数据 Service 接口
  */
@@ -48,5 +50,7 @@ public interface SwmDictDataService {
      * @return 字典数据分页
      */
     PageResult<SwmDictDataDO> getDictDataPage(SwmDictDataPageReqVO pageReqVO);
+
+    List<SwmDictDataDO> getDictDataList(String dictType);
 
 }

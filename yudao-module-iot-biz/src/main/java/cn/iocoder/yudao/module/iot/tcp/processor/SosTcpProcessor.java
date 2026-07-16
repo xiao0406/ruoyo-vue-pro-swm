@@ -6,7 +6,8 @@ import cn.iocoder.yudao.module.iot.mqtt.handler.zhongtai.DeviceSoSAlarmHandler;
 import cn.iocoder.yudao.module.iot.tcp.model.TcpMessageData;
 import cn.iocoder.yudao.module.iot.service.HelmetSosTdEngineService;
 import cn.iocoder.yudao.module.iot.service.SwmWarningManagementService;
-import cn.iocoder.yudao.module.swm.service.TDengineService;
+import cn.iocoder.yudao.module.iot.service.TDengineService;
+import cn.iocoder.yudao.module.iot.util.DictUtils;
 import cn.iocoder.yudao.module.iot.tcp.parser.TcpMessageParser;
 import cn.iocoder.yudao.module.iot.tcp.service.TcpBeaconLocationService;
 import cn.iocoder.yudao.module.iot.util.R;
@@ -203,8 +204,8 @@ public class SosTcpProcessor {
      * @param voiceCommand 语音指令
      */
     private void sendVoiceCommand(String deviceId, String voiceCommand) {
-        com.jeesite.modules.tcp.session.SessionManager sessionManager =
-            com.jeesite.modules.tcp.server.NettyTcpServer.getInstance().getSessionManager();
+        cn.iocoder.yudao.module.iot.tcp.session.SessionManager sessionManager =
+            cn.iocoder.yudao.module.iot.tcp.server.NettyTcpServer.getInstance().getSessionManager();
         boolean success = sessionManager.sendMessageToDevice(deviceId, voiceCommand);
         if (success) {
             logger.debug("语音指令发送成功, deviceId: {}", deviceId);

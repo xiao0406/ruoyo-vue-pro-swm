@@ -49,7 +49,10 @@ public class SwmAlarmConfigDetailServiceImpl implements SwmAlarmConfigDetailServ
 
     @Override
     public PageResult<SwmAlarmConfigDetailDO> getAlarmConfigDetailPage(SwmAlarmConfigDetailPageReqVO pageReqVO) {
-        return swmAlarmConfigDetailMapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return swmAlarmConfigDetailMapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmAlarmConfigDetailDO>()
+                        .eqIfPresent(SwmAlarmConfigDetailDO::getMainId, pageReqVO.getMainId())
+                        .orderByDesc(SwmAlarmConfigDetailDO::getCreateTime));
     }
 
     private void validateAlarmConfigDetailExists(String id) {

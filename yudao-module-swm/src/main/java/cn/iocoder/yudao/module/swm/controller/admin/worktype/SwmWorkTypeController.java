@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - 工种管理")
@@ -69,6 +71,12 @@ public class SwmWorkTypeController {
     public CommonResult<PageResult<SwmWorkTypeRespVO>> getSwmWorkTypePage(@Valid SwmWorkTypePageReqVO pageReqVO) {
         PageResult<SwmWorkTypeDO> pageResult = workTypeService.getWorkTypePage(pageReqVO);
         return success(BeanUtils.toBean(pageResult, SwmWorkTypeRespVO.class));
+    }
+
+    @GetMapping("/active-list")
+    @Operation(summary = "获取有效工种列表")
+    public CommonResult<List<SwmWorkTypeRespVO>> getActiveWorkTypes() {
+        return success(BeanUtils.toBean(workTypeService.getActiveWorkTypes(), SwmWorkTypeRespVO.class));
     }
 
 }

@@ -27,7 +27,7 @@ public interface SwmPersonScheduleService {
     /**
      * 根据租户编码查询排班列表
      */
-    List<SwmPersonScheduleDO> findListByCorpCode(SwmPersonScheduleDO query);
+    List<SwmPersonScheduleDO> findListByTenantId(SwmPersonScheduleDO query);
 
     /**
      * 根据身份证号和月份查询排班

@@ -29,6 +29,26 @@ public class SwmDailyAttendanceRespVO {
     @Schema(description = "人员类型")
     private String personType;
 
+    @Schema(description = "phone number")
+    private String phoneNumber;
+
+    @Schema(description = "company")
+    private String company;
+
+    @Schema(description = "department")
+    private String department;
+
+    @Schema(description = "production line")
+    private String prodLine;
+
+    @Schema(description = "team")
+    private String team;
+
+    @Schema(description = "job type")
+    private String jobType;
+
+    @Schema(description = "power on status")
+    private String powerOnStatus;
     @Schema(description = "考勤日期")
     private LocalDate attendanceDate;
 

@@ -21,3 +21,4 @@ public interface PersonTrackMapper extends BaseMapperX<SwmWarningManagementDO> {
 
     List<Map<String, Object>> getColorsByKeys(@Param("keys") List<String> keys);
 }
+

@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.swm.controller.admin.voice_template.vo.SwmVoiceTe
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmVoiceTemplateDO;
 
 import jakarta.validation.Valid;
+import java.util.List;
 
 public interface SwmVoiceTemplateService {
 
@@ -18,5 +19,9 @@ public interface SwmVoiceTemplateService {
     SwmVoiceTemplateDO getVoiceTemplate(String id);
 
     PageResult<SwmVoiceTemplateDO> getVoiceTemplatePage(SwmVoiceTemplatePageReqVO pageReqVO);
+
+    void updateStatus(String id, String status);
+
+    List<SwmVoiceTemplateDO> getActiveVoiceTemplates();
 
 }

@@ -35,3 +35,4 @@ public interface SwmPersonWorkAreaMapper extends BaseMapperX<SwmPersonWorkAreaDO
 
     void insertBatch(@Param("list") List<SwmPersonWorkAreaDO> list);
 }
+

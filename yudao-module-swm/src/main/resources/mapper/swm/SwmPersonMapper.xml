@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmPersonMapper">
 
-    <!-- 查询数据 -->
+    <!-- 閺屻儴顕楅弫鐗堝祦 -->
     <select id="findList" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
         SELECT DISTINCT
                a.id AS "id",
@@ -36,14 +36,14 @@
                a.age,
                a.urgent_person,
                a.urgent_phone_number,
-               a.corp_code AS "corpCode",
-               a.corp_name AS "corpName"
+               a.tenant_id AS "tenantId",
+               a.tenant_name AS "tenantName"
         FROM 
         LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
-        LEFT JOIN system_dept jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         <where>
             a.status = '0' and a.personnel_status = '1'
@@ -69,7 +69,7 @@
                 AND a.job_type = #{jobType}
             </if>
             
-            <!-- 非组织字段保留原有查询方式 -->
+            <!-- 闂堢偟绮嶇紒鍥х摟濞堝吀绻氶悾娆忓斧閺堝鐓＄拠銏℃煙瀵?-->
             <if test="name != null and name != ''">
                 AND a.name LIKE CONCAT('%', #{name}, '%')
             </if>
@@ -107,9 +107,9 @@
                 AND a.is_external_personnel = #{isExternalPersonnel}
             </if>
 
-            <!-- 只有在 powerOnStatus 不为空时才加条件 -->
+            <!-- 閸欘亝婀侀崷?powerOnStatus 娑撳秳璐熺粚鐑樻閹靛秴濮為弶鈥叉 -->
             <if test="powerOnStatus != null and powerOnStatus != ''">
-                <!-- 假如 status = 0，则使用 IN -->
+                <!-- 閸嬪洤顩?status = 0閿涘苯鍨担璺ㄦ暏 IN -->
                 <if test="powerOnStatus == '0'.toString() ">
                 <if test="todayOnSiteIdCards != null and todayOnSiteIdCards.size >0">
                     AND a.identity_card IN
@@ -119,7 +119,7 @@
                 </if>
 
                 </if>
-                <!-- 否则 NOT IN -->
+                <!-- 閸氾箑鍨?NOT IN -->
                 <if test="powerOnStatus == '1'.toString() ">
                     <if test="todayOnSiteIdCards != null and todayOnSiteIdCards.size >0">
                         AND a.identity_card NOT IN
@@ -132,14 +132,14 @@
             <if test="random != null and random != 0 ">
                 AND #{random} = #{random}
             </if>
-            <if test="corpCode != null and corpCode != ''">
-                AND a.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND a.tenant_id = #{tenantId}
             </if>
         </where>
         ORDER BY 
     </select>
 
-    <!-- 根据身份证号码查询离职人员 -->
+    <!-- 閺嶈宓侀煬顐″敜鐠囦礁褰块惍浣圭叀鐠囥垻顬囬懕灞兼眽閸?-->
     <select id="findDepartedByIdentityCard" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
         SELECT
             a.id, a.name, a.person_type, a.gender, a.company, a.department, a.prod_line,
@@ -163,19 +163,19 @@
         </foreach>
     </select>
 
-    <!-- 根据部门条件查询在职人员 -->
+    <!-- 閺嶈宓侀柈銊╂，閺夆€叉閺屻儴顕楅崷銊ㄤ捍娴滃搫鎲?-->
     <select id="findPersonsByDepartmentCondition" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
         SELECT DISTINCT
                a.id AS "id",
                a.name AS "name",
                a.person_type AS "personType",
                a.gender AS "gender",
-               -- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
+               -- 娴ｈ法鏁OALESCE閸戣姤鏆熼敍灞肩喘閸忓牅濞囬悽銊ュ彠閼辨棁銆冮弫鐗堝祦閿涘奔璐熺粚鐑樻娴ｈ法鏁wm_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ嫭鏆熼幑顕嗙礄闂団偓鐟曚胶鐐曠拠鎴礆
                COALESCE(o.office_name, backup_o.office_name) AS "company",
                COALESCE(p.position_name, backup_p.position_name) AS "department",
                COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
                COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
-               -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
+               -- 瀹搞儳顫掔€涙顔岄敍姘喘閸忓牅濞囬悽鈺s_worker鐠佹澘缍嶉敍灞藉従濞嗩摴wm_work_type缂堟槒鐦ч敍灞炬付閸氬骸娲栭柅鈧禍鍝勬喅鐞涖劏鍤滈煬顐㈠絿閸?
                COALESCE(
                    NULLIF(TRIM(f.work_type), ''),
                    NULLIF(TRIM(backup_wt.work_type), ''),
@@ -197,7 +197,7 @@
                a.remarks AS "remarks",
                a.status AS "status"
         FROM swm_person a
-        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
+        -- 閸樼喐婀侀惃鍕彠閼辨梹鐓＄拠顫礄闁俺绻僨ms_worker閸忓疇浠堥敍? 鎼存梻鏁ら崢濠氬櫢闁槒绶?Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
             AND NOT EXISTS (
                 SELECT 1
@@ -205,12 +205,12 @@
                 WHERE fw2.identity_code = f.identity_code
                 AND fw2.create_date > f.create_date
             )
-        LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
         LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-        -- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
-        LEFT JOIN system_dept backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
+        -- 婢跺洨鏁ら崗瀹犱粓閺屻儴顕楅敍鍫㈡纯閹恒儰濞囬悽鈺痺m_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ嚘D鏉╂稖顢戠紙鏄忕槯閿?
+        LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
         LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
@@ -232,19 +232,19 @@
         ORDER BY a.update_date DESC
     </select>
 
-    <!-- 搜索人员（支持多字段搜索） -->
+    <!-- 閹兼粎鍌ㄦ禍鍝勬喅閿涘牊鏁幐浣割樋鐎涙顔岄幖婊呭偍閿?-->
     <select id="searchPersonsByKeyword" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
         SELECT DISTINCT
                a.id AS "id",
                a.name AS "name",
                a.person_type AS "personType",
                a.gender AS "gender",
-               -- 使用COALESCE函数，优先使用关联表数据，为空时使用swm_person表中保存的数据（需要翻译）
+               -- 娴ｈ法鏁OALESCE閸戣姤鏆熼敍灞肩喘閸忓牅濞囬悽銊ュ彠閼辨棁銆冮弫鐗堝祦閿涘奔璐熺粚鐑樻娴ｈ法鏁wm_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ嫭鏆熼幑顕嗙礄闂団偓鐟曚胶鐐曠拠鎴礆
                COALESCE(o.office_name, backup_o.office_name) AS "company",
                COALESCE(p.position_name, backup_p.position_name) AS "department",
                COALESCE(fpl.prod_line_name, backup_fpl.prod_line_name) AS "prodLine",
                COALESCE(wg.work_group_name, backup_wg.work_group_name) AS "team",
-               -- 工种字段：优先使用fms_worker记录，其次swm_work_type翻译，最后回退人员表自身取值
+               -- 瀹搞儳顫掔€涙顔岄敍姘喘閸忓牅濞囬悽鈺s_worker鐠佹澘缍嶉敍灞藉従濞嗩摴wm_work_type缂堟槒鐦ч敍灞炬付閸氬骸娲栭柅鈧禍鍝勬喅鐞涖劏鍤滈煬顐㈠絿閸?
                COALESCE(
                    NULLIF(TRIM(f.work_type), ''),
                    NULLIF(TRIM(backup_wt.work_type), ''),
@@ -267,7 +267,7 @@
                a.status AS "status",
                a.is_external_personnel AS "isExternalPersonnel"
         FROM swm_person a
-        -- 原有的关联查询（通过fms_worker关联）- 应用去重逻辑 Author: Shawn Date: 2025-09-18
+        -- 閸樼喐婀侀惃鍕彠閼辨梹鐓＄拠顫礄闁俺绻僨ms_worker閸忓疇浠堥敍? 鎼存梻鏁ら崢濠氬櫢闁槒绶?Author: Shawn Date: 2025-09-18
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
             AND NOT EXISTS (
                 SELECT 1
@@ -275,12 +275,12 @@
                 WHERE fw2.identity_code = f.identity_code
                 AND fw2.create_date > f.create_date
             )
-        LEFT JOIN system_dept o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
+        LEFT JOIN js_sys_office o ON f.office_code = o.office_code AND o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive p ON f.work_shop_code = p.id AND p.type = 'CJ'
         LEFT JOIN fms_work_group wg ON f.work_group_id = wg.id
         LEFT JOIN fms_prod_line fpl ON fpl.id = wg.prod_line_id
-        -- 备用关联查询（直接使用swm_person表中保存的ID进行翻译）
-        LEFT JOIN system_dept backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
+        -- 婢跺洨鏁ら崗瀹犱粓閺屻儴顕楅敍鍫㈡纯閹恒儰濞囬悽鈺痺m_person鐞涖劋鑵戞穱婵嗙摠閻ㄥ嚘D鏉╂稖顢戠紙鏄忕槯閿?
+        LEFT JOIN js_sys_office backup_o ON a.company = backup_o.office_code COLLATE utf8mb4_general_ci AND backup_o.zip_code IS NOT NULL
         LEFT JOIN fms_position_archive backup_p ON a.department = backup_p.id COLLATE utf8mb4_general_ci AND backup_p.type = 'CJ'
         LEFT JOIN fms_work_group backup_wg ON a.team = backup_wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line backup_fpl ON a.prod_line = backup_fpl.id COLLATE utf8mb4_general_ci
@@ -297,7 +297,7 @@
         ORDER BY a.update_date DESC
     </select>
 
-    <!-- 查询所有在职人员的详细信息（包含关联表ID）- 用于缓存初始化 -->
+    <!-- 閺屻儴顕楅幍鈧張澶婃躬閼卞奔姹夐崨妯兼畱鐠囷妇绮忔穱鈩冧紖閿涘牆瀵橀崥顐㈠彠閼辨棁銆僆D閿? 閻劋绨紓鎾崇摠閸掓繂顫愰崠?-->
     <select id="findActivePersonsWithIds" resultType="java.util.Map">
         SELECT DISTINCT
             a.id AS "id",
@@ -331,7 +331,7 @@
                 LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
                 LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
                 LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
-                LEFT JOIN system_dept jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+                LEFT JOIN js_sys_office jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
                 LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
                 AND NOT EXISTS (SELECT 1 FROM fms_worker fw2 WHERE fw2.identity_code = f.identity_code AND fw2.create_date > f.create_date)
         WHERE a.personnel_status = '1'
@@ -346,7 +346,7 @@
     </select>
 
 
-    <!-- 根据身份证号列表查询人员 -->
+    <!-- 閺嶈宓侀煬顐″敜鐠囦礁褰块崚妤勩€冮弻銉嚄娴滃搫鎲?-->
     <select id="findByIdCards" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
         SELECT
             *
@@ -358,7 +358,7 @@
         </foreach>
     </select>
 
-    <!-- 统计不重复身份证的人员数量 -->
+    <!-- 缂佺喕顓告稉宥夊櫢婢跺秷闊╂禒鍊熺槈閻ㄥ嫪姹夐崨妯绘殶闁?-->
     <select id="countDistinctByIdentityCard" resultType="int">
         SELECT COUNT(DISTINCT identity_card)
         FROM swm_person
@@ -391,7 +391,7 @@
         left join fms_prod_line pl on a.prod_line = pl.id COLLATE utf8mb4_general_ci
         left join fms_work_group wg on a.team = wg.id   COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
-        left join system_dept jso on a.company = jso.office_code  COLLATE utf8mb4_general_ci
+        left join js_sys_office jso on a.company = jso.office_code  COLLATE utf8mb4_general_ci
         WHERE a.personnel_status = '1'
         AND a.status = '0'
         <if test="query.officeCode != null and query.officeCode != ''">
@@ -409,11 +409,11 @@
         <if test="query.jobType != null and query.jobType != ''">
             AND a.job_type = #{query.jobType}
         </if>
-        GROUP BY a.id  <!-- 只需按主键分组 -->
-        ORDER BY MAX(a.update_date) DESC  <!-- 聚合排序字段 -->
+        GROUP BY a.id  <!-- 閸欘亪娓堕幐澶夊瘜闁款喖鍨庣紒?-->
+        ORDER BY MAX(a.update_date) DESC  <!-- 閼辨艾鎮庨幒鎺戠碍鐎涙顔?-->
     </select>
 
-    <!-- 根据身份证号列表查询在职人员 -->
+    <!-- 閺嶈宓侀煬顐″敜鐠囦礁褰块崚妤勩€冮弻銉嚄閸︺劏浜存禍鍝勬喅 -->
     <select id="findActivePersonsByIdentityCards" parameterType="java.util.List" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
         SELECT 
             a.id AS "id",
@@ -431,7 +431,7 @@
         </foreach>
     </select>
 
-    <!-- 根据手机号列表查询在职人员 -->
+    <!-- 閺嶈宓侀幍瀣簚閸欏嘲鍨悰銊︾叀鐠囥垹婀懕灞兼眽閸?-->
     <select id="findActivePersonsByPhoneNumbers" parameterType="java.util.List" resultType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO">
         SELECT 
             a.id AS "id",
@@ -545,7 +545,7 @@
         a.NAME AS "name",
         a.person_type AS "personType",
         a.gender AS "gender",
-        a.corp_name AS "company",
+        a.tenant_name AS "company",
         a.job_type AS "jobType",
         a.safety_helmet_id AS "safetyHelmetId",
         a.personnel_status AS "personnelStatus",
@@ -573,8 +573,8 @@
             <if test="status != null and status != ''">
                 AND a.status = #{status}
             </if>
-            <if test="corpCode != null and corpCode != ''">
-                AND a.corp_code = #{corpCode}
+            <if test="tenantId != null and tenantId != ''">
+                AND a.tenant_id = #{tenantId}
             </if>
             AND #{random} = #{random}
         </where>
@@ -642,7 +642,7 @@
         FROM
         fms_position_archive
         WHERE
-            corp_code = #{corpCode} and
+            tenant_id = #{tenantId} and
         position_name IN
         <foreach collection="departments" item="name" open="(" separator="," close=")">
             #{name}
@@ -654,7 +654,7 @@
         FROM
         fms_prod_line
         WHERE
-        corp_code = #{corpCode} and
+        tenant_id = #{tenantId} and
         prod_line_name IN
         <foreach collection="productionLines" item="name" open="(" separator="," close=")">
             #{name}
@@ -666,7 +666,7 @@
         FROM
         fms_work_group
         WHERE
-        corp_code = #{corpCode} and
+        tenant_id = #{tenantId} and
         work_group_name IN
         <foreach collection="teams" item="name" open="(" separator="," close=")">
             #{name}
@@ -683,7 +683,7 @@
         </foreach>
     </select>
 
-    <resultMap id="SwmPersonResultMap" type="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO"> <!-- 替换为实体类包路径 -->
+    <resultMap id="SwmPersonResultMap" type="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO"> <!-- 閺囨寧宕叉稉鍝勭杽娴ｆ挾琚崠鍛扮熅瀵?-->
         <result column="id" property="id"/>
         <result column="name" property="name"/>
         <result column="personType" property="personType"/>
@@ -715,12 +715,12 @@
         <result column="age" property="age"/>
         <result column="urgentPerson" property="urgentPerson"/>
         <result column="urgentPhoneNumber" property="urgentPhoneNumber"/>
-        <result column="corpCode" property="corpCode"/>
-        <result column="corpName" property="corpName"/>
+        <result column="tenantId" property="tenantId"/>
+        <result column="tenantName" property="tenantName"/>
     </resultMap>
 
-    <!-- 自定义查询：无corpCode过滤的人员列表（核心方法） -->
-    <select id="findListWithoutCorpCode" parameterType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO" resultMap="SwmPersonResultMap">
+    <!-- 閼奉亜鐣炬稊澶嬬叀鐠囶澁绱伴弮鐕緊rpCode鏉╁洦鎶ら惃鍕眽閸涙ê鍨悰顭掔礄閺嶇绺鹃弬瑙勭《閿?-->
+    <select id="findListWithoutTenantId" parameterType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmPersonDO" resultMap="SwmPersonResultMap">
         SELECT DISTINCT
         a.id AS "id",
         a.NAME AS "name",
@@ -753,23 +753,23 @@
         a.age,
         a.urgent_person AS "urgentPerson",
         a.urgent_phone_number AS "urgentPhoneNumber",
-        a.corp_code AS "corpCode",
-        a.corp_name AS "corpName"
+        a.tenant_id AS "tenantId",
+        a.tenant_name AS "tenantName"
         FROM
         `swm_person` a
         LEFT JOIN fms_position_archive pa ON a.department = pa.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_prod_line pl ON a.prod_line = pl.id COLLATE utf8mb4_general_ci
         LEFT JOIN fms_work_group wg ON a.team = wg.id COLLATE utf8mb4_general_ci
         LEFT JOIN swm_work_type backup_wt ON a.job_type = backup_wt.work_type_code COLLATE utf8mb4_general_ci
-        LEFT JOIN system_dept jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
+        LEFT JOIN js_sys_office jso ON a.company = jso.office_code COLLATE utf8mb4_general_ci
         LEFT JOIN fms_worker f ON a.identity_card = f.identity_code COLLATE utf8mb4_general_ci
         WHERE
         1=1
-        <!-- 动态条件：status（匹配传入的参数） -->
+        <!-- 閸斻劍鈧焦娼禒璁圭窗status閿涘牆灏柊宥勭炊閸忋儳娈戦崣鍌涙殶閿?-->
         <if test="status != null and status != ''">
             AND a.STATUS = #{status}
         </if>
-        <!-- 动态条件：personnelStatus（匹配传入的参数） -->
+        <!-- 閸斻劍鈧焦娼禒璁圭窗personnelStatus閿涘牆灏柊宥勭炊閸忋儳娈戦崣鍌涙殶閿?-->
         <if test="personnelStatus != null and personnelStatus != ''">
             AND a.personnel_status = #{personnelStatus}
         </if>
@@ -803,3 +803,4 @@
         </foreach>
     </update>
 </mapper>
+

@@ -14,4 +14,9 @@ public interface VoiceAlarmService {
      */
     void triggerAlarm(String alarmType, String deviceCode, String message);
 
+    default boolean sendVoiceAlarm(String deviceId, String content) {
+        triggerAlarm("voice", deviceId, content);
+        return true;
+    }
+
 }

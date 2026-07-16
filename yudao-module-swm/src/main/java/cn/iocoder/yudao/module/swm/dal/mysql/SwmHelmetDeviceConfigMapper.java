@@ -10,3 +10,4 @@ public interface SwmHelmetDeviceConfigMapper extends BaseMapperX<SwmHelmetDevice
 
     void saveOrUpdateConfig(SwmHelmetDeviceConfigDO config);
 }
+

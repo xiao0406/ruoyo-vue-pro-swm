@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.swm.dal.mysql.SwmHelmetDeviceConfigMapper">
     
-    <!-- 插入或更新配置 -->
+    <!-- 鎻掑叆鎴栨洿鏂伴厤缃?-->
     <insert id="saveOrUpdateConfig" parameterType="cn.iocoder.yudao.module.swm.dal.dataobject.SwmHelmetDeviceConfigDO">
         INSERT INTO swm_helmet_device_config (
             id,
@@ -26,8 +26,8 @@
             update_by,
             update_date,
             remarks,
-            corp_code,
-            corp_name,
+            tenant_id,
+            tenant_name,
             hat_off_alarm_interval
         ) VALUES (
             #{id},
@@ -51,8 +51,8 @@
             #{updateBy},
             NOW(),
             #{remarks},
-            #{corpCode},
-            #{corpName},
+            #{tenantId},
+            #{tenantName},
             #{hatOffAlarmInterval}
         )
         ON DUPLICATE KEY UPDATE
@@ -73,8 +73,8 @@
             update_by = VALUES(update_by),
             update_date = NOW(),
             remarks = IFNULL(NULLIF(VALUES(remarks), ''), remarks),
-            corp_code = IFNULL(NULLIF(VALUES(corp_code), ''), corp_code),
-            corp_name = IFNULL(NULLIF(VALUES(corp_name), ''), corp_name),
+            tenant_id = IFNULL(NULLIF(VALUES(tenant_id), ''), tenant_id),
+            tenant_name = IFNULL(NULLIF(VALUES(tenant_name), ''), tenant_name),
             hat_off_alarm_interval = IFNULL(NULLIF(VALUES(hat_off_alarm_interval), ''), hat_off_alarm_interval)
     </insert>
     

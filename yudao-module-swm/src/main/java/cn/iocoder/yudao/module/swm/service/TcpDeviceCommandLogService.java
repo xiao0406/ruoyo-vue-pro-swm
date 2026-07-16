@@ -14,4 +14,8 @@ public interface TcpDeviceCommandLogService {
      */
     void logCommand(String deviceCode, String command, String direction);
 
+    default void saveTcpCommandLog(String deviceId, String command, String direction) {
+        logCommand(deviceId, command, direction);
+    }
+
 }

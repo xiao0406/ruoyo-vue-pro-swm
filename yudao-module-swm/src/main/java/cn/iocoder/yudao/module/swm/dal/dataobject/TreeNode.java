@@ -10,6 +10,11 @@ public class TreeNode {
     private String id;
     private String parentId;
     private String title;
+    private String value;
+    private String key;
+    private String nodeType;
+    private Boolean leaf;
+    private Boolean isLeaf;
     private String idCard;
     private String personId;
 }

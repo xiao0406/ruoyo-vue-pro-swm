@@ -15,6 +15,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - 巡检单")
@@ -62,5 +65,29 @@ public class SwmInspectionListController {
     @PreAuthorize("@ss.hasPermission('swm:inspection-list:query')")
     public CommonResult<PageResult<SwmInspectionListRespVO>> getPage(@Valid SwmInspectionListPageReqVO pageReqVO) {
         return success(BeanUtils.toBean(service.getSwmInspectionListPage(pageReqVO), SwmInspectionListRespVO.class));
+    }
+
+    @PostMapping("/start-task")
+    @Operation(summary = "开始巡检任务")
+    @PreAuthorize("@ss.hasPermission('swm:inspection-list:update')")
+    public CommonResult<Boolean> startTask(@RequestBody Map<String, String> data) {
+        return success(service.startTask(data.get("id")) != null);
+    }
+
+    @PostMapping("/complete-task")
+    @Operation(summary = "完成巡检任务")
+    @PreAuthorize("@ss.hasPermission('swm:inspection-list:update')")
+    public CommonResult<Boolean> completeTask(@RequestBody SwmInspectionListSaveReqVO reqVO) {
+        return success(service.completeTask(reqVO) != null);
+    }
+
+    @GetMapping("/files")
+    @Operation(summary = "获取巡检附件")
+    public CommonResult<List<Map<String, String>>> getFiles(@RequestParam("id") String id) {
+        SwmInspectionListDO task = service.getSwmInspectionList(id);
+        if (task == null || task.getAttachmentPath() == null || task.getAttachmentPath().isBlank()) {
+            return success(List.of());
+        }
+        return success(List.of(Map.of("url", task.getAttachmentPath(), "objectName", task.getAttachmentPath())));
     }
 }

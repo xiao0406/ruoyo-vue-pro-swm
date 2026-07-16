@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.swm.controller.admin.inspectionlist.vo.*;
 import cn.iocoder.yudao.module.swm.dal.dataobject.SwmInspectionListDO;
 import cn.iocoder.yudao.module.swm.dal.mysql.SwmInspectionListMapper;
 import cn.iocoder.yudao.module.swm.enums.ErrorCodeConstants;
+import cn.iocoder.yudao.module.swm.enums.SwmEnums;
 import cn.iocoder.yudao.module.swm.service.SwmInspectionListService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
@@ -51,7 +52,9 @@ public class SwmInspectionListServiceImpl implements SwmInspectionListService {
 
     @Override
     public PageResult<SwmInspectionListDO> getSwmInspectionListPage(SwmInspectionListPageReqVO pageReqVO) {
-        return mapper.selectPage(pageReqVO, new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>());
+        return mapper.selectPage(pageReqVO,
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<SwmInspectionListDO>()
+                        .orderByDesc(SwmInspectionListDO::getStartTime));
     }
 
     private void validateExists(String id) {
@@ -83,5 +86,34 @@ public class SwmInspectionListServiceImpl implements SwmInspectionListService {
                 .orderByDesc(SwmInspectionListDO::getCreateTime)
                 .last("LIMIT 1");
         return mapper.selectOne(wrapper);
+    }
+
+    @Override
+    public SwmInspectionListDO startTask(String id) {
+        SwmInspectionListDO task = mapper.selectById(id);
+        if (task == null || !SwmEnums.InspectionListStatusEnum.WAIT.getValue()
+                .equals(task.getInspectionListStatus())) {
+            return null;
+        }
+        task.setInspectionListStatus(SwmEnums.InspectionListStatusEnum.IN_PROGRESS.getValue());
+        task.setStartTime(LocalDateTime.now());
+        mapper.updateById(task);
+        return task;
+    }
+
+    @Override
+    public SwmInspectionListDO completeTask(SwmInspectionListSaveReqVO reqVO) {
+        SwmInspectionListDO task = mapper.selectById(reqVO.getId());
+        if (task == null || !SwmEnums.InspectionListStatusEnum.IN_PROGRESS.getValue()
+                .equals(task.getInspectionListStatus())) {
+            return null;
+        }
+        task.setInspectionListStatus(SwmEnums.InspectionListStatusEnum.COMPLETED.getValue());
+        task.setEndTime(reqVO.getEndTime() == null ? LocalDateTime.now() : reqVO.getEndTime());
+        if (StringUtils.isNotBlank(reqVO.getAttachmentPath())) {
+            task.setAttachmentPath(reqVO.getAttachmentPath());
+        }
+        mapper.updateById(task);
+        return task;
     }
 }

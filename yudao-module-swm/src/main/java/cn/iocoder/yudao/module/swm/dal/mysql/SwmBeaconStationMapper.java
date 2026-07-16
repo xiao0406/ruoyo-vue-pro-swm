@@ -12,9 +12,9 @@ import java.util.Map;
 @Mapper
 public interface SwmBeaconStationMapper extends BaseMapperX<SwmBeaconStationDO> {
 
-    SwmBeaconStationDO get(@Param("id") String id, @Param("corpCode") String corpCode);
+    SwmBeaconStationDO get(@Param("id") String id, @Param("tenantId") Long tenantId);
 
-    List<SwmBeaconStationDO> findList(@Param("corpCode") String corpCode,
+    List<SwmBeaconStationDO> findList(@Param("tenantId") Long tenantId,
                                        @Param("beaconId") String beaconId,
                                        @Param("deviceName") String deviceName,
                                        @Param("beaconType") String beaconType,
@@ -50,15 +50,15 @@ public interface SwmBeaconStationMapper extends BaseMapperX<SwmBeaconStationDO> 
 
     List<String> findAllAreas();
 
-    List<String> findAreaOptionsFromBeacon(@Param("corpCode") String corpCode);
+    List<String> findAreaOptionsFromBeacon(@Param("tenantId") Long tenantId);
 
     List<Map<String, Object>> findAreaNameMappings(@Param("areaIds") List<String> areaIds,
-                                                    @Param("corpCode") String corpCode);
+                                                    @Param("tenantId") Long tenantId);
 
-    List<String> findFloorOptionsFromBeacon(@Param("corpCode") String corpCode);
+    List<String> findFloorOptionsFromBeacon(@Param("tenantId") Long tenantId);
 
     List<Map<String, Object>> findFloorNameMappings(@Param("floorIds") List<String> floorIds,
-                                                     @Param("corpCode") String corpCode);
+                                                     @Param("tenantId") Long tenantId);
 
     List<SwmBeaconStationDO> findByPixelCoordinates(@Param("pixelX") Double pixelX,
                                                      @Param("pixelY") Double pixelY);
@@ -83,3 +83,4 @@ public interface SwmBeaconStationMapper extends BaseMapperX<SwmBeaconStationDO> 
 
     List<Map<String, Object>> findBeaconLocationForMap();
 }
+

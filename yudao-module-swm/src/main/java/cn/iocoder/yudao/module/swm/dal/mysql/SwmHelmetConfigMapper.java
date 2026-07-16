@@ -24,3 +24,4 @@ public interface SwmHelmetConfigMapper extends BaseMapperX<SwmHelmetConfigDO> {
 
     SwmHelmetDeviceDO getByDeviceId(@Param("deviceId") String deviceId);
 }
+

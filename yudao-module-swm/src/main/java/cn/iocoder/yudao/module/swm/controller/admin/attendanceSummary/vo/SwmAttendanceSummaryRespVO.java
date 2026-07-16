@@ -22,6 +22,8 @@ public class SwmAttendanceSummaryRespVO {
     @Schema(description = "身份证号")
     private String identityCard;
 
+    @Schema(description = "phone number")
+    private String phoneNumber;
     @Schema(description = "部门")
     private String department;
 

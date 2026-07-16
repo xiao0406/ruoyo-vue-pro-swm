@@ -34,6 +34,15 @@ public class SwmPersonPageReqVO extends PageParam {
     @Size(max = 100, message = "所属车间长度不能超过100个字符")
     private String department;
 
+    @Schema(description = "所属产线")
+    private String prodLine;
+
+    @Schema(description = "所属班组")
+    private String team;
+
+    @Schema(description = "工种")
+    private String jobType;
+
     @Schema(description = "人员状态")
     @Size(max = 30, message = "人员状态长度不能超过30个字符")
     private String personnelStatus;
@@ -45,5 +54,14 @@ public class SwmPersonPageReqVO extends PageParam {
     @Schema(description = "手机号码")
     @Size(max = 30, message = "手机号码长度不能超过30个字符")
     private String phoneNumber;
+
+    @Schema(description = "安全教育状态")
+    private String safetyEducation;
+
+    @Schema(description = "是否厂内员工")
+    private String isExternalPersonnel;
+
+    @Schema(description = "安全帽编号")
+    private String safetyHelmetId;
 
 }
